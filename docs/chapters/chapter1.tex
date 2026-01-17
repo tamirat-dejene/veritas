@@ -1,0 +1,373 @@
+% Chapter 1: Introduction
+\section{Introduction}
+
+The rapid advancement of digital technologies has fundamentally transformed the landscape of educational and professional evaluations. Globally, the transition from traditional paper-based examinations to digital assessment platforms has been accelerated by the need for greater efficiency, scalability, and immediate feedback. This shift toward digital transformation has allowed academic institutions and enterprise sectors to adopt remote evaluation technologies that reduce logistical overhead, automate grading, and offer better reach across geographical boundaries.
+
+In the Ethiopian context, the adoption of online examination platforms is seeing significant growth, particularly within education and organizational recruitment sectors . As institutions strive to modernize their administrative workflows, there is an increasing reliance on digital tools to manage large-scale assessments. However, many current implementations are either generic platforms or manual processes that are not fully aligned with local infrastructural realities, such as varying internet stability and specific institutional requirements.
+
+The integrity of these digital assessments remains a cornerstone of their success. While the convenience of remote testing is undeniable, ensuring that a candidate’s performance truly reflects their genuine ability is a persistent challenge for educators and HR professionals alike. As the demand for objective human capital evaluation grows, there is a parallel need for systems that can provide a high degree of trust without being prohibitively expensive or technologically inaccessible in resource-constrained environments.
+
+The development of the Veritas system represents a response to this evolving landscape. By leveraging modern web technologies and artificial intelligence, the project aims to bridge the gap between global assessment standards and local institutional needs. This study explores the potential for a locally developed, secure, and intelligent platform that prioritizes data sovereignty and operational efficiency, ultimately contributing to the broader goal of technological independence and digital innovation within Ethiopia.
+
+
+\subsection{Statement of the Problem}
+In Ethiopia, enterprises and organizations increasingly rely on online assessments for recruitment and academic evaluations. However, there is a significant lack of comprehensive, commercially available platforms tailored to the local digital ecosystem. Currently, organizations often depend on foreign-hosted solutions which present challenges regarding data sovereignty, high subscription costs in foreign currency, and a lack of integration with local identity infrastructures. According to the Ministry of Innovation and Technology (2025), a key objective of the Digital Ethiopia 2030 Strategy is to reduce this dependency on external digital platforms and establish "Digital Sovereignty" by fostering locally developed systems that keep Ethiopian data within national borders.
+
+Existing digital tools are largely restricted to automating objective assessments. While these systems handle simple data well, they are insufficient for managing subjective evaluations at scale. The grading of open-ended essays and descriptive answers remains a manual, labor-intensive process. This reliance on manual grading for subjective content leads to significant bottlenecks, introduces human bias, and results in substantial delays. Current systems fail to provide an automated framework that can accurately interpret and grade complex, high-volume subjective submissions, forcing organizations to choose between the simplicity of objective tests or the inefficiency of manual review.
+
+While global platforms such as TestGorilla, HackerRank, and ProctorU offer sophisticated features like continuous authentication and behavior analytics, they remain largely inaccessible to most Ethiopian organizations. The primary barrier is the high cost of subscription fees required in foreign currency, which is strictly regulated and in short supply within the national economy. Furthermore, these platforms are optimized for high-bandwidth, stable international internet nodes. In the local context, high latency and connectivity fluctuations often result in session timeouts and data loss when interacting with foreign-hosted servers, thereby compromising the reliability of  assessments.
+
+As a result, maintaining examination credibility, preventing cheating, verifying identity, and handling large-scale automated assessments remain significant challenges for Ethiopian institutions and organizations. There is, therefore, a clear need for a secure, and inte-lligent online assessment and examination platform that provides flexibility, integrity, and scalability tailored to the needs of Ethiopian organizations and institutions .
+
+
+\subsection{Objectives}
+\subsubsection{General Objective}
+The general objective of the project is to design and develop an AI-enhanced online assessment and monitoring system.
+
+\subsubsection{Specific Objectives}
+\begin{itemize}
+    \item To gather and analyze user and organizations requirements for developing a secure and intelligent online assessment system.
+    \item To design a multi-tenant architecture that allows multiple enterprises or institutions to manage independent examination environments.
+    \item To implement a secure authentication mechanism using enterprise-issued IDs or unique tokens to verify candidate identity.
+    \item To authenticate the user's real identity through face recognition models that capture images at regular intervals and compare them with the image submitted during registration.
+    \item To develop intelligent monitoring and behavior analysis features, including tab-switch detection and mouse activity tracking, ip address tracking to reduce cheating incidents.
+    \item To integrate automated and manual grading mechanisms for evaluating exam, time utilization, and cheating scores.
+    \item To build a customizable enterprise dashboard for managing exams, participants, and result reports with.
+    \item To design and generate organization-specific certificates that are automatically issued to examinees upon successful completion. 
+    \item To integrate payment and subscription management modules that support different service plans (basic, premium, enterprise).
+    \item To evaluate the system’s usability, scalability, accuracy, and security through prototype testing and user feedback.
+    \item To deploy a functional prototype of the system in a controlled environment for demonstration and evaluation purposes.
+    
+\end{itemize}
+
+\subsection{Scope and Limitations}
+\subsubsection{Scope}
+This project focuses on the design, development, and evaluation of a prototype AI-enhanced online assessment and monitoring system intended for enterprise and organizational use within the Ethiopian context. The scope of the project is limited to demonstrating the core concepts, architecture, and key functionalities of a secure and intelligent online examination platform.
+
+Within this scope, the project includes:
+
+\begin{sloppypar}
+\begin{itemize}
+    \item Design of a multi-tenant system architecture that allows multiple enterprises to manage independent examination environments.
+    \item Development of core examination management features, including exam creation, scheduling, and candidate participation.
+    \item Implementation of basic authentication mechanisms, such as enterprise-issued credentials or unique examination tokens.
+    \item Integration of AI-assisted smart proctoring features at a prototype level, including tab-switch detection, mouse activity tracking, and periodic image capture for identity verification.
+    \item Implementation of automated grading for objective-type and essay based questions and basic analytics for performance evaluation and cheating indication.
+    \item Development of role-based administrative dashboards for exam management and result visualization.
+    \item Simulation of subscription-based access control models.
+\end{itemize}
+\end{sloppypar}
+The project scope excludes full-scale production deployment, large-scale real-world usage, legal compliance certification, and continuous system maintenance. Payment processing and cloud infrastructure are implemented at a demonstration or simulated level only. The system is tested and demonstrated in a controlled environment to evaluate usability, system performance, and the effectiveness of the AI-based monitoring mechanisms.
+
+
+\subsubsection{Limitations}
+Despite its comprehensive functionality, the project has certain technical and contextual limitations due to time, resource, and scope constraints:
+\begin{sloppypar}
+\begin{itemize}
+    \item Platform Restriction: The current phase of the project focuses solely on the web application; no dedicated mobile or desktop application  version is included.
+    \item Biometric Authentication: Advanced biometric features such as, fingerprint, or voice verification are excluded due to hardware and privacy constraints.
+    \item Human Proctoring: The system relies solely on automated proctoring mechanisms; real-time human invigilation via webcam or video streaming is not integrated.
+    \item Dataset and AI Model Limitations: The AI-based behavior analysis relies on lightweight, pre-trained models. As a result, its accuracy may vary depending on lighting, device camera quality, and candidate behavior diversity.
+    \item Scalability Constraints: Large-scale, nationwide deployment and integration with government-level exam systems are beyond the current project phase but may be considered for future iterations.
+\end{itemize}
+\end{sloppypar}
+
+\subsection{Methodology}
+The methodology for this project is anchored in the Agile framework, specifically utilizing the Scrum methodology, to facilitate an iterative and adaptive development environment. This approach has been selected as the ideal choice over traditional linear models because the development of an AI-driven, security-critical system requires continuous refinement of complex proctoring and semantic analysis layers. By working in iterative cycles, the project can rapidly incorporate stakeholder feedback and adapt to technical challenges inherent in the Ethiopian infrastructure, ensuring that the final product is both technologically robust and contextually relevant.
+
+This methodology prioritizes a blend of comprehensive upfront research and an iterative development cycle encompassing design, implementation, testing, and deployment. The Agile approach specifically enables us to mitigate risks early, such as high-latency network bottlenecks or AI "false positives," by validating functional increments at the end of every sprint.
+
+Our methodology incorporates user-centered design principles, ensuring that stakeholder feedback is integrated during both the initial requirements gathering and the final evaluation phases. This ensures the system remains adaptable to local needs, such as strict compliance with the Ethiopian Data Protection Proclamation and maintaining stability during high-concurrency exams. By following this structured yet flexible path, the project ensures traceability, risk mitigation, and the high-quality delivery of academic objectives.
+
+The methodology comprises two primary components: Research and Requirements Engineering and the System Development Process, detailed in the following subsections.
+
+\subsubsection{Research and Requirements Engineering}
+The foundation of the smart proctoring system is grounded in a systematic and multi-method research process aimed at deeply understanding the security, operational, and usability requirements of target users in Ethiopia. Quantitative and qualitative techniques—including surveys, structured interviews, and comparative analysis of existing platforms—will be utilized to gather empirical and contextual insights from stakeholders involved in online examinations.
+
+\paragraph{A. Interviews with HRs and Educators}\
+This qualitative phase focuses on understanding the administrative and pedagogical needs of those overseeing assessments. Interviews enable deeper discussion of regulatory compliance and human bottlenecks in grading that surveys might miss.
+\textbf{Guiding Questions:}
+\begin{itemize}
+    \item What is the current average turnaround time for grading subjective/essay-based assessments, and how does this impact recruitment or academic cycles?
+    \item What specific behaviors do you currently define as cheating that are most difficult to detect in a remote setting?
+    \item How critical is data sovereignty (storing data within Ethiopia) to your institution's legal and ethical standards?
+    \item What are the most common technical complaints you receive from candidates during online exams?
+\end{itemize}
+
+\paragraph{B. Literature Review}\
+A systematic review of academic papers, technical documentation, and industry reports on virtualization, AI monitoring, and NLP. This prevents reinventing existing solutions and anchors the project to current benchmarks for AI accuracy and container security.
+\textbf{Guiding Questions:}
+\begin{itemize}
+    \item What are the state-of-the-art benchmarks for Transformer-based models in automated subjective grading?
+    \item How do current researchers address the trade-off between strict proctoring and user privacy?
+    \item What are the known vulnerabilities of process-level isolation (namespaces/cgroups) in exam-environment sandboxing?
+    \item What are the best practices for handling high-latency connections in real-time WebSocket communication?
+\end{itemize}
+
+\paragraph{C. Observational Studies of Existing Tools}\
+Hands-on comparative analysis of global platforms (ProctorU, TestGorilla) and available local systems to uncover friction points in user experience and technical barriers such as forex payment gates. Direct observation highlights where international tools impose constraints on local users.
+\textbf{Guiding Questions:}
+\begin{itemize}
+    \item At what point in the user journey does the system fail when simulated on a typical 3G/4G Ethiopian network?
+    \item How many steps does it take for an administrator to set up a new exam, and can this be simplified for the local context?
+    \item How does the system respond to common local hardware constraints (e.g., low-resolution webcams or limited CPU resources)?
+    \item What specific proctoring flags are most prone to false positives in a typical local testing environment (e.g., background noise or lighting)?
+\end{itemize}
+A detailed comparative analysis will be conducted on international solutions (e.g., ProctorU, Respondus) and local Ethiopian platforms. This will identify key gaps such as high costs and lack of localized support in global tools, limited scalability and AI capabilities in local systems, and frequent user concerns regarding intrusiveness and false-positive rates.
+
+
+\subsubsection{System Development Process}
+The project follows the Software Development Life Cycle (SDLC) integrated into an Agile framework, allowing for iterative development of AI components.
+
+\begin{itemize}[leftmargin=1.4em]
+    \item \textbf{Phase 1: Planning and Requirement Analysis}
+    \begin{itemize}
+        \item Define scope and technical feasibility
+        \item Finalize the product backlog and prioritize MVP features
+        \item Tools: 
+        \begin{itemize}
+            \item GitHub Projects for task tracking
+            \item Trello for milestone management
+        \end{itemize}
+    \end{itemize}
+    
+    \item \textbf{Phase 2: System Design and Architecture}
+    \begin{itemize}
+        \item Translate requirements into an event-driven microservices architecture (choreography-based)
+        \item Ensure high-volume proctoring events are handled asynchronously
+        \item Prevent failures in log services from blocking exam submissions
+        \item Modeling:
+        \begin{itemize}
+            \item Visual Paradigm or LucidChart for UML (Use Case, Sequence, ER)
+        \end{itemize}
+        \item UI/UX:
+        \begin{itemize}
+            \item Figma for interactive high-fidelity prototypes
+        \end{itemize}
+    \end{itemize}
+    
+    \begin{sloppypar}
+    \item \textbf{Phase 3: Technical Implementation (Build)}
+    \begin{itemize}
+        \item Hybrid stack:
+        \begin{itemize}
+            \item Go for concurrency-critical services (real-time proctoring event streamer, API gateway)
+            \item FastAPI/Python for AI services, including subjective grading and anomaly detection
+        \end{itemize}
+        \item Continuous authentication via facial recognition with liveness (OpenCV/DeepFace)
+        \item Frontend:
+        \begin{itemize}
+            \item React SPA for dashboard-heavy, real-time handling
+        \end{itemize}
+        \item Data:
+        \begin{itemize}
+            \item PostgreSQL for ACID guarantees
+        \end{itemize}
+    \end{itemize}
+    \end{sloppypar}
+    
+    \item \textbf{Phase 4: Quality Assurance and Testing}
+    \begin{itemize}
+        \item Unit tests:
+        \begin{itemize}
+            \item PyTest, Go Test, Jest
+        \end{itemize}
+        \item Scalability:
+        \begin{itemize}
+            \item Apache JMeter for 500+ concurrent users on typical Ethiopian networks
+        \end{itemize}
+        \item Security:
+        \begin{itemize}
+            \item Red teaming to bypass proctoring with a target detection rate above 95\%
+        \end{itemize}
+    \end{itemize}
+    
+    \item \textbf{Phase 5: Documentation}
+    \begin{itemize}
+        \item Technical docs:
+        \begin{itemize}
+            \item Swagger/OpenAPI for FastAPI
+            \item JSDoc for React
+        \end{itemize}
+        \item System manuals for examiners/candidates with local-network troubleshooting
+    \end{itemize}
+\end{itemize}
+
+
+\subsubsection{Evaluation}
+The final success of the project is measured against the initial Research Questions using the F1-Score for AI accuracy and User Acceptance Testing (UAT) surveys with the stakeholders interviewed in Section 1.4.1.
+
+\subsection{Plan of Activities}
+This section provides an updated outline of the planned activities for the development of Vertas: AI Enhanced Online Assessment and Monitoring System, incorporating details from both the initial project proposal and the current final year project report. The plan aligns with the Agile Scrum methodology emphasized in the report's methodology section (1.4), which integrates research, iterative sprints, and user-centered design for flexibility and adaptability.
+
+\subsubsection{Key Phases and Activities}
+\begin{enumerate}[leftmargin=*,label=\textbf{\arabic*.}]
+    \item \textbf{Requirement Analysis and Research Phase}\\
+    This phase, now considered complete or wrapping up, involved gathering stakeholder input to refine requirements, as detailed in the report (1.4.1).
+    \begin{itemize}[leftmargin=1.6em]
+        \item Activities:
+        \begin{itemize}[leftmargin=1.4em]
+            \item Conduct literature review, interviews with HR managers, and educators to quantify challenges and prioritize features.
+            \item Define functional requirements.
+            \item Outline non-functional requirements.
+            \item Analyze existing tools.
+        \end{itemize}
+        \item Timeline: September 2025 to early January 2026.
+        \item Key Milestone: Finalized stakeholder feedback; approved requirements document.
+        \item Deliverables: Updated requirements specification.
+    \end{itemize}
+
+    \item \textbf{System Design Phase}\\
+    Focuses on architectural planning, incorporating modular microservices.
+    \begin{itemize}[leftmargin=1.6em]
+        \item Activities:
+        \begin{itemize}[leftmargin=1.4em]
+            \item Design a modular, microservices-based architecture separating services.
+            \item Create relational database schema for the system components.
+            \item Develop wireframes and mockups for UI/UX.
+            \item Plan AI integration.
+            \item Iterate designs in short sprints with team reviews.
+        \end{itemize}
+        \item Timeline: Late January to early February.
+        \item Key Milestone: Approved architecture and UI prototypes.
+        \item Deliverables: System architecture document with diagrams; database ER diagram; UI wireframes/mockups; updated backlog incorporating report limitations.
+    \end{itemize}
+
+    \item \textbf{Implementation Phase}\\
+    Core coding phase, updated to include facial recognition, personalized feedback, and certificate generation in iterative sprints.
+    \begin{itemize}[leftmargin=1.6em]
+        \item Activities:
+        \begin{itemize}[leftmargin=1.4em]
+            \item Frontend development and backend development.
+            \item Proctoring and automated grading module development.
+            \item Module integration.
+            \item Code reviews and sprint demos every week.
+        \end{itemize}
+        \item Timeline: February 2025 to May 2026.
+        \item Key Milestones: Functional prototype with core features; integrated AI proctoring.
+        \item Deliverables: Code repository; API documentation; prototype demo; interim report on new features like certificate automation.
+    \end{itemize}
+
+    \item \textbf{Testing Phase}\\
+    Multi-level testing, updated to validate new AI elements (e.g., facial recognition accuracy) and security.
+    \begin{itemize}[leftmargin=1.6em]
+        \item Activities:
+        \begin{itemize}[leftmargin=1.4em]
+            \item Unit and integration tests of modules.
+            \item System testing: assess functionality, performance, and non-functional aspects.
+            \item UAT: pilot with enterprises/candidates for feedback on usability and automated grading fairness.
+        \end{itemize}
+        \item Timeline: May 2026.
+        \item Key Milestones: 95\% test coverage; UAT feedback integrated.
+        \item Deliverables: Test plans/reports (including AI accuracy metrics); updated prototype; security audit.
+    \end{itemize}
+
+    \item \textbf{Documentation and Finalization Phase}\\
+    Wrap-up, including post-prototype deployment support.
+    \begin{itemize}[leftmargin=1.6em]
+        \item Activities:
+        \begin{itemize}[leftmargin=1.4em]
+            \item Fix bugs from pilots; refine features.
+            \item Prepare documentation (technical/user manuals, including for facial recognition).
+            \item Plan maintenance mechanism for updates.
+            \item Compile final report and prepare defense.
+        \end{itemize}
+        \item Timeline: May 2026.
+        \item Key Milestones: Complete documentation; project defense.
+        \item Deliverables: Final system; manuals; project report; presentation.
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Timeline Overview}
+The table below summarizes planned dates and durations.
+
+\renewcommand{\arraystretch}{1.2}
+{\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{|>{\raggedright\arraybackslash}p{2.6cm}|>{\raggedright\arraybackslash}p{4.0cm}|>{\centering\arraybackslash}p{1.9cm}|>{\centering\arraybackslash}p{1.9cm}|>{\centering\arraybackslash}p{1.9cm}|}
+\hline
+\textbf{Phase} & \textbf{Task/Activity} & \textbf{Start Date} & \textbf{End Date} & \textbf{Duration (Weeks)} \\
+\hline
+1. Requirement Analysis & Research and gathering & 2025-10-01 & 2025-11-03 & 4 \\
+\hline
+2. System Design & Architecture, database, UI & 2025-12-13 & 2026-01-07 & 3 \\
+\hline
+3. Implementation & Frontend, backend, AI integration & 2025-02-08 & 2026-04-08 & 9 \\
+\hline
+4. Testing & Unit, integration, system, UAT & 2026-04-09 & 2026-04-20 & 2 \\
+\hline
+5. Maintenance and documentation & Adjustments, docs, finalization & 2026-04-01 & 2026-06-07 & 9 \\
+\hline
+\end{tabular}
+}
+
+\subsubsection{Risk Management and Monitoring}
+\begin{itemize} 
+    \item Risks: Delays in module integration; AI model accuracy below targets; infrastructure limitations.
+    \item Monitoring: Agile tools (Trello and GitHub Projects); monthly advisor reports.
+    \item Overall Milestones: Prototype by March 2026; testable system by April 2026; completion by June 2026.
+\end{itemize}
+
+\subsection{Budget Required}
+This section outlines the estimated financial resources required to develop the prototype for Vertas: AI Enhanced Online Assessment and Monitoring System. The budget is tailored for a 9-month academic cycle (November 2025 – June 2026), prioritizing cost-efficiency by leveraging open-source frameworks and university facilities.
+
+In line with the project’s scope as an academic prototype, this budget excludes commercial deployment fees, professional cloud hosting, and additional hardware purchases (e.g., external webcams), assuming the use of integrated laptop cameras for testing facial recognition and proctoring features. Costs are in Ethiopian Birr (ETB), reflecting current market rates in Addis Ababa.
+
+\subsubsection{Budget Breakdown}
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{|l|l|p{5.0cm}|r|}
+\hline
+\textbf{Category} & \textbf{Item} & \textbf{Description} & \textbf{Subtotal (ETB)} \\
+\hline
+Connectivity & Internet/Data & Supplemental data for cloud access and research (6 months). & 15,000 \\
+\hline
+Resources & API/Cloud Credits & \parbox[t]{5.0cm}{\raggedright Small buffer for AI model testing (OpenCV/Firebase) beyond free tiers.} & 5,000 \\
+\hline
+Documentation & Printing \& Binding & Final thesis reports, posters, and technical documentation. & 2,500 \\
+\hline
+Fieldwork & Transport & Local travel for data collection and supervisor meetings. & 2,000 \\
+\hline
+Contingency & Emergency Buffer & 10\% for hardware repairs or price fluctuations. & 2,500 \\
+\hline
+\multicolumn{3}{|r|}{\textbf{Total}} & \textbf{27,000 ETB} \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Explanation of Estimates and Updates}
+\begin{itemize}
+    \item Equipment Zero-Rating: External HD webcams have been removed from the budget. For the prototype phase, the team will utilize the built-in cameras of existing personal laptops. This suffices for demonstrating the facial recognition and gaze-tracking algorithms in a controlled environment.
+    \item Hosting and Software: As the system will be demonstrated locally or via free-tier services (e.g., GitHub Pages, Heroku Free, or local tunneling), the deployment and domain costs have been eliminated. The small "API/AI Credits" allocation is a safety buffer for any paid machine learning libraries or cloud processing required for heavy model training.
+    \item Internet/Data: This remains the primary expense. Reliability is critical for Git collaboration and accessing documentation. The estimate uses Ethio Telecom’s standard 10GB monthly student-friendly packages.
+    \item Documentation: Costs have been adjusted to reflect current printing rates in Addis Ababa for high-quality final thesis submissions and technical diagrams.
+    \item Cost-Saving Strategies:
+    \begin{itemize}
+        \item Open-Source Core: The project uses Python (OpenCV/TensorFlow) and React.js to eliminate licensing fees.
+        \item University Labs: Development and primary testing will occur in university computer labs to save on electricity and high-speed infrastructure costs.
+        \item Student Credits: The team will apply for student developer packs (GitHub Student Developer Pack) to access free tools and training.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Significance of the Study}
+The significance of this study lies in its potential to bridge the critical gap between global online assessment standards and the specific infrastructural realities of the Ethiopian educational and enterprise landscape. While digital transformation is accelerating globally, the adoption of high-integrity proctoring systems in developing regions is often hindered by high subscription costs, heavy hardware requirements, and data privacy concerns. This research moves the field forward by demonstrating that robust, AI-enhanced monitoring can be achieved through localized, resource-efficient engineering.
+
+From an academic perspective, this research deepens the current understanding of how Microservices Architectures combining the concurrency of Go with the analytical power of Python can be applied to real-time proctoring. By integrating continuous identity verification and semantic AI grading into a cohesive framework, the study provides a blueprint for future researchers to build scalable and fair evaluation systems that move beyond simple keyword matching to genuine contextual understanding.
+
+\begin{sloppypar}
+The practical application of this research directly benefits HR departments and academic administrators by streamlining evaluation processes. The implementation of Transformer-based NLP for automated grading significantly reduces the administrative burden and subjective bias associated with manual evaluation. For the candidate, the significance of this work lies in the provision of a fair, transparent, and low-latency testing environment that accurately reflects their genuine abilities.
+\end{sloppypar}
+
+\subsection{Outline of the Study}
+This study is organized into several chapters, each addressing specific aspects of the project’s background, methodology, implementation, and evaluation. The structure provides a clear roadmap for understanding how the proposed system was conceptualized, designed, and developed.
+
+\begin{itemize}
+    \item \textbf{Chapter 1: Introduction} – This chapter introduces the research background, problem statement, objectives, scope, limitations, and methodology. It outlines the motivation for developing an AI-enhanced online assessment and monitoring system and defines the framework for the study.
+    \item \textbf{Chapter 2: Literature Review} – This section examines existing online assessment systems, smart proctoring technologies, and previous research related to AI-based monitoring and exam integrity. It identifies the gaps in current solutions and establishes the theoretical foundation for the proposed system.
+    \item \textbf{Chapter 3: Methodology} – This chapter details the requirements analysis, system architecture, and design specifications. It explains the functional and non-functional requirements, data flow, and overall design structure of the Vertas system.
+    \item \textbf{Chapter 4: System Design and Implementation} – This part presents the development process, chosen technologies, and implementation of core modules such as authentication, proctoring, and automated grading. Screenshots, interface designs, and code summaries may be included to demonstrate the functionality.
+    \item \textbf{Chapter 5: Testing and Evaluation} – This chapter discusses the methods used for testing the system’s performance, accuracy, usability, and security. It includes the results from unit, integration, and user acceptance testing, as well as analysis of the system’s reliability and scalability.
+    \item \textbf{Chapter 6: Conclusion and Future Work} – The final chapter summarizes the key findings of the study, outlines the system’s overall contributions, and provides recommendations for future enhancements and research directions.
+\end{itemize}

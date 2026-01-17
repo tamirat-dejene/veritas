@@ -1,0 +1,56 @@
+\documentclass[12pt,a4paper]{article}
+
+% Packages
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{array}
+\usepackage{setspace}
+\usepackage{enumitem}
+% \usepackage{mathptmx}
+\usepackage[hidelinks]{hyperref}
+\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{3}
+
+% Page setup
+\geometry{margin=1in}
+
+\begin{document}
+
+\begingroup
+\singlespacing
+\input{cover_page.tex}
+\endgroup
+
+% Front matter with Roman page numbers
+\clearpage
+\pagenumbering{roman}
+\onehalfspacing
+\setlist{nosep}
+
+% Acknowledgement
+\input{front/acknowledgement.tex}
+
+% Table of Contents
+\clearpage
+\tableofcontents
+
+% Lists of Tables, Figures/Illustrations, Plates/Photographs
+\clearpage
+\input{front/lists.tex}
+
+% List of Abbreviations, Symbols, Specialized Nomenclature
+\clearpage
+\input{front/abbreviations.tex}
+
+% Abstract
+\clearpage
+\input{front/abstract.tex}
+
+% Switch to Arabic page numbering for main content
+\clearpage
+\pagenumbering{arabic}
+
+% Main contents
+\input{chapters/chapter1.tex}
+
+\end{document}
