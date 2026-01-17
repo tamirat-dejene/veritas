@@ -3,16 +3,15 @@
 
 \begin{center}
 
-% Logo (keep placeholder or image as needed)
 \includegraphics[width=0.33\textwidth]{../assets/aastu_logo.jpg}
 
 \vspace{1cm}
 
-{\bfseries Addis Ababa Science and Technology University}
+{\Large\bfseries Addis Ababa Science and Technology University}
 
 \vspace{0.5cm}
 
-{\bfseries College of Engineering}
+{\large\bfseries College of Engineering}
 
 \vspace{0.3cm}
 
@@ -20,9 +19,13 @@
 
 \vspace{1cm}
 
+{\bfseries FINAL YEAR PROJECT REPORT}
+
+\vspace{0.5cm}
+
 \hrule
 \vspace{0.3cm}
-{\bfseries Veritas: AI Enhanced Online Assessment and Monitoring System}
+{\fontsize{14}{14}\selectfont\bfseries Veritas: AI Enhanced Online Assessment and Monitoring System}
 \vspace{0.3cm}
 \hrule
 
@@ -42,7 +45,6 @@
 \hline
 \end{tabular}
 
-% ---- Push content to bottom ----
 \vfill
 
 \end{center}
@@ -56,5 +58,7 @@ Advisor:\ \hrulefill
 \end{minipage}
 
 \vspace{0.5cm}
-
+\renewcommand{\today}{%
+    \ifcase\month\or January\or February\or March\or April\or May\or June\or July\or August\or September\or October\or November\or December\fi\ \number\year%
+}
 \noindent\hfill \today
