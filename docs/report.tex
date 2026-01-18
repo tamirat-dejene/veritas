@@ -1,27 +1,68 @@
 \documentclass[12pt,a4paper]{article}
 
-% Packages
-\usepackage{graphicx}
-\usepackage{geometry}
-\usepackage{array}
-\usepackage{setspace}
-\usepackage{enumitem}
-% \usepackage{mathptmx}
+% --------------------------------------------------
+% Font and typography
+% --------------------------------------------------
+\usepackage{mathptmx}        % Times New Roman–like font
+\usepackage{setspace}        % Line spacing control
+
+% --------------------------------------------------
+% Page layout
+% --------------------------------------------------
+\usepackage{geometry}        % Page margins
+\geometry{margin=1in}
+
+% --------------------------------------------------
+% Graphics and floats
+% --------------------------------------------------
+\usepackage{graphicx}        % Images
+\usepackage{caption}         % Caption control
+\usepackage{pdflscape}       % Landscape pages
+
+% --------------------------------------------------
+% Tables
+% --------------------------------------------------
+\usepackage{array}           % Extended table features
+\usepackage{tabularx}        % Auto-width tables
+\usepackage{longtable}       % Tables across pages
+\usepackage{ltablex}         % longtable + tabularx
+\keepXColumns
+
+% --------------------------------------------------
+% Lists and enumeration
+% --------------------------------------------------
+\usepackage{enumitem}        % Custom list spacing
+
+% --------------------------------------------------
+% Hyperlinks
+% --------------------------------------------------
 \usepackage[hidelinks]{hyperref}
+
+% --------------------------------------------------
+% Custom column types
+% --------------------------------------------------
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X} % Auto-width, left aligned
+\newcolumntype{Z}{>{\centering\arraybackslash}X}   % Auto-width, centered
+
+% --------------------------------------------------
+% TOC and section numbering
+% --------------------------------------------------
 \setcounter{tocdepth}{3}
 \setcounter{secnumdepth}{3}
 
-% Page setup
-\geometry{margin=1in}
-
 \begin{document}
 
+% ==================================================
+% Cover page (no page number)
+% ==================================================
 \begingroup
 \singlespacing
 \input{front/cover_page.tex}
 \endgroup
 
-% Front matter with Roman page numbers
+% ==================================================
+% Front matter (Roman numbering)
+% ==================================================
 \clearpage
 \pagenumbering{roman}
 \onehalfspacing
@@ -34,11 +75,11 @@
 \clearpage
 \tableofcontents
 
-% Lists of Tables, Figures/Illustrations, Plates/Photographs
+% Lists of Tables, Figures, etc.
 \clearpage
 \input{front/lists.tex}
 
-% List of Abbreviations, Symbols, Specialized Nomenclature
+% List of Abbreviations
 \clearpage
 \input{front/abbreviations.tex}
 
@@ -46,13 +87,18 @@
 \clearpage
 \input{front/abstract.tex}
 
-% Switch to Arabic page numbering for main content
+% ==================================================
+% Main content (Arabic numbering)
+% ==================================================
 \clearpage
 \pagenumbering{arabic}
 
-% Main contents
 \input{chapters/chapter1.tex}
 \clearpage
+
 \input{chapters/chapter2.tex}
+\clearpage
+
+\input{chapters/chapter3.tex}
 
 \end{document}

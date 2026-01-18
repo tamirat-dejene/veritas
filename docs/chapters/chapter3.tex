@@ -1,0 +1,82 @@
+\section{Problem Analysis and Modeling}
+This chapter delves into the systematic analysis of the current online assessment landscape in Ethiopia, focusing on the requirements gathering process, the modeling of system behaviors, and the architectural design. It begins with an examination of existing systems and their inherent problems, followed by a detailed breakdown of functional and non-functional requirements. State diagrams, use case models, and sequence diagrams are employed to model the proposed Veritas system, ensuring alignment with stakeholder needs and Ethiopian contextual constraints. The analysis draws from the requirements engineering phase outlined in Chapter 1, incorporating insights from interviews, literature reviews, and observational studies to inform a robust, scalable design.
+
+\subsection{Existing System and Its Problems}
+\subsubsection{Overview of Existing Online Assessment Systems in Ethiopia}
+In the Ethiopian context, online assessment and monitoring systems are primarily characterized by a mix of foreign-hosted commercial platforms, locally adapted generic tools, and traditional manual processes. These systems are utilized across educational institutions, government agencies, and private enterprises for recruitment, certification, and academic evaluations.
+
+Foreign platforms such as TestGorilla, HackerRank, and ProctorU dominate the market for organizations seeking advanced features. TestGorilla, for instance, offers a suite of pre-built assessments focusing on skills like coding, cognitive abilities, and personality traits, with automated grading for objective questions and basic proctoring via webcam monitoring. HackerRank specializes in technical evaluations, providing coding challenges with real-time compilation and execution, alongside anti-cheating measures like plagiarism detection. ProctorU emphasizes live proctoring, integrating human invigilators with AI-assisted tools for identity verification and behavior analysis, such as eye-tracking and screen recording.
+
+Locally, many institutions rely on open-source or low-cost alternatives like Moodle or Google Forms, customized for basic quiz administration. Moodle, an open-source learning management system (LMS), supports timed quizzes, multiple-choice questions, and rudimentary proctoring through browser lockdowns. In resource-constrained settings, manual processes persist, involving paper-based exams or hybrid setups where subjective responses are emailed and graded by hand. For enterprise recruitment, tools like LinkedIn Assessments or custom spreadsheets are sometimes employed, but these lack integrated monitoring.
+
+\begin{sloppypar}
+These systems operate on a client-server model, with assessments delivered via web browsers or dedicated apps. Data is typically stored on cloud servers hosted abroad (e.g., AWS or Google Cloud), and features like real-time feedback are limited to objective items. Integration with local identity systems, such as Ethiopia's national ID or enterprise credentials, is often absent, leading to reliance on email-based authentication.
+\end{sloppypar}
+
+\subsubsection{Identified Problems and Limitations}
+Despite their utility, existing systems exhibit several critical shortcomings, particularly when applied to the Ethiopian digital ecosystem. These limitations were identified through stakeholder interviews, observational studies of platforms like ProctorU and Moodle, and a comparative analysis informed by the literature review in Chapter 2. The problems can be categorized into technical, economic, operational, and ethical dimensions.
+
+\paragraph{(a) Technical Limitations}
+\begin{itemize}
+    \begin{sloppypar}
+        \item \textbf{Infrastructure Incompatibility:} Many foreign platforms are optimized for high-bandwidth, stable internet connections. In Ethiopia, where internet latency averages 50-100 ms and outages are common (as per Ethio Telecom reports), this results in frequent session timeouts, data loss during submissions, and degraded proctoring quality. For example, ProctorU's live video streaming often fails on 3G/4G networks, leading to incomplete exams.
+    \end{sloppypar}
+	\item \textbf{Lack of Automated Subjective Grading:} Current systems excel at objective assessments (e.g., multiple-choice via HackerRank) but rely on manual grading for essays and open-ended questions. This creates bottlenecks, with turnaround times extending to days or weeks, as noted in interviews with HR managers who reported delays impacting recruitment cycles.
+	\item \textbf{Weak Integration with Local Systems:} There is no seamless linkage with Ethiopian identity infrastructures, such as the National ID system or enterprise directories. Authentication often defaults to usernames/passwords, increasing vulnerability to identity spoofing.
+\end{itemize}
+
+\paragraph{(b) Economic Limitations}
+\begin{itemize}
+    \item \textbf{High Subscription Costs:} Platforms like TestGorilla and ProctorU require payments in foreign currency (e.g., USD), which is regulated and scarce in Ethiopia. Annual fees can exceed ETB 500,000 for enterprise plans, making them inaccessible to small institutions and startups, as highlighted in the Ministry of Innovation and Technology's 2025 report on Digital Sovereignty.
+    \item \textbf{Dependency on External Hosting:} Data storage on foreign servers incurs ongoing costs and risks non-compliance with emerging data protection laws, potentially leading to fines or operational halts.
+\end{itemize}
+
+\paragraph{(c) Operational Limitations}
+\begin{itemize}
+    \begin{sloppypar}
+        \item \textbf{Cheating Vulnerabilities:} While some systems include basic proctoring (e.g., tab-switch detection in Safe Exam Browser), they fall short in detecting sophisticated behaviors like proxy testing or collaborative cheating. Observational studies revealed false positives in AI monitoring due to poor lighting or device quality, common in Ethiopian settings.
+    \end{sloppypar}
+    \item \textbf{Scalability Issues:} Handling large-scale assessments (e.g., national exams or mass recruitment) strains these systems. Moodle, for instance, struggles with concurrency beyond 500 users without custom scaling, resulting in crashes during peak times.
+    \item \textbf{User Experience and Accessibility Gaps:} Interfaces are often not localized (e.g. lacking Amharic support), and restrictive features like browser lockdowns exclude users with disabilities who rely on assistive technologies. As per Chapter 2's gaps, this prioritizes security over inclusivity, leading to higher anxiety and error rates among candidates.
+\end{itemize}
+
+\paragraph{(d) Ethical and Regulatory Limitations}
+\begin{itemize}
+    \item \textbf{Data Sovereignty Concerns:} Storing sensitive assessment data abroad violates the Digital Ethiopia 2030 Strategy's emphasis on keeping Ethiopian data within national borders, exposing it to foreign jurisdiction and potential breaches.
+    \item \textbf{Bias and Privacy Issues:} AI components in platforms like Jia and He's IOPS (from literature) introduce biases, such as inaccurate facial recognition for diverse ethnicities, and raise privacy concerns without clear compliance to Ethiopia's Personal Data Protection Proclamation.
+    \item \textbf{Limited Customization:} Existing tools do not support multi-tenant environments for multiple organizations, nor do they offer features like automated certificate generation or subscription models tailored to local payment systems (e.g., Telebirr).
+\end{itemize}
+
+These problems underscore the need for a tailored solution like Veritas, which addresses them through local development, AI-enhanced grading, and lightweight proctoring, as modeled in subsequent sections of this chapter.
+
+\subsection{System Requirement Specification}
+Requirements are categorized by functional area for clarity and maintainability. Requirement IDs follow the convention:
+\begin{itemize}
+    \item \textbf{FR-[CATEGORY]-[NNN]} for functional requirements 
+    \item \textbf{NFR-[CATEGORY]-[NNN]} for non-functional requirements.
+\end{itemize}
+
+\noindent{[CATEGORY]} is a short code representing the requirement category, such as AUTH for authentication and etc. And 
+[NNN] is a three-digit sequential number within each category, starting from 001.
+
+\paragraph{Priority levels}
+\begin{itemize}
+    \item \textbf{Mandatory:} Must be implemented for the system to meet core objectives.
+    \item \textbf{Desirable:} Strongly required but could be deferred to a later phase if necessary.
+    \item \textbf{Optional:} Nice-to-have / planned for future enhancements.
+\end{itemize}
+
+\paragraph{Verification Method}
+\begin{itemize}
+    \item \textbf{Test:} Functional or acceptance testing to validate requirement fulfillment.
+    \item \textbf{Demonstration:} UI or admin review to confirm feature implementation.
+    \item \textbf{Inspection:} Code or configuration review to ensure compliance with specifications.
+    \item \textbf{Analysis:} Performance measurement or audit to verify non-functional attributes.
+\end{itemize}
+
+% make a new section with page orientation landscape
+\begin{landscape}
+\subsubsection{Functional Requirements}
+\input{chapters/tables/fr.tex}
+\label{sec:functional-requirements}
+\end{landscape}

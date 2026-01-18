@@ -1,0 +1,67 @@
+\singlespacing
+\captionsetup{hypcap=false}
+\captionof{table}{Enterprise Management and Multi-Tenancy Requirements}
+\label{tab:enterprise-mt}
+\renewcommand{\arraystretch}{1.5}
+\setlength{\tabcolsep}{6pt}
+
+\noindent
+\begin{tabularx}{\linewidth}{|l|>{\raggedright\arraybackslash}p{4.5cm}|>{\raggedright\arraybackslash}X|l|l|}
+\hline
+\textbf{Req. ID} & \textbf{Requirement Title} & \textbf{Description} & \textbf{Priority} & \textbf{VM} \\ \hline
+FR-MT-001 & Multi-tenant architecture & The system shall completely isolate data, configurations, users, exams, and results between different enterprises/organizations. & Mandatory & Test / Inspection \\ \hline
+FR-MT-002 & Enterprise registration & The system shall allow organizations to self-register with company details, contact person, and desired subscription plan. & Mandatory & Test \\ \hline
+FR-MT-003 & Enterprise account approval & System administrator shall review and approve/reject enterprise registration requests. & Mandatory & Demonstration \\ \hline
+FR-MT-004 & Enterprise profile management & Approved enterprises shall be able to update their profile, branding (logo, colors), and contact details. & Mandatory & Test \\ \hline
+FR-MT-005 & Subscription tier enforcement & The system shall enforce feature restrictions based on the enterprise's subscription tier (Basic, Premium, Enterprise). & Mandatory & Test \\ \hline
+FR-MT-006 & Tenant Deletion/Suspension & System administrator shall be able to suspend an enterprise account (locking out all associated users) and/or permanently delete an enterprise and all associated data after a 90-day retention period & Mandatory & Demonstration \\ \hline
+\end{tabularx}
+
+\vspace{3em}
+
+\captionsetup{hypcap=false}
+\captionof{table}{Authentication and User Management Requirements}
+\label{tab:auth-requirements}
+\begin{tabularx}{\linewidth}{|l|>{\raggedright\arraybackslash}p{4.5cm}|>{\raggedright\arraybackslash}X|l|l|}
+\hline
+\textbf{Req. ID} & \textbf{Requirement Title} & \textbf{Description} & \textbf{Priority} & \textbf{VM} \\ \hline
+FR-AUTH-001 & Role-based access control & The system shall support roles: Super Admin, Enterprise Admin, Enterprise Staff, Candidate (temporary). & Mandatory & Test \\ \hline
+FR-AUTH-002 & Enterprise-issued credential login & Candidates shall log in using enterprise-issued unique token or ID (no personal email/password required). & Mandatory & Test \\ \hline
+FR-AUTH-003 & Enterprise admin/user management & Enterprise admins shall create/manage their staff accounts and permissions. & Mandatory & Test \\ \hline
+FR-AUTH-004 & Face registration during exam onboarding & During exam start, candidates shall submit a live facial image that is stored as reference for the session. & Mandatory & Test \\ \hline
+FR-AUTH-005 & Periodic face verification (Premium+) & The system shall periodically capture facial images during exam and compare with registration image using face recognition (available only for Premium/Enterprise plans). & Desirable & Test \\ \hline
+FR-AUTH-006 & Session timeout \& re-authentication & Inactive sessions shall timeout after a configurable period and require re-authentication. & Mandatory & Test \\ \hline
+\end{tabularx}
+
+\vspace{3em}
+
+\captionsetup{hypcap=false}
+\captionof{table}{Examination Creation \& Management Requirements}
+\label{tab:exam-requirements}
+\begin{tabularx}{\linewidth}{|l|>{\raggedright\arraybackslash}p{4.5cm}|>{\raggedright\arraybackslash}X|l|l|}
+\hline
+\textbf{Req. ID} & \textbf{Requirement Title} & \textbf{Description} & \textbf{Priority} & \textbf{VM} \\ \hline
+FR-EXM-001 & Question Bank \& Metadata Management & Enterprise Admins shall create, categorize, and manage central question banks. The system must support the following question types: Multiple Choice (MCQ), True/False, Short Answer, and Essay. Each question must be assigned mandatory metadata for Topic/Category, Difficulty Level (e.g., Easy, Medium, Hard), and Media Support (allowing image, audio, or video attachments). & Mandatory & Test \\ \hline
+FR-EXM-002 & Advanced Exam Configuration Wizard & The system shall provide a multi-step wizard to create exams with comprehensive settings: overall Exam Duration, Passing Score percentage, Negative Marking rules, and Targeted Randomization. Targeted Randomization must allow the Admin to define the exam structure by drawing N questions from specific categories or difficulty levels (e.g., 5 Easy questions from "Topic A," 10 Medium questions from "Topic B"). & Mandatory & Demonstration \\ \hline
+FR-EXM-003 & Strict Scheduling \& Status Control & Admins shall precisely schedule exams with definite start date/time and end date/time, define available Invitation Methods (Email, Link, Token), and set the Maximum Allowed Participants. The system must automatically manage and display the exam's status lifecycle: Scheduled, Active, Closed, and Archived. & Mandatory & Test \\ \hline
+FR-EXM-004 & Bulk Candidate Enrollment \& Credential Generation & Admins shall upload a CSV file or manually input candidate details. The system shall validate the uploaded data (e.g., checking for unique identifiers) and automatically generate unique, secure exam links or tokens for each candidate, sending the credentials via email. & Mandatory & Test \\ \hline
+FR-EXM-005 & Exam Template Cloning \& Reuse & Admins shall be able to save any configured exam as a reusable template for future use. The system must also provide a Cloning function to duplicate all settings, question selections, and organization branding from any existing exam (Active or Closed) into a new, editable draft. & Mandatory & Demonstration \\ \hline
+\end{tabularx}
+
+\vspace{3em}
+
+\captionsetup{hypcap=false}
+\captionof{table}{Candidate Examination Interface Requirements}
+\label{tab:candidate-exam-ui}
+\begin{tabularx}{\linewidth}{|l|>{\raggedright\arraybackslash}p{4.5cm}|>{\raggedright\arraybackslash}X|l|l|}
+\hline
+\textbf{Req. ID} & \textbf{Requirement Title} & \textbf{Description} & \textbf{Priority} & \textbf{VM} \\ \hline
+FR-CAND-001 & Secure Web Browser Mode \& Warning & The exam interface shall enforce full-screen mode and use JavaScript/browser APIs to disable right-click, copy-paste, and common browser shortcuts (e.g., Ctrl+C). A prominent, persistent warning banner shall inform the candidate that switching tabs/applications will be logged and may lead to disqualification. & Mandatory & Test \\ \hline
+FR-CAND-002 & Server-Enforced Real-Time Timer & A strict countdown timer shall be displayed prominently. The remaining time shall be tracked and strictly enforced server-side to prevent client-side manipulation. The server shall reject answers submitted even milliseconds after the scheduled end time. & Mandatory & Test \\ \hline
+FR-CAND-003 & Question Navigation \& Review & Candidates shall navigate questions sequentially or via a navigation index. They must be able to mark questions for review and receive a clear confirmation prompt before final submission or when time expires. & Mandatory & Demonstration \\ \hline
+FR-CAND-004 & Auto-Save \& Submission Confirmation & Answers shall be auto-saved locally (using IndexedDB/LocalStorage) and synced to the server at least every 60 seconds. A comprehensive submission confirmation screen detailing the number of answered/unanswered questions must appear before final submission. & Mandatory & Test \\ \hline
+FR-CAND-005 & Graceful Handling of Connectivity Issues & The system shall detect loss of connection and immediately queue answers locally using an offline-first approach (Service Workers/IndexedDB). When the connection restores, the system shall automatically and silently sync all queued data to the server and notify the candidate. & Mandatory & Test \\ \hline
+FR-CAND-006 & Accessibility \& Readability Controls & The interface shall conform to at least WCAG 2.1 AA standards. Candidates shall have simple controls to adjust font size, color contrast (dark/light mode), and use standard keyboard navigation for accessibility. & Mandatory & Inspection \\ \hline
+FR-CAND-007 & Secure Session Termination & If a major proctoring violation (e.g., identity mismatch (FR-PROC-004)) is flagged, the system shall provide the Enterprise Admin the option to force-terminate the candidate's session immediately. The candidate must receive a non-specific notification of termination. & Mandatory & Demonstration \\ \hline
+
+\end{tabularx}
