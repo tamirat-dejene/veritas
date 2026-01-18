@@ -1,0 +1,57 @@
+\singlespacing
+\renewcommand{\arraystretch}{1.5}
+\setlength{\tabcolsep}{6pt}
+
+% ==================================================
+% Table 1: Performance & Scalability
+% ==================================================
+\begin{tabularx}{\linewidth}{|l|>{\raggedright\arraybackslash}X|l|l|}
+\caption{Performance \& Scalability Non-Functional Requirements}
+\label{tab:nfr-performance-scalability} \\ \hline
+\textbf{Req. ID} & \textbf{Description} & \textbf{Priority} & \textbf{VM} \\ \hline
+NFR-PERF-001 & The system shall support at least 1,000 concurrent candidates during peak exam periods. & Mandatory & Analysis / Load Test \\ \hline
+NFR-PERF-002 & Page load time $\leq 3$ seconds under normal load. & Mandatory & Analysis \\ \hline
+NFR-PERF-003 & Proctoring events shall be processed and logged in real-time ($< 2$ seconds delay). & Mandatory & Test \\ \hline
+\end{tabularx}
+
+\vspace{3em}
+
+% ==================================================
+% Table 2: Security & Privacy
+% ==================================================
+\begin{tabularx}{\linewidth}{|l|>{\raggedright\arraybackslash}X|l|l|}
+\caption{Security \& Privacy Non-Functional Requirements}
+\label{tab:nfr-security-privacy} \\ \hline
+\textbf{Req. ID} & \textbf{Description} & \textbf{Priority} & \textbf{VM} \\ \hline
+NFR-SEC-001 & All data in transit shall be encrypted with HTTPS/TLS 1.3. & Mandatory & Inspection \\ \hline
+NFR-SEC-002 & Data at rest shall be encrypted. & Mandatory & Inspection \\ \hline
+NFR-SEC-003 & Compliance with Ethiopian Personal Data Protection Proclamation and GDPR principles. & Mandatory & Inspection / Audit \\ \hline
+NFR-SEC-004 & Audit logs for all critical actions (login, exam start, proctoring flags, result access). & Mandatory & Inspection \\ \hline
+\end{tabularx}
+
+\vspace{3em}
+% ==================================================
+% Table 3: Usability & Accessibility
+% ==================================================
+\begin{tabularx}{\linewidth}{|l|>{\raggedright\arraybackslash}X|l|l|}
+\caption{Usability \& Accessibility Non-Functional Requirements}
+\label{tab:nfr-usability-accessibility} \\ \hline
+\textbf{Req. ID} & \textbf{Description} & \textbf{Priority} & \textbf{VM} \\ \hline
+NFR-USAB-001 & Interface shall be intuitive and require minimal training ($< 15$ minutes for new enterprise admins). & Mandatory & User Testing \\ \hline
+NFR-USAB-002 & The system shall be fully functional on latest versions of Chrome, Firefox, and Edge browsers. & Mandatory & Test \\ \hline
+NFR-USAB-003 & Support Amharic and English languages (UI and reports). & Desirable & Demonstration \\ \hline
+\end{tabularx}
+
+\vspace{3em}
+
+% ==================================================
+% Table 4: Reliability & Availability
+% ==================================================
+\begin{tabularx}{\linewidth}{|l|>{\raggedright\arraybackslash}X|l|l|}
+\caption{Reliability \& Availability Non-Functional Requirements}
+\label{tab:nfr-reliability-availability} \\ \hline
+\textbf{Req. ID} & \textbf{Description} & \textbf{Priority} & \textbf{VM} \\ \hline
+NFR-REL-001 & System uptime $\geq 99.5\%$ (excluding scheduled maintenance). & Mandatory & Analysis \\ \hline
+NFR-REL-002 & Automated backups daily with 30-day retention. & Mandatory & Inspection \\ \hline
+NFR-REL-003 & Disaster recovery plan with RTO $\leq 4$ hours and RPO $\leq 24$ hours. & Desirable & Inspection \\ \hline
+\end{tabularx}
