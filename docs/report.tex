@@ -3,7 +3,7 @@
 % --------------------------------------------------
 % Font and typography
 % --------------------------------------------------
-\usepackage{mathptmx}        % Times New Roman–like font
+% \usepackage{mathptmx}        % Times New Roman–like font
 \usepackage{setspace}        % Line spacing control
 
 % --------------------------------------------------
@@ -18,6 +18,7 @@
 \usepackage{graphicx}        % Images
 \usepackage{caption}         % Caption control
 \usepackage{pdflscape}       % Landscape pages
+\usepackage{float}           % Improved float control
 
 % --------------------------------------------------
 % Tables
@@ -26,7 +27,23 @@
 \usepackage{tabularx}        % Auto-width tables
 \usepackage{longtable}       % Tables across pages
 \usepackage{ltablex}         % longtable + tabularx
+\usepackage{multicol}        % Multi-column text
 \keepXColumns
+
+% --------------------------------------------------
+% Section formatting
+% --------------------------------------------------
+\usepackage{titlesec}
+\titleformat{\paragraph}
+  {\normalfont\normalsize\bfseries}
+  {\theparagraph}
+  {1em}
+  {}
+
+\titlespacing*{\paragraph}
+  {0pt}
+  {1.5ex plus .2ex}
+  {1ex}
 
 % --------------------------------------------------
 % Lists and enumeration
@@ -47,8 +64,8 @@
 % --------------------------------------------------
 % TOC and section numbering
 % --------------------------------------------------
-\setcounter{tocdepth}{3}
-\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{4}
+\setcounter{secnumdepth}{4}
 
 \begin{document}
 
