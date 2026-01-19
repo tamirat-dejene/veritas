@@ -1,34 +1,61 @@
 \section{Literature Review}
 
 \subsection{Overview}
-This chapter presents a critical review of the literature concerning online assessment systems, with a particular focus on their evolution during and after the COVID-19 pandemic. The section establishes the theoretical and empirical foundation for the Veritas Online Assessment system by exploring trends, challenges, and innovations in online proctoring, integrity assurance, and artificial intelligence integration.
+This chapter presents a critical review of the literature concerning online assessment systems, with a particular focus on their evolution during and after the COVID-19 pandemic. The section establishes the theoretical and empirical foundation for the Veritas Online Assessment system by exploring trends, challenges, and innovations in online proctoring, integrity assurance, and AI-driven automated essay scoring (AES) and feedback generation, drawing from recent advancements in natural language processing (NLP) and large language models (LLMs).
 
 \subsection{Study Related Works}
 
-Topuz et al.~\cite{topuz2021} conducted a systematic review of 22 online assessment systems to identify emerging trends in online measurement and evaluation during the Emergency Remote Teaching (ERT) period. Their findings emphasized three major features: multi-platform compatibility, enhanced security through biometric authentication, and automated proctoring. Systems such as Examity, ProctorU, and Safe Exam Browser were noted for multimodal authentication, integrating webcam monitoring, keystroke analysis, and facial recognition.
+Topuz et al. conducted a systematic review of 22 online assessment systems to identify the emerging trends in online measurement and evaluation during the Emergency Remote Teaching (ERT) period. Their findings emphasized three major features: multi-platform compatibility, enhanced security through biometric authentication, and automated proctoring. Systems like Examity, ProctorU, and Safe Exam Browser were noted for multimodal authentication, integrating webcam, keystroke, and facial recognition.
 
-Complementing this, Kurniati et al.~\cite{kurniati2021} investigated challenges faced by Indonesian teachers across various educational levels. The study highlighted infrastructure limitations, academic dishonesty, and inconsistent student discipline as major obstacles. Teachers adopted adaptive strategies, including shifting from objective to subjective assessments and providing localized solutions such as home visits or shared mobile phone access.
+Complementing this, Kurniati et al. investigated challenges faced by Indonesian teachers across educational levels, highlighting infrastructure limitations, academic dishonesty, and inconsistent student discipline. Teachers employed adaptive strategies, such as shifting from objective to subjective assessments and providing localized solutions like home visits or mobile phone sharing.
 
-Further studies expanded on these foundations. Hussein et al.~\cite{hussein2022} evaluated commercial proctoring systems and identified cost, accessibility, and ethical concerns as key barriers to adoption. Arn\`o et al.~\cite{arno2022} performed a detailed feature comparison of 29 online assessment systems and concluded that a hybrid model combining automated facial detection with human oversight achieved an optimal balance between security and user experience. Jia and He~\cite{jia2023} proposed an intelligent online proctoring system (IOPS) utilizing artificial intelligence for facial, eye, and voice monitoring, which significantly reduced cheating incidents during real university examinations.
+Several studies have since expanded on these foundations. Hussein et al.  evaluated commercial proctoring systems, identifying cost, accessibility, and ethical concerns as key barriers. Arnò et al. performed a detailed feature comparison of 29 systems, concluding that a hybrid model combining automated facial detection and human oversight achieved optimal balance between security and user experience. Jia and He proposed an intelligent online proctoring system (IOPS) utilizing AI for facial, eye, and voice monitoring, which successfully reduced cheating incidents in real university exams.
 
-Rahim~\cite{rahim2020} outlined practical guidelines for conducting online assessments during emergency remote teaching, emphasizing alignment with learning objectives and the importance of formative evaluation. More recent research by Ali et al.~\cite{ali2024} analyzed phased implementations of remote online assessments in medical education, revealing that mock examinations and small-group training improved student satisfaction despite persistent technological challenges.
+Furthermore, Rahim outlined guidelines for conducting online assessments during emergency remote teaching, stressing the alignment of assessments with learning objectives and the importance of formative evaluation. More recent research by Ali et al. analyzed phased implementations of remote online assessments in medical education, revealing that mock exams and small-group training improved student satisfaction despite technological challenges.
+
+Building on these advancements in proctoring and assessment integrity, recent literature has explored Automated Essay Scoring (AES) and Automated Short Answer Grading (ASAG) using large language models (LLMs) to enhance evaluation efficiency for subjective questions, addressing ERT gaps in manual grading scalability. Mizumoto and Eguchi (2023) demonstrated GPT-3's effectiveness for AES on TOEFL essays, achieving high human agreement (QWK ~0.7) through zero-shot prompting, enabling instant feedback on linguistic and content traits. Schneider et al. (2024) applied GPT-4 for ASAG, showing reliable scoring of short textual responses in educational benchmarks, particularly for rubric-based exam questions like listing key concepts.
+
+Mansour et al. (2024) evaluated LLMs like GPT-3.5 and Llama for proficiency essay scoring, emphasizing trait-based feedback (e.g., coherence, relevance) with variable but promising correlations to human raters. Kundu and Barbosa (2024) analyzed ChatGPT and Llama on AES datasets, noting LLMs' utility as assistants despite harsher scoring tendencies on nuanced responses. Xiao et al. (2024) proposed a human-AI collaborative framework for AES, improving efficiency by 20% through dual-process workflows that integrate LLM suggestions with educator oversight.
 
 \subsection{Identifying Milestones of Related Literature and Finding the Gaps}
 
 \subsubsection{Milestones}
 
 \begin{itemize}
-\item Phase 1: Manual Online Assessments (Pre-2020)
-Early online assessment systems prioritized usability over security. Studies by Foster and Layman (2013) and Karim and Shukur (2016) categorized authentication mechanisms into knowledge-based, possession-based, and biometric approaches, laying the groundwork for later proctoring technologies.
+\item \textbf{Phase 1: Manual Online Assessments (Pre-2020)}
+    \begin{itemize}
+        \item Early online assessment systems focused on basic digital delivery and security. Foster and Layman (2013) compared eight online proctoring systems, analyzing features such as authentication methods, webcam monitoring, lockdown tools, and security risks. They showed that webcam-based monitoring was an important deterrent to cheating. Karim and Shukur (2016) expanded this work by studying authentication methods and proposing a preference-based model, grouping techniques into knowledge-based, possession-based, biometric, and contextual methods.
+        \item \textbf{Strength: } Provided clear frameworks for understanding early systems.
+        \item \textbf{Limitation: } Mostly descriptive, limited real-world testing, and little focus on scalability or low-bandwidth environments.
+    \end{itemize}
 
-\item Phase 2: Emergency Remote Teaching (2020--2021)
-During the COVID-19 pandemic, studies such as Topuz et al.~\cite{topuz2021} and Rahim~\cite{rahim2020} documented the rapid shift to digital examinations. These works identified best practices and highlighted challenges related to academic integrity, infrastructure limitations, and student anxiety.
 
-\item Phase 3: AI and Automation Integration (2021--2024)
-Intelligent proctoring systems emerged, integrating deep learning and behavioral analytics for cheating detection. Notable examples include the systems proposed by Jia and He~\cite{jia2023} and Tiong and Lee~\cite{tiong2023}, which employed facial recognition and activity monitoring to enhance exam security.
+\item \textbf{Phase 2: Emergency Remote Teaching (2020–2021)}
+    \begin{itemize}
+        \item COVID-19 forced rapid adoption of online exams, revealing major integrity challenges. Topuz et al. (2022) reviewed systems studied during this period, identifying common features such as desktop-focused platforms, pre-exam face recognition, semi-automatic monitoring, and LMS integration (e.g., Moodle). Other studies compared commercial tools in terms of scalability, authentication, and monitoring.
+        \item \textbf{Strength: } Timely and comprehensive overview of pandemic-driven solutions.
+        \item \textbf{Limitation: } Relied on self-reported data and largely ignored infrastructure limitations in developing regions.
+    \end{itemize}
 
-\item Phase 4: User-Centric Design and Ethics (2024--2025)
-Recent literature has shifted toward ethical considerations, equity, and user experience. Works by U\c{c}a G\"une\c{s} et al.~\cite{uca2024} and Tabassum~\cite{tabassum2025} emphasized ethical AI use, accessibility, and learner-centered assessment design within learning management systems.
+\item \textbf{Phase 3: AI and Automation Integration (2021–2024)}
+    \begin{itemize}
+        \item Machine learning enabled automated cheating detection. Jia and He (2021/2022) developed an AI-based proctoring system for real-time monitoring, while Tiong and Lee (2021) used deep learning to detect abnormal behavior and network patterns. Review studies reported improved accuracy but also highlighted false positives.
+        \item \textbf{Strength: } Shift toward proactive, automated integrity enforcement.
+        \item \textbf{Limitation: } Dependence on good data and stable internet; limited attention to bias and privacy.
+    \end{itemize}
+
+\item \textbf{Phase 4: User-Centric Design and Ethics (2024–2025)}
+    \begin{itemize}
+        \item Recent studies focus on ethics, privacy, and user experience. Research discusses reduced video surveillance, GDPR compliance, hybrid assessment models, and the need for human oversight in AI systems. Equity and bias across diverse populations are increasingly emphasized.
+        \item \textbf{Strength: } Stronger focus on ethical and human-centered design.
+        \item \textbf{Limitation: } Still early-stage, with limited empirical evidence and Western-centric perspectives.
+    \end{itemize}
+\item \textbf{Phase 5: LLM-Driven Automated Scoring for Essays and Short Answers (2023–2026)}
+    \begin{itemize}
+        \item This phase focuses on integrating large language models (LLMs) like GPT-3, GPT-4, ChatGPT, and Llama for Automated Essay Scoring (AES) and Automated Short Answer Grading (ASAG), emphasizing rubric-based evaluation, feedback generation, and human-AI collaboration. Key milestones include Mizumoto and Eguchi (2023), who demonstrated GPT-3's potential for AES on TOEFL essays with high human agreement (QWK ~0.7) via zero-shot prompting; Schneider et al. (2024), who applied GPT-4 for ASAG, achieving reliable scoring on short textual responses; Mansour et al. (2024), evaluating LLMs for proficiency essay scoring with trait-based feedback; Kundu and Barbosa (2024), finding LLMs harsher and less correlated with humans in AES but useful as assistants; and Xiao et al. (2024), proposing a dual-process human-AI framework for AES that improves efficiency and reduces misgrading through collaborative workflows.
+        \item \textbf{Strength: } This phase advances scalability and personalization in online assessments by leveraging LLMs for consistent, instant scoring and detailed feedback, enabling efficient handling of large-scale subjective responses (e.g., essays and short answers) with high agreement to human raters (QWK 0.68–0.88 across studies); it promotes accessibility through open-source models and prompting techniques, reducing educator workload while supporting diverse formats like rubric-based exam questions.
+        \item \textbf{Limitation: } Despite progress, LLM performance is sensitive to prompt design and training biases, leading to inconsistencies in domain-specific or non-English contexts; studies show variable human-LLM correlations and potential over-harshness/leniency, with limited empirical validation in real-world, resource-constrained environments, raising concerns about reliability without human oversight.
+    \end{itemize}  
 \end{itemize}
 
 \subsubsection{Gaps Identified}
@@ -36,24 +63,52 @@ Recent literature has shifted toward ethical considerations, equity, and user ex
 Despite significant advancements, several critical gaps remain.
 
 \begin{enumerate}
-    \item \textbf{Contextual Adaptability:} Existing online assessment tools lack localization for low-resource settings. Kurniati et al.~\cite{kurniati2021} demonstrated that most platforms fail to adapt to infrastructural constraints common in developing regions.
-    \item \textbf{Security--Accessibility Balance:} No existing system optimally integrates advanced proctoring mechanisms while minimizing data intrusion. Many platforms prioritize surveillance at the expense of usability and student comfort.
-    \item \textbf{AI Bias and Privacy Concerns:} Emerging AI-based systems raise ethical, legal, and privacy challenges. Studies by Tiong and Lee~\cite{tiong2023} and Jia and He~\cite{jia2023} highlighted risks associated with facial recognition, biometric data storage, and algorithmic bias. Few systems demonstrate compliance with frameworks such as GDPR or FERPA.
-    \item \textbf{Poor Accessibility for Students with Disabilities:} A significant limitation of current systems is inadequate accessibility support. Topuz et al.~\cite{topuz2021} reported that restrictive security features often exclude students who rely on assistive technologies. Hussein et al.~\cite{hussein2022} observed that Universal Design for Learning (UDL) principles are rarely incorporated, while Rahim~\cite{rahim2020} noted accessibility was largely overlooked during emergency remote teaching.
-    \item \textbf{The Security vs.\ Connectivity Gap:} Most secure proctoring systems require continuous high-speed internet and live video streaming. Kurniati et al.~\cite{kurniati2021} and Ali et al.~\cite{ali2024} reported unstable connectivity led to exam disruptions and increased anxiety. Hussein et al.~\cite{hussein2022} noted commercial systems demand high computational resources, creating inequity among students, especially in bandwidth-constrained environments such as Ethiopia.
-    \item \textbf{The Intelligent Proctoring Gap:} The literature reveals a polarization between unproctored tools and expensive, fully automated AI systems. Arn\`o et al.~\cite{arno2022} and Jia and He~\cite{jia2023} showed advanced systems remain financially and technically inaccessible to smaller institutions. There is a lack of lightweight, ``passive-AI'' solutions that ensure integrity without continuous live monitoring.
-    \item \textbf{The Local Customization Gap:} Most online assessment platforms are designed for Western institutions and neglect local regulations, languages, and workflows relevant to African higher education. Studies by Topuz et al.~\cite{topuz2021}, Kurniati et al.~\cite{kurniati2021}, and U\c{c}a G\"une\c{s} et al.~\cite{uca2024} emphasized the absence of region-specific systems compliant with local data protection laws.
+    \item \textbf{Poor Accessibility for Students with Disabilities} 
+        \begin{itemize}
+            \item A significant but often overlooked limitation in online assessment systems is their lack of accessibility for students with disabilities. Topuz et al. identified that most existing platforms employ restrictive security measures, such as forced browser lockdowns, hidden taskbars, and required software installations—that unintentionally exclude users who depend on assistive technologies like screen readers or adaptive input devices. These constraints prevent such students from navigating exams independently and raise ethical concerns about inclusivity.
+            \item Hussein et al. also observed that advanced proctoring systems rarely incorporate Universal Design for Learning (UDL) principles, focusing instead on surveillance and integrity rather than equitable usability. Similarly, Rahim highlighted that during emergency remote teaching, accessibility and fairness were underemphasized, especially for learners with sensory or cognitive disabilities. Uça Güneş et al.  further confirmed that accessibility policies were inconsistent across institutions, and few systems offered accommodations such as extended time or alternative input modes. Collectively, these studies demonstrate a persistent design bias, prioritizing security and standardization over inclusivity.
+        \end{itemize}
+
+
+    \item \textbf{The ``Security vs. Connectivity” Gap} 
+        \begin{itemize}
+            \item A persistent limitation in online assessment research lies in the trade-off between exam security and network reliability. Most secure proctoring platforms depend on continuous high-speed internet and uninterrupted video streaming to verify student behavior. However, studies in developing regions reveal that weak digital infrastructure severely impedes assessment validity. Kurniati et al. found that Indonesian teachers frequently abandoned video-based testing due to poor bandwidth and device incompatibility. Similarly, Ali et al.  reported that 57 \% of medical students in Pakistan experienced internet instability during live-proctored exams, resulting in high anxiety and incomplete submissions. Hussein et al.  further noted that commercial proctoring tools such as ProctorU and Respondus required intensive data streaming and high computing power, creating inequity between students with and without robust connections. Topuz et al. confirmed that even secure systems like Safe Exam Browser remain dependent on real-time connectivity. Hence, despite advances in digital invigilation, current systems lack adaptive, low-bandwidth monitoring mechanisms capable of maintaining integrity under unstable network conditions. Addressing this limitation is crucial for equitable implementation of online assessments in bandwidth-constrained environments such as Ethiopia.
+        \end{itemize}
+
+    \item \textbf{The ``Intelligent Proctoring” Gap} 
+        \begin{itemize}
+            \item Another major research gap concerns the absence of mid-level intelligent proctoring systems. Existing literature illustrates a polarization between simple unproctored tools and costly AI-driven systems that require human oversight or aggressive live video analysis. Arnò et al. demonstrated that only high-end commercial platforms provide comprehensive automation, yet these remain financially inaccessible to smaller universities. Jia and He introduced an AI-based system integrating facial and voice analysis, but acknowledged privacy and scalability challenges stemming from continuous data transmission. Tiong and Lee proposed a deep-learning model for cheating detection, though it required GPU-intensive computation and complex setup. Rahim observed that many institutions reverted to Google Forms and LMS quizzes precisely because proctoring tools were technologically demanding.
+            \item These findings underline the lack of accessible “passive-AI” solutions—systems that ensure exam integrity through lightweight features such as tab-switch detection, periodic image capture, or local face verification without live video streaming. Developing such balanced systems would democratize secure assessments for low-resource educational institutions.
+        \end{itemize}
+
+    \item \textbf{The “Local Customization” Gap} 
+        \begin{itemize}
+            \item Reviewed studies also reveal a significant contextual and regulatory gap. Current online assessment technologies are predominantly developed for Western institutions and seldom consider local privacy laws, language interfaces, or administrative workflows relevant to African higher-education systems. Topuz et al. observed that nearly all systems in their global review were hosted abroad, while Kurniati et al. highlighted the difficulties of adapting foreign platforms to local socio-technical realities. Uça Güneş et al. emphasized the absence of consistent institutional policies within emerging economies, resulting in reliance on externally governed software. Likewise, Tabassum and Ali et al. stressed that assessments remain culturally and infrastructurally mismatched to learners’ environments.
+            \item Consequently, there is little evidence of indigenous, region-specific assessment frameworks tailored to comply with national data-protection regulations, such as Ethiopia’s draft Personal Data Protection Proclamation, or aligned with local HR and university workflows. This presents an opportunity for Veritas Online Assessment to pioneer a locally hosted, policy-compliant, and culturally responsive assessment ecosystem.
+        \end{itemize}
+
+    \item \textbf{ASAG(Automatic Short Answer Grading) Gaps} 
+        \begin{itemize}
+            \item Research on short answers remains narrow in application, as Schneider et al. (2024) identifies variability in GPT-4 performance, leading to inconsistent scoring for domain-specific, technical responses. There is a limitation in multilingual and non-english contexts.
+        \end{itemize}
+    
+    \item \textbf{AES(Automatic Essay Scoring) Gaps}
+        \begin{itemize}
+            \item Human-LLM agreement is variable and often suboptimal, with Kundu and Barbosa (2024) highlighting LLMs' tendency to be harsher on nuanced essays due to biases in training data; Mansour et al. (2024) and Mizumoto and Eguchi (2023) focus primarily on proficiency or linguistic traits, neglecting adaptation to non-English, technical domains and culturally diverse datasets, resulting in potential inequities for global users.
+        \end{itemize}
 \end{enumerate}
 
 \subsection{Lessons Learned from Literature}
 
-Several key lessons emerge from the reviewed literature:
+Three core insights arise:
 
-\begin{itemize}
-  \item \textbf{Hybrid supervision is most effective}: Combining AI-driven monitoring with human oversight enhances fairness and security~\cite{arno2022,hussein2022}.
-  \item \textbf{Infrastructure and inclusivity matter}: Flexible designs that adapt to varying connectivity conditions are essential for exam integrity~\cite{kurniati2021,ali2024}.
-  \item \textbf{Ethical and data-conscious design is mandatory}: Recent studies emphasize transparent data handling, privacy protection, and user-centric system design~\cite{uca2024,tabassum2025}.
-  \item \textbf{Integrity cannot rely on trust alone}: Technical mechanisms such as tab-switch detection and multiple-face recognition are necessary to mitigate academic dishonesty.
-  \item \textbf{Infrastructure is the primary constraint}: Lightweight architectures and client-side AI processing are critical for operation under unstable internet conditions.
-  \item \textbf{User experience impacts performance}: Intuitive interfaces reduce anxiety and technical errors, allowing students to focus on exam content rather than system complexity.
-\end{itemize}
+\begin{enumerate}
+    \item \textbf{Infrastructure and Inclusivity Matter}: Kurniati et al. and Ali et al. underscored the digital divide’s role in exam integrity, emphasizing flexible system design adaptable to varying connectivity conditions.
+    \item \textbf{Future Assessments Must Be Ethical and Data-Conscious}: Works from 2024–2025, stress ethical implementation, transparent data handling, and user-centric approaches.
+    \item \textbf{Integrity Cannot Rely on Trust Alone}: Research consistently shows that without technical methods, academic dishonesty is inevitable in remote settings. Teachers attempting to mitigate cheating by simply "changing question types" or "randomizing questions" found these methods insufficient without supervision. So the system must proactively detect behaviors like tab-switching and multiple face detections.
+    \item \textbf{Infrastructure is the Primary Constraint}: The most frequent complaint in the literature regarding online exams is technical failure (internet failure, power outages).So The Veritas architecture must be lightweight. Using client-side AI (processing behavior on the user's device rather than streaming heavy video to a server) is a crucial strategy to ensure the system works even with unstable connections.
+    \item \textbf{User Experience Impacts Performance}: Complex interfaces increase student anxiety and technical error rates. The literature suggests that students are often unfamiliar with advanced online tools. So The candidate portal must be intuitive and require minimal setup, ensuring that the cognitive load is placed on the exam content, not the software interface.
+    \item \textbf{Consistency}: LLMs provide reliable and generalizable scoring across large datasets, outperforming traditional methods in efficiency for AES and ASAG.
+    \item \textbf{Human-AI Collaboration}: Frameworks like dual-process models enhance accuracy and reduce errors, positioning LLMs as effective assistants rather than standalone tools in AES.
+    \item \textbf{Prompting Techniques}: Zero-shot and chain-of-thought prompting significantly improve rubric-based evaluation, enabling better handling of subjective criteria in both AES and ASAG.
+\end{enumerate}
