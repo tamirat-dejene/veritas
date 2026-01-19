@@ -167,4 +167,40 @@ The key use cases for each actor in the Veritas system are outlined below:
 \input{chapters/state_machine_diagrams.tex}
 \input{chapters/activity_diagrams.tex}
 
-\subsection{System Model Validation}
+\subsection{System Model Verification and Validation}
+The verification and validation (V\&V) process ensures that the problem analysis and system models accurately reflect the stakeholder needs and are technically sound. This phase focuses on checking the correctness, completeness, and consistency of the requirements and models presented in previous sections.
+
+\subsubsection{Requirements Validation}
+The functional and non-functional requirements (Section \ref{sec:functional-requirements} and \ref{sec:non-functional-requirements}) were validated through:
+\begin{itemize}
+    \item \textbf{Stakeholder Reviews:} Interactive sessions with HR managers and University administrators to confirm that the requirements (e.g., FR-MT-001, FR-EXM-003) capture their real-world needs, particularly regarding low-bandwidth resilience (FR-CAND-005).
+    \item \textbf{Prototyping:} Low-fidelity mockups of the Assessment Interface were used to validate the usability requirements (FR-CAND-006) and the flow of the "Start Exam" process (UC-18).
+\end{itemize}
+
+\subsubsection{Model Verification}
+Understanding that models must be structurally correct and consistent:
+\begin{itemize}
+    \item \textbf{Consistency Checks:} Cross-verification was performed between Use Case diagrams and Sequence diagrams. For instance, the steps in "UC-08 Create Exam" were strictly mapped to the sequence of interactions in the exam creation sequence diagram to ensure no logic was missing.
+    \item \textbf{Syntax Verification:} All UML diagrams were verified against UML 2.5 standards to ensure proper usage of actors, relationships (include/extend), and control flows.
+\end{itemize}
+
+\subsubsection{Traceability Analysis}
+A Traceability Matrix was constructed to ensure every requirement is covered by at least one system function (Use Case). Table \ref{tab:traceability-matrix} illustrates a subset of this mapping.
+
+\begin{table}[H]
+\centering
+\caption{Requirements to Use Case Traceability Matrix (Sample)}
+\label{tab:traceability-matrix}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Req. ID} & \textbf{Requirement Title} & \textbf{Implemented By (Use Case)} \\ \hline
+FR-MT-002 & Enterprise Registration & UC-05: Register Enterprise \\ \hline
+FR-MT-003 & Enterprise Account Approval & UC-01: Approve Enterprise Registration \\ \hline
+FR-EXM-001 & Question Bank Management & UC-08: Create Exam \\ \hline
+FR-EXM-003 & Strict Scheduling & UC-09: Schedule Exam \\ \hline
+FR-CAND-006 & Accessibility & UC-18: Start Exam, UC-19: View Results \\ \hline
+FR-GRAD-005 & Certificate Generation & UC-17: Receive Certificate \\ \hline
+\end{tabular}
+\end{table}
+
+This traceability confirms that all critical requirements derived from the problem analysis are addressed in the system design.
