@@ -56,6 +56,13 @@
 \usepackage[hidelinks]{hyperref}
 
 % --------------------------------------------------
+% Bibliography
+% --------------------------------------------------
+\usepackage{natbib}
+\bibliographystyle{apalike}
+
+
+% --------------------------------------------------
 % Custom column types
 % --------------------------------------------------
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X} % Auto-width, left aligned
@@ -117,5 +124,13 @@
 \clearpage
 
 \input{chapters/chapter3.tex}
+\clearpage
+
+% ==================================================
+% References
+% ==================================================
+\section*{References}
+\addcontentsline{toc}{section}{References}
+\bibliography{references/ref}
 
 \end{document}
