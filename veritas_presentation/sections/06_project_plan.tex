@@ -1,0 +1,351 @@
+\section{Project Plan}
+
+% =============================================================================
+% Plan of Activities
+% =============================================================================
+\begin{frame}{Plan of Activities: Overview}
+    \begin{block}{Agile Scrum Integration}
+        Plan aligns with Agile Scrum methodology for flexibility and adaptability
+        \begin{itemize}
+            \item Iterative sprints with user-centered design
+            \item Research + development integration
+            \item Continuous stakeholder feedback
+        \end{itemize}
+    \end{block}
+    
+    \begin{block}{Key Phases}
+        \begin{enumerate}
+            \item Requirement Analysis and Research Phase
+            \item System Design Phase
+            \item Implementation Phase
+            \item Testing Phase
+            \item Documentation and Finalization Phase
+        \end{enumerate}
+    \end{block}
+\end{frame}
+
+% =============================================================================
+% Phase 1: Requirements
+% =============================================================================
+\begin{frame}{Phase 1: Requirement Analysis \& Research}
+    \begin{block}{Activities}
+        \begin{itemize}
+            \item Conduct literature review
+            \item Interviews with HR managers and educators
+            \item Define functional requirements
+            \item Outline non-functional requirements
+            \item Analyze existing tools (comparative analysis)
+        \end{itemize}
+    \end{block}
+    
+    \begin{columns}
+        \column{0.5\textwidth}
+        \textbf{Timeline}
+        \begin{itemize}
+            \item September 2025 - January 2026
+            \item Duration: 4 weeks
+        \end{itemize}
+        
+        \column{0.5\textwidth}
+        \textbf{Deliverables}
+        \begin{itemize}
+            \item Updated requirements specification
+            \item Stakeholder feedback report
+        \end{itemize}
+    \end{columns}
+    
+    \vspace{0.3cm}
+    \begin{center}
+        \textbf{Status:} \textcolor{green}{Completed}
+    \end{center}
+\end{frame}
+
+% =============================================================================
+% Phase 2: Design
+% =============================================================================
+\begin{frame}{Phase 2: System Design}
+    \begin{block}{Activities}
+        \begin{itemize}
+            \item Design modular, microservices-based architecture
+            \item Separate services (auth, exam, proctoring, grading, payment)
+            \item Create relational database schema for system components
+            \item Develop wireframes and mockups for UI/UX (Figma)
+            \item Plan AI integration (facial recognition, NLP grading)
+            \item Iterate designs in short sprints with team reviews
+        \end{itemize}
+    \end{block}
+    
+    \begin{columns}
+        \column{0.5\textwidth}
+        \textbf{Timeline}
+        \begin{itemize}
+            \item Late January - Early February
+            \item Duration: 3 weeks
+        \end{itemize}
+        
+        \column{0.5\textwidth}
+        \textbf{Deliverables}
+        \begin{itemize}
+            \item System architecture document
+            \item Database ER diagram
+            \item UI wireframes/mockups
+            \item Updated backlog
+        \end{itemize}
+    \end{columns}
+\end{frame}
+
+% =============================================================================
+% Phase 3: Implementation
+% =============================================================================
+\begin{frame}{Phase 3: Implementation (1/2)}
+    \begin{block}{Core Development Activities}
+        \begin{itemize}
+            \item \textbf{Frontend Development}
+            \begin{itemize}
+                \item React SPA for dashboards and exam interface
+                \item Responsive design for various screen sizes
+                \item Real-time updates via WebSocket
+            \end{itemize}
+            
+            \item \textbf{Backend Development}
+            \begin{itemize}
+                \item Go services: API gateway, real-time proctoring event streamer
+                \item Python/FastAPI: AI services (facial recognition, NLP grading)
+                \item PostgreSQL database setup and optimization
+            \end{itemize}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Phase 3: Implementation (2/2)}
+    \begin{block}{Module Development}
+        \begin{itemize}
+            \item \textbf{Proctoring Module}
+            \begin{itemize}
+                \item Tab-switch detection, mouse tracking
+                \item Facial recognition with liveness detection (OpenCV/DeepFace)
+                \item Cheating probability score calculation
+            \end{itemize}
+            
+            \item \textbf{Automated Grading Module}
+            \begin{itemize}
+                \item Objective question auto-grading
+                \item NLP-based essay grading (Transformer models)
+                \item Blind grading interface for human reviewers
+            \end{itemize}
+            
+            \item \textbf{Module Integration}
+            \begin{itemize}
+                \item Code reviews and sprint demos every week
+                \item Continuous integration/deployment pipeline
+            \end{itemize}
+        \end{itemize}
+    \end{block}
+    
+    \textbf{Timeline:} February - May 2026 (9 weeks) \\
+    \textbf{Deliverables:} Code repository, API documentation, prototype demo
+\end{frame}
+
+% =============================================================================
+% Phase 4: Testing
+% =============================================================================
+\begin{frame}{Phase 4: Testing \& Quality Assurance}
+    \begin{block}{Testing Levels}
+        \begin{description}
+            \item[Unit Tests] PyTest (Python), Go Test (Go), Jest (JavaScript)
+            \begin{itemize}
+                \item Individual function and component testing
+                \item Target: 95\% code coverage
+            \end{itemize}
+            
+            \item[Integration Tests] Module interaction testing
+            \begin{itemize}
+                \item API endpoint testing
+                \item Database transaction verification
+                \item Service communication validation
+            \end{itemize}
+            
+            \item[System Testing] Functionality, performance, non-functional aspects
+            \begin{itemize}
+                \item End-to-end workflow testing
+                \item Security vulnerability scanning
+            \end{itemize}
+        \end{description}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Phase 4: Specialized Testing}
+    \begin{block}{Scalability Testing}
+        \begin{itemize}
+            \item \textbf{Tool:} Apache JMeter
+            \item \textbf{Target:} 500+ concurrent users on typical Ethiopian networks
+            \item \textbf{Scenarios:} Peak exam load, simultaneous submissions
+            \item \textbf{Metrics:} Response time, throughput, error rate
+        \end{itemize}
+    \end{block}
+    
+    \begin{block}{Security Testing}
+        \begin{itemize}
+            \item \textbf{Red Teaming:} Attempt to bypass proctoring
+            \item \textbf{Target:} Detection rate above 95\%
+            \item \textbf{Penetration Testing:} OWASP Top 10 vulnerability assessment
+        \end{itemize}
+    \end{block}
+    
+    \begin{block}{User Acceptance Testing (UAT)}
+        \begin{itemize}
+            \item Pilot with enterprises/candidates
+            \item Feedback on usability and automated grading fairness
+        \end{itemize}
+    \end{block}
+    
+    \textbf{Timeline:} May 2026 (2 weeks) \\
+    \textbf{Deliverables:} Test plans/reports, AI accuracy metrics, updated prototype, security audit
+\end{frame}
+
+% =============================================================================
+% Phase 5: Documentation
+% =============================================================================
+\begin{frame}{Phase 5: Documentation \& Finalization}
+    \begin{block}{Activities}
+        \begin{itemize}
+            \item Fix bugs identified from pilots
+            \item Refine features based on UAT feedback
+            \item Prepare comprehensive documentation
+            \begin{itemize}
+                \item Technical documentation (Swagger/OpenAPI for FastAPI, JSDoc for React)
+                \item User manuals (including facial recognition setup)
+                \item System administrator guides
+                \item Local-network troubleshooting guides
+            \end{itemize}
+            \item Plan maintenance mechanism for updates
+            \item Compile final project report
+            \item Prepare defense presentation
+        \end{itemize}
+    \end{block}
+    
+    \textbf{Timeline:} May 2026 (concurrent with testing) \\
+    \textbf{Deliverables:} Final system, complete documentation, project report, presentation
+\end{frame}
+
+% =============================================================================
+% Timeline Overview
+% =============================================================================
+\begin{frame}{Timeline Overview}
+    \begin{table}[]
+        \centering
+        \small
+        \begin{tabular}{|l|p{4.5cm}|c|c|c|}
+            \hline
+            \textbf{Phase} & \textbf{Task/Activity} & \textbf{Start} & \textbf{End} & \textbf{Weeks} \\
+            \hline
+            1. Requirements & Research and gathering & 2025-10-01 & 2025-11-03 & 4 \\
+            \hline
+            2. Design & Architecture, database, UI & 2025-12-13 & 2026-01-07 & 3 \\
+            \hline
+            3. Implementation & Frontend, backend, AI integration & 2026-02-08 & 2026-04-08 & 9 \\
+            \hline
+            4. Testing & Unit, integration, system, UAT & 2026-04-09 & 2026-04-20 & 2 \\
+            \hline
+            5. Documentation & Adjustments, docs, finalization & 2026-04-01 & 2026-06-07 & 9 \\
+            \hline
+        \end{tabular}
+    \end{table}
+    
+    \vspace{0.3cm}
+    \textbf{Overall Milestones:}
+    \begin{itemize}
+        \item Prototype by March 2026
+        \item Testable system by April 2026
+        \item Completion by June 2026
+    \end{itemize}
+\end{frame}
+
+% =============================================================================
+% Risk Management
+% =============================================================================
+\begin{frame}{Risk Management \& Monitoring}
+    \begin{block}{Identified Risks}
+        \begin{description}
+            \item[Technical Risks]
+            \begin{itemize}
+                \item Delays in module integration
+                \item AI model accuracy below targets
+                \item Infrastructure limitations (bandwidth, server capacity)
+            \end{itemize}
+            
+            \item[Resource Risks]
+            \begin{itemize}
+                \item Team member availability
+                \item Hardware/software resource constraints
+                \item Budget limitations
+            \end{itemize}
+            
+            \item[External Risks]
+            \begin{itemize}
+                \item Stakeholder availability for feedback
+                \item Changes in regulatory requirements
+                \item Third-party service dependencies (payment gateways)
+            \end{itemize}
+        \end{description}
+    \end{block}
+    
+    \begin{block}{Monitoring Mechanisms}
+        \begin{itemize}
+            \item Agile tools: Trello for milestones, GitHub Projects for task tracking
+            \item Monthly advisor reports
+            \item Weekly team sprint reviews
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+% =============================================================================
+% Budget
+% =============================================================================
+\begin{frame}{Budget Required}
+    \begin{block}{Budget Overview}
+        \textbf{Total Estimated Budget: 27,000 ETB}
+        
+        \textit{Tailored for 9-month academic cycle (November 2025 - June 2026)}
+    \end{block}
+    
+    \begin{table}[]
+        \centering
+        \small
+        \begin{tabular}{|l|p{5.5cm}|r|}
+            \hline
+            \textbf{Category} & \textbf{Description} & \textbf{Amount (ETB)} \\
+            \hline
+            Connectivity & Internet/Data for cloud access and research (6 months) & 15,000 \\
+            \hline
+            Resources & API/Cloud Credits (OpenCV/Firebase buffers beyond free tiers) & 5,000 \\
+            \hline
+            Documentation & Printing \& Binding (final thesis, posters, technical docs) & 2,500 \\
+            \hline
+            Fieldwork & Transport for data collection and supervisor meetings & 2,000 \\
+            \hline
+            Contingency & Emergency buffer (10\% for hardware repairs, price fluctuations) & 2,500 \\
+            \hline
+            \multicolumn{2}{|r|}{\textbf{Total}} & \textbf{27,000} \\
+            \hline
+        \end{tabular}
+    \end{table}
+\end{frame}
+
+\begin{frame}{Budget Justification}
+    \begin{block}{Key Assumptions \& Cost-Saving Strategies}
+        \begin{description}
+            \item[Equipment] Zero-rating external HD webcams. Using built-in laptop cameras for prototype.
+            
+            \item[Hosting \& Software] Local demonstration or free-tier services (GitHub Pages, Heroku Free). Small API/AI credits buffer for heavy model training.
+            
+            \item[Internet/Data] Primary expense (60\% of budget). Critical for Git collaboration and documentation access. Ethio Telecom 10GB monthly student packages.
+            
+            \item[Open-Source Core] Python (OpenCV/TensorFlow), React.js eliminate licensing fees.
+            
+            \item[University Labs] Development and testing in university labs saves electricity and infrastructure costs.
+            
+            \item[Student Credits] GitHub Student Developer Pack for free tools and training.
+        \end{description}
+    \end{block}
+\end{frame}

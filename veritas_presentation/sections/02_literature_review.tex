@@ -1,0 +1,279 @@
+\section{Literature Review}
+
+% =============================================================================
+% Overview
+% =============================================================================
+\begin{frame}{Literature Review: Overview}
+    \begin{block}{Focus Areas}
+        Critical review of literature concerning:
+        \begin{itemize}
+            \item Online assessment systems evolution (COVID-19 pandemic impact)
+            \item Online proctoring and integrity assurance
+            \item AI-driven Automated Essay Scoring (AES)
+            \item Large Language Models (LLMs) in assessment
+            \item Natural Language Processing (NLP) advancements
+        \end{itemize}
+    \end{block}
+    
+    \begin{block}{Key References}
+        \begin{itemize}
+            \item Topuz (2022): Systematic review of 22 online assessment systems
+            \item Hussein (2020): Commercial proctoring tools evaluation
+            \item Mizumoto \& Eguchi (2023): GPT-3 for AES
+            \item Schneider (2024): GPT-4 for short answer grading
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+% =============================================================================
+% Evolution Phases
+% =============================================================================
+\begin{frame}{Evolution of Online Assessment Systems}
+    \begin{table}[]
+        \centering
+        \small
+        \begin{tabular}{l p{8cm}}
+            \toprule
+            \textbf{Phase} & \textbf{Key Characteristics} \\
+            \midrule
+            \textbf{Phase 1} & \textbf{Manual Online (Pre-2020):} Basic digital delivery, webcam monitoring, \\
+            (Pre-2020) & browser lockdowns. Limited real-world deployment. \\
+            \midrule
+            \textbf{Phase 2} & \textbf{Emergency Remote Teaching (2020-2021):} Rapid adoption, \\
+            (2020-2021) & desktop-focused, facial recognition, semi-automatic monitoring, \\
+            & LMS integration (Moodle). Infrastructure gaps exposed. \\
+            \midrule
+            \textbf{Phase 3} & \textbf{AI Integration (2021-2024):} Machine learning for cheating \\
+            (2021-2024) & detection, real-time monitoring, deep learning for behavior analysis. \\
+            & Issues: false positives, bias concerns. \\
+            \midrule
+            \textbf{Phase 4} & \textbf{User-Centric \& Ethics (2024-2025):} Privacy focus, GDPR \\
+            (2024-2025) & compliance, hybrid models, human oversight, equity considerations. \\
+            \midrule
+            \textbf{Phase 5} & \textbf{LLM-Driven Scoring (2023-2026):} GPT-3/4, ChatGPT, Llama \\
+            (2023-2026) & for AES and ASAG. Rubric-based evaluation, feedback generation. \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+\end{frame}
+
+% =============================================================================
+% Study Related Works
+% =============================================================================
+\begin{frame}{Key Related Works (1/3)}
+    \begin{block}{Topuz et al. (2022) - Systematic Review}
+        \begin{itemize}
+            \item Reviewed 22 online assessment systems during Emergency Remote Teaching
+            \item \textbf{Major features identified:}
+            \begin{itemize}
+                \item Multi-platform compatibility
+                \item Enhanced security (biometric authentication)
+                \item Automated proctoring
+            \end{itemize}
+            \item Commercial systems: Examity, ProctorU, Safe Exam Browser
+            \item Multimodal authentication: webcam, keystroke analysis, facial recognition
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Key Related Works (2/3)}
+    \begin{block}{Kurniati et al. (2023) - Indonesian Context}
+        \begin{itemize}
+            \item Challenges: Infrastructure limitations, academic dishonesty, inconsistent discipline
+            \item \textbf{Adaptive strategies:} Shift to subjective assessments, home visits, shared mobile access
+        \end{itemize}
+    \end{block}
+    
+    \begin{block}{Hussein (2020) \& Arno (2021)}
+        \begin{itemize}
+            \item \textbf{Hussein:} Cost, accessibility, ethical concerns as barriers
+            \item \textbf{Arno:} Compared 29 commercial systems
+            \item \textbf{Conclusion:} Hybrid approaches (automated + human) optimal for integrity \& UX
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Key Related Works (3/3)}
+    \begin{block}{AI-Based Proctoring}
+        \begin{itemize}
+            \item \textbf{Jia \& He (2021):} IOPS - facial, eye, voice monitoring. Reduced cheating in university exams
+            \item \textbf{Rahim (2020):} Guidelines for effective online assessment during ERT
+            \item \textbf{Ali (2025):} Phased implementation in medical education. Mock exams improved confidence
+        \end{itemize}
+    \end{block}
+    
+    \begin{block}{LLM-Based Grading}
+        \begin{itemize}
+            \item \textbf{Mizumoto \& Eguchi (2023):} GPT-3 for TOEFL essays (QWK $\sim$0.7)
+            \item \textbf{Schneider (2024):} GPT-4 for short answers - reliable on rubric-based benchmarks
+            \item \textbf{Mansour (2024):} LLMs for proficiency scoring with trait-based feedback
+            \item \textbf{Kundu (2024):} LLMs harsher on nuanced responses, useful as assistants
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+% =============================================================================
+% Milestones
+% =============================================================================
+\begin{frame}{Milestones: Phase 1 \& 2}
+    \begin{block}{Phase 1: Manual Online Assessments (Pre-2020)}
+        \textbf{Strengths:}
+        \begin{itemize}
+            \item Clear conceptual frameworks for design and security
+            \item Authentication classification (knowledge, possession, biometric, contextual)
+        \end{itemize}
+        \textbf{Limitations:}
+        \begin{itemize}
+            \item Largely descriptive, limited real-world testing
+            \item Minimal emphasis on scalability or low-bandwidth environments
+        \end{itemize}
+    \end{block}
+    
+    \begin{block}{Phase 2: Emergency Remote Teaching (2020-2021)}
+        \textbf{Strengths:}
+        \begin{itemize}
+            \item Comprehensive overview of pandemic-driven solutions
+            \item Desktop-focused, pre-exam facial recognition, LMS integration
+        \end{itemize}
+        \textbf{Limitations:}
+        \begin{itemize}
+            \item Self-reported data, overlooks infrastructure constraints in developing regions
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Milestones: Phase 3, 4 \& 5}
+    \begin{block}{Phase 3: AI \& Automation (2021-2024)}
+        \textbf{Strengths:} Proactive, automated integrity enforcement \\
+        \textbf{Limitations:} Requires high-quality data, stable internet; bias, fairness, privacy concerns
+    \end{block}
+    
+    \begin{block}{Phase 4: User-Centric Design (2024-2025)}
+        \textbf{Strengths:} Ethics, privacy, GDPR compliance, human oversight \\
+        \textbf{Limitations:} Early stages, limited empirical evidence, Western-centric
+    \end{block}
+    
+    \begin{block}{Phase 5: LLM-Driven Scoring (2023-2026)}
+        \textbf{Strengths:} Scalability, personalization, instant feedback (QWK 0.68-0.88) \\
+        \textbf{Limitations:} Prompt design sensitivity, training biases, variable correlations, limited validation in resource-constrained environments
+    \end{block}
+\end{frame}
+
+% =============================================================================
+% Gaps Identified
+% =============================================================================
+\begin{frame}{Critical Gaps Identified (1/3)}
+    \begin{alertblock}{1. Poor Accessibility for Students with Disabilities}
+        \begin{itemize}
+            \item Restrictive security measures (browser lockdowns, hidden taskbars)
+            \item Exclude users dependent on assistive technologies
+            \item Lack of Universal Design for Learning (UDL) principles
+            \item Inconsistent accessibility policies across institutions
+            \item \textbf{Design bias:} Security \& standardization over inclusivity
+        \end{itemize}
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}{Critical Gaps Identified (2/3)}
+    \begin{alertblock}{2. The ``Security vs. Connectivity'' Gap}
+        \begin{itemize}
+            \item Secure proctoring requires continuous high-speed internet
+            \item Weak digital infrastructure in developing regions
+            \item Indonesian teachers abandoned video-based testing (Kurniati 2023)
+            \item 57\% of Pakistani medical students experienced internet instability (Ali 2025)
+            \item Commercial tools require intensive data streaming, high computing power
+            \item \textbf{Missing:} Adaptive, low-bandwidth monitoring mechanisms
+        \end{itemize}
+    \end{alertblock}
+    
+    \begin{alertblock}{3. The ``Intelligent Proctoring'' Gap}
+        \begin{itemize}
+            \item Polarization: Simple unproctored tools vs. costly AI-driven systems
+            \item High-end platforms financially inaccessible to smaller universities
+            \item \textbf{Missing:} Accessible ``Passive AI'' solutions (tab-switch detection, periodic image capture, local face verification)
+        \end{itemize}
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}{Critical Gaps Identified (3/3)}
+    \begin{alertblock}{4. The ``Local Customization'' Gap}
+        \begin{itemize}
+            \item Technologies developed for Western institutions
+            \item Seldom consider local privacy laws, language interfaces, workflows
+            \item Nearly all systems hosted abroad
+            \item Difficulties adapting foreign platforms to local realities
+            \item \textbf{Missing:} Indigenous, region-specific frameworks compliant with national data protection (e.g., Ethiopia's Personal Data Protection Proclamation)
+        \end{itemize}
+    \end{alertblock}
+    
+    \begin{alertblock}{5. ASAG \& AES Gaps}
+        \begin{itemize}
+            \item \textbf{ASAG:} Variable GPT-4 performance, inconsistent domain-specific scoring
+            \item \textbf{AES:} Variable human-LLM agreement, harsher on nuanced essays, limited non-English/technical domain adaptation
+        \end{itemize}
+    \end{alertblock}
+\end{frame}
+
+% =============================================================================
+% Lessons Learned
+% =============================================================================
+\begin{frame}{Lessons Learned from Literature}
+    \begin{enumerate}
+        \item \textbf{Infrastructure \& Inclusivity Matter}
+        \begin{itemize}
+            \item Digital divide's role in exam integrity
+            \item Flexible system design for varying connectivity
+        \end{itemize}
+        
+        \item \textbf{Ethical \& Data-Conscious Design}
+        \begin{itemize}
+            \item Transparent data handling, user-centric approaches
+        \end{itemize}
+        
+        \item \textbf{Integrity Cannot Rely on Trust Alone}
+        \begin{itemize}
+            \item Technical methods essential (tab-switching, face detection)
+            \item Changing question types insufficient without supervision
+        \end{itemize}
+        
+        \item \textbf{Infrastructure is Primary Constraint}
+        \begin{itemize}
+            \item Technical failures most frequent complaint
+            \item Client-side AI processing crucial for unstable connections
+        \end{itemize}
+        
+        \item \textbf{User Experience Impacts Performance}
+        \begin{itemize}
+            \item Complex interfaces increase anxiety and errors
+            \item Intuitive portals with minimal setup required
+        \end{itemize}
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{Lessons Learned (continued)}
+    \begin{enumerate}
+        \setcounter{enumi}{5}
+        \item \textbf{LLM Consistency}
+        \begin{itemize}
+            \item Reliable, generalizable scoring across large datasets
+            \item Outperforms traditional methods in efficiency
+        \end{itemize}
+        
+        \item \textbf{Human-AI Collaboration}
+        \begin{itemize}
+            \item Dual-process models enhance accuracy
+            \item LLMs as assistants, not standalone tools
+        \end{itemize}
+        
+        \item \textbf{Prompting Techniques}
+        \begin{itemize}
+            \item Zero-shot and chain-of-thought prompting improve rubric-based evaluation
+            \item Better handling of subjective criteria
+        \end{itemize}
+    \end{enumerate}
+    
+    \vspace{0.5cm}
+    \begin{center}
+        \textbf{These lessons directly inform Veritas design decisions}
+    \end{center}
+\end{frame}

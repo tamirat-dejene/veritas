@@ -1,0 +1,101 @@
+\documentclass[aspectratio=169, 10pt]{beamer}
+
+% Theme and Color Settings
+\usetheme{Madrid}
+\usecolortheme{whale}
+\usefonttheme{professionalfonts}
+
+% Packages
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usepackage{caption}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{adjustbox}
+
+% Customization
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{caption}[numbered]
+\setbeamertemplate{footline}[frame number]
+
+% Custom column types
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{Z}{>{\centering\arraybackslash}X}
+
+% Title Information
+\title[Veritas: AI Enhanced Assessment]{Veritas: AI Enhanced Online Assessment and Monitoring System}
+\subtitle{Final Year Project Report Presentation}
+\author[Team Veritas]{
+    \textbf{Team Members:} \\
+    Abraham Mulugeta (ETS0107/14) \and Alazar Gebre (ETS0132/14) \\
+    Tadiyos Dejene (ETS1522/14) \and Tamirat Dejene (ETS1518/14) \\
+    Yohannes Tigistu (ETS1703/14) \\
+    \vspace{0.3cm}
+    \textbf{Advisor:} Mr. Muleta Taye (PhD)
+}
+\institute[AASTU]{
+    Department of Software Engineering \\
+    College of Engineering \\
+    Addis Ababa Science and Technology University
+}
+\date{January 2026}
+
+% Logo
+\titlegraphic{\includegraphics[width=2.5cm]{assets/aastu_logo.jpg}}
+
+\begin{document}
+
+% =============================================================================
+% TITLE SLIDE
+% =============================================================================
+\begin{frame}
+    \titlepage
+\end{frame}
+
+% =============================================================================
+% TABLE OF CONTENTS
+% =============================================================================
+\begin{frame}{Presentation Outline}
+    \tableofcontents
+\end{frame}
+
+% =============================================================================
+% SECTION 1: INTRODUCTION
+% =============================================================================
+\input{sections/01_introduction.tex}
+
+% =============================================================================
+% SECTION 2: LITERATURE REVIEW
+% =============================================================================
+\input{sections/02_literature_review.tex}
+
+% =============================================================================
+% SECTION 3: PROBLEM ANALYSIS AND MODELING
+% =============================================================================
+\input{sections/03_problem_analysis.tex}
+
+% =============================================================================
+% SECTION 4: SYSTEM REQUIREMENTS
+% =============================================================================
+\input{sections/04_requirements.tex}
+
+% =============================================================================
+% SECTION 5: SYSTEM MODELING
+% =============================================================================
+\input{sections/05_system_modeling.tex}
+
+% =============================================================================
+% SECTION 6: PROJECT PLAN
+% =============================================================================
+\input{sections/06_project_plan.tex}
+
+% =============================================================================
+% CONCLUSION
+% =============================================================================
+\input{sections/07_conclusion.tex}
+
+\end{document}

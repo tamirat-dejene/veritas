@@ -1,0 +1,101 @@
+\section{Problem Analysis and Modeling}
+
+% =============================================================================
+% Existing System Overview
+% =============================================================================
+\begin{frame}{Existing Systems in Ethiopia}
+    \begin{block}{Foreign-Hosted Commercial Platforms}
+        \begin{description}
+            \item[TestGorilla] Pre-built assessments (coding, cognitive, personality), automated grading, basic webcam proctoring
+            \item[HackerRank] Technical evaluations, coding challenges, real-time compilation, plagiarism detection
+            \item[ProctorU] Live proctoring, human invigilators + AI tools, eye-tracking, screen recording
+        \end{description}
+    \end{block}
+    
+    \begin{block}{Local Alternatives}
+        \begin{itemize}
+            \item \textbf{Moodle:} Open-source LMS, timed quizzes, MCQ, browser lockdowns
+            \item \textbf{Google Forms:} Basic quiz administration
+            \item \textbf{Manual Processes:} Paper-based or hybrid (email + manual grading)
+            \item \textbf{Enterprise Tools:} LinkedIn Assessments, custom spreadsheets
+        \end{itemize}
+    \end{block}
+    
+    \textit{Typical architecture: Client-server model, cloud storage (AWS/Google Cloud), limited local identity integration}
+\end{frame}
+
+% =============================================================================
+% Problems - Technical
+% =============================================================================
+\begin{frame}{Identified Problems: Technical Limitations}
+    \begin{alertblock}{(a) Infrastructure Incompatibility}
+        \begin{itemize}
+            \item Foreign platforms optimized for high-bandwidth, stable internet
+            \item Ethiopian context: 50-100ms latency, common outages (Ethio Telecom)
+            \item Results: Session timeouts, data loss, degraded proctoring quality
+            \item Example: ProctorU live streaming fails on 3G/4G networks
+        \end{itemize}
+    \end{alertblock}
+    
+    \begin{alertblock}{(b) Lack of Automated Subjective Grading}
+        \begin{itemize}
+            \item Current systems excel at objective assessments (MCQ)
+            \item Manual grading for essays and open-ended questions
+            \item Creates bottlenecks: turnaround times extend to days/weeks
+            \item Impacts recruitment cycles (HR manager interviews)
+        \end{itemize}
+    \end{alertblock}
+    
+    \begin{alertblock}{(c) Weak Integration with Local Systems}
+        \begin{itemize}
+            \item No linkage with Ethiopian National ID or enterprise directories
+            \item Authentication defaults to username/password
+            \item Increases vulnerability to identity spoofing
+        \end{itemize}
+    \end{alertblock}
+\end{frame}
+
+% =============================================================================
+% Problems - Economic & Operational
+% =============================================================================
+\begin{frame}{Identified Problems: Economic \& Operational}
+    \begin{alertblock}{(d) Economic Limitations}
+        \begin{itemize}
+            \item \textbf{High subscription costs:} Foreign currency (USD) required
+            \item Regulated and scarce in Ethiopia
+            \item Annual fees exceed ETB 500,000 for enterprise plans
+            \item Inaccessible to small institutions and startups
+            \item \textbf{External hosting dependency:} Ongoing costs, compliance risks
+        \end{itemize}
+    \end{alertblock}
+    
+    \begin{alertblock}{(e) Operational Limitations}
+        \begin{itemize}
+            \item \textbf{Cheating vulnerabilities:} Basic proctoring insufficient for sophisticated behaviors
+            \item False positives in AI monitoring (poor lighting, device quality)
+            \item \textbf{Scalability issues:} Moodle struggles beyond 500 concurrent users
+            \item Crashes during peak times
+            \item \textbf{UX \& accessibility gaps:} No localization (Amharic), restrictive features exclude disabled users
+        \end{itemize}
+    \end{alertblock}
+\end{frame}
+
+% =============================================================================
+% Problems - Ethical & Regulatory
+% =============================================================================
+\begin{frame}{Identified Problems: Ethical \& Regulatory}
+    \begin{alertblock}{(f) Ethical and Regulatory Limitations}
+        \begin{description}
+            \item[Data Sovereignty] Storing data abroad violates Digital Ethiopia 2030 Strategy. Exposes data to foreign jurisdiction and potential breaches.
+            
+            \item[Bias \& Privacy] AI components introduce biases (inaccurate facial recognition for diverse ethnicities). Privacy concerns without clear compliance to Ethiopia's Personal Data Protection Proclamation.
+            
+            \item[Limited Customization] No multi-tenant environments for multiple organizations. No automated certificate generation. No local payment system support (Telebirr).
+        \end{description}
+    \end{alertblock}
+    
+    \vspace{0.5cm}
+    \begin{center}
+        \textbf{These problems underscore the need for Veritas}
+    \end{center}
+\end{frame}
