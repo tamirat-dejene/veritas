@@ -1,1 +1,22 @@
 docs/tex_out
+veritas_presentation/tex_out
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.nav
+*.snm
+*.vrb
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+*.dvi
+*.xdv
+*.ps
+*.eps
