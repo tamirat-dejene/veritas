@@ -134,12 +134,12 @@ This directory contains a detailed, modular LaTeX Beamer presentation covering a
 # Navigate to the presentation directory
 cd veritas_presentation
 
-# Compile (run twice for proper references)
-pdflatex presentation.tex
-pdflatex presentation.tex
+# Quick build with latexmk (recommended)
+latexmk -pdf -interaction=nonstopmode presentation.tex
 
-# Or use the automated script
-pdflatex -interaction=nonstopmode presentation.tex && pdflatex -interaction=nonstopmode presentation.tex
+# Alternatively, compile with pdflatex (run twice for references)
+pdflatex -interaction=nonstopmode presentation.tex
+pdflatex -interaction=nonstopmode presentation.tex
 ```
 
 ### Output
