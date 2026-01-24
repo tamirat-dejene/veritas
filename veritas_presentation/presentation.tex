@@ -17,10 +17,24 @@
 \usepackage{multirow}
 \usepackage{adjustbox}
 
+% Graphics and links configuration
+\graphicspath{{assets/}{assets/activity_diagrams/}{assets/seq_diagrams/}{assets/state_machine_diagrams/}{assets/uc_diagrams/}}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!50!black,
+    urlcolor=blue!60!black,
+    citecolor=green!50!black,
+    pdftitle={Veritas: AI Enhanced Online Assessment and Monitoring System},
+    pdfauthor={Team Veritas},
+    pdfsubject={Final Year Project Presentation},
+    pdfkeywords={Veritas, AI, Assessment, Monitoring}
+}
+
 % Customization
 \setbeamertemplate{navigation symbols}{}
 \setbeamertemplate{caption}[numbered]
 \setbeamertemplate{footline}[frame number]
+\setbeamersize{text margin left=1cm,text margin right=1cm}
 
 % Custom column types
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
@@ -46,6 +60,18 @@
 
 % Logo
 \titlegraphic{\includegraphics[width=2.5cm]{assets/aastu_logo.jpg}}
+
+% Show a mini outline at the start of each section/subsection
+\AtBeginSection[]{
+    \begin{frame}{Outline}
+        \tableofcontents[currentsection]
+    \end{frame}
+}
+\AtBeginSubsection[]{
+    \begin{frame}{Outline}
+        \tableofcontents[currentsection,currentsubsection]
+    \end{frame}
+}
 
 \begin{document}
 
