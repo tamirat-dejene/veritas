@@ -1,7 +1,0 @@
-\beamer@sectionintoc {1}{Introduction}{3}{0}{1}
-\beamer@sectionintoc {2}{Literature Review}{19}{0}{2}
-\beamer@sectionintoc {3}{Problem Analysis and Modeling}{31}{0}{3}
-\beamer@sectionintoc {4}{System Requirements Specification}{35}{0}{4}
-\beamer@sectionintoc {5}{System Modeling}{50}{0}{5}
-\beamer@sectionintoc {6}{Project Plan}{76}{0}{6}
-\beamer@sectionintoc {7}{Conclusion}{88}{0}{7}
