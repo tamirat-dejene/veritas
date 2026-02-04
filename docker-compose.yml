@@ -1,0 +1,115 @@
+version: "3.8"
+
+services:
+  # --- Infrastructure ---
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: veritas_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml # You will need to create this if you want real metrics
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  # --- Go Services ---
+  api-gateway:
+    build: ./services/api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+    depends_on:
+      - auth-service
+
+  auth-service:
+    build: ./services/auth-service
+    ports:
+      - "8081:8080" # Mapped to host 8081
+    environment:
+      - PORT=8080
+    depends_on:
+      - postgres
+
+  enterprise-service:
+    build: ./services/enterprise-service
+    ports:
+      - "8082:8080"
+    environment:
+      - PORT=8080
+    depends_on:
+      - postgres
+
+  exam-service:
+    build: ./services/exam-service
+    ports:
+      - "8083:8080"
+    environment:
+      - PORT=8080
+    depends_on:
+      - postgres
+
+  candidate-service:
+    build: ./services/candidate-service
+    ports:
+      - "8084:8080"
+    environment:
+      - PORT=8080
+    depends_on:
+      - postgres
+
+  payment-service:
+    build: ./services/payment-service
+    ports:
+      - "8085:8080"
+    environment:
+      - PORT=8080
+    depends_on:
+      - postgres
+
+  # --- Python Services ---
+  proctoring-service:
+    build: ./services/proctoring-service
+    ports:
+      - "8086:8000"
+    environment:
+      - SERVICE_NAME=proctoring-service
+
+  grading-service:
+    build: ./services/grading-service
+    ports:
+      - "8087:8000"
+    environment:
+      - SERVICE_NAME=grading-service
+
+  reporting-service:
+    build: ./services/reporting-service
+    ports:
+      - "8088:8000"
+    environment:
+      - SERVICE_NAME=reporting-service
+
+  face-verification-service:
+    build: ./services/face-verification-service
+    ports:
+      - "8089:8000"
+    environment:
+      - SERVICE_NAME=face-verification-service
+
+volumes:
+  postgres_data:
