@@ -2,26 +2,26 @@ FROM golang:1.25.1-alpine AS builder
 
 WORKDIR /app
 
-COPY go.mod ./
+COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o main .
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /app/bin/api-gateway ./cmd/server
 
 FROM alpine:3.22
 
 RUN apk add --no-cache ca-certificates \
 	&& adduser -D -u 10001 appuser \
-	&& mkdir -p /app/shared \
-	&& chown -R appuser:appuser /app/shared
+	&& mkdir -p /app \
+	&& chown -R appuser:appuser /app
 
-WORKDIR /home/appuser
+WORKDIR /app
 
-COPY --from=builder /app/main ./main
+COPY --from=builder /app/bin/api-gateway ./api-gateway
 
 USER appuser
 
 EXPOSE 8080
 
-CMD ["./main"]
+CMD ["./api-gateway"]
