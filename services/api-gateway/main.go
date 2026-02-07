@@ -3,22 +3,25 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
+
+	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/config"
+	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/router"
 )
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	cfg := config.Load()
+
+	// Initialize Router
+	handler, err := router.NewRouter(cfg)
+	if err != nil {
+		log.Fatalf("Failed to initialize router: %v", err)
 	}
 
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	})
+	log.Printf("Service api-gateway starting on port %s", cfg.Port)
+	log.Printf("Routes configured for services: Auth=%s, Enterprise=%s, Payment=%s", cfg.AuthServiceURL, cfg.EnterpriseServiceURL, cfg.PaymentServiceURL)
 
-	log.Printf("Service api-gateway starting on port %s", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	// Start Server
+	if err := http.ListenAndServe(":"+cfg.Port, handler); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
