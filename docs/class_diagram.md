@@ -1,1 +1,210 @@
-[![](https://img.plantuml.biz/plantuml/svg/hLXBSzis4BxpLs1yQ6WdxhHNJiOJ-TMgZHD5Kfip1Auar2J00g1ifUr_xm84IH2aaaac5vi2bejzVFljWc-qeShKPP7eHouggcX92Yx072iWKfcz33PAAIJRAra2CQg697b1RgG2SYSCDnmqkIbgRK0b5MMFT0Va37T0LOfh80zKu589mfoHVn92M46r9e60NIJaal0y8okZkDZv1K5BY9QO58Ooim2bfOZsAYMtl81RC9GNEjeiv4vcv9eBgewThaAgeTnBec37hIjftgfveDLvHWwIvrwahd9gOD6SbcuK5Jc-Fo6eQrs1o6UCoLgOTBYPGm46PbiyQuaF64af0f7_4lm3eYx9gjvefdXb1TOSb8_NDTMSkQU5WfBNfNlkmzhgQC8TAbaKL7nLqBT0JQq0O_4MO_EwsRlocxN6xBxb9JTDhFpsAp8NvghB36Uez1OOBsdX0r0wN5XZT1GQ45kf62n1eofcJTOfmanberY4yK9lE_ZDQhEt8MNKIf8Vo1yQ4TFWZsvGBMB8HyRkd8w6aWKQliI_TyA7-1BjQuCypoFu8CouI9c2t1vFUnYYfMlv2CBB6Lw2hCqAj1xclS5WO3zCWgAro5k-gYjGixpa8aB1rDhAqEtMhTrOw5em3y7IBHDuHcJcKP2CzIE626NexRp4w2zX2mg4JNXGRdrbtLC6ARUIhS3G-mCelZtENG3DqNf_BT5RAbeZdJ6l_xsydF1pQg_rjzyBmXMYvkuPkMwQhZxK24RCr3KLZwVHyXbWD6XlrUWugSDJJfzWwJdhvDRuAy2b9KSq8Nf5kcgPBbwilITGlyCnFaPMd4LhETzkEQiBWyAttNDmV0avfpE3_BotuMjFR79yvUE0fO70QXr8IsHPH1gDsBC7Ukog3yt3pGVtVutjw1xB39eos6FdcZcV6inhJOy3TKF3lR8xgXkGFg07tfrVgOgIuz3nzQd7O79Jn9IQryfHKsPficL9F0KbLWnRQqRk2qdR7G4xb3x00rMFhjNq5U582kjLbloJqxYi2pZDnAxhhxcb-5lCWttg7CWdr_4DKwD2w_xAFOSffyyBLCWPhwZBUElDIml6BTzXs_Y8XgayrM0CMZFLK3NRGuvcfywwte9NrgZ-v_0b6woTwAXAfwnxzC3hzgw6Rx922bX3MHMUNQrh0vGCVMqvrblPg9ancv26HGkfsrN5zhWyRaWzfSujK90k8QGNx6ibTwtWDC8w_qO00pHtjDYKjaT2MqNp_1KPCi3N0W83NnkveWT8mnFYmGVTYGUUFTfVm8qK0cpiaDlVIdsYzTlZLBGbw87l0kw8NyMm8g6ZmBYfHiF174ScoOoqSGYpqA_U7R2UJwT2T-cQAFOIpQDbDOfdGzrESyJR6cpFixpQam6EEG12xwLfkoH96oQdnNa_R3XrwOJgAIuT27ZlrdIpUkA6xHi2b3KIcA0-GMxDzkjtqk1OZNdpE6-xymFN9SMNIUg7q9UDRG_8iBmgmBwhINeBcYkwAU0y6ZJss0nQolkcSEkOBB6yQO44RqiR3a4RYf9hEQ5zQmYFNnIrypmEZJECzH79JOSWiTlVoLOxMKE-mOFZgHEd3CVpFPtQgdD7nsKNkhx16rpUIAbwe_eM7idXJUd0S-ZyiwKIDeptcxymrrTHiW29Vkj6qkz6KXYf6coTZAhbRtKZytY4t840PJCRNxewgM4gRwdURoHs7qpc4YeS3gAAxmLEUeG5eKPsF_5y1nsqFhfVtOI3Ls7RZQ5PZcaAxz8SSRW4MbXtqs5S9iV2nlGl3ON3-QATgIPowe0d5HOkeiBzxxYe3_5C7mLByOPhfYaUdgrDwLZFUPIp0uUdMPrpyrRkR2XSnF0Pv_D-AgGMYPzWhUnjumjeT5JMd-V3ihYzRvhnwizcfdjcqDmqVrkzVpT2ne8UxOoAk0Ylb8Dcu2M-PUAZfRtm3o-y_IJbDKV3bAjAP4kTsYRtH8zZIFHTT0ciLdOp_gXG2u6h2wzfgWcCJcy32AwYcb6dPlPzJ_-yW0YGSu5gsMTee6eE6GKcd_msO-Xp_76Wg_HHSR_0SYZSfAltlD99y27fxESpWhSx-s_qlIF3oEaR31gQ5RzpOL-wE6ikY9c_geqqNtZLWwjWHkIJqCbWBLJPtUYovjCL5zDwKTJTBp9_GK8f-_E4AWq5LiI4J3zcPdv0rac_riRduYmSE3C_hkaaM0oLncDHPWUFaRIFph2bMw_BghR-J8ittJGZ2ZIE37ekacRbxASVVmoK1gqdQvg6dcyNw24YyqGus_hDo8ONXKxQty7XBOop3cuwSHW80jLtYCnHcKxwbK3CKtIeANc35LMNnVy0)](https://editor.plantuml.com/uml/hLXBSzis4BxpLs1yQ6WdxhHNJiOJ-TMgZHD5Kfip1Auar2J00g1ifUr_xm84IH2aaaac5vi2bejzVFljWc-qeShKPP7eHouggcX92Yx072iWKfcz33PAAIJRAra2CQg697b1RgG2SYSCDnmqkIbgRK0b5MMFT0Va37T0LOfh80zKu589mfoHVn92M46r9e60NIJaal0y8okZkDZv1K5BY9QO58Ooim2bfOZsAYMtl81RC9GNEjeiv4vcv9eBgewThaAgeTnBec37hIjftgfveDLvHWwIvrwahd9gOD6SbcuK5Jc-Fo6eQrs1o6UCoLgOTBYPGm46PbiyQuaF64af0f7_4lm3eYx9gjvefdXb1TOSb8_NDTMSkQU5WfBNfNlkmzhgQC8TAbaKL7nLqBT0JQq0O_4MO_EwsRlocxN6xBxb9JTDhFpsAp8NvghB36Uez1OOBsdX0r0wN5XZT1GQ45kf62n1eofcJTOfmanberY4yK9lE_ZDQhEt8MNKIf8Vo1yQ4TFWZsvGBMB8HyRkd8w6aWKQliI_TyA7-1BjQuCypoFu8CouI9c2t1vFUnYYfMlv2CBB6Lw2hCqAj1xclS5WO3zCWgAro5k-gYjGixpa8aB1rDhAqEtMhTrOw5em3y7IBHDuHcJcKP2CzIE626NexRp4w2zX2mg4JNXGRdrbtLC6ARUIhS3G-mCelZtENG3DqNf_BT5RAbeZdJ6l_xsydF1pQg_rjzyBmXMYvkuPkMwQhZxK24RCr3KLZwVHyXbWD6XlrUWugSDJJfzWwJdhvDRuAy2b9KSq8Nf5kcgPBbwilITGlyCnFaPMd4LhETzkEQiBWyAttNDmV0avfpE3_BotuMjFR79yvUE0fO70QXr8IsHPH1gDsBC7Ukog3yt3pGVtVutjw1xB39eos6FdcZcV6inhJOy3TKF3lR8xgXkGFg07tfrVgOgIuz3nzQd7O79Jn9IQryfHKsPficL9F0KbLWnRQqRk2qdR7G4xb3x00rMFhjNq5U582kjLbloJqxYi2pZDnAxhhxcb-5lCWttg7CWdr_4DKwD2w_xAFOSffyyBLCWPhwZBUElDIml6BTzXs_Y8XgayrM0CMZFLK3NRGuvcfywwte9NrgZ-v_0b6woTwAXAfwnxzC3hzgw6Rx922bX3MHMUNQrh0vGCVMqvrblPg9ancv26HGkfsrN5zhWyRaWzfSujK90k8QGNx6ibTwtWDC8w_qO00pHtjDYKjaT2MqNp_1KPCi3N0W83NnkveWT8mnFYmGVTYGUUFTfVm8qK0cpiaDlVIdsYzTlZLBGbw87l0kw8NyMm8g6ZmBYfHiF174ScoOoqSGYpqA_U7R2UJwT2T-cQAFOIpQDbDOfdGzrESyJR6cpFixpQam6EEG12xwLfkoH96oQdnNa_R3XrwOJgAIuT27ZlrdIpUkA6xHi2b3KIcA0-GMxDzkjtqk1OZNdpE6-xymFN9SMNIUg7q9UDRG_8iBmgmBwhINeBcYkwAU0y6ZJss0nQolkcSEkOBB6yQO44RqiR3a4RYf9hEQ5zQmYFNnIrypmEZJECzH79JOSWiTlVoLOxMKE-mOFZgHEd3CVpFPtQgdD7nsKNkhx16rpUIAbwe_eM7idXJUd0S-ZyiwKIDeptcxymrrTHiW29Vkj6qkz6KXYf6coTZAhbRtKZytY4t840PJCRNxewgM4gRwdURoHs7qpc4YeS3gAAxmLEUeG5eKPsF_5y1nsqFhfVtOI3Ls7RZQ5PZcaAxz8SSRW4MbXtqs5S9iV2nlGl3ON3-QATgIPowe0d5HOkeiBzxxYe3_5C7mLByOPhfYaUdgrDwLZFUPIp0uUdMPrpyrRkR2XSnF0Pv_D-AgGMYPzWhUnjumjeT5JMd-V3ihYzRvhnwizcfdjcqDmqVrkzVpT2ne8UxOoAk0Ylb8Dcu2M-PUAZfRtm3o-y_IJbDKV3bAjAP4kTsYRtH8zZIFHTT0ciLdOp_gXG2u6h2wzfgWcCJcy32AwYcb6dPlPzJ_-yW0YGSu5gsMTee6eE6GKcd_msO-Xp_76Wg_HHSR_0SYZSfAltlD99y27fxESpWhSx-s_qlIF3oEaR31gQ5RzpOL-wE6ikY9c_geqqNtZLWwjWHkIJqCbWBLJPtUYovjCL5zDwKTJTBp9_GK8f-_E4AWq5LiI4J3zcPdv0rac_riRduYmSE3C_hkaaM0oLncDHPWUFaRIFph2bMw_BghR-J8ittJGZ2ZIE37ekacRbxASVVmoK1gqdQvg6dcyNw24YyqGus_hDo8ONXKxQty7XBOop3cuwSHW80jLtYCnHcKxwbK3CKtIeANc35LMNnVy0)
+# Class Diagram
+
+```mermaid
+classDiagram
+	direction LR
+
+	class TenantContext {
+		+String enterpriseId
+		+String enforceIsolation
+	}
+
+	class EnterpriseStatus {
+		<<enumeration>>
+		PendingApproval
+		Active
+		Suspended
+		Deleted
+	}
+
+	class Branding {
+		+Binary logo
+		+String colors
+	}
+
+	class Enterprise {
+		+String id
+		+String name
+		+EnterpriseStatus status
+		+Branding branding
+		+DateTime retentionUntil
+		+updateProfile()
+		+suspend()
+		+scheduleDeletion()
+	}
+
+	class SubscriptionPlan {
+		+String tier
+		+Map limits
+	}
+
+	class Tier {
+		<<enumeration>>
+		Basic
+		Premium
+		Enterprise
+	}
+
+	class Payment {
+		+Decimal amount
+		+PaymentStatus status
+	}
+
+	class Invoice {
+		+Decimal tax
+		+generate()
+	}
+
+	class Exam {
+		+String id
+		+ExamStatus status
+		+Int duration
+		+Float passingScore
+		+schedule()
+		+clone()
+	}
+
+	class ExamTemplate {
+		+String templateId
+		+reuse()
+	}
+
+	class ExamStatus {
+		<<enumeration>>
+		Scheduled
+		Active
+		Closed
+		Archived
+	}
+
+	class Question {
+		+String id
+		+QuestionType type
+		+Difficulty difficulty
+		+String content
+	}
+
+	class User {
+		+String id
+		+Role role
+		+String enterpriseId
+		+login()
+		+reauthenticate()
+	}
+
+	class Role {
+		<<enumeration>>
+		SuperAdmin
+		EnterpriseAdmin
+		EnterpriseStaff
+		Candidate
+	}
+
+	class Candidate {
+		+String examToken
+		+Binary faceReference
+		+registerFace()
+	}
+
+	class AuditLogEntry {
+		+String actorId
+		+String action
+		+DateTime timestamp
+	}
+
+	class Dashboard
+	class Report
+
+	class Session {
+		+String id
+		+DateTime startTime
+		+DateTime endTime
+		+SessionStatus status
+		+terminate()
+	}
+
+	class SessionStatus {
+		<<enumeration>>
+		Active
+		Terminated
+		Submitted
+	}
+
+	class Submission {
+		+Map answers
+		+autoSave()
+		+submit()
+	}
+
+	class ProctoringEvent {
+		+EventType type
+		+Int severity
+		+DateTime timestamp
+	}
+
+	class CheatingScore {
+		+Float value
+		+calculate()
+	}
+
+	class EventType {
+		<<enumeration>>
+		TabSwitch
+		FaceMissing
+		IdentityMismatch
+		MultipleFaces
+	}
+
+	class Grade {
+		+Float score
+		+Int ranking
+		+autoGrade()
+		+blindReview()
+	}
+
+	class Certificate {
+		+Binary qrCode
+		+DateTime issueDate
+	}
+
+	%% Tenant & Enterprise Management
+	TenantContext --> Enterprise : scopes
+	Enterprise --> EnterpriseStatus : status
+	Enterprise --> Branding : branding
+
+	%% Billing & Subscription
+	Enterprise --> SubscriptionPlan : plan
+	SubscriptionPlan --> Tier : tier
+	Enterprise --> Payment : payments
+	Payment --> Invoice : invoice
+
+	%% Exam Management
+	Enterprise --> Exam : owns
+	Exam --> ExamStatus : status
+	Exam --> ExamTemplate : template
+	Exam "1" --> "*" Question : questions
+
+	%% Authentication & Users
+	Enterprise "1" --> "*" User : users
+	User --> Role : role
+	User <|-- Candidate
+
+	%% Dashboard & Reporting
+	Enterprise --> AuditLogEntry : auditTrail
+	Dashboard --> AuditLogEntry : activity
+	Dashboard --> Report : reports
+
+	%% Candidate Session
+	Candidate "1" --> "*" Session : sessions
+	Session --> SessionStatus : status
+	Session "1" --> "1" Submission : submission
+
+	%% AI Proctoring
+	Session --> ProctoringEvent : events
+	ProctoringEvent --> EventType : type
+	ProctoringEvent --> CheatingScore : scoring
+
+	%% Grading & Certification
+	Submission --> Grade : grade
+	Grade --> Certificate : certificate
+```
