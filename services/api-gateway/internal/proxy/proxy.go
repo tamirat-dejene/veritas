@@ -19,8 +19,22 @@ func NewProxy(target string) (*httputil.ReverseProxy, error) {
 	originalDirector := proxy.Director
 	proxy.Director = func(req *http.Request) {
 		originalDirector(req)
-		// Set X-Forwarded-Host headers etc if needed
+		// Set X-Forwarded headers
+		// X-Forwarded-For
+		clientIP := req.RemoteAddr
+		if ip := req.Header.Get("X-Forwarded-For"); ip != "" {
+			req.Header.Set("X-Forwarded-For", ip+", "+clientIP)
+		} else {
+			req.Header.Set("X-Forwarded-For", clientIP)
+		}
+		// X-Forwarded-Host
 		req.Header.Set("X-Forwarded-Host", req.Host)
+		// X-Forwarded-Proto
+		proto := "http"
+		if req.TLS != nil {
+			proto = "https"
+		}
+		req.Header.Set("X-Forwarded-Proto", proto)
 		req.Host = url.Host // Important for some backends to receive correct Host header
 	}
 
