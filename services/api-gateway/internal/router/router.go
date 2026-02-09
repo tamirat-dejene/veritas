@@ -4,12 +4,12 @@ import (
 	"net/http"
 
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/config"
+	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/middleware"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/proxy"
-	"golang.org/x/time/rate"
 )
 
-func NewRouter(cfg *config.Config) (http.Handler, error) {
+func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler, error) {
 	mux := http.NewServeMux()
 
 	// --- Middlewares ---
@@ -160,20 +160,12 @@ func NewRouter(cfg *config.Config) (http.Handler, error) {
 	// Wrap the mux with global middleware: RequestID -> Logging -> RateLimit -> Mux
 	// Recovery middleware is also good practice but not explicitly asked.
 
-	// Create Rate Limit middleware (10 req/s generic for now, prompt had specific per-route limits)
-	// Prompt: "Auth 10 req/min, Candidate 60 req/min..."
-	// Implementing per-route rate limiting cleanly requires a more complex router wrapper or applying middleware to specific routes.
-	// I will apply global rate limit here for safety, and per-route logic would be an enhancement.
-	// Given the prompt "Rate Limiting Strategy" table, let's apply specific limits to specific routes.
-
-	// Re-wrapping specific routes with their rate limits would be verbose here.
-	// Strategy: Use a generic valid rate limit for the global level for now (e.g. 100 req/s)
-	// and specific ones where strictly needed if time permits.
-	// The core requirement is "Rate Limiter" middleware exists.
+	// Create rate limit middleware using injected rate limiter (dependency injection)
+	rateLimitMiddleware := middleware.NewRateLimitMiddleware(rateLimiter)
 
 	handler := middleware.Logging(mux)
 	handler = middleware.RequestID(handler)
-	handler = middleware.RateLimit(rate.Limit(100), 200)(handler) // Global safety net
+	handler = rateLimitMiddleware.Handler(handler)
 
 	return handler, nil
 }

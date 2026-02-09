@@ -1,67 +1,83 @@
 package middleware
 
 import (
+	"context"
+	"log"
+	"net"
 	"net/http"
-	"sync"
+	"strconv"
+	"time"
 
-	"golang.org/x/time/rate"
+	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/domain"
 )
 
-// IPRateLimiter implementation
-type IPRateLimiter struct {
-	ips map[string]*rate.Limiter
-	mu  *sync.RWMutex
-	r   rate.Limit
-	b   int
+// RateLimitMiddleware wraps a domain.RateLimiter for HTTP middleware
+type RateLimitMiddleware struct {
+	limiter domain.RateLimiter
 }
 
-func NewIPRateLimiter(r rate.Limit, b int) *IPRateLimiter {
-	return &IPRateLimiter{
-		ips: make(map[string]*rate.Limiter),
-		mu:  &sync.RWMutex{},
-		r:   r,
-		b:   b,
+// NewRateLimitMiddleware creates a new rate limit middleware
+func NewRateLimitMiddleware(limiter domain.RateLimiter) *RateLimitMiddleware {
+	return &RateLimitMiddleware{
+		limiter: limiter,
 	}
 }
 
-func (i *IPRateLimiter) AddIP(ip string) *rate.Limiter {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
-	limiter := rate.NewLimiter(i.r, i.b)
-	i.ips[ip] = limiter
-	return limiter
-}
-
-func (i *IPRateLimiter) GetLimiter(ip string) *rate.Limiter {
-	i.mu.Lock()
-	limiter, exists := i.ips[ip]
-	i.mu.Unlock()
-
-	if !exists {
-		return i.AddIP(ip)
+// extractIP extracts the real client IP from the request
+// It checks X-Forwarded-For and X-Real-IP headers for proxy scenarios
+func extractIP(r *http.Request) string {
+	// Check X-Forwarded-For header (can contain multiple IPs)
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		// Take the first IP in the list
+		if ip, _, err := net.SplitHostPort(xff); err == nil {
+			return ip
+		}
+		// If no port, return as is
+		return xff
 	}
 
-	return limiter
+	// Check X-Real-IP header
+	if xri := r.Header.Get("X-Real-IP"); xri != "" {
+		return xri
+	}
+
+	// Fallback to RemoteAddr
+	if ip, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
+		return ip
+	}
+
+	return r.RemoteAddr
 }
 
-func RateLimit(limit rate.Limit, burst int) func(http.Handler) http.Handler {
-	limiter := NewIPRateLimiter(limit, burst)
+// Handler returns an HTTP middleware handler
+func (m *RateLimitMiddleware) Handler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.Background()
+		ip := extractIP(r)
 
-	// Background goroutine to cleanup old entries could be added here to avoid memory leak
-	// For this implementations, we'll keep it simple.
+		// Create a unique key for this IP
+		key := "ratelimit:" + ip
 
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ip := r.RemoteAddr // Setup valid IP extraction (X-Forwarded-For etc) if behind proxy
-			// Simple implementation using RemoteAddr
-
-			if !limiter.GetLimiter(ip).Allow() {
-				http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
-				return
-			}
-
+		// Check rate limit using the domain interface
+		result, err := m.limiter.Allow(ctx, key)
+		if err != nil {
+			// If rate limiter fails, log the error and allow the request (fail open)
+			log.Printf("Rate limiter error: %v - allowing request", err)
 			next.ServeHTTP(w, r)
-		})
-	}
+			return
+		}
+
+		// Set rate limit headers
+		w.Header().Set("X-RateLimit-Remaining", strconv.Itoa(result.Remaining))
+		w.Header().Set("X-RateLimit-Reset", strconv.FormatInt(time.Now().Add(result.ResetAfter).Unix(), 10))
+
+		// Check if rate limit exceeded
+		if result.Allowed == 0 {
+			w.Header().Set("Retry-After", strconv.FormatInt(int64(result.RetryAfter.Seconds()), 10))
+			http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }

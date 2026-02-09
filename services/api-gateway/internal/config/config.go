@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 )
 
 type Config struct {
@@ -16,6 +17,9 @@ type Config struct {
 	GradingServiceURL          string
 	ReportingServiceURL        string
 	JWTSecret                  string
+	RedisAddr                  string
+	RedisPassword              string
+	RedisDB                    int
 }
 
 func Load() *Config {
@@ -31,12 +35,24 @@ func Load() *Config {
 		GradingServiceURL:          getEnv("GRADING_SERVICE_URL", "http://localhost:8088"),
 		ReportingServiceURL:        getEnv("REPORTING_SERVICE_URL", "http://localhost:8089"),
 		JWTSecret:                  getEnv("JWT_SECRET", "super-secret-key"),
+		RedisAddr:                  getEnv("REDIS_ADDR", "localhost:6379"),
+		RedisPassword:              getEnv("REDIS_PASSWORD", ""),
+		RedisDB:                    getEnvInt("REDIS_DB", 0),
 	}
 }
 
 func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
+	}
+	return fallback
+}
+
+func getEnvInt(key string, fallback int) int {
+	if value, ok := os.LookupEnv(key); ok {
+		if intValue, err := strconv.Atoi(value); err == nil {
+			return intValue
+		}
 	}
 	return fallback
 }
