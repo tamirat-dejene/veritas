@@ -20,6 +20,9 @@ type Config struct {
 	RedisAddr                  string
 	RedisPassword              string
 	RedisDB                    int
+	CORSAllowedOrigins         string
+	CORSAllowedMethods         string
+	CORSAllowedHeaders         string
 }
 
 func Load() *Config {
@@ -35,9 +38,12 @@ func Load() *Config {
 		GradingServiceURL:          getEnv("GRADING_SERVICE_URL", "http://localhost:8088"),
 		ReportingServiceURL:        getEnv("REPORTING_SERVICE_URL", "http://localhost:8089"),
 		JWTSecret:                  getEnv("JWT_SECRET", "super-secret-key"),
-		RedisAddr:                  getEnv("REDIS_ADDR", "localhost:6379"),
+		RedisAddr:                  getEnv("REDIS_ADDR", "redis:6379"),
 		RedisPassword:              getEnv("REDIS_PASSWORD", ""),
 		RedisDB:                    getEnvInt("REDIS_DB", 0),
+		CORSAllowedOrigins:         getEnv("CORS_ALLOWED_ORIGINS", "*"),
+		CORSAllowedMethods:         getEnv("CORS_ALLOWED_METHODS", "GET,POST,PATCH,DELETE,OPTIONS"),
+		CORSAllowedHeaders:         getEnv("CORS_ALLOWED_HEADERS", "Authorization,Content-Type,X-Request-ID"),
 	}
 }
 

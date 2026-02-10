@@ -2,17 +2,27 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/config"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/infrastructure"
+	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/logger"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/router"
+	"go.uber.org/zap"
 )
 
 func main() {
+	log, err := logger.NewLogger()
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		_ = log.Sync()
+	}()
+	zap.ReplaceGlobals(log)
+
 	cfg := config.Load()
 
 	// Initialize Redis Client
@@ -25,9 +35,9 @@ func main() {
 	// Test Redis connection
 	ctx := context.Background()
 	if err := rdb.Ping(ctx).Err(); err != nil {
-		log.Printf("Warning: Redis connection failed: %v - rate limiting will fail open", err)
+		zap.L().Warn("Redis connection failed; rate limiting will fail open", zap.Error(err))
 	} else {
-		log.Println("Redis connection established successfully")
+		zap.L().Info("Redis connection established")
 	}
 
 	// Create rate limiter implementation (dependency injection)
@@ -37,13 +47,13 @@ func main() {
 	// Initialize Router with injected dependencies
 	handler, err := router.NewRouter(cfg, rateLimiter)
 	if err != nil {
-		log.Fatalf("Failed to initialize router: %v", err)
+		zap.L().Fatal("Failed to initialize router", zap.Error(err))
 	}
 
-	log.Printf("Service api-gateway starting on port %s", cfg.Port)
+	zap.L().Info("Service api-gateway starting", zap.String("port", cfg.Port))
 
 	// Start Server
 	if err := http.ListenAndServe(":"+cfg.Port, handler); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+		zap.L().Fatal("Failed to start server", zap.Error(err))
 	}
 }

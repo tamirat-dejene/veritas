@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -68,18 +69,14 @@ func RequireRole(allowedRoles ...string) func(http.Handler) http.Handler {
 			}
 
 			// Check if "All" is in allowedRoles, effectively disabling the check for authenticated users
-			for _, role := range allowedRoles {
-				if role == "All" {
-					next.ServeHTTP(w, r)
-					return
-				}
+			if slices.Contains(allowedRoles, "All") {
+				next.ServeHTTP(w, r)
+				return
 			}
 
-			for _, role := range allowedRoles {
-				if role == claims.Role {
-					next.ServeHTTP(w, r)
-					return
-				}
+			if slices.Contains(allowedRoles, claims.Role) {
+				next.ServeHTTP(w, r)
+				return
 			}
 
 			http.Error(w, "Forbidden", http.StatusForbidden)

@@ -2,13 +2,13 @@ package middleware
 
 import (
 	"context"
-	"log"
 	"net"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/domain"
+	"go.uber.org/zap"
 )
 
 // RateLimitMiddleware wraps a domain.RateLimiter for HTTP middleware
@@ -62,7 +62,7 @@ func (m *RateLimitMiddleware) Handler(next http.Handler) http.Handler {
 		result, err := m.limiter.Allow(ctx, key)
 		if err != nil {
 			// If rate limiter fails, log the error and allow the request (fail open)
-			log.Printf("Rate limiter error: %v - allowing request", err)
+			zap.L().Warn("Rate limiter error; allowing request", zap.Error(err))
 			next.ServeHTTP(w, r)
 			return
 		}

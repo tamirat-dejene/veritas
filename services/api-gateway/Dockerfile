@@ -1,9 +1,11 @@
 FROM golang:1.25.1-alpine AS builder
 
 WORKDIR /app
+# RUN apk add --no-cache git
+# ENV GOPROXY=direct
 
 COPY go.mod go.sum ./
-RUN go mod download
+RUN go mod tidy && go mod download
 
 COPY . .
 

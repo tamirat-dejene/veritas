@@ -1,10 +1,11 @@
 package proxy
 
 import (
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+
+	"go.uber.org/zap"
 )
 
 // NewProxy creates a new ReverseProxy that forwards requests to the target URL.
@@ -35,11 +36,11 @@ func NewProxy(target string) (*httputil.ReverseProxy, error) {
 			proto = "https"
 		}
 		req.Header.Set("X-Forwarded-Proto", proto)
-		req.Host = url.Host // Important for some backends to receive correct Host header
+		req.Host = url.Host
 	}
 
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-		log.Printf("Proxy error: %v", err)
+		zap.L().Error("Proxy error", zap.Error(err))
 		http.Error(w, "Service Unavailable", http.StatusBadGateway)
 	}
 

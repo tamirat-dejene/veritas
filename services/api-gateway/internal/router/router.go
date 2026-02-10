@@ -2,6 +2,7 @@ package router
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/config"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/domain"
@@ -62,64 +63,84 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 		return h
 	}
 
+	register := func(pattern string, h http.Handler, mws ...func(http.Handler) http.Handler) {
+		mux.Handle(pattern, chain(h, mws...))
+	}
+
+	parseCSV := func(value string) []string {
+		parts := strings.Split(value, ",")
+		items := make([]string, 0, len(parts))
+		for _, part := range parts {
+			item := strings.TrimSpace(part)
+			if item != "" {
+				items = append(items, item)
+			}
+		}
+		return items
+	}
+
 	// Definition of common middlewares
 	jwtAuth := middleware.JWTAuth(cfg.JWTSecret)
-	requireAuth := middleware.RequireRole("All") // Any authenticated user
-	// requireAdmin := middleware.RequireRole("EnterpriseAdmin", "SuperAdmin")
+	authChain := func() []func(http.Handler) http.Handler {
+		return []func(http.Handler) http.Handler{jwtAuth, middleware.TenantResolver}
+	}
+	authWithRoles := func(roles ...string) []func(http.Handler) http.Handler {
+		return append(authChain(), middleware.RequireRole(roles...))
+	}
 
 	// --- Auth Service Routes ---
 	// Public
-	mux.Handle("POST /auth/login", authProxy)
-	mux.Handle("POST /auth/refresh", authProxy)
+	register("POST /auth/login", authProxy)
+	register("POST /auth/refresh", authProxy)
 	// Protected
-	mux.Handle("POST /auth/logout", chain(authProxy, jwtAuth, requireAuth))
+	register("POST /auth/logout", authProxy, authWithRoles("All")...)
 
 	// --- Enterprise Service Routes ---
-	mux.Handle("POST /enterprises", enterpriseProxy) // Public registration
+	register("POST /enterprises", enterpriseProxy) // Public registration
 	// Specific routes with roles
-	mux.Handle("POST /enterprises/{enterpriseId}/approve", chain(enterpriseProxy, jwtAuth, middleware.RequireRole("SuperAdmin")))
-	mux.Handle("PATCH /enterprises/{enterpriseId}", chain(enterpriseProxy, jwtAuth, middleware.RequireRole("EnterpriseAdmin")))
-	mux.Handle("POST /enterprises/{enterpriseId}/suspend", chain(enterpriseProxy, jwtAuth, middleware.RequireRole("SuperAdmin")))
-	mux.Handle("DELETE /enterprises/{enterpriseId}", chain(enterpriseProxy, jwtAuth, middleware.RequireRole("SuperAdmin")))
+	register("POST /enterprises/{enterpriseId}/approve", enterpriseProxy, authWithRoles("SuperAdmin")...)
+	register("PATCH /enterprises/{enterpriseId}", enterpriseProxy, authWithRoles("EnterpriseAdmin")...)
+	register("POST /enterprises/{enterpriseId}/suspend", enterpriseProxy, authWithRoles("SuperAdmin")...)
+	register("DELETE /enterprises/{enterpriseId}", enterpriseProxy, authWithRoles("SuperAdmin")...)
 	// Tenant Resolver should be applied where enterpriseId is needed, but for proxying,
 	// the heavy lifting might be done by the service itself using the token.
 	// However, the gateway must enforce access.
 	// We'll rely on the path matching and RBAC here. Configurable tenant resolver can inspect path vars in Go 1.22+
 
 	// --- Payment Service ---
-	mux.Handle("GET /subscriptions/plans", paymentProxy)
-	mux.Handle("POST /subscriptions/{enterpriseId}/upgrade", chain(paymentProxy, jwtAuth, middleware.RequireRole("EnterpriseAdmin")))
-	mux.Handle("POST /payments", chain(paymentProxy, jwtAuth, middleware.RequireRole("EnterpriseAdmin")))
-	mux.Handle("GET /payments/history", chain(paymentProxy, jwtAuth, middleware.RequireRole("EnterpriseAdmin")))
-	mux.Handle("GET /invoices/{invoiceId}", chain(paymentProxy, jwtAuth, middleware.RequireRole("EnterpriseAdmin")))
+	register("GET /subscriptions/plans", paymentProxy)
+	register("POST /subscriptions/{enterpriseId}/upgrade", paymentProxy, authWithRoles("EnterpriseAdmin")...)
+	register("POST /payments", paymentProxy, authWithRoles("EnterpriseAdmin")...)
+	register("GET /payments/history", paymentProxy, authWithRoles("EnterpriseAdmin")...)
+	register("GET /invoices/{invoiceId}", paymentProxy, authWithRoles("EnterpriseAdmin")...)
 
 	// --- Exam Service ---
 	// "EnterpriseAdmin, Staff"
-	staffOrAdmin := middleware.RequireRole("EnterpriseAdmin", "Staff")
-	mux.Handle("POST /questions", chain(examProxy, jwtAuth, staffOrAdmin))
-	mux.Handle("GET /questions", chain(examProxy, jwtAuth, staffOrAdmin))
-	mux.Handle("POST /exams", chain(examProxy, jwtAuth, middleware.RequireRole("EnterpriseAdmin")))
-	mux.Handle("PATCH /exams/{examId}", chain(examProxy, jwtAuth, middleware.RequireRole("EnterpriseAdmin")))
-	mux.Handle("POST /exams/{examId}/schedule", chain(examProxy, jwtAuth, middleware.RequireRole("EnterpriseAdmin")))
-	mux.Handle("POST /exams/{examId}/clone", chain(examProxy, jwtAuth, middleware.RequireRole("EnterpriseAdmin")))
+	staffOrAdmin := authWithRoles("EnterpriseAdmin", "Staff")
+	register("POST /questions", examProxy, staffOrAdmin...)
+	register("GET /questions", examProxy, staffOrAdmin...)
+	register("POST /exams", examProxy, authWithRoles("EnterpriseAdmin")...)
+	register("PATCH /exams/{examId}", examProxy, authWithRoles("EnterpriseAdmin")...)
+	register("POST /exams/{examId}/schedule", examProxy, authWithRoles("EnterpriseAdmin")...)
+	register("POST /exams/{examId}/clone", examProxy, authWithRoles("EnterpriseAdmin")...)
 
 	// --- Candidate Service ---
-	mux.Handle("POST /candidates/bulk", chain(candidateProxy, jwtAuth, middleware.RequireRole("EnterpriseAdmin")))
+	register("POST /candidates/bulk", candidateProxy, authWithRoles("EnterpriseAdmin")...)
 	// Candidate Token is different from Admin JWT. Assuming specific logic or just passing through for now?
 	// The prompt says "Candidate tokens are validated differently".
 	// Implementation Detail: We might need a separate CandidateAuth middleware.
 	// usage specific token validation is complex if not standardized.
 	// For this task, I will assume a "Candidate" role or a specific Middleware if needed.
 	// Prompt says "Token" (generic). Let's assume standard JWT but with "Candidate" role.
-	candidateRole := middleware.RequireRole("Candidate")
-	mux.Handle("POST /sessions/start", chain(candidateProxy, jwtAuth, candidateRole))
-	mux.Handle("PATCH /sessions/{sessionId}/answers", chain(candidateProxy, jwtAuth, candidateRole))
-	mux.Handle("POST /sessions/{sessionId}/submit", chain(candidateProxy, jwtAuth, candidateRole))
-	mux.Handle("POST /sessions/{sessionId}/terminate", chain(candidateProxy, jwtAuth, middleware.RequireRole("EnterpriseAdmin")))
+	candidateRole := authWithRoles("Candidate")
+	register("POST /sessions/start", candidateProxy, candidateRole...)
+	register("PATCH /sessions/{sessionId}/answers", candidateProxy, candidateRole...)
+	register("POST /sessions/{sessionId}/submit", candidateProxy, candidateRole...)
+	register("POST /sessions/{sessionId}/terminate", candidateProxy, authWithRoles("EnterpriseAdmin")...)
 
 	// --- Proctoring Service ---
-	mux.Handle("POST /proctoring/events", chain(proctoringProxy, jwtAuth, candidateRole))
-	mux.Handle("GET /proctoring/sessions/{sessionId}/events", chain(proctoringProxy, jwtAuth, middleware.RequireRole("EnterpriseAdmin")))
+	register("POST /proctoring/events", proctoringProxy, candidateRole...)
+	register("GET /proctoring/sessions/{sessionId}/events", proctoringProxy, authWithRoles("EnterpriseAdmin")...)
 
 	// --- Face Verification ---
 	// "Gateway checks subscription tier before routing (Premium+)" -> This requires custom middleware to check claim "tier".
@@ -134,38 +155,44 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 		})
 	}
 
-	mux.Handle("POST /face/register", chain(faceProxy, jwtAuth, candidateRole, requirePremium))
-	mux.Handle("POST /face/verify", chain(faceProxy, jwtAuth, candidateRole, requirePremium))
+	register("POST /face/register", faceProxy, append(authWithRoles("Candidate"), requirePremium)...)
+	register("POST /face/verify", faceProxy, append(authWithRoles("Candidate"), requirePremium)...)
 
 	// --- Grading Service ---
-	mux.Handle("POST /grading/auto", chain(gradingProxy, jwtAuth, middleware.RequireRole("System")))
-	mux.Handle("POST /grading/manual", chain(gradingProxy, jwtAuth, middleware.RequireRole("EnterpriseStaff")))
-	mux.Handle("GET /results/{examId}", chain(gradingProxy, jwtAuth, middleware.RequireRole("EnterpriseAdmin")))
-	mux.Handle("GET /certificates/{certificateId}", chain(gradingProxy, jwtAuth, candidateRole))
+	register("POST /grading/auto", gradingProxy, authWithRoles("System")...)
+	register("POST /grading/manual", gradingProxy, authWithRoles("EnterpriseStaff")...)
+	register("GET /results/{examId}", gradingProxy, authWithRoles("EnterpriseAdmin")...)
+	register("GET /certificates/{certificateId}", gradingProxy, candidateRole...)
 
 	// --- Reporting Service ---
 	// "Gateway blocks routes: /reports/export/json -> Enterprise tier"
 	// Assuming this maps to POST /reports or GET /reports/{reportId}/export
 	// Will add specific check if path suffix matches.
 	// For "Audit logs" -> SuperAdmin, EnterpriseAdmin
-	auditRole := middleware.RequireRole("SuperAdmin", "EnterpriseAdmin")
+	auditRole := authWithRoles("SuperAdmin", "EnterpriseAdmin")
 
-	mux.Handle("GET /dashboard/metrics", chain(reportingProxy, jwtAuth, middleware.RequireRole("Admin", "Staff"))) // "Admin" probably means EnterpriseAdmin? using exact string from prompt "Admin"
-	mux.Handle("GET /monitoring/exams/{examId}", chain(reportingProxy, jwtAuth, middleware.RequireRole("EnterpriseAdmin")))
-	mux.Handle("POST /reports", chain(reportingProxy, jwtAuth, middleware.RequireRole("EnterpriseAdmin")))
-	mux.Handle("GET /reports/{reportId}/export", chain(reportingProxy, jwtAuth, middleware.RequireRole("EnterpriseAdmin")))
-	mux.Handle("GET /audit/logs", chain(reportingProxy, jwtAuth, auditRole))
+	register("GET /dashboard/metrics", reportingProxy, authWithRoles("Admin", "Staff")...) // "Admin" probably means EnterpriseAdmin? using exact string from prompt "Admin"
+	register("GET /monitoring/exams/{examId}", reportingProxy, authWithRoles("EnterpriseAdmin")...)
+	register("POST /reports", reportingProxy, authWithRoles("EnterpriseAdmin")...)
+	register("GET /reports/{reportId}/export", reportingProxy, authWithRoles("EnterpriseAdmin")...)
+	register("GET /audit/logs", reportingProxy, auditRole...)
 
 	// --- Global Middleware ---
-	// Wrap the mux with global middleware: RequestID -> Logging -> RateLimit -> Mux
-	// Recovery middleware is also good practice but not explicitly asked.
+	// Wrap the mux with global middleware: RequestID -> Logging -> CORS -> Recovery -> RateLimit -> Mux
 
 	// Create rate limit middleware using injected rate limiter (dependency injection)
 	rateLimitMiddleware := middleware.NewRateLimitMiddleware(rateLimiter)
+	corsMiddleware := middleware.CORS(
+		parseCSV(cfg.CORSAllowedOrigins),
+		parseCSV(cfg.CORSAllowedMethods),
+		parseCSV(cfg.CORSAllowedHeaders),
+	)
 
-	handler := middleware.Logging(mux)
+	handler := rateLimitMiddleware.Handler(mux)
+	handler = middleware.Recoverer(handler)
+	handler = corsMiddleware(handler)
+	handler = middleware.Logging(handler)
 	handler = middleware.RequestID(handler)
-	handler = rateLimitMiddleware.Handler(handler)
 
 	return handler, nil
 }
