@@ -8,11 +8,12 @@ import (
 
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/config"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/domain"
+	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/infrastructure"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/middleware"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/proxy"
 )
 
-//go:embed docs/**
+//go:embed docs/index.html docs/styles.css
 var docsFS embed.FS
 
 func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler, error) {
@@ -22,40 +23,54 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 	// Global middleware chain applied to the final handler
 	// Note: In standard ServeMux, we wrap the entire mux with global middlewares.
 
+	// --- Circuit Breakers ---
+	// Create circuit breakers for each service with default settings
+	cbSettings := infrastructure.DefaultCircuitBreakerSettings()
+
+	authCB := infrastructure.NewCircuitBreaker("auth-service", cbSettings)
+	enterpriseCB := infrastructure.NewCircuitBreaker("enterprise-service", cbSettings)
+	paymentCB := infrastructure.NewCircuitBreaker("payment-service", cbSettings)
+	examCB := infrastructure.NewCircuitBreaker("exam-service", cbSettings)
+	candidateCB := infrastructure.NewCircuitBreaker("candidate-service", cbSettings)
+	proctoringCB := infrastructure.NewCircuitBreaker("proctoring-service", cbSettings)
+	faceCB := infrastructure.NewCircuitBreaker("face-verification-service", cbSettings)
+	gradingCB := infrastructure.NewCircuitBreaker("grading-service", cbSettings)
+	reportingCB := infrastructure.NewCircuitBreaker("reporting-service", cbSettings)
+
 	// --- Service Proxies ---
-	authProxy, err := proxy.NewProxy(cfg.AuthServiceURL)
+	authProxy, err := proxy.NewProxy(cfg.AuthServiceURL, authCB, "auth-service")
 	if err != nil {
 		return nil, err
 	}
-	enterpriseProxy, err := proxy.NewProxy(cfg.EnterpriseServiceURL)
+	enterpriseProxy, err := proxy.NewProxy(cfg.EnterpriseServiceURL, enterpriseCB, "enterprise-service")
 	if err != nil {
 		return nil, err
 	}
-	paymentProxy, err := proxy.NewProxy(cfg.PaymentServiceURL)
+	paymentProxy, err := proxy.NewProxy(cfg.PaymentServiceURL, paymentCB, "payment-service")
 	if err != nil {
 		return nil, err
 	}
-	examProxy, err := proxy.NewProxy(cfg.ExamServiceURL)
+	examProxy, err := proxy.NewProxy(cfg.ExamServiceURL, examCB, "exam-service")
 	if err != nil {
 		return nil, err
 	}
-	candidateProxy, err := proxy.NewProxy(cfg.CandidateServiceURL)
+	candidateProxy, err := proxy.NewProxy(cfg.CandidateServiceURL, candidateCB, "candidate-service")
 	if err != nil {
 		return nil, err
 	}
-	proctoringProxy, err := proxy.NewProxy(cfg.ProctoringServiceURL)
+	proctoringProxy, err := proxy.NewProxy(cfg.ProctoringServiceURL, proctoringCB, "proctoring-service")
 	if err != nil {
 		return nil, err
 	}
-	faceProxy, err := proxy.NewProxy(cfg.FaceVerificationServiceURL)
+	faceProxy, err := proxy.NewProxy(cfg.FaceVerificationServiceURL, faceCB, "face-verification-service")
 	if err != nil {
 		return nil, err
 	}
-	gradingProxy, err := proxy.NewProxy(cfg.GradingServiceURL)
+	gradingProxy, err := proxy.NewProxy(cfg.GradingServiceURL, gradingCB, "grading-service")
 	if err != nil {
 		return nil, err
 	}
-	reportingProxy, err := proxy.NewProxy(cfg.ReportingServiceURL)
+	reportingProxy, err := proxy.NewProxy(cfg.ReportingServiceURL, reportingCB, "reporting-service")
 	if err != nil {
 		return nil, err
 	}
@@ -78,9 +93,10 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 		return nil, err
 	}
 	docsHandler := http.StripPrefix("/docs/", http.FileServer(http.FS(docsSub)))
-	register("GET /", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// Redirect homepage to docs
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/docs", http.StatusFound)
-	}))
+	})
 	register("GET /docs", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/docs/", http.StatusFound)
 	}))
