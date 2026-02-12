@@ -1,6 +1,8 @@
 package router
 
 import (
+	"embed"
+	"io/fs"
 	"net/http"
 	"strings"
 
@@ -9,6 +11,9 @@ import (
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/middleware"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/proxy"
 )
+
+//go:embed docs/**
+var docsFS embed.FS
 
 func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler, error) {
 	mux := http.NewServeMux()
@@ -66,6 +71,20 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 	register := func(pattern string, h http.Handler, mws ...func(http.Handler) http.Handler) {
 		mux.Handle(pattern, chain(h, mws...))
 	}
+
+	// --- Docs ---
+	docsSub, err := fs.Sub(docsFS, "docs")
+	if err != nil {
+		return nil, err
+	}
+	docsHandler := http.StripPrefix("/docs/", http.FileServer(http.FS(docsSub)))
+	register("GET /", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/docs", http.StatusFound)
+	}))
+	register("GET /docs", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/docs/", http.StatusFound)
+	}))
+	register("GET /docs/", docsHandler)
 
 	parseCSV := func(value string) []string {
 		parts := strings.Split(value, ",")

@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Veritas API Gateway - Documentation</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <div class="logo">
+        <div class="logo-icon">V</div>
+        <div class="logo-text">
+          <h1>Veritas API Gateway</h1>
+          <span class="version">v1.0</span>
+        </div>
+      </div>
+      <div class="search-container">
+        <input type="text" id="searchBox" class="search-box" placeholder="Search endpoints..." autocomplete="off" />
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    <!-- Legend -->
+    <div class="legend">
+      <h3>Access Control Roles</h3>
+      <div class="badge-row">
+        <span class="badge badge-public">Public</span>
+        <span class="badge badge-all">All</span>
+        <span class="badge badge-candidate">Candidate</span>
+        <span class="badge badge-admin">EnterpriseAdmin</span>
+        <span class="badge badge-enterprise-staff">EnterpriseStaff</span>
+        <span class="badge badge-staff">Staff</span>
+        <span class="badge badge-super">SuperAdmin</span>
+        <span class="badge badge-system">System</span>
+        <span class="badge badge-premium">Premium</span>
+      </div>
+    </div>
+
+    <!-- Authentication -->
+    <section class="section" data-service="auth">
+      <div class="section-header">
+        <h2>Authentication</h2>
+        <span class="section-count">3 endpoints</span>
+      </div>
+      <div class="endpoint-list">
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/auth/login</span>
+          <div class="access-badges">
+            <span class="badge badge-public">Public</span>
+          </div>
+          <button class="copy-btn" data-path="/auth/login">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/auth/refresh</span>
+          <div class="access-badges">
+            <span class="badge badge-public">Public</span>
+          </div>
+          <button class="copy-btn" data-path="/auth/refresh">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/auth/logout</span>
+          <div class="access-badges">
+            <span class="badge badge-all">All</span>
+          </div>
+          <button class="copy-btn" data-path="/auth/logout">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Enterprise Management -->
+    <section class="section" data-service="enterprise">
+      <div class="section-header">
+        <h2>Enterprise Management</h2>
+        <span class="section-count">5 endpoints</span>
+      </div>
+      <div class="endpoint-list">
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/enterprises</span>
+          <div class="access-badges">
+            <span class="badge badge-public">Public</span>
+          </div>
+          <button class="copy-btn" data-path="/enterprises">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/enterprises/{id}/approve</span>
+          <div class="access-badges">
+            <span class="badge badge-super">SuperAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/enterprises/{id}/approve">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method patch">PATCH</span>
+          <span class="endpoint-path">/enterprises/{id}</span>
+          <div class="access-badges">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/enterprises/{id}">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/enterprises/{id}/suspend</span>
+          <div class="access-badges">
+            <span class="badge badge-super">SuperAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/enterprises/{id}/suspend">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method delete">DELETE</span>
+          <span class="endpoint-path">/enterprises/{id}</span>
+          <div class="access-badges">
+            <span class="badge badge-super">SuperAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/enterprises/{id}">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Payments & Subscriptions -->
+    <section class="section" data-service="payment">
+      <div class="section-header">
+        <h2>Payments & Subscriptions</h2>
+        <span class="section-count">5 endpoints</span>
+      </div>
+      <div class="endpoint-list">
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/subscriptions/plans</span>
+          <div class="access-badges">
+            <span class="badge badge-public">Public</span>
+          </div>
+          <button class="copy-btn" data-path="/subscriptions/plans">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/subscriptions/{id}/upgrade</span>
+          <div class="access-badges">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/subscriptions/{id}/upgrade">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/payments</span>
+          <div class="access-badges">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/payments">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/payments/history</span>
+          <div class="access-badges">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/payments/history">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/invoices/{id}</span>
+          <div class="access-badges">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/invoices/{id}">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Exam Management -->
+    <section class="section" data-service="exam">
+      <div class="section-header">
+        <h2>Exam Management</h2>
+        <span class="section-count">6 endpoints</span>
+      </div>
+      <div class="endpoint-list">
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/questions</span>
+          <div class="access-badges">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+            <span class="badge badge-staff">Staff</span>
+          </div>
+          <button class="copy-btn" data-path="/questions">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/questions</span>
+          <div class="access-badges">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+            <span class="badge badge-staff">Staff</span>
+          </div>
+          <button class="copy-btn" data-path="/questions">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/exams</span>
+          <div class="access-badges">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/exams">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method patch">PATCH</span>
+          <span class="endpoint-path">/exams/{id}</span>
+          <div class="access-badges">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/exams/{id}">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/exams/{id}/schedule</span>
+          <div class="access-badges">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/exams/{id}/schedule">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/exams/{id}/clone</span>
+          <div class="access-badges">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/exams/{id}/clone">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Candidate & Sessions -->
+    <section class="section" data-service="candidate">
+      <div class="section-header">
+        <h2>Candidate & Sessions</h2>
+        <span class="section-count">5 endpoints</span>
+      </div>
+      <div class="endpoint-list">
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/candidates/bulk</span>
+          <div class="access-badges">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/candidates/bulk">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/sessions/start</span>
+          <div class="access-badges">
+            <span class="badge badge-candidate">Candidate</span>
+          </div>
+          <button class="copy-btn" data-path="/sessions/start">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method patch">PATCH</span>
+          <span class="endpoint-path">/sessions/{id}/answers</span>
+          <div class="access-badges">
+            <span class="badge badge-candidate">Candidate</span>
+          </div>
+          <button class="copy-btn" data-path="/sessions/{id}/answers">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/sessions/{id}/submit</span>
+          <div class="access-badges">
+            <span class="badge badge-candidate">Candidate</span>
+          </div>
+          <button class="copy-btn" data-path="/sessions/{id}/submit">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/sessions/{id}/terminate</span>
+          <div class="access-badges">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/sessions/{id}/terminate">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Proctoring -->
+    <section class="section" data-service="proctoring">
+      <div class="section-header">
+        <h2>Proctoring</h2>
+        <span class="section-count">2 endpoints</span>
+      </div>
+      <div class="endpoint-list">
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/proctoring/events</span>
+          <div class="access-badges">
+            <span class="badge badge-candidate">Candidate</span>
+          </div>
+          <button class="copy-btn" data-path="/proctoring/events">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/proctoring/sessions/{id}/events</span>
+          <div class="access-badges">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/proctoring/sessions/{id}/events">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Face Verification -->
+    <section class="section" data-service="face">
+      <div class="section-header">
+        <h2>Face Verification</h2>
+        <span class="section-count">2 endpoints</span>
+      </div>
+      <div class="endpoint-list">
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/face/register</span>
+          <div class="access-badges">
+            <span class="badge badge-candidate">Candidate</span>
+            <span class="badge badge-premium">Premium</span>
+          </div>
+          <button class="copy-btn" data-path="/face/register">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/face/verify</span>
+          <div class="access-badges">
+            <span class="badge badge-candidate">Candidate</span>
+            <span class="badge badge-premium">Premium</span>
+          </div>
+          <button class="copy-btn" data-path="/face/verify">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Grading & Results -->
+    <section class="section" data-service="grading">
+      <div class="section-header">
+        <h2>Grading & Results</h2>
+        <span class="section-count">4 endpoints</span>
+      </div>
+      <div class="endpoint-list">
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/grading/auto</span>
+          <div class="access-badges">
+            <span class="badge badge-system">System</span>
+          </div>
+          <button class="copy-btn" data-path="/grading/auto">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/grading/manual</span>
+          <div class="access-badges">
+            <span class="badge badge-enterprise-staff">EnterpriseStaff</span>
+          </div>
+          <button class="copy-btn" data-path="/grading/manual">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/results/{examId}</span>
+          <div class="access-badges">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/results/{examId}">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/certificates/{id}</span>
+          <div class="access-badges">
+            <span class="badge badge-candidate">Candidate</span>
+          </div>
+          <button class="copy-btn" data-path="/certificates/{id}">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Reporting & Analytics -->
+    <section class="section" data-service="reporting">
+      <div class="section-header">
+        <h2>Reporting & Analytics</h2>
+        <span class="section-count">5 endpoints</span>
+      </div>
+      <div class="endpoint-list">
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/dashboard/metrics</span>
+          <div class="access-badges">
+            <span class="badge badge-admin">Admin</span>
+            <span class="badge badge-staff">Staff</span>
+          </div>
+          <button class="copy-btn" data-path="/dashboard/metrics">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/monitoring/exams/{id}</span>
+          <div class="access-badges">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/monitoring/exams/{id}">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/reports</span>
+          <div class="access-badges">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/reports">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/reports/{id}/export</span>
+          <div class="access-badges">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/reports/{id}/export">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/audit/logs</span>
+          <div class="access-badges">
+            <span class="badge badge-super">SuperAdmin</span>
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+          </div>
+          <button class="copy-btn" data-path="/audit/logs">
+            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>Veritas API Gateway • Version 1.0 • Documentation</p>
+  </footer>
+
+  <script>
+    // Search functionality
+    const searchBox = document.getElementById('searchBox');
+    const sections = document.querySelectorAll('.section');
+
+    searchBox.addEventListener('input', (e) => {
+      const searchTerm = e.target.value.toLowerCase();
+
+      sections.forEach(section => {
+        const sectionName = section.querySelector('h2').textContent.toLowerCase();
+        const endpoints = Array.from(section.querySelectorAll('.endpoint-path'))
+          .map(ep => ep.textContent.toLowerCase())
+          .join(' ');
+
+        const matches = sectionName.includes(searchTerm) || endpoints.includes(searchTerm);
+        section.style.display = matches ? 'block' : 'none';
+      });
+    });
+
+    // Copy to clipboard functionality
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const path = btn.dataset.path;
+        const copyText = btn.querySelector('.copy-text');
+
+        try {
+          await navigator.clipboard.writeText(path);
+          btn.classList.add('copied');
+          copyText.textContent = 'Copied!';
+
+          setTimeout(() => {
+            btn.classList.remove('copied');
+            copyText.textContent = 'Copy';
+          }, 2000);
+        } catch (err) {
+          console.error('Failed to copy:', err);
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>
