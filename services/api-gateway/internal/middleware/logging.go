@@ -11,6 +11,18 @@ import (
 	"go.uber.org/zap"
 )
 
+// ANSI color codes for terminal output
+const (
+	colorReset  = "\033[0m"
+	colorGreen  = "\033[32m"
+	colorYellow = "\033[33m"
+	colorRed    = "\033[31m"
+	colorCyan   = "\033[36m"
+	colorGray   = "\033[90m"
+	colorBlue   = "\033[34m"
+	colorBold   = "\033[1m"
+)
+
 func Logging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -18,51 +30,145 @@ func Logging(next http.Handler) http.Handler {
 
 		next.ServeHTTP(rw, r)
 
+		duration := time.Since(start)
 		requestID := getRequestID(r)
 		clientIP := getClientIP(r)
-		userAgent := r.UserAgent()
-		userID, role, enterpriseID := getUserInfo(r)
-		tenantID := getTenantID(r)
-		query := r.URL.RawQuery
+		userID, role, _ := getUserInfo(r)
 
 		if logger.IsConsoleFormat() {
-			message := fmt.Sprintf(
-				"request_id=%s method=%s path=%s status=%d duration_ms=%d bytes=%d ip=%s user_id=%s role=%s enterprise_id=%s tenant_id=%s ua=%q query=%q",
-				requestID,
-				r.Method,
-				r.URL.Path,
-				rw.status,
-				time.Since(start).Milliseconds(),
-				rw.bytes,
-				clientIP,
-				userID,
-				role,
-				enterpriseID,
-				tenantID,
-				userAgent,
-				query,
-			)
-			zap.L().Info(message)
+			logStyle := logger.GetLogStyle()
+
+			switch logStyle {
+			case "detailed":
+				logDetailed(r, rw, duration, requestID, clientIP, userID, role)
+			case "minimal":
+				logMinimal(r, rw, duration)
+			default: // compact
+				logCompact(r, rw, duration, clientIP, userID, role)
+			}
 			return
 		}
 
+		// JSON format - structured logging
 		zap.L().Info(
 			"request_completed",
 			zap.String("request_id", requestID),
 			zap.String("method", r.Method),
 			zap.String("path", r.URL.Path),
 			zap.Int("status", rw.status),
-			zap.Int64("duration_ms", time.Since(start).Milliseconds()),
+			zap.Int64("duration_ms", duration.Milliseconds()),
 			zap.Int("bytes", rw.bytes),
 			zap.String("ip", clientIP),
-			zap.String("user_agent", userAgent),
-			zap.String("query", query),
 			zap.String("user_id", userID),
 			zap.String("role", role),
-			zap.String("enterprise_id", enterpriseID),
-			zap.String("tenant_id", tenantID),
 		)
 	})
+}
+
+func logCompact(r *http.Request, rw *responseWriter, duration time.Duration, clientIP, userID, role string) {
+	statusColor := getStatusColor(rw.status)
+	methodColor := getMethodColor(r.Method)
+
+	// Format: INFO GET /path → 200 OK (5ms) [IP] user:john role:admin
+	message := fmt.Sprintf(
+		"%s%s%s %s → %s%d %s%s %s(%s)%s [%s]",
+		methodColor, r.Method, colorReset,
+		r.URL.Path,
+		statusColor, rw.status, http.StatusText(rw.status), colorReset,
+		colorGray, formatDuration(duration), colorReset,
+		clientIP,
+	)
+
+	// Add user info if authenticated
+	if userID != "-" {
+		message += fmt.Sprintf(" %suser:%s%s", colorCyan, userID, colorReset)
+	}
+	if role != "-" {
+		message += fmt.Sprintf(" %srole:%s%s", colorBlue, role, colorReset)
+	}
+
+	zap.L().Info(message)
+}
+
+func logDetailed(r *http.Request, rw *responseWriter, duration time.Duration, requestID, clientIP, userID, role string) {
+	statusColor := getStatusColor(rw.status)
+	methodColor := getMethodColor(r.Method)
+
+	message := fmt.Sprintf(
+		"\n%s┌─ REQUEST ────────────────────────────────────────%s\n"+
+			"│ %s%s %s%s\n"+
+			"│ Status: %s%d %s%s\n"+
+			"│ Duration: %s\n"+
+			"│ IP: %s\n"+
+			"│ Request ID: %s\n",
+		colorGray, colorReset,
+		methodColor, r.Method, r.URL.Path, colorReset,
+		statusColor, rw.status, http.StatusText(rw.status), colorReset,
+		formatDuration(duration),
+		clientIP,
+		requestID,
+	)
+
+	if userID != "-" {
+		message += fmt.Sprintf("│ User: %s (Role: %s)\n", userID, role)
+	}
+
+	message += fmt.Sprintf("%s└──────────────────────────────────────────────────%s", colorGray, colorReset)
+
+	zap.L().Info(message)
+}
+
+func logMinimal(r *http.Request, rw *responseWriter, duration time.Duration) {
+	statusColor := getStatusColor(rw.status)
+
+	// Format: GET /path 200 (5ms)
+	message := fmt.Sprintf(
+		"%s %s %s%d%s (%s)",
+		r.Method,
+		r.URL.Path,
+		statusColor, rw.status, colorReset,
+		formatDuration(duration),
+	)
+
+	zap.L().Info(message)
+}
+
+func getStatusColor(status int) string {
+	switch {
+	case status >= 200 && status < 300:
+		return colorGreen
+	case status >= 300 && status < 400:
+		return colorYellow
+	case status >= 400:
+		return colorRed
+	default:
+		return colorReset
+	}
+}
+
+func getMethodColor(method string) string {
+	switch method {
+	case "GET":
+		return colorCyan
+	case "POST":
+		return colorGreen
+	case "PUT", "PATCH":
+		return colorYellow
+	case "DELETE":
+		return colorRed
+	default:
+		return colorReset
+	}
+}
+
+func formatDuration(d time.Duration) string {
+	if d < time.Millisecond {
+		return fmt.Sprintf("%dµs", d.Microseconds())
+	}
+	if d < time.Second {
+		return fmt.Sprintf("%dms", d.Milliseconds())
+	}
+	return fmt.Sprintf("%.2fs", d.Seconds())
 }
 
 type responseWriter struct {
