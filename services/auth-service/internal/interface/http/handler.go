@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -33,57 +34,98 @@ type LoginResponse struct {
 	Token string `json:"token"`
 }
 
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
 	user, err := h.authService.Register(r.Context(), req.Email, req.Password, req.Role, req.FirstName, req.LastName)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest) // Ideally differentiate errors (409 Conflict, 400 Bad Request)
+		switch {
+		case errors.Is(err, application.ErrUserExists):
+			writeError(w, http.StatusConflict, err.Error())
+		case errors.Is(err, application.ErrInvalidEmail),
+			errors.Is(err, application.ErrInvalidPassword),
+			errors.Is(err, application.ErrInvalidRole),
+			errors.Is(err, application.ErrMissingName):
+			writeError(w, http.StatusBadRequest, err.Error())
+		default:
+			writeError(w, http.StatusInternalServerError, "internal server error")
+		}
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(user)
+	writeJSON(w, http.StatusCreated, user)
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
 	token, err := h.authService.Login(r.Context(), req.Email, req.Password)
 	if err != nil {
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		switch {
+		case errors.Is(err, application.ErrInvalidEmail), errors.Is(err, application.ErrInvalidPassword):
+			writeError(w, http.StatusBadRequest, err.Error())
+		case errors.Is(err, application.ErrInvalidCredentials):
+			writeError(w, http.StatusUnauthorized, err.Error())
+		default:
+			writeError(w, http.StatusInternalServerError, "internal server error")
+		}
 		return
 	}
 
-	json.NewEncoder(w).Encode(LoginResponse{Token: token})
+	writeJSON(w, http.StatusOK, LoginResponse{Token: token})
 }
 
 func (h *AuthHandler) Validate(w http.ResponseWriter, r *http.Request) {
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {
-		http.Error(w, "Authorization header required", http.StatusUnauthorized)
+		writeError(w, http.StatusUnauthorized, "authorization header required")
 		return
 	}
 
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 	if tokenString == authHeader {
-		http.Error(w, "Invalid token format", http.StatusUnauthorized)
+		writeError(w, http.StatusUnauthorized, "invalid token format")
 		return
 	}
 
 	user, err := h.authService.Validate(r.Context(), tokenString)
 	if err != nil {
-		http.Error(w, "Invalid token", http.StatusUnauthorized)
+		switch {
+		case errors.Is(err, application.ErrInvalidToken):
+			writeError(w, http.StatusUnauthorized, err.Error())
+		case errors.Is(err, application.ErrUserNotFound):
+			writeError(w, http.StatusNotFound, err.Error())
+		default:
+			writeError(w, http.StatusInternalServerError, "internal server error")
+		}
 		return
 	}
 
-	json.NewEncoder(w).Encode(user)
+	writeJSON(w, http.StatusOK, user)
+}
+
+func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(payload)
+}
+
+func writeError(w http.ResponseWriter, status int, message string) {
+	writeJSON(w, status, ErrorResponse{Error: message})
 }
