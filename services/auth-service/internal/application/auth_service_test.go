@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -61,6 +62,95 @@ func TestAuthService_Register(t *testing.T) {
 	_, err = service.Register(context.Background(), email, password, role, "Test", "User")
 	if err == nil {
 		t.Error("expected error for duplicate email, got nil")
+	}
+}
+
+func TestAuthService_Register_Validation(t *testing.T) {
+	mockRepo := NewMockUserRepository()
+	tokenService := security.NewTokenService("secret")
+	service := NewAuthService(mockRepo, tokenService)
+
+	cases := []struct {
+		name      string
+		email     string
+		password  string
+		role      string
+		firstName string
+		lastName  string
+		wantErr   error
+	}{
+		{
+			name:      "invalid email",
+			email:     "invalid-email",
+			password:  "password123",
+			role:      "student",
+			firstName: "Test",
+			lastName:  "User",
+			wantErr:   ErrInvalidEmail,
+		},
+		{
+			name:      "short password",
+			email:     "shortpass@example.com",
+			password:  "short",
+			role:      "student",
+			firstName: "Test",
+			lastName:  "User",
+			wantErr:   ErrInvalidPassword,
+		},
+		{
+			name:      "invalid role",
+			email:     "role@example.com",
+			password:  "password123",
+			role:      "invalid",
+			firstName: "Test",
+			lastName:  "User",
+			wantErr:   ErrInvalidRole,
+		},
+		{
+			name:      "missing first name",
+			email:     "first@example.com",
+			password:  "password123",
+			role:      "student",
+			firstName: " ",
+			lastName:  "User",
+			wantErr:   ErrMissingName,
+		},
+		{
+			name:      "missing last name",
+			email:     "last@example.com",
+			password:  "password123",
+			role:      "student",
+			firstName: "Test",
+			lastName:  " ",
+			wantErr:   ErrMissingName,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := service.Register(context.Background(), tc.email, tc.password, tc.role, tc.firstName, tc.lastName)
+			if err == nil {
+				t.Fatalf("expected error, got nil")
+			}
+			if !errors.Is(err, tc.wantErr) {
+				t.Fatalf("expected error %v, got %v", tc.wantErr, err)
+			}
+		})
+	}
+}
+
+func TestAuthService_Register_NormalizesEmail(t *testing.T) {
+	mockRepo := NewMockUserRepository()
+	tokenService := security.NewTokenService("secret")
+	service := NewAuthService(mockRepo, tokenService)
+
+	user, err := service.Register(context.Background(), " Test@Example.com ", "password123", "student", "Test", "User")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if user.Email != "test@example.com" {
+		t.Fatalf("expected normalized email, got %s", user.Email)
 	}
 }
 
