@@ -87,6 +87,12 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 		mux.Handle(pattern, chain(h, mws...))
 	}
 
+	// --- Health Check ---
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+
 	// --- Docs ---
 	docsSub, err := fs.Sub(docsFS, "docs")
 	if err != nil {

@@ -4,35 +4,40 @@ services:
     image: postgres:15-alpine
     env_file:
       - .env
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  prometheus:
-    image: prom/prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml 
+  # prometheus:
+  #   image: prom/prometheus
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml 
 
-  grafana:
-    image: grafana/grafana
-    ports:
-      - "3000:3000"
-    depends_on:
-      - prometheus
+  # grafana:
+  #   image: grafana/grafana
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - prometheus
 
   # --- Go Services ---
   api-gateway:
@@ -42,23 +47,34 @@ services:
     volumes:
       - ./shared:/app/shared:ro
     env_file:
-      - ./services/api-gateway/.env
+      - .env
     depends_on:
-      # - auth-service
-      - redis
+      auth-service:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   auth-service:
     build: ./services/auth-service
     ports:
-      - "8081:8080" # Mapped to host 8081
+      - "8081:8080"
     volumes:
       - ./shared:/app/shared:ro
     env_file:
       - .env
-    environment:
-      - PORT=${PORT}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   enterprise-service:
     build: ./services/enterprise-service
@@ -68,10 +84,14 @@ services:
       - ./shared:/app/shared:ro
     env_file:
       - .env
-    environment:
-      - PORT=${PORT}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   exam-service:
     build: ./services/exam-service
@@ -81,10 +101,14 @@ services:
       - ./shared:/app/shared:ro
     env_file:
       - .env
-    environment:
-      - PORT=${PORT}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   candidate-service:
     build: ./services/candidate-service
@@ -94,10 +118,14 @@ services:
       - ./shared:/app/shared:ro
     env_file:
       - .env
-    environment:
-      - PORT=${PORT}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   payment-service:
     build: ./services/payment-service
@@ -107,10 +135,14 @@ services:
       - ./shared:/app/shared:ro
     env_file:
       - .env
-    environment:
-      - PORT=${PORT}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # --- Python Services ---
   proctoring-service:
@@ -121,8 +153,11 @@ services:
       - ./shared:/app/shared:ro
     env_file:
       - .env
-    environment:
-      - SERVICE_NAME=proctoring-service
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/health\").read()' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   grading-service:
     build: ./services/grading-service
@@ -132,8 +167,11 @@ services:
       - ./shared:/app/shared:ro
     env_file:
       - .env
-    environment:
-      - SERVICE_NAME=grading-service
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/health\").read()' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   reporting-service:
     build: ./services/reporting-service
@@ -143,8 +181,11 @@ services:
       - ./shared:/app/shared:ro
     env_file:
       - .env
-    environment:
-      - SERVICE_NAME=reporting-service
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/health\").read()' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   face-verification-service:
     build: ./services/face-verification-service
@@ -154,8 +195,11 @@ services:
       - ./shared:/app/shared:ro
     env_file:
       - .env
-    environment:
-      - SERVICE_NAME=face-verification-service
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/health\").read()' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
