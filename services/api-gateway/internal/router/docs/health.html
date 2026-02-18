@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Veritas Status | System Infrastructure</title>
+    <link rel="stylesheet" href="/docs/styles.css" />
+    <link rel="stylesheet" href="/docs/health.css" />
+</head>
+
+<body class="status-page">
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">V</div>
+                <div class="logo-text">
+                    <h1>Real-time Status</h1>
+                    <span class="version">Infrastructure Control Center</span>
+                </div>
+            </div>
+            <button class="refresh-action" onclick="location.reload()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 4v6h-6"></path>
+                    <path d="M1 20v-6h6"></path>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                Sync Status
+            </button>
+        </div>
+    </header>
+
+    <main class="container">
+        {{range .Categories}}
+        <section class="category-section">
+            <h2 class="category-title">{{.Title}}</h2>
+            <div class="service-list">
+                {{range .Services}}
+                <div class="service-row {{if eq .Status " UP"}}status-up{{else}}status-down{{end}}">
+                    <div class="service-info">
+                        <div class="status-indicator">
+                            <span class="status-dot"></span>
+                        </div>
+                        <div class="name-container">
+                            <span class="service-name">{{.Name}}</span>
+                            <span class="service-url">{{.URL}}</span>
+                        </div>
+                    </div>
+
+                    <div class="service-metrics">
+                        <div class="metric-item">
+                            <span class="metric-label">Latency</span>
+                            <span class="metric-value">{{.Latency}}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Status</span>
+                            <span class="status-label">{{.Status}}</span>
+                        </div>
+                    </div>
+
+                    {{if .Error}}
+                    <div class="error-info">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <span class="error-text">{{.Error}}</span>
+                    </div>
+                    {{end}}
+
+                    <div class="timestamp">
+                        {{.Timestamp}}
+                    </div>
+                </div>
+                {{end}}
+            </div>
+        </section>
+        {{end}}
+    </main>
+
+    <footer class="footer">
+        <p>Veritas API Gateway &bull; &copy; 2026 Monitoring System</p>
+    </footer>
+</body>
+
+</html>
