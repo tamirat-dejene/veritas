@@ -37,7 +37,7 @@
             <h2 class="category-title">{{.Title}}</h2>
             <div class="service-list">
                 {{range .Services}}
-                <div class="service-row {{if eq .Status " UP"}}status-up{{else}}status-down{{end}}">
+                <div class="service-row {{if eq .Status "UP"}}status-up{{else}}status-down{{end}}">
                     <div class="service-info">
                         <div class="status-indicator">
                             <span class="status-dot"></span>
@@ -60,7 +60,7 @@
                     </div>
 
                     {{if .Error}}
-                    <div class="error-info">
+                    <div class="error-info" title="{{.Error}}" tabindex="0" aria-label="Error details: {{.Error}}">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2">
                             <circle cx="12" cy="12" r="10"></circle>

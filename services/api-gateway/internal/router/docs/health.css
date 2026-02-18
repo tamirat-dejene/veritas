@@ -8,6 +8,37 @@ main.container {
     padding: 40px 24px 80px;
 }
 
+/* Header action button */
+.refresh-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.refresh-action svg {
+    color: var(--accent);
+}
+
+.refresh-action:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--bg-secondary);
+}
+
+.refresh-action:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(10, 123, 131, 0.15);
+}
+
 /* Section */
 .category-section {
     margin-bottom: 48px;
@@ -161,9 +192,67 @@ main.container {
     color: var(--error);
     opacity: 0.75;
     max-width: 200px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    cursor: help;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.error-info svg {
+    flex-shrink: 0;
+}
+
+.error-text {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: linear-gradient(135deg, #ffffff 0%, #f3f7fb 100%);
+    color: #1f2933;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.16);
+    max-width: 360px;
+    white-space: normal;
+    overflow: visible;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    backdrop-filter: blur(8px);
+    transform-origin: left center;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    z-index: 2;
+}
+
+.error-text::before {
+    content: "";
+    position: absolute;
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+    width: 10px;
+    height: 10px;
+    background: linear-gradient(135deg, #ffffff 0%, #f3f7fb 100%);
+    border-left: 1px solid rgba(15, 23, 42, 0.12);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+.error-info:hover .error-text,
+.error-info:focus-within .error-text {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(-50%) translateX(6px);
+}
+
+.error-info:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(245, 101, 101, 0.2);
+    border-radius: 6px;
 }
 
 .service-row.status-up .error-info {
