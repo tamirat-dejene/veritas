@@ -5,15 +5,19 @@ WORKDIR /app
 # Install git (sometimes needed for private deps)
 RUN apk add --no-cache git
 
-# Copy only go.mod first (better layer caching)
-COPY go.mod go.sum ./
+# Copy only go.mod/go.sum first (better layer caching)
+COPY shared/go.mod shared/go.sum /app/shared/
+COPY services/api-gateway/go.mod services/api-gateway/go.sum /app/services/api-gateway/
+
+WORKDIR /app/services/api-gateway
 
 # Cache Go modules
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
 
 # Copy source
-COPY . .
+COPY services/api-gateway /app/services/api-gateway
+COPY shared /app/shared
 
 # Cache Go build files
 RUN --mount=type=cache,target=/go/pkg/mod \
