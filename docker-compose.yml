@@ -58,6 +58,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    develop:
+      watch:
+        - action: rebuild
+          path: ./services/api-gateway
 
   auth-service:
     build: ./services/auth-service
@@ -75,6 +79,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    develop:
+      watch:
+        - action: rebuild
+          path: ./services/auth-service
 
   enterprise-service:
     build: ./services/enterprise-service
@@ -92,6 +100,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    develop:
+      watch:
+        - action: rebuild
+          path: ./services/enterprise-service
 
   exam-service:
     build: ./services/exam-service
@@ -109,6 +121,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    develop:
+      watch:
+        - action: rebuild
+          path: ./services/exam-service
 
   candidate-service:
     build: ./services/candidate-service
@@ -126,6 +142,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    develop:
+      watch:
+        - action: rebuild
+          path: ./services/candidate-service
 
   payment-service:
     build: ./services/payment-service
@@ -143,6 +163,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    develop:
+      watch:
+        - action: rebuild
+          path: ./services/payment-service
 
   # --- Python Services ---
   proctoring-service:
@@ -158,6 +182,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./services/proctoring-service
+          target: /app
+        - action: rebuild
+          path: ./services/proctoring-service/requirements.txt
 
   grading-service:
     build: ./services/grading-service
@@ -172,6 +203,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./services/grading-service
+          target: /app
+        - action: rebuild
+          path: ./services/grading-service/requirements.txt
 
   reporting-service:
     build: ./services/reporting-service
@@ -186,6 +224,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./services/reporting-service
+          target: /app
+        - action: rebuild
+          path: ./services/reporting-service/requirements.txt
 
   face-verification-service:
     build: ./services/face-verification-service
@@ -200,6 +245,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./services/face-verification-service
+          target: /app
+        - action: rebuild
+          path: ./services/face-verification-service/requirements.txt
 
 volumes:
   postgres_data:
