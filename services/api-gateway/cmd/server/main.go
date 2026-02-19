@@ -8,8 +8,8 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/config"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/infrastructure"
-	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/logger"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/router"
+	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 )
 

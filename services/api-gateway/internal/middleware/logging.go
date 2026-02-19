@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/logger"
+	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 )
 
