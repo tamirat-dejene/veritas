@@ -1,12 +1,23 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"os"
+
+	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
+	"go.uber.org/zap"
 )
 
 func main() {
+	log, err := logger.NewLogger()
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		_ = log.Sync()
+	}()
+	zap.ReplaceGlobals(log)
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -17,8 +28,8 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 
-	log.Printf("Service exam-service starting on port %s", port)
+	zap.L().Info("Service exam-service starting", zap.String("port", port))
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+		zap.L().Fatal("Failed to start server", zap.Error(err))
 	}
 }
