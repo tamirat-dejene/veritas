@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"log"
 	"net/http"
 
 	_ "github.com/lib/pq"
@@ -11,22 +10,33 @@ import (
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/infrastructure/postgres"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/infrastructure/security"
 	authHTTP "github.com/tamirat-dejene/veritas/services/auth-service/internal/interface/http"
+	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
+	"go.uber.org/zap"
 )
 
 func main() {
+	log, err := logger.NewLogger()
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		_ = log.Sync()
+	}()
+	zap.ReplaceGlobals(log)
+
 	cfg := config.Load()
 
 	// 1. Initialize Database
 	db, err := sql.Open("postgres", cfg.DatabaseURL)
 	if err != nil {
-		log.Fatalf("failed to open db: %v", err)
+		zap.L().Fatal("failed to open db", zap.Error(err))
 	}
 	defer db.Close()
 
 	if err := db.Ping(); err != nil {
-		log.Fatalf("failed to ping db: %v", err)
+		zap.L().Fatal("failed to ping db", zap.Error(err))
 	}
-	log.Println("Connected to database")
+	zap.L().Info("Connected to database")
 
 	// 2. Initialize Infrastructure
 	userRepo := postgres.NewUserRepository(db)
@@ -39,8 +49,8 @@ func main() {
 	handler := authHTTP.NewRouter(authService)
 
 	// 5. Start Server
-	log.Printf("Starting auth-service on port %s", cfg.Port)
+	zap.L().Info("Starting auth-service", zap.String("port", cfg.Port))
 	if err := http.ListenAndServe(":"+cfg.Port, handler); err != nil {
-		log.Fatalf("failed to start server: %v", err)
+		zap.L().Fatal("failed to start server", zap.Error(err))
 	}
 }
