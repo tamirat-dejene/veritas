@@ -3,9 +3,11 @@ package middleware
 import (
 	"net/http"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
-func CORS(allowedOrigins, allowedMethods, allowedHeaders []string) func(http.Handler) http.Handler {
+func CORS(allowedOrigins, allowedMethods, allowedHeaders []string) gin.HandlerFunc {
 	allowAllOrigins := len(allowedOrigins) == 1 && allowedOrigins[0] == "*"
 	allowedOriginSet := make(map[string]struct{}, len(allowedOrigins))
 	for _, origin := range allowedOrigins {
@@ -18,30 +20,28 @@ func CORS(allowedOrigins, allowedMethods, allowedHeaders []string) func(http.Han
 	allowMethods := strings.Join(allowedMethods, ", ")
 	allowHeaders := strings.Join(allowedHeaders, ", ")
 
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			origin := r.Header.Get("Origin")
-			if origin != "" {
-				if allowAllOrigins {
-					w.Header().Set("Access-Control-Allow-Origin", "*")
-				} else if _, ok := allowedOriginSet[origin]; ok {
-					w.Header().Set("Access-Control-Allow-Origin", origin)
-				}
-				w.Header().Set("Vary", "Origin")
+	return func(c *gin.Context) {
+		origin := c.GetHeader("Origin")
+		if origin != "" {
+			if allowAllOrigins {
+				c.Header("Access-Control-Allow-Origin", "*")
+			} else if _, ok := allowedOriginSet[origin]; ok {
+				c.Header("Access-Control-Allow-Origin", origin)
 			}
+			c.Header("Vary", "Origin")
+		}
 
-			if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
-				if allowMethods != "" {
-					w.Header().Set("Access-Control-Allow-Methods", allowMethods)
-				}
-				if allowHeaders != "" {
-					w.Header().Set("Access-Control-Allow-Headers", allowHeaders)
-				}
-				w.WriteHeader(http.StatusNoContent)
-				return
+		if c.Request.Method == http.MethodOptions && c.GetHeader("Access-Control-Request-Method") != "" {
+			if allowMethods != "" {
+				c.Header("Access-Control-Allow-Methods", allowMethods)
 			}
+			if allowHeaders != "" {
+				c.Header("Access-Control-Allow-Headers", allowHeaders)
+			}
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
 
-			next.ServeHTTP(w, r)
-		})
+		c.Next()
 	}
 }

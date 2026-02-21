@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/config"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/infrastructure"
@@ -12,8 +13,39 @@ import (
 )
 
 func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler, error) {
-	mux := http.NewServeMux()
-	routerGroup := NewRouterGroup(mux, cfg.JWTSecret)
+	// Initialize Gin engine without default logger/recovery so we can use our custom ones
+	gin.SetMode(gin.ReleaseMode)
+	engine := gin.New()
+
+	// --- Global Middleware ---
+
+	parseCSV := func(value string) []string {
+		parts := strings.Split(value, ",")
+		items := make([]string, 0, len(parts))
+		for _, part := range parts {
+			item := strings.TrimSpace(part)
+			if item != "" {
+				items = append(items, item)
+			}
+		}
+		return items
+	}
+
+	rateLimitMiddleware := middleware.NewRateLimitMiddleware(rateLimiter)
+	corsMiddleware := middleware.CORS(
+		parseCSV(cfg.CORSAllowedOrigins),
+		parseCSV(cfg.CORSAllowedMethods),
+		parseCSV(cfg.CORSAllowedHeaders),
+	)
+
+	engine.Use(middleware.RequestID())
+	engine.Use(middleware.Logging())
+	engine.Use(corsMiddleware)
+	engine.Use(middleware.Recoverer())
+	engine.Use(rateLimitMiddleware.Handler())
+
+	// --- Set up Router Group ---
+	routerGroup := NewRouterGroup(engine, cfg.JWTSecret)
 
 	// --- Circuit Breakers ---
 	cbSettings := infrastructure.DefaultCircuitBreakerSettings()
@@ -83,32 +115,5 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 	routerGroup.RegisterGradingRoutes(gradingProxy)
 	routerGroup.RegisterReportingRoutes(reportingProxy)
 
-	// --- Global Middleware ---
-
-	parseCSV := func(value string) []string {
-		parts := strings.Split(value, ",")
-		items := make([]string, 0, len(parts))
-		for _, part := range parts {
-			item := strings.TrimSpace(part)
-			if item != "" {
-				items = append(items, item)
-			}
-		}
-		return items
-	}
-
-	rateLimitMiddleware := middleware.NewRateLimitMiddleware(rateLimiter)
-	corsMiddleware := middleware.CORS(
-		parseCSV(cfg.CORSAllowedOrigins),
-		parseCSV(cfg.CORSAllowedMethods),
-		parseCSV(cfg.CORSAllowedHeaders),
-	)
-
-	handler := rateLimitMiddleware.Handler(mux)
-	handler = middleware.Recoverer(handler)
-	handler = corsMiddleware(handler)
-	handler = middleware.Logging(handler)
-	handler = middleware.RequestID(handler)
-
-	return handler, nil
+	return engine, nil
 }

@@ -8,15 +8,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/config"
 )
 
 // RegisterHealthCheck sets up the detailed health check endpoint
 func (g *RouterGroup) RegisterHealthCheck(cfg *config.Config) {
-	g.mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		if !strings.Contains(r.Header.Get("Accept"), "text/html") {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
+	g.engine.GET("/health", func(c *gin.Context) {
+		if !strings.Contains(c.GetHeader("Accept"), "text/html") {
+			c.String(http.StatusOK, "OK")
 			return
 		}
 
@@ -156,13 +156,17 @@ func (g *RouterGroup) RegisterHealthCheck(cfg *config.Config) {
 			"stringsContains": strings.Contains,
 		}).ParseFS(docsFS, "docs/health.html")
 		if err != nil {
-			http.Error(w, "Failed to load health template: "+err.Error(), http.StatusInternalServerError)
+			c.String(http.StatusInternalServerError, "Failed to load health template: "+err.Error())
 			return
 		}
 
-		w.Header().Set("Content-Type", "text/html")
-		tmpl.Execute(w, map[string]interface{}{
+		c.Header("Content-Type", "text/html")
+		err = tmpl.Execute(c.Writer, map[string]interface{}{
 			"Categories": results,
 		})
+		if err != nil {
+			// Cannot change status here easily if already sent via template partial, but template err log is ok
+			c.Error(err)
+		}
 	})
 }

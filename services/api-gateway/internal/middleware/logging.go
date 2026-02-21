@@ -2,11 +2,9 @@ package middleware
 
 import (
 	"fmt"
-	"net"
-	"net/http"
-	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 )
@@ -23,28 +21,29 @@ const (
 	colorBold   = "\033[1m"
 )
 
-func Logging(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func Logging() gin.HandlerFunc {
+	return func(c *gin.Context) {
 		start := time.Now()
-		rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
 
-		next.ServeHTTP(rw, r)
+		c.Next()
 
 		duration := time.Since(start)
-		requestID := getRequestID(r)
-		clientIP := getClientIP(r)
-		userID, role, _ := getUserInfo(r)
+		requestID := getRequestID(c)
+		clientIP := c.ClientIP()
+		userID, role, _ := getUserInfo(c)
+		status := c.Writer.Status()
+		bytes := c.Writer.Size()
 
 		if logger.IsConsoleFormat() {
 			logStyle := logger.GetLogStyle()
 
 			switch logStyle {
 			case "detailed":
-				logDetailed(r, rw, duration, requestID, clientIP, userID, role)
+				logDetailed(c, status, duration, requestID, clientIP, userID, role)
 			case "minimal":
-				logMinimal(r, rw, duration)
+				logMinimal(c, status, duration)
 			default: // compact
-				logCompact(r, rw, duration, clientIP, userID, role)
+				logCompact(c, status, duration, clientIP, userID, role)
 			}
 			return
 		}
@@ -53,28 +52,28 @@ func Logging(next http.Handler) http.Handler {
 		zap.L().Info(
 			"request_completed",
 			zap.String("request_id", requestID),
-			zap.String("method", r.Method),
-			zap.String("path", r.URL.Path),
-			zap.Int("status", rw.status),
+			zap.String("method", c.Request.Method),
+			zap.String("path", c.Request.URL.Path),
+			zap.Int("status", status),
 			zap.Int64("duration_ms", duration.Milliseconds()),
-			zap.Int("bytes", rw.bytes),
+			zap.Int("bytes", bytes),
 			zap.String("ip", clientIP),
 			zap.String("user_id", userID),
 			zap.String("role", role),
 		)
-	})
+	}
 }
 
-func logCompact(r *http.Request, rw *responseWriter, duration time.Duration, clientIP, userID, role string) {
-	statusColor := getStatusColor(rw.status)
-	methodColor := getMethodColor(r.Method)
+func logCompact(c *gin.Context, status int, duration time.Duration, clientIP, userID, role string) {
+	statusColor := getStatusColor(status)
+	methodColor := getMethodColor(c.Request.Method)
 
 	// Format: INFO GET /path → 200 OK (5ms) [IP] user:john role:admin
 	message := fmt.Sprintf(
 		"%s%s%s %s → %s%d %s%s %s(%s)%s [%s]",
-		methodColor, r.Method, colorReset,
-		r.URL.Path,
-		statusColor, rw.status, http.StatusText(rw.status), colorReset,
+		methodColor, c.Request.Method, colorReset,
+		c.Request.URL.Path,
+		statusColor, status, httpStatusText(status), colorReset,
 		colorGray, formatDuration(duration), colorReset,
 		clientIP,
 	)
@@ -90,9 +89,9 @@ func logCompact(r *http.Request, rw *responseWriter, duration time.Duration, cli
 	zap.L().Info(message)
 }
 
-func logDetailed(r *http.Request, rw *responseWriter, duration time.Duration, requestID, clientIP, userID, role string) {
-	statusColor := getStatusColor(rw.status)
-	methodColor := getMethodColor(r.Method)
+func logDetailed(c *gin.Context, status int, duration time.Duration, requestID, clientIP, userID, role string) {
+	statusColor := getStatusColor(status)
+	methodColor := getMethodColor(c.Request.Method)
 
 	message := fmt.Sprintf(
 		"\n%s┌─ REQUEST ────────────────────────────────────────%s\n"+
@@ -102,8 +101,8 @@ func logDetailed(r *http.Request, rw *responseWriter, duration time.Duration, re
 			"│ IP: %s\n"+
 			"│ Request ID: %s\n",
 		colorGray, colorReset,
-		methodColor, r.Method, r.URL.Path, colorReset,
-		statusColor, rw.status, http.StatusText(rw.status), colorReset,
+		methodColor, c.Request.Method, c.Request.URL.Path, colorReset,
+		statusColor, status, httpStatusText(status), colorReset,
 		formatDuration(duration),
 		clientIP,
 		requestID,
@@ -118,15 +117,15 @@ func logDetailed(r *http.Request, rw *responseWriter, duration time.Duration, re
 	zap.L().Info(message)
 }
 
-func logMinimal(r *http.Request, rw *responseWriter, duration time.Duration) {
-	statusColor := getStatusColor(rw.status)
+func logMinimal(c *gin.Context, status int, duration time.Duration) {
+	statusColor := getStatusColor(status)
 
 	// Format: GET /path 200 (5ms)
 	message := fmt.Sprintf(
 		"%s %s %s%d%s (%s)",
-		r.Method,
-		r.URL.Path,
-		statusColor, rw.status, colorReset,
+		c.Request.Method,
+		c.Request.URL.Path,
+		statusColor, status, colorReset,
 		formatDuration(duration),
 	)
 
@@ -171,42 +170,27 @@ func formatDuration(d time.Duration) string {
 	return fmt.Sprintf("%.2fs", d.Seconds())
 }
 
-type responseWriter struct {
-	http.ResponseWriter
-	status int
-	bytes  int
-}
-
-func (rw *responseWriter) WriteHeader(status int) {
-	rw.status = status
-	rw.ResponseWriter.WriteHeader(status)
-}
-
-func (rw *responseWriter) Write(p []byte) (int, error) {
-	if rw.status == 0 {
-		rw.status = http.StatusOK
-	}
-	n, err := rw.ResponseWriter.Write(p)
-	rw.bytes += n
-	return n, err
-}
-
-func getRequestID(r *http.Request) string {
-	if requestID, ok := r.Context().Value(RequestIDKey).(string); ok && requestID != "" {
+func getRequestID(c *gin.Context) string {
+	if requestID := c.GetString(RequestIDKey); requestID != "" {
 		return requestID
 	}
 	return "-"
 }
 
-func getTenantID(r *http.Request) string {
-	if tenantID, ok := r.Context().Value(TenantIDKey).(string); ok && tenantID != "" {
+func getTenantID(c *gin.Context) string {
+	if tenantID := c.GetString(TenantIDKey); tenantID != "" {
 		return tenantID
 	}
 	return "-"
 }
 
-func getUserInfo(r *http.Request) (string, string, string) {
-	claims, ok := r.Context().Value(UserContextKey).(*UserClaims)
+func getUserInfo(c *gin.Context) (string, string, string) {
+	claimsVal, exists := c.Get(string(UserContextKey))
+	if !exists {
+		return "-", "-", "-"
+	}
+
+	claims, ok := claimsVal.(*UserClaims)
 	if !ok || claims == nil {
 		return "-", "-", "-"
 	}
@@ -228,30 +212,27 @@ func getUserInfo(r *http.Request) (string, string, string) {
 	return userID, role, enterpriseID
 }
 
-func getClientIP(r *http.Request) string {
-	forwardedFor := r.Header.Get("X-Forwarded-For")
-	if forwardedFor != "" {
-		parts := strings.Split(forwardedFor, ",")
-		if len(parts) > 0 {
-			ip := strings.TrimSpace(parts[0])
-			if ip != "" {
-				return ip
-			}
-		}
+func httpStatusText(status int) string {
+	// Simple mapping for common statuses to avoid importing net/http just for this
+	// Alternatively can just import net/http
+	switch status {
+	case 200:
+		return "OK"
+	case 201:
+		return "Created"
+	case 204:
+		return "No Content"
+	case 400:
+		return "Bad Request"
+	case 401:
+		return "Unauthorized"
+	case 403:
+		return "Forbidden"
+	case 404:
+		return "Not Found"
+	case 500:
+		return "Internal Server Error"
+	default:
+		return ""
 	}
-
-	if realIP := strings.TrimSpace(r.Header.Get("X-Real-IP")); realIP != "" {
-		return realIP
-	}
-
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err == nil && host != "" {
-		return host
-	}
-
-	if r.RemoteAddr != "" {
-		return r.RemoteAddr
-	}
-
-	return "-"
 }

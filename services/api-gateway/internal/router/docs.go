@@ -4,6 +4,8 @@ import (
 	"embed"
 	"io/fs"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 //go:embed docs/index.html docs/styles.css docs/health.html docs/health.css
@@ -18,17 +20,18 @@ func (g *RouterGroup) RegisterDocs() error {
 	docsHandler := http.StripPrefix("/docs/", http.FileServer(http.FS(docsSub)))
 
 	// Redirect homepage to docs
-	g.mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/docs", http.StatusFound)
+	g.engine.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/docs")
 	})
 
-	// Redirect /docs to /docs/
-	g.register("GET /docs", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/docs/", http.StatusFound)
-	}))
+	// Serve the static files using Gin wrapper
+	// Setting up the /*filepath param helps gin pattern match over the http handler
+	g.engine.GET("/docs/*filepath", gin.WrapH(http.StripPrefix("/docs", docsHandler)))
 
-	// Serve the static files
-	g.register("GET /docs/", docsHandler)
+	// Ensure /docs without trailing slash redirects if hit explicitly, but gin usually handles this
+	g.engine.GET("/docs", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/docs/")
+	})
 
 	return nil
 }

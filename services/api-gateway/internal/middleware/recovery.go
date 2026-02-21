@@ -3,22 +3,23 @@ package middleware
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
-func Recoverer(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func Recoverer() gin.HandlerFunc {
+	return func(c *gin.Context) {
 		defer func() {
 			if rec := recover(); rec != nil {
-				requestID := "-"
-				if value, ok := r.Context().Value(RequestIDKey).(string); ok && value != "" {
-					requestID = value
+				requestID := c.GetString(RequestIDKey)
+				if requestID == "" {
+					requestID = "-"
 				}
 				zap.L().Error("panic recovered", zap.String("request_id", requestID), zap.Any("panic", rec))
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 			}
 		}()
 
-		next.ServeHTTP(w, r)
-	})
+		c.Next()
+	}
 }

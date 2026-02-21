@@ -3,46 +3,41 @@ package router
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/middleware"
 )
 
 // RouterGroup encapsulates routing logic and common middleware builders
 type RouterGroup struct {
-	mux       *http.ServeMux
+	engine    *gin.Engine
 	jwtSecret string
 }
 
 // NewRouterGroup creates a new router group
-func NewRouterGroup(mux *http.ServeMux, jwtSecret string) *RouterGroup {
+func NewRouterGroup(engine *gin.Engine, jwtSecret string) *RouterGroup {
 	return &RouterGroup{
-		mux:       mux,
+		engine:    engine,
 		jwtSecret: jwtSecret,
 	}
 }
 
-// chain merges a handler and middlewares into a single handler
-func (g *RouterGroup) chain(h http.Handler, mws ...func(http.Handler) http.Handler) http.Handler {
-	for i := len(mws) - 1; i >= 0; i-- {
-		h = mws[i](h)
-	}
-	return h
-}
-
-// register handles attaching routes to the mux
-func (g *RouterGroup) register(pattern string, h http.Handler, mws ...func(http.Handler) http.Handler) {
-	g.mux.Handle(pattern, g.chain(h, mws...))
+// register handles attaching HTTP handlers wrapped as Gin routes
+// Because proxies are standard http.Handler, we wrap them to gin.HandlerFunc
+func (g *RouterGroup) register(method, path string, h http.Handler, mws ...gin.HandlerFunc) {
+	handlers := append(mws, gin.WrapH(h))
+	g.engine.Handle(method, path, handlers...)
 }
 
 // defaultAuthChain builds the required base authentication and tenant resolution middlewares
-func (g *RouterGroup) defaultAuthChain() []func(http.Handler) http.Handler {
-	return []func(http.Handler) http.Handler{
+func (g *RouterGroup) defaultAuthChain() []gin.HandlerFunc {
+	return []gin.HandlerFunc{
 		middleware.JWTAuth(g.jwtSecret),
-		middleware.TenantResolver,
+		middleware.TenantResolver(),
 	}
 }
 
 // authWithRoles wraps routes with auth and domain role checks
-func (g *RouterGroup) authWithRoles(roles ...domain.Role) []func(http.Handler) http.Handler {
+func (g *RouterGroup) authWithRoles(roles ...domain.Role) []gin.HandlerFunc {
 	return append(g.defaultAuthChain(), middleware.RequireRole(roles...))
 }
