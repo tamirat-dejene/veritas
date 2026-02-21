@@ -17,19 +17,21 @@ func (g *RouterGroup) RegisterDocs() error {
 	if err != nil {
 		return err
 	}
-	docsHandler := http.StripPrefix("/docs/", http.FileServer(http.FS(docsSub)))
 
-	// Redirect homepage to docs
-	g.engine.GET("/", func(c *gin.Context) {
-		c.Redirect(http.StatusFound, "/docs")
+	// Create file server for embedded static assets
+	fileServer := http.FileServer(http.FS(docsSub))
+
+	// Serving /docs/*filepath
+	// We use http.StripPrefix("/docs/") because gin.WrapH receives the full URL path
+	g.engine.GET("/docs/*filepath", gin.WrapH(http.StripPrefix("/docs/", fileServer)))
+
+	// Redirect /docs (no slash) to /docs/ so it hits the /*filepath pattern correctly
+	g.engine.GET("/docs", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/docs/")
 	})
 
-	// Serve the static files using Gin wrapper
-	// Setting up the /*filepath param helps gin pattern match over the http handler
-	g.engine.GET("/docs/*filepath", gin.WrapH(http.StripPrefix("/docs", docsHandler)))
-
-	// Ensure /docs without trailing slash redirects if hit explicitly, but gin usually handles this
-	g.engine.GET("/docs", func(c *gin.Context) {
+	// Redirect root to /docs/
+	g.engine.GET("/", func(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/docs/")
 	})
 
