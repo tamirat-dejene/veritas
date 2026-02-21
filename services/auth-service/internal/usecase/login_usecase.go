@@ -13,8 +13,10 @@ import (
 
 // LoginInput is the request payload for the login use case.
 type LoginInput struct {
-	Email    string
-	Password string
+	Email     string
+	Password  string
+	IP        string
+	UserAgent string
 }
 
 // LoginOutput is the response payload for the login use case.
@@ -24,7 +26,7 @@ type LoginOutput struct {
 	ExpiresIn    int64 // seconds
 }
 
-// LoginUseCase orchestrates user authentication.
+// LoginUseCase orchestrates user authentication with security auditing.
 type LoginUseCase struct {
 	userRepo         domain.UserRepository
 	refreshTokenRepo domain.RefreshTokenRepository
@@ -61,7 +63,6 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 	// 1. Find user by email.
 	user, err := uc.userRepo.FindByEmail(ctx, input.Email)
 	if err != nil {
-		// Do not distinguish "not found" from "bad password" to the caller.
 		if err == domain.ErrUserNotFound {
 			uc.log.Warn("login attempt for unknown email", zap.String("email", input.Email))
 			return nil, domain.ErrInvalidCredentials
@@ -69,30 +70,41 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 		return nil, fmt.Errorf("LoginUseCase.Execute: FindByEmail: %w", err)
 	}
 
-	// 2. Reject if soft-deleted.
+	// 2. Reject if soft-deleted or inactive.
 	if user.IsDeleted {
-		uc.log.Warn("login attempt for deleted account", zap.String("userId", user.ID.String()))
 		return nil, domain.ErrUserDeleted
 	}
-
-	// 3. Reject if inactive.
 	if !user.IsActive {
-		uc.log.Warn("login attempt for inactive account", zap.String("userId", user.ID.String()))
 		return nil, domain.ErrUserInactive
+	}
+
+	// 3. Check Account Lock.
+	if user.LockedUntil != nil && time.Now().Before(*user.LockedUntil) {
+		uc.log.Warn("login attempt for locked account", zap.String("userId", user.ID.String()), zap.Time("lockedUntil", *user.LockedUntil))
+		return nil, domain.ErrAccountLocked
 	}
 
 	// 4. Reject roles not served by this service.
 	if _, ok := domain.AllowedAuthRoles[user.Role]; !ok {
-		uc.log.Warn("login attempt from disallowed role",
-			zap.String("userId", user.ID.String()),
-			zap.String("role", string(user.Role)),
-		)
 		return nil, domain.ErrRoleNotPermitted
 	}
 
-	// 5. Verify password using constant-time bcrypt comparison.
+	// 5. Verify password.
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
 		uc.log.Warn("invalid password attempt", zap.String("userId", user.ID.String()))
+
+		// Handle Login Failure (increment count, potentially lock)
+		var lockUntil *time.Time
+		if user.FailedLoginAttempts+1 >= 5 {
+			l := time.Now().Add(15 * time.Minute)
+			lockUntil = &l
+			uc.log.Info("account locked due to too many failures", zap.String("userId", user.ID.String()))
+		}
+
+		if errUpdate := uc.userRepo.UpdateLoginFailure(ctx, user.ID, lockUntil); errUpdate != nil {
+			uc.log.Error("failed to update login failure stats", zap.Error(errUpdate))
+		}
+
 		return nil, domain.ErrInvalidCredentials
 	}
 
@@ -102,24 +114,29 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 		return nil, fmt.Errorf("LoginUseCase.Execute: GenerateAccessToken: %w", err)
 	}
 
-	// 7. Generate raw refresh token and its SHA-256 hash.
+	// 7. Generate refresh token hash.
 	rawRefreshToken, tokenHash, err := uc.refreshService.GenerateRefreshToken()
 	if err != nil {
 		return nil, fmt.Errorf("LoginUseCase.Execute: GenerateRefreshToken: %w", err)
 	}
 
-	// 8. Persist the hash (NEVER the raw token).
-	now := time.Now().UTC()
+	// 8. Persist refresh token hash.
 	rt := &domain.RefreshToken{
 		ID:        uuid.New(),
 		UserID:    user.ID,
 		TokenHash: tokenHash,
-		ExpiresAt: now.Add(uc.refreshTokenTTL),
+		ExpiresAt: time.Now().Add(uc.refreshTokenTTL).UTC(),
 		Revoked:   false,
-		CreatedAt: now,
+		CreatedAt: time.Now().UTC(),
 	}
 	if err := uc.refreshTokenRepo.Create(ctx, rt); err != nil {
 		return nil, fmt.Errorf("LoginUseCase.Execute: Create refresh token: %w", err)
+	}
+
+	// 9. Update Login Audit Stats.
+	if err := uc.userRepo.UpdateLoginSuccess(ctx, user.ID, input.IP, input.UserAgent); err != nil {
+		uc.log.Error("failed to update login success stats", zap.Error(err))
+		// Not returning error here as the user is effectively logged in.
 	}
 
 	uc.log.Info("user logged in successfully", zap.String("userId", user.ID.String()))

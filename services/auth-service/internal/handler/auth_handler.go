@@ -58,12 +58,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// Trim whitespace to prevent trivial bypass attempts.
 	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
 
 	out, err := h.loginUseCase.Execute(c.Request.Context(), usecase.LoginInput{
-		Email:    req.Email,
-		Password: req.Password,
+		Email:     req.Email,
+		Password:  req.Password,
+		IP:        c.ClientIP(),
+		UserAgent: c.Request.UserAgent(),
 	})
 	if err != nil {
 		h.handleUseCaseError(c, err)
@@ -93,7 +94,6 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 }
 
 // Logout handles POST /auth/logout.
-// Returns 204 No Content on success.
 func (h *AuthHandler) Logout(c *gin.Context) {
 	var req logoutRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -111,13 +111,15 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// handleUseCaseError maps domain errors to appropriate HTTP status codes.
-// Generic messages are returned to clients to prevent information enumeration.
+// handleUseCaseError maps domain errors to HTTP status codes.
 func (h *AuthHandler) handleUseCaseError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, domain.ErrInvalidCredentials),
 		errors.Is(err, domain.ErrUserNotFound):
 		writeError(c, http.StatusUnauthorized, "invalid email or password")
+
+	case errors.Is(err, domain.ErrAccountLocked):
+		writeError(c, http.StatusForbidden, "account is temporarily locked")
 
 	case errors.Is(err, domain.ErrUserInactive),
 		errors.Is(err, domain.ErrUserDeleted),
