@@ -4,11 +4,9 @@ type Role string
 
 const (
 	RoleAll             Role = "All"
-	RoleSuperAdmin      Role = "SuperAdmin"
+	RoleSystemAdmin     Role = "SystemAdmin"
 	RoleEnterpriseAdmin Role = "EnterpriseAdmin"
-	RoleStaff           Role = "Staff"
-	RoleCandidate       Role = "Candidate"
-	RoleSystem          Role = "System"
+	RoleEnterpriseAuto  Role = "EnterpriseAuto"
 	RoleEnterpriseStaff Role = "EnterpriseStaff"
-	RoleAdmin           Role = "Admin"
+	RoleExamCandidate   Role = "ExamCandidate"
 )

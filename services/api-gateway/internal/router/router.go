@@ -293,10 +293,10 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 	// --- Enterprise Service Routes ---
 	register("POST /enterprises", enterpriseProxy) // Public registration
 	// Specific routes with roles
-	register("POST /enterprises/{enterpriseId}/approve", enterpriseProxy, authWithRoles(domain.RoleSuperAdmin)...)
+	register("POST /enterprises/{enterpriseId}/approve", enterpriseProxy, authWithRoles(domain.RoleSystemAdmin)...)
 	register("PATCH /enterprises/{enterpriseId}", enterpriseProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
-	register("POST /enterprises/{enterpriseId}/suspend", enterpriseProxy, authWithRoles(domain.RoleSuperAdmin)...)
-	register("DELETE /enterprises/{enterpriseId}", enterpriseProxy, authWithRoles(domain.RoleSuperAdmin)...)
+	register("POST /enterprises/{enterpriseId}/suspend", enterpriseProxy, authWithRoles(domain.RoleSystemAdmin)...)
+	register("DELETE /enterprises/{enterpriseId}", enterpriseProxy, authWithRoles(domain.RoleSystemAdmin)...)
 	// Tenant Resolver should be applied where enterpriseId is needed, but for proxying,
 	// the heavy lifting might be done by the service itself using the token.
 	// However, the gateway must enforce access.
@@ -311,7 +311,7 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 
 	// --- Exam Service ---
 	// "EnterpriseAdmin, Staff"
-	staffOrAdmin := authWithRoles(domain.RoleEnterpriseAdmin, domain.RoleStaff)
+	staffOrAdmin := authWithRoles(domain.RoleEnterpriseAdmin, domain.RoleEnterpriseStaff)
 	register("POST /questions", examProxy, staffOrAdmin...)
 	register("GET /questions", examProxy, staffOrAdmin...)
 	register("POST /exams", examProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
@@ -327,7 +327,7 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 	// usage specific token validation is complex if not standardized.
 	// For this task, I will assume a "Candidate" role or a specific Middleware if needed.
 	// Prompt says "Token" (generic). Let's assume standard JWT but with "Candidate" role.
-	candidateRole := authWithRoles(domain.RoleCandidate)
+	candidateRole := authWithRoles(domain.RoleExamCandidate)
 	register("POST /sessions/start", candidateProxy, candidateRole...)
 	register("PATCH /sessions/{sessionId}/answers", candidateProxy, candidateRole...)
 	register("POST /sessions/{sessionId}/submit", candidateProxy, candidateRole...)
@@ -350,11 +350,11 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 		})
 	}
 
-	register("POST /face/register", faceProxy, append(authWithRoles(domain.RoleCandidate), requirePremium)...)
-	register("POST /face/verify", faceProxy, append(authWithRoles(domain.RoleCandidate), requirePremium)...)
+	register("POST /face/register", faceProxy, append(authWithRoles(domain.RoleExamCandidate), requirePremium)...)
+	register("POST /face/verify", faceProxy, append(authWithRoles(domain.RoleExamCandidate), requirePremium)...)
 
 	// --- Grading Service ---
-	register("POST /grading/auto", gradingProxy, authWithRoles(domain.RoleSystem)...)
+	register("POST /grading/auto", gradingProxy, authWithRoles(domain.RoleEnterpriseAuto)...)
 	register("POST /grading/manual", gradingProxy, authWithRoles(domain.RoleEnterpriseStaff)...)
 	register("GET /results/{examId}", gradingProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
 	register("GET /certificates/{certificateId}", gradingProxy, candidateRole...)
@@ -364,9 +364,9 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 	// Assuming this maps to POST /reports or GET /reports/{reportId}/export
 	// Will add specific check if path suffix matches.
 	// For "Audit logs" -> SuperAdmin, EnterpriseAdmin
-	auditRole := authWithRoles(domain.RoleSuperAdmin, domain.RoleEnterpriseAdmin)
+	auditRole := authWithRoles(domain.RoleSystemAdmin, domain.RoleEnterpriseAdmin)
 
-	register("GET /dashboard/metrics", reportingProxy, authWithRoles(domain.RoleAdmin, domain.RoleStaff)...) // "Admin" probably means EnterpriseAdmin? using exact string from prompt "Admin"
+	register("GET /dashboard/metrics", reportingProxy, authWithRoles(domain.RoleEnterpriseAdmin, domain.RoleEnterpriseStaff)...) // "Admin" probably means EnterpriseAdmin? using exact string from prompt "Admin"
 	register("GET /monitoring/exams/{examId}", reportingProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
 	register("POST /reports", reportingProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
 	register("GET /reports/{reportId}/export", reportingProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
