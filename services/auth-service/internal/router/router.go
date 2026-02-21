@@ -16,9 +16,8 @@ func NewRouter(authHandler *handler.AuthHandler, log *zap.Logger) *gin.Engine {
 
 	// Global middleware
 	engine.Use(
-		gin.Recovery(),              // recover from panics and return 500
-		middleware.RequestID(),      // attach X-Request-ID to every request
-		middleware.RateLimiter(log), // rate limiter stub
+		gin.Recovery(),         // recover from panics and return 500
+		middleware.RequestID(), // attach X-Request-ID to every request
 	)
 
 	// Health check (no auth required).

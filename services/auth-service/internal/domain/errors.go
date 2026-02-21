@@ -13,5 +13,5 @@ var (
 	ErrTokenNotFound      = errors.New("refresh token not found")
 	ErrTokenRevoked       = errors.New("refresh token has been revoked")
 	ErrTokenExpired       = errors.New("refresh token has expired")
-	ErrAccountLocked = errors.New("user account is locked")
+	ErrAccountLocked      = errors.New("user account is locked")
 )
