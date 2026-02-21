@@ -1,56 +1,119 @@
 package main
 
 import (
-	"database/sql"
+	"context"
+	"errors"
+	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-	_ "github.com/lib/pq"
-	"github.com/tamirat-dejene/veritas/services/auth-service/internal/application"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/config"
-	"github.com/tamirat-dejene/veritas/services/auth-service/internal/infrastructure/postgres"
-	"github.com/tamirat-dejene/veritas/services/auth-service/internal/infrastructure/security"
-	authHTTP "github.com/tamirat-dejene/veritas/services/auth-service/internal/interface/http"
+	"github.com/tamirat-dejene/veritas/services/auth-service/internal/handler"
+	infratoken "github.com/tamirat-dejene/veritas/services/auth-service/internal/infrastructure/token"
+	pgRepo "github.com/tamirat-dejene/veritas/services/auth-service/internal/repository/postgres"
+	"github.com/tamirat-dejene/veritas/services/auth-service/internal/router"
+	"github.com/tamirat-dejene/veritas/services/auth-service/internal/usecase"
+	postgres "github.com/tamirat-dejene/veritas/shared/db/pg"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 )
 
 func main() {
+	// --- Logger ---
 	log, err := logger.NewLogger()
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
+		os.Exit(1)
 	}
-	defer func() {
-		_ = log.Sync()
-	}()
+	defer func() { _ = log.Sync() }()
 	zap.ReplaceGlobals(log)
 
+	// --- Config ---
 	cfg := config.Load()
+	log.Info("auth-service starting",
+		zap.String("port", cfg.Port),
+		zap.Duration("accessTokenTTL", cfg.AccessTokenTTL),
+		zap.Duration("refreshTokenTTL", cfg.RefreshTokenTTL),
+	)
 
-	// 1. Initialize Database
-	db, err := sql.Open("postgres", cfg.DatabaseURL)
+	// --- Database ---
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		cfg.Pg_Veritas_Host,
+		cfg.Pg_Veritas_Port,
+		cfg.Pg_Veritas_User,
+		cfg.Pg_Veritas_Password,
+		cfg.Pg_Veritas_Core_DB,
+	)
+	db, err := postgres.NewPostgresClient(dsn)
 	if err != nil {
-		zap.L().Fatal("failed to open db", zap.Error(err))
+		log.Fatal("failed to connect to database", zap.Error(err))
 	}
 	defer db.Close()
+	db.LogConnectionInfo()
 
-	if err := db.Ping(); err != nil {
-		zap.L().Fatal("failed to ping db", zap.Error(err))
+	// --- Infrastructure: Token Services ---
+	jwtService := infratoken.NewJWTService(cfg.JWTSecret, cfg.AccessTokenTTL)
+	refreshService := infratoken.NewRefreshTokenService(cfg.RefreshTokenTTL)
+
+	// --- Repositories ---
+	userRepo := pgRepo.NewUserRepository(db)
+	refreshTokenRepo := pgRepo.NewRefreshTokenRepository(db)
+
+	// --- Use Cases ---
+	loginUC := usecase.NewLoginUseCase(
+		userRepo,
+		refreshTokenRepo,
+		jwtService,
+		refreshService,
+		cfg.AccessTokenTTL,
+		cfg.RefreshTokenTTL,
+		log,
+	)
+	refreshUC := usecase.NewRefreshUseCase(
+		userRepo,
+		refreshTokenRepo,
+		jwtService,
+		refreshService,
+		cfg.AccessTokenTTL,
+		cfg.RefreshTokenTTL,
+		log,
+	)
+	logoutUC := usecase.NewLogoutUseCase(refreshTokenRepo, log)
+
+	// --- HTTP Layer ---
+	authHandler := handler.NewAuthHandler(loginUC, refreshUC, logoutUC, log)
+	engine := router.NewRouter(authHandler, log)
+
+	srv := &http.Server{
+		Addr:         ":" + cfg.Port,
+		Handler:      engine,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
-	zap.L().Info("Connected to database")
 
-	// 2. Initialize Infrastructure
-	userRepo := postgres.NewUserRepository(db)
-	tokenService := security.NewTokenService(cfg.JWTSecret)
+	// Start server in a goroutine so we can listen for signals.
+	go func() {
+		log.Info("HTTP server listening", zap.String("addr", srv.Addr))
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatal("HTTP server error", zap.Error(err))
+		}
+	}()
 
-	// 3. Initialize Application
-	authService := application.NewAuthService(userRepo, tokenService)
+	// --- Graceful Shutdown ---
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
 
-	// 4. Initialize Interface
-	handler := authHTTP.NewRouter(authService)
+	log.Info("shutting down server...")
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
 
-	// 5. Start Server
-	zap.L().Info("Starting auth-service", zap.String("port", cfg.Port))
-	if err := http.ListenAndServe(":"+cfg.Port, handler); err != nil {
-		zap.L().Fatal("failed to start server", zap.Error(err))
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Error("server shutdown error", zap.Error(err))
 	}
+	log.Info("server stopped")
 }
