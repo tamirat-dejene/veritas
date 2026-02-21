@@ -279,7 +279,7 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 	authChain := func() []func(http.Handler) http.Handler {
 		return []func(http.Handler) http.Handler{jwtAuth, middleware.TenantResolver}
 	}
-	authWithRoles := func(roles ...string) []func(http.Handler) http.Handler {
+	authWithRoles := func(roles ...domain.Role) []func(http.Handler) http.Handler {
 		return append(authChain(), middleware.RequireRole(roles...))
 	}
 
@@ -288,15 +288,15 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 	register("POST /auth/login", authProxy)
 	register("POST /auth/refresh", authProxy)
 	// Protected
-	register("POST /auth/logout", authProxy, authWithRoles("All")...)
+	register("POST /auth/logout", authProxy, authWithRoles(domain.RoleAll)...)
 
 	// --- Enterprise Service Routes ---
 	register("POST /enterprises", enterpriseProxy) // Public registration
 	// Specific routes with roles
-	register("POST /enterprises/{enterpriseId}/approve", enterpriseProxy, authWithRoles("SuperAdmin")...)
-	register("PATCH /enterprises/{enterpriseId}", enterpriseProxy, authWithRoles("EnterpriseAdmin")...)
-	register("POST /enterprises/{enterpriseId}/suspend", enterpriseProxy, authWithRoles("SuperAdmin")...)
-	register("DELETE /enterprises/{enterpriseId}", enterpriseProxy, authWithRoles("SuperAdmin")...)
+	register("POST /enterprises/{enterpriseId}/approve", enterpriseProxy, authWithRoles(domain.RoleSuperAdmin)...)
+	register("PATCH /enterprises/{enterpriseId}", enterpriseProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
+	register("POST /enterprises/{enterpriseId}/suspend", enterpriseProxy, authWithRoles(domain.RoleSuperAdmin)...)
+	register("DELETE /enterprises/{enterpriseId}", enterpriseProxy, authWithRoles(domain.RoleSuperAdmin)...)
 	// Tenant Resolver should be applied where enterpriseId is needed, but for proxying,
 	// the heavy lifting might be done by the service itself using the token.
 	// However, the gateway must enforce access.
@@ -304,38 +304,38 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 
 	// --- Payment Service ---
 	register("GET /subscriptions/plans", paymentProxy)
-	register("POST /subscriptions/{enterpriseId}/upgrade", paymentProxy, authWithRoles("EnterpriseAdmin")...)
-	register("POST /payments", paymentProxy, authWithRoles("EnterpriseAdmin")...)
-	register("GET /payments/history", paymentProxy, authWithRoles("EnterpriseAdmin")...)
-	register("GET /invoices/{invoiceId}", paymentProxy, authWithRoles("EnterpriseAdmin")...)
+	register("POST /subscriptions/{enterpriseId}/upgrade", paymentProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
+	register("POST /payments", paymentProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
+	register("GET /payments/history", paymentProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
+	register("GET /invoices/{invoiceId}", paymentProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
 
 	// --- Exam Service ---
 	// "EnterpriseAdmin, Staff"
-	staffOrAdmin := authWithRoles("EnterpriseAdmin", "Staff")
+	staffOrAdmin := authWithRoles(domain.RoleEnterpriseAdmin, domain.RoleStaff)
 	register("POST /questions", examProxy, staffOrAdmin...)
 	register("GET /questions", examProxy, staffOrAdmin...)
-	register("POST /exams", examProxy, authWithRoles("EnterpriseAdmin")...)
-	register("PATCH /exams/{examId}", examProxy, authWithRoles("EnterpriseAdmin")...)
-	register("POST /exams/{examId}/schedule", examProxy, authWithRoles("EnterpriseAdmin")...)
-	register("POST /exams/{examId}/clone", examProxy, authWithRoles("EnterpriseAdmin")...)
+	register("POST /exams", examProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
+	register("PATCH /exams/{examId}", examProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
+	register("POST /exams/{examId}/schedule", examProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
+	register("POST /exams/{examId}/clone", examProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
 
 	// --- Candidate Service ---
-	register("POST /candidates/bulk", candidateProxy, authWithRoles("EnterpriseAdmin")...)
+	register("POST /candidates/bulk", candidateProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
 	// Candidate Token is different from Admin JWT. Assuming specific logic or just passing through for now?
 	// The prompt says "Candidate tokens are validated differently".
 	// Implementation Detail: We might need a separate CandidateAuth middleware.
 	// usage specific token validation is complex if not standardized.
 	// For this task, I will assume a "Candidate" role or a specific Middleware if needed.
 	// Prompt says "Token" (generic). Let's assume standard JWT but with "Candidate" role.
-	candidateRole := authWithRoles("Candidate")
+	candidateRole := authWithRoles(domain.RoleCandidate)
 	register("POST /sessions/start", candidateProxy, candidateRole...)
 	register("PATCH /sessions/{sessionId}/answers", candidateProxy, candidateRole...)
 	register("POST /sessions/{sessionId}/submit", candidateProxy, candidateRole...)
-	register("POST /sessions/{sessionId}/terminate", candidateProxy, authWithRoles("EnterpriseAdmin")...)
+	register("POST /sessions/{sessionId}/terminate", candidateProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
 
 	// --- Proctoring Service ---
 	register("POST /proctoring/events", proctoringProxy, candidateRole...)
-	register("GET /proctoring/sessions/{sessionId}/events", proctoringProxy, authWithRoles("EnterpriseAdmin")...)
+	register("GET /proctoring/sessions/{sessionId}/events", proctoringProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
 
 	// --- Face Verification ---
 	// "Gateway checks subscription tier before routing (Premium+)" -> This requires custom middleware to check claim "tier".
@@ -350,13 +350,13 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 		})
 	}
 
-	register("POST /face/register", faceProxy, append(authWithRoles("Candidate"), requirePremium)...)
-	register("POST /face/verify", faceProxy, append(authWithRoles("Candidate"), requirePremium)...)
+	register("POST /face/register", faceProxy, append(authWithRoles(domain.RoleCandidate), requirePremium)...)
+	register("POST /face/verify", faceProxy, append(authWithRoles(domain.RoleCandidate), requirePremium)...)
 
 	// --- Grading Service ---
-	register("POST /grading/auto", gradingProxy, authWithRoles("System")...)
-	register("POST /grading/manual", gradingProxy, authWithRoles("EnterpriseStaff")...)
-	register("GET /results/{examId}", gradingProxy, authWithRoles("EnterpriseAdmin")...)
+	register("POST /grading/auto", gradingProxy, authWithRoles(domain.RoleSystem)...)
+	register("POST /grading/manual", gradingProxy, authWithRoles(domain.RoleEnterpriseStaff)...)
+	register("GET /results/{examId}", gradingProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
 	register("GET /certificates/{certificateId}", gradingProxy, candidateRole...)
 
 	// --- Reporting Service ---
@@ -364,12 +364,12 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 	// Assuming this maps to POST /reports or GET /reports/{reportId}/export
 	// Will add specific check if path suffix matches.
 	// For "Audit logs" -> SuperAdmin, EnterpriseAdmin
-	auditRole := authWithRoles("SuperAdmin", "EnterpriseAdmin")
+	auditRole := authWithRoles(domain.RoleSuperAdmin, domain.RoleEnterpriseAdmin)
 
-	register("GET /dashboard/metrics", reportingProxy, authWithRoles("Admin", "Staff")...) // "Admin" probably means EnterpriseAdmin? using exact string from prompt "Admin"
-	register("GET /monitoring/exams/{examId}", reportingProxy, authWithRoles("EnterpriseAdmin")...)
-	register("POST /reports", reportingProxy, authWithRoles("EnterpriseAdmin")...)
-	register("GET /reports/{reportId}/export", reportingProxy, authWithRoles("EnterpriseAdmin")...)
+	register("GET /dashboard/metrics", reportingProxy, authWithRoles(domain.RoleAdmin, domain.RoleStaff)...) // "Admin" probably means EnterpriseAdmin? using exact string from prompt "Admin"
+	register("GET /monitoring/exams/{examId}", reportingProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
+	register("POST /reports", reportingProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
+	register("GET /reports/{reportId}/export", reportingProxy, authWithRoles(domain.RoleEnterpriseAdmin)...)
 	register("GET /audit/logs", reportingProxy, auditRole...)
 
 	// --- Global Middleware ---

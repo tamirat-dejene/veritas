@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/domain"
 )
 
 type userContextKey string
@@ -15,10 +16,10 @@ type userContextKey string
 const UserContextKey userContextKey = "user"
 
 type UserClaims struct {
-	UserID       string `json:"sub"`
-	Role         string `json:"role"`
-	EnterpriseID string `json:"enterpriseId"`
-	Tier         string `json:"tier"`
+	UserID       string      `json:"sub"`
+	Role         domain.Role `json:"role"`
+	EnterpriseID string      `json:"enterpriseId"`
+	Tier         string      `json:"tier"`
 	jwt.RegisteredClaims
 }
 
@@ -59,7 +60,7 @@ func JWTAuth(secret string) func(http.Handler) http.Handler {
 	}
 }
 
-func RequireRole(allowedRoles ...string) func(http.Handler) http.Handler {
+func RequireRole(allowedRoles ...domain.Role) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			claims, ok := r.Context().Value(UserContextKey).(*UserClaims)
@@ -69,7 +70,7 @@ func RequireRole(allowedRoles ...string) func(http.Handler) http.Handler {
 			}
 
 			// Check if "All" is in allowedRoles, effectively disabling the check for authenticated users
-			if slices.Contains(allowedRoles, "All") {
+			if slices.Contains(allowedRoles, domain.RoleAll) {
 				next.ServeHTTP(w, r)
 				return
 			}

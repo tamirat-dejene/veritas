@@ -212,7 +212,7 @@ func getUserInfo(r *http.Request) (string, string, string) {
 	}
 
 	userID := claims.UserID
-	role := claims.Role
+	role := string(claims.Role)
 	enterpriseID := claims.EnterpriseID
 
 	if userID == "" {
