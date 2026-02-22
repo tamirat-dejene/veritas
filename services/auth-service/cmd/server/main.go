@@ -40,14 +40,7 @@ func main() {
 	)
 
 	// --- Database ---
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		cfg.Pg_Veritas_Host,
-		cfg.Pg_Veritas_Port,
-		cfg.Pg_Veritas_User,
-		cfg.Pg_Veritas_Password,
-		cfg.Pg_Veritas_Core_DB,
-	)
-	db, err := postgres.NewPostgresClient(dsn)
+	db, err := postgres.NewPostgresClient(cfg.DSN)
 	if err != nil {
 		log.Fatal("failed to connect to database", zap.Error(err))
 	}
