@@ -28,9 +28,9 @@ func (g *RouterGroup) RegisterEnterpriseRoutes(proxy http.Handler) {
 func (g *RouterGroup) RegisterPaymentRoutes(proxy http.Handler) {
 	g.register("GET", "/subscriptions/plans", proxy)
 	g.register("POST", "/subscriptions/:enterpriseId/upgrade", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
-	g.register("POST", "/payments", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
 	g.register("GET", "/payments/history", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
 	g.register("GET", "/invoices/:invoiceId", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
+	g.register("POST", "/webhooks/stripe", proxy) // Public webhook
 }
 
 // RegisterExamRoutes attaches Exam Service proxy routes
