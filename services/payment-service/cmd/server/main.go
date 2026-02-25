@@ -1,35 +1,74 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
+	"github.com/tamirat-dejene/veritas/services/payment-service/internal/config"
+	"github.com/tamirat-dejene/veritas/services/payment-service/internal/handler"
+	"github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/stripe"
+	"github.com/tamirat-dejene/veritas/services/payment-service/internal/repository/postgres"
+	"github.com/tamirat-dejene/veritas/services/payment-service/internal/router"
+	"github.com/tamirat-dejene/veritas/services/payment-service/internal/usecase"
+	pg_client "github.com/tamirat-dejene/veritas/shared/db/pg"
 	"go.uber.org/zap"
 )
 
 func main() {
-	log, err := logger.NewLogger()
+	// Initialize logger
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
+
+	// Load configuration
+	cfg := config.Load()
+
+	// Database connection
+	db, err := pg_client.NewPostgresClient(cfg.DSN)
 	if err != nil {
-		panic(err)
+		logger.Fatal("failed to connect to database", zap.Error(err))
 	}
-	defer func() {
-		_ = log.Sync()
+	defer db.Close()
+
+	// Wire dependencies
+	subRepo := postgres.NewSubscriptionRepository(db)
+	billingRepo := postgres.NewBillingRepository(db)
+	payProvider := stripe.NewStripeProvider(cfg.StripeSecretKey, cfg.StripeWebhookSecret)
+
+	payUsecase := usecase.NewPaymentUsecase(subRepo, billingRepo, payProvider)
+	payHandler := handler.NewPaymentHandler(payUsecase)
+
+	r := router.NewRouter(payHandler)
+
+	// Server setup
+	srv := &http.Server{
+		Addr:    ":" + cfg.Port,
+		Handler: r,
+	}
+
+	// Start server in a goroutine
+	go func() {
+		logger.Info("starting payment-service", zap.String("port", cfg.Port))
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Fatal("failed to start server", zap.Error(err))
+		}
 	}()
-	zap.ReplaceGlobals(log)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	// Graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	logger.Info("shutting down payment-service...")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		logger.Fatal("server forced to shutdown", zap.Error(err))
 	}
 
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	})
-
-	zap.L().Info("Service payment-service starting", zap.String("port", port))
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		zap.L().Fatal("Failed to start server", zap.Error(err))
-	}
+	logger.Info("payment-service exited gracefully")
 }
