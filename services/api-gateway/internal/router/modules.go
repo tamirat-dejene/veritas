@@ -36,12 +36,35 @@ func (g *RouterGroup) RegisterPaymentRoutes(proxy http.Handler) {
 // RegisterExamRoutes attaches Exam Service proxy routes
 func (g *RouterGroup) RegisterExamRoutes(proxy http.Handler) {
 	staffOrAdmin := g.authWithRoles(domain.RoleEnterpriseAdmin, domain.RoleEnterpriseStaff)
+	adminRole := g.authWithRoles(domain.RoleEnterpriseAdmin)
+
+	// Questions
 	g.register("POST", "/questions", proxy, staffOrAdmin...)
 	g.register("GET", "/questions", proxy, staffOrAdmin...)
-	g.register("POST", "/exams", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
-	g.register("PATCH", "/exams/:examId", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
-	g.register("POST", "/exams/:examId/schedule", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
-	g.register("POST", "/exams/:examId/clone", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
+	g.register("GET", "/questions/:questionId", proxy, staffOrAdmin...)
+	g.register("PATCH", "/questions/:questionId", proxy, staffOrAdmin...)
+	g.register("DELETE", "/questions/:questionId", proxy, staffOrAdmin...)
+
+	// Exams Lifecycle
+	g.register("POST", "/exams", proxy, adminRole...)
+	g.register("GET", "/exams", proxy, adminRole...)
+	g.register("GET", "/exams/:examId", proxy, adminRole...)
+	g.register("PATCH", "/exams/:examId", proxy, adminRole...)
+	g.register("POST", "/exams/:examId/schedule", proxy, adminRole...)
+	g.register("POST", "/exams/:examId/clone", proxy, adminRole...)
+	g.register("POST", "/exams/:examId/publish", proxy, adminRole...)
+	g.register("POST", "/exams/:examId/close", proxy, adminRole...)
+	g.register("DELETE", "/exams/:examId", proxy, adminRole...)
+
+	// Exam Questions Assembly
+	g.register("POST", "/exams/:examId/questions", proxy, adminRole...)
+	g.register("DELETE", "/exams/:examId/questions/:questionId", proxy, adminRole...)
+	g.register("PATCH", "/exams/:examId/questions/:questionId", proxy, adminRole...)
+
+	// Exam Randomization Rules
+	g.register("POST", "/exams/:examId/rules", proxy, adminRole...)
+	g.register("PATCH", "/exams/:examId/rules/:ruleId", proxy, adminRole...)
+	g.register("DELETE", "/exams/:examId/rules/:ruleId", proxy, adminRole...)
 }
 
 // RegisterCandidateRoutes attaches Candidate Service proxy routes
