@@ -62,12 +62,35 @@ type Exam struct {
 type ExamRepository interface {
 	Create(ctx context.Context, exam *Exam) error
 	GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*Exam, error)
+	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]*Exam, error)
 	Update(ctx context.Context, exam *Exam) error
+	Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
+
+	AddQuestion(ctx context.Context, examID uuid.UUID, eq *ExamQuestion) error
+	RemoveQuestion(ctx context.Context, examID uuid.UUID, questionID uuid.UUID) error
+	UpdateQuestionMapping(ctx context.Context, examID uuid.UUID, eq *ExamQuestion) error
+
+	AddRandomizationRule(ctx context.Context, examID uuid.UUID, rule *ExamRandomizationRule) error
+	UpdateRandomizationRule(ctx context.Context, examID uuid.UUID, rule *ExamRandomizationRule) error
+	DeleteRandomizationRule(ctx context.Context, examID uuid.UUID, ruleID uuid.UUID) error
 }
 
 type ExamUsecase interface {
 	CreateExam(ctx context.Context, exam *Exam, userID uuid.UUID) (*Exam, error)
+	GetExams(ctx context.Context, enterpriseID uuid.UUID) ([]*Exam, error)
+	GetExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*Exam, error)
 	UpdateExam(ctx context.Context, exam *Exam, userID uuid.UUID) error
 	ScheduleExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID, startTime time.Time, endTime time.Time, userID uuid.UUID) error
 	CloneExam(ctx context.Context, sourceID uuid.UUID, enterpriseID uuid.UUID, cloneTitle string, userID uuid.UUID) (*Exam, error)
+	PublishExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
+	CloseExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
+	DeleteExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
+
+	AddQuestionToExam(ctx context.Context, enterpriseID, examID, questionID uuid.UUID, pointsOverride *int, orderIndex *int) (*ExamQuestion, error)
+	RemoveQuestionFromExam(ctx context.Context, enterpriseID, examID, questionID uuid.UUID) error
+	UpdateExamQuestion(ctx context.Context, enterpriseID, examID, questionID uuid.UUID, pointsOverride *int, orderIndex *int) error
+
+	AddRandomizationRule(ctx context.Context, enterpriseID, examID uuid.UUID, topic *string, difficulty *DifficultyLevel, questionCount int) (*ExamRandomizationRule, error)
+	UpdateRandomizationRule(ctx context.Context, enterpriseID, examID, ruleID uuid.UUID, topic *string, difficulty *DifficultyLevel, questionCount int) error
+	DeleteRandomizationRule(ctx context.Context, enterpriseID, examID, ruleID uuid.UUID) error
 }

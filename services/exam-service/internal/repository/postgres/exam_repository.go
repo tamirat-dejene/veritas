@@ -166,3 +166,126 @@ func (r *examRepository) Update(ctx context.Context, e *domain.Exam) error {
 	)
 	return err
 }
+
+func (r *examRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]*domain.Exam, error) {
+	query := fmt.Sprintf("SELECT %s FROM veritas_exams WHERE enterprise_id = $1 ORDER BY created_at DESC", examFields)
+	rows, err := r.db.Query(ctx, query, enterpriseID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var exams []*domain.Exam
+	for rows.Next() {
+		e, err := scanExam(rows)
+		if err != nil {
+			return nil, err
+		}
+		// Notice: To keep this lightweight, we aren't joining questions/rules on a bulk list request.
+		// If the client needs deep details, they should call GetByID.
+		exams = append(exams, e)
+	}
+
+	return exams, nil
+}
+
+func (r *examRepository) Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
+	// Let's do a soft delete via status 'Archived' (domain.ExamArchived)
+	const archiveExam = `
+		UPDATE veritas_exams
+		SET status = $3, updated_at = NOW()
+		WHERE id = $1 AND enterprise_id = $2
+	`
+	tag, err := r.db.Exec(ctx, archiveExam, id, enterpriseID, domain.ExamArchived)
+	if err != nil {
+		return err
+	}
+	if tag == 0 {
+		return domain.ErrExamNotFound
+	}
+	return nil
+}
+
+func (r *examRepository) AddQuestion(ctx context.Context, examID uuid.UUID, eq *domain.ExamQuestion) error {
+	if eq.ID == uuid.Nil {
+		eq.ID = uuid.New()
+	}
+	eq.ExamID = examID
+
+	const insertEq = `
+		INSERT INTO veritas_exam_questions (id, exam_id, question_id, points_override, order_index)
+		VALUES ($1, $2, $3, $4, $5)
+	`
+	_, err := r.db.Exec(ctx, insertEq, eq.ID, eq.ExamID, eq.QuestionID, eq.PointsOverride, eq.OrderIndex)
+	return err
+}
+
+func (r *examRepository) RemoveQuestion(ctx context.Context, examID uuid.UUID, questionID uuid.UUID) error {
+	const deleteEq = `DELETE FROM veritas_exam_questions WHERE exam_id = $1 AND question_id = $2`
+	tag, err := r.db.Exec(ctx, deleteEq, examID, questionID)
+	if err != nil {
+		return err
+	}
+	if tag == 0 {
+		return fmt.Errorf("exam question mapping not found")
+	}
+	return nil
+}
+
+func (r *examRepository) UpdateQuestionMapping(ctx context.Context, examID uuid.UUID, eq *domain.ExamQuestion) error {
+	const updateEq = `
+		UPDATE veritas_exam_questions
+		SET points_override = $3, order_index = $4
+		WHERE exam_id = $1 AND question_id = $2
+	`
+	tag, err := r.db.Exec(ctx, updateEq, examID, eq.QuestionID, eq.PointsOverride, eq.OrderIndex)
+	if err != nil {
+		return err
+	}
+	if tag == 0 {
+		return fmt.Errorf("exam question mapping not found")
+	}
+	return nil
+}
+
+func (r *examRepository) AddRandomizationRule(ctx context.Context, examID uuid.UUID, rule *domain.ExamRandomizationRule) error {
+	if rule.ID == uuid.Nil {
+		rule.ID = uuid.New()
+	}
+	rule.ExamID = examID
+
+	const insertRule = `
+		INSERT INTO veritas_exam_randomization_rules (id, exam_id, topic, difficulty, question_count)
+		VALUES ($1, $2, $3, $4, $5)
+	`
+	_, err := r.db.Exec(ctx, insertRule, rule.ID, rule.ExamID, rule.Topic, rule.Difficulty, rule.QuestionCount)
+	return err
+}
+
+func (r *examRepository) UpdateRandomizationRule(ctx context.Context, examID uuid.UUID, rule *domain.ExamRandomizationRule) error {
+	const updateRule = `
+		UPDATE veritas_exam_randomization_rules
+		SET topic = $3, difficulty = $4, question_count = $5
+		WHERE exam_id = $1 AND id = $2
+	`
+	tag, err := r.db.Exec(ctx, updateRule, examID, rule.ID, rule.Topic, rule.Difficulty, rule.QuestionCount)
+	if err != nil {
+		return err
+	}
+	if tag == 0 {
+		return fmt.Errorf("randomization rule not found")
+	}
+	return nil
+}
+
+func (r *examRepository) DeleteRandomizationRule(ctx context.Context, examID uuid.UUID, ruleID uuid.UUID) error {
+	const deleteRule = `DELETE FROM veritas_exam_randomization_rules WHERE exam_id = $1 AND id = $2`
+	tag, err := r.db.Exec(ctx, deleteRule, examID, ruleID)
+	if err != nil {
+		return err
+	}
+	if tag == 0 {
+		return fmt.Errorf("randomization rule not found")
+	}
+	return nil
+}
