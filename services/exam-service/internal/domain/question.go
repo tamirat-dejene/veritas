@@ -55,9 +55,14 @@ type QuestionRepository interface {
 	Create(ctx context.Context, q *Question) error
 	GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*Question, error)
 	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]*Question, error)
+	Update(ctx context.Context, q *Question) error
+	Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 }
 
 type QuestionUsecase interface {
 	CreateQuestion(ctx context.Context, q *Question, userID uuid.UUID) (*Question, error)
 	GetQuestions(ctx context.Context, enterpriseID uuid.UUID) ([]*Question, error)
+	GetQuestion(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*Question, error)
+	UpdateQuestion(ctx context.Context, q *Question, userID uuid.UUID) error
+	DeleteQuestion(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 }

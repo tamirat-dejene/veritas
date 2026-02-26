@@ -168,3 +168,61 @@ func (r *questionRepository) ListByEnterprise(ctx context.Context, enterpriseID 
 
 	return questions, nil
 }
+
+func (r *questionRepository) Update(ctx context.Context, q *domain.Question) error {
+	const updateQuestion = `
+		UPDATE veritas_questions
+		SET type = $3, topic = $4, difficulty = $5, title = $6, content = $7, media_url = $8,
+		    points = $9, negative_points = $10, metadata = $11, is_active = $12, updated_at = NOW()
+		WHERE id = $1 AND enterprise_id = $2
+	`
+	_, err := r.db.Exec(ctx, updateQuestion,
+		q.ID, q.EnterpriseID, q.Type, q.Topic, q.Difficulty, q.Title, q.Content, q.MediaURL,
+		q.Points, q.NegativePoints, q.Metadata, q.IsActive,
+	)
+	if err != nil {
+		return err
+	}
+
+	// For simplicity, we delete all existing options and re-insert the provided ones.
+	// In a real production system, you might want to perform an intelligent upsert/delete mapping.
+	const deleteOptions = `DELETE FROM veritas_question_options WHERE question_id = $1`
+	_, err = r.db.Exec(ctx, deleteOptions, q.ID)
+	if err != nil {
+		return fmt.Errorf("failed to clear old options: %w", err)
+	}
+
+	const insertOption = `
+		INSERT INTO veritas_question_options (id, question_id, content, is_correct)
+		VALUES ($1, $2, $3, $4)
+	`
+	for i := range q.Options {
+		if q.Options[i].ID == uuid.Nil {
+			q.Options[i].ID = uuid.New()
+		}
+		q.Options[i].QuestionID = q.ID
+		_, optErr := r.db.Exec(ctx, insertOption, q.Options[i].ID, q.Options[i].QuestionID, q.Options[i].Content, q.Options[i].IsCorrect)
+		if optErr != nil {
+			return fmt.Errorf("failed to save updated option: %w", optErr)
+		}
+	}
+
+	return nil
+}
+
+func (r *questionRepository) Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
+	// Let's do a soft delete by setting is_active = false
+	const archiveQuestion = `
+		UPDATE veritas_questions
+		SET is_active = false, updated_at = NOW()
+		WHERE id = $1 AND enterprise_id = $2
+	`
+	tag, err := r.db.Exec(ctx, archiveQuestion, id, enterpriseID)
+	if err != nil {
+		return err
+	}
+	if tag == 0 {
+		return domain.ErrQuestionNotFound
+	}
+	return nil
+}
