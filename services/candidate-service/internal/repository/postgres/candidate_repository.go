@@ -69,20 +69,40 @@ func (r *candidateRepository) Create(ctx context.Context, c *domain.CandidatePro
 }
 
 func (r *candidateRepository) CreateBulk(ctx context.Context, candidates []*domain.CandidateProfile) error {
-	// For bulk insert, pgx CopyFrom is usually best.
-	// But sticking to shared db interface constraints, we'll iterate or construct a batch if supported.
-	// Assumes postgres.PostgresClient provides a way or we just iterate within a transaction if possible.
-	// For now, iterate with Exec.
-
-	// Ideally we'd use pgx.Batch or QueryBuilder here.
-	for _, c := range candidates {
-		err := r.Create(ctx, c)
-		if err != nil && !errors.Is(err, domain.ErrDuplicateExternalID) {
-			return fmt.Errorf("bulk insert failed on external_id %s: %w", c.ExternalID, err)
-		}
-		// If duplicate, it means we can skip or update. Let's assume ignore for now on bulk insert conflicts
-		// by using ON CONFLICT DO NOTHING natively, but since Create doesn't, we'd ignore the error.
+	if len(candidates) == 0 {
+		return nil
 	}
+
+	cols := []string{"id", "enterprise_id", "external_id", "first_name", "last_name", "email", "face_reference_url", "is_active", "created_at"}
+	rows := make([][]any, 0, len(candidates))
+
+	for _, c := range candidates {
+		if c.ID == uuid.Nil {
+			c.ID = uuid.New()
+		}
+		if c.CreatedAt.IsZero() {
+			c.CreatedAt = time.Now()
+		}
+		rows = append(rows, []any{
+			c.ID, c.EnterpriseID, c.ExternalID, c.FirstName, c.LastName, c.Email,
+			c.FaceReferenceURL, c.IsActive, c.CreatedAt,
+		})
+	}
+
+	_, err := r.db.CopyFrom(
+		ctx,
+		pgx.Identifier{"candidate_profiles"},
+		cols,
+		pgx.CopyFromRows(rows),
+	)
+
+	if err != nil {
+		if err.Error() == "ERROR: duplicate key value violates unique constraint \"uq_candidate_external\" (SQLSTATE 23505)" {
+			return domain.ErrDuplicateExternalID
+		}
+		return fmt.Errorf("bulk insert failed: %w", err)
+	}
+
 	return nil
 }
 

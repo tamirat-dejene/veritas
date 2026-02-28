@@ -78,8 +78,15 @@ func (c *examServiceClient) GetExamMetadata(ctx context.Context, examID uuid.UUI
 	return &response.Data, nil
 }
 
+type rawExamQuestion struct {
+	ID             uuid.UUID       `json:"id"`
+	QuestionID     uuid.UUID       `json:"questionId"`
+	PointsOverride *int            `json:"pointsOverride"`
+	OrderIndex     *int            `json:"orderIndex"`
+	Question       json.RawMessage `json:"question"`
+}
+
 func (c *examServiceClient) GetExamQuestions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID) ([]QuestionSnapshot, error) {
-	// Let's assume the exam-service exposes an endpoint like /api/v1/exams/:id/questions for fetching mapped questions
 	url := fmt.Sprintf("%s/api/v1/exams/%s/questions", c.baseURL, examID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -99,11 +106,31 @@ func (c *examServiceClient) GetExamQuestions(ctx context.Context, examID uuid.UU
 	}
 
 	var response struct {
-		Data []QuestionSnapshot `json:"data"`
+		Data []rawExamQuestion `json:"data"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
 
-	return response.Data, nil
+	var snapshots []QuestionSnapshot
+	for _, raw := range response.Data {
+		var qData struct {
+			Points         int     `json:"points"`
+			NegativePoints float64 `json:"negativePoints"`
+		}
+		if err := json.Unmarshal(raw.Question, &qData); err != nil {
+			return nil, fmt.Errorf("failed to parse question payload: %w", err)
+		}
+
+		snapshots = append(snapshots, QuestionSnapshot{
+			ID:             raw.QuestionID, // We use the actual QuestionID here to map candidate answers
+			Content:        raw.Question,
+			PointsOverride: raw.PointsOverride,
+			OrderIndex:     raw.OrderIndex,
+			Points:         qData.Points,
+			NegativePoints: qData.NegativePoints,
+		})
+	}
+
+	return snapshots, nil
 }
