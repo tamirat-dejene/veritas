@@ -12,6 +12,7 @@ type PostgresClient interface {
 	QueryRow(ctx context.Context, query string, args ...any) Row
 	Query(ctx context.Context, query string, args ...any) (Rows, error)
 	Exec(ctx context.Context, query string, args ...any) (int, error)
+	CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error)
 	BeginTx(ctx context.Context) (Tx, error)
 	LogConnectionInfo()
 	Close()
@@ -21,6 +22,7 @@ type Tx interface {
 	QueryRow(ctx context.Context, query string, args ...any) Row
 	Query(ctx context.Context, query string, args ...any) (Rows, error)
 	Exec(ctx context.Context, query string, args ...any) (int, error)
+	CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error)
 	Commit(ctx context.Context) error
 	Rollback(ctx context.Context) error
 }
@@ -102,6 +104,11 @@ func (p *pgTx) QueryRow(ctx context.Context, query string, args ...any) Row {
 	return &pgRow{row: p.tx.QueryRow(ctx, query, args...)}
 }
 
+// CopyFrom implements Tx.
+func (p *pgTx) CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error) {
+	return p.tx.CopyFrom(ctx, tableName, columnNames, rowSrc)
+}
+
 // Rollback implements Tx.
 func (p *pgTx) Rollback(ctx context.Context) error {
 	return p.tx.Rollback(ctx)
@@ -130,6 +137,20 @@ func (p *pgClient) Query(ctx context.Context, query string, args ...any) (Rows, 
 func (p *pgClient) Exec(ctx context.Context, query string, args ...any) (int, error) {
 	commandTag, err := p.pool.Exec(ctx, query, args...)
 	return int(commandTag.RowsAffected()), err
+}
+
+func (p *pgClient) CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error) {
+	// For pool.CopyFrom, we need to acquire a connection or use Acquire
+	// Thankfully, pgxpool has CopyFrom directly on the pool as well in v5? Actually no.
+	// Wait, pgxpool.Pool does not have CopyFrom?
+	// Let's use Acquire and then conn.CopyFrom
+	conn, err := p.pool.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Release()
+
+	return conn.CopyFrom(ctx, tableName, columnNames, rowSrc)
 }
 
 func (p *pgClient) Close() {
