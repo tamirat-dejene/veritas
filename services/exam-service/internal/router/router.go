@@ -31,6 +31,7 @@ func NewRouter(qh *handler.QuestionHandler, eh *handler.ExamHandler) *gin.Engine
 		exams.POST("", eh.CreateExam)
 		exams.GET("", eh.ListExams)
 		exams.GET("/:examId", eh.GetExam)
+		exams.GET("/:examId/questions", eh.GetExamQuestions)
 		exams.PATCH("/:examId", eh.UpdateExam)
 		exams.POST("/:examId/schedule", eh.ScheduleExam)
 		exams.POST("/:examId/clone", eh.CloneExam)

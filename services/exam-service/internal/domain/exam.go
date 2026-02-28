@@ -87,6 +87,7 @@ type ExamUsecase interface {
 	DeleteExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 
 	AddQuestionToExam(ctx context.Context, enterpriseID, examID, questionID uuid.UUID, pointsOverride *int, orderIndex *int) (*ExamQuestion, error)
+	GetExamQuestions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID) ([]*ExamQuestion, error)
 	RemoveQuestionFromExam(ctx context.Context, enterpriseID, examID, questionID uuid.UUID) error
 	UpdateExamQuestion(ctx context.Context, enterpriseID, examID, questionID uuid.UUID, pointsOverride *int, orderIndex *int) error
 

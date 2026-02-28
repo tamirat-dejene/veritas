@@ -138,6 +138,24 @@ func (uc *examUsecase) PublishExam(ctx context.Context, id uuid.UUID, enterprise
 	return uc.examRepo.Update(ctx, exam)
 }
 
+func (uc *examUsecase) GetExamQuestions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID) ([]*domain.ExamQuestion, error) {
+	exam, err := uc.examRepo.GetByID(ctx, examID, enterpriseID)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []*domain.ExamQuestion
+	for _, eq := range exam.Questions {
+		q, err := uc.questionRepo.GetByID(ctx, eq.QuestionID, enterpriseID)
+		if err == nil && q != nil {
+			eqCopy := eq
+			eqCopy.Question = q
+			result = append(result, &eqCopy)
+		}
+	}
+	return result, nil
+}
+
 func (uc *examUsecase) CloseExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
 	exam, err := uc.examRepo.GetByID(ctx, id, enterpriseID)
 	if err != nil {

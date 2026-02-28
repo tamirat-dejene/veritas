@@ -229,6 +229,37 @@ func (h *ExamHandler) GetExam(c *gin.Context) {
 	writeJSON(c, http.StatusOK, e)
 }
 
+func (h *ExamHandler) GetExamQuestions(c *gin.Context) {
+	enterpriseID, ok := getEnterpriseID(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "missing enterprise ID")
+		return
+	}
+
+	examIDStr := c.Param("examId")
+	examID, err := uuid.Parse(examIDStr)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid exam ID")
+		return
+	}
+
+	questions, err := h.usecase.GetExamQuestions(c.Request.Context(), examID, enterpriseID)
+	if err != nil {
+		if err == domain.ErrExamNotFound {
+			writeError(c, http.StatusNotFound, "exam not found")
+			return
+		}
+		writeError(c, http.StatusInternalServerError, "failed to fetch exam questions")
+		return
+	}
+
+	if questions == nil {
+		questions = make([]*domain.ExamQuestion, 0)
+	}
+
+	writeJSON(c, http.StatusOK, questions)
+}
+
 func (h *ExamHandler) PublishExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
