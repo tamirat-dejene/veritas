@@ -1,3 +1,15 @@
+// Package main is the entry-point for the Veritas auth-service.
+//
+//	@title			Veritas Auth Service API
+//	@version		1.0
+//	@description	JWT-based authentication service for the Veritas platform.
+//	@description	Handles login, token refresh, and token revocation for privileged roles.
+//
+//	@contact.name	Veritas Platform Team
+//
+//	@host		localhost:8081
+//	@BasePath	/
+
 package main
 
 import (
@@ -19,6 +31,9 @@ import (
 	postgres "github.com/tamirat-dejene/veritas/shared/db/pg"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
+
+	// Import generated swagger docs so the spec is registered at startup.
+	_ "github.com/tamirat-dejene/veritas/services/auth-service/docs/swagger"
 )
 
 func main() {
