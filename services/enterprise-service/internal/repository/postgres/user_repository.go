@@ -109,3 +109,58 @@ func (r *userRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	_, err := r.db.Exec(ctx, query, id)
 	return err
 }
+
+// ListByEnterprise returns paginated users for an enterprise.
+func (r *userRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, page, limit int) ([]*domain.User, int, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	if page <= 0 {
+		page = 1
+	}
+	offset := (page - 1) * limit
+
+	var total int
+	countQ := "SELECT COUNT(*) FROM veritas_users WHERE enterprise_id = $1 AND is_deleted = false"
+	if err := r.db.QueryRow(ctx, countQ, enterpriseID).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	dataQ := fmt.Sprintf(
+		"SELECT %s FROM veritas_users WHERE enterprise_id = $1 AND is_deleted = false ORDER BY created_at DESC LIMIT $2 OFFSET $3",
+		userFields,
+	)
+	rows, err := r.db.Query(ctx, dataQ, enterpriseID, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var users []*domain.User
+	for rows.Next() {
+		u, err := scanUser(rows)
+		if err != nil {
+			return nil, 0, err
+		}
+		users = append(users, u)
+	}
+	return users, total, rows.Err()
+}
+
+// FindByEnterpriseAndID fetches a user scoped to an enterprise.
+func (r *userRepository) FindByEnterpriseAndID(ctx context.Context, enterpriseID, userID uuid.UUID) (*domain.User, error) {
+	query := fmt.Sprintf(
+		"SELECT %s FROM veritas_users WHERE enterprise_id = $1 AND id = $2 AND is_deleted = false LIMIT 1",
+		userFields,
+	)
+	row := r.db.QueryRow(ctx, query, enterpriseID, userID)
+	return scanUser(row)
+}
+
+// CountByEnterprise returns the number of active users for an enterprise.
+func (r *userRepository) CountByEnterprise(ctx context.Context, enterpriseID uuid.UUID) (int, error) {
+	var count int
+	const q = "SELECT COUNT(*) FROM veritas_users WHERE enterprise_id = $1 AND is_deleted = false AND is_active = true"
+	err := r.db.QueryRow(ctx, q, enterpriseID).Scan(&count)
+	return count, err
+}
