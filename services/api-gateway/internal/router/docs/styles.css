@@ -155,6 +155,22 @@ main {
   font-weight: 500;
 }
 
+.endpoint-group-title {
+  background: var(--bg-secondary);
+  padding: 12px 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+}
+
+.endpoint-group-title:first-child {
+  border-top: none;
+}
+
 /* Endpoint List */
 .endpoint-list {
   display: flex;
