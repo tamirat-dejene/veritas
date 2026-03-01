@@ -1,0 +1,183 @@
+basePath: /
+definitions:
+  internal_handler.ErrorResponse:
+    properties:
+      error:
+        example: invalid email or password
+        type: string
+    type: object
+  internal_handler.TokenResponse:
+    properties:
+      accessToken:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      expiresIn:
+        example: 3600
+        type: integer
+      refreshToken:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    type: object
+  internal_handler.loginRequest:
+    properties:
+      email:
+        example: admin@veritas.io
+        type: string
+      password:
+        example: s3cur3P@ssw0rd
+        minLength: 1
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  internal_handler.logoutRequest:
+    properties:
+      refreshToken:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    required:
+    - refreshToken
+    type: object
+  internal_handler.refreshRequest:
+    properties:
+      refreshToken:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    required:
+    - refreshToken
+    type: object
+host: localhost:8081
+info:
+  contact:
+    name: Veritas Platform Team
+  description: |-
+    JWT-based authentication service for the Veritas platform.
+    Handles login, token refresh, and token revocation for privileged roles.
+  title: Veritas Auth Service API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Validates email/password credentials and returns a JWT access token plus a refresh token.
+        Only users with roles SystemAdmin, EnterpriseAdmin, EnterpriseAuto, or EnterpriseStaff may authenticate via this service.
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.loginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: JWT access and refresh tokens
+          schema:
+            $ref: '#/definitions/internal_handler.TokenResponse'
+        "400":
+          description: Missing or malformed request body
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "401":
+          description: Invalid email or password / expired/revoked token
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Account locked, inactive, deleted, or role not permitted
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      summary: Authenticate a user
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Immediately revokes the supplied refresh token so it cannot be
+        used for future token refreshes.
+      parameters:
+      - description: Refresh token to revoke
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.logoutRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Token revoked — no content
+        "400":
+          description: Missing or malformed request body
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "401":
+          description: Refresh token invalid, revoked, or expired
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      summary: Revoke a refresh token
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Exchanges a valid refresh token for a new JWT access token and
+        a rotated refresh token. The old refresh token is invalidated.
+      parameters:
+      - description: Refresh token
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.refreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: New JWT access and refresh tokens
+          schema:
+            $ref: '#/definitions/internal_handler.TokenResponse'
+        "400":
+          description: Missing or malformed request body
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "401":
+          description: Refresh token invalid, revoked, or expired
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      summary: Refresh an access token
+      tags:
+      - auth
+  /health:
+    get:
+      description: Returns a simple JSON indicating the service is alive.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Service is healthy
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - system
+swagger: "2.0"
