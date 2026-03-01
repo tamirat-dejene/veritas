@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/handler"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/middleware"
 	"go.uber.org/zap"
@@ -21,9 +23,7 @@ func NewRouter(authHandler *handler.AuthHandler, log *zap.Logger) *gin.Engine {
 	)
 
 	// Health check (no auth required).
-	engine.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
-	})
+	engine.GET("/health", healthCheck)
 
 	// Auth routes
 	auth := engine.Group("/auth")
@@ -33,5 +33,20 @@ func NewRouter(authHandler *handler.AuthHandler, log *zap.Logger) *gin.Engine {
 		auth.POST("/logout", authHandler.Logout)
 	}
 
+	// Swagger UI — available at /swagger/index.html
+	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	return engine
+}
+
+// healthCheck returns 200 OK if the service is running.
+//
+//	@Summary		Health check
+//	@Description	Returns a simple JSON indicating the service is alive.
+//	@Tags			system
+//	@Produce		json
+//	@Success		200	{object}	map[string]string	"Service is healthy"
+//	@Router			/health [get]
+func healthCheck(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
