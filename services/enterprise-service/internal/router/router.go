@@ -7,9 +7,17 @@ import (
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/handler"
 )
 
-func NewRouter(h *handler.EnterpriseHandler) *gin.Engine {
+// NewRouter creates and configures the Gin engine.
+// NOTE: Role-based access control is enforced by the API Gateway via JWT claims
+// before requests reach this service. This service does NOT re-validate tokens
+// or roles — it trusts the X-User-ID, X-User-Role, and X-Enterprise-ID headers
+// injected by the gateway proxy.
+func NewRouter(
+	eh *handler.EnterpriseHandler,
+	sh *handler.SubscriptionHandler,
+	uh *handler.UserHandler,
+) *gin.Engine {
 	engine := gin.New()
-
 	engine.Use(gin.Recovery())
 	engine.Use(gin.Logger())
 
@@ -19,12 +27,50 @@ func NewRouter(h *handler.EnterpriseHandler) *gin.Engine {
 
 	enterprises := engine.Group("/enterprises")
 	{
-		enterprises.POST("", h.Register)
-		enterprises.GET("/:enterpriseId", h.Get)
-		enterprises.PATCH("/:enterpriseId", h.Update)
-		enterprises.POST("/:enterpriseId/approve", h.Approve)
-		enterprises.POST("/:enterpriseId/suspend", h.Suspend)
-		enterprises.DELETE("/:enterpriseId", h.Delete)
+		// ── Registration (public) ─────────────────────────────────────────────
+		enterprises.POST("", eh.Register)
+
+		// ── Discovery ─────────────────────────────────────────────────────────
+		enterprises.GET("", eh.List)
+		enterprises.GET("/me", eh.GetMe)
+		enterprises.GET("/slug/:slug", eh.GetBySlug)
+
+		// ── Single-enterprise read & general update ───────────────────────────
+		enterprises.GET("/:enterpriseId", eh.Get)
+		enterprises.PATCH("/:enterpriseId", eh.Update)
+
+		// ── Admin lifecycle ───────────────────────────────────────────────────
+		enterprises.POST("/:enterpriseId/approve", eh.Approve)
+		enterprises.POST("/:enterpriseId/suspend", eh.Suspend)
+		enterprises.DELETE("/:enterpriseId", eh.Delete)
+		enterprises.POST("/:enterpriseId/reactivate", eh.Reactivate)
+		enterprises.POST("/:enterpriseId/restore", eh.Restore)
+		enterprises.DELETE("/:enterpriseId/permanent", eh.HardDelete)
+
+		// ── Self-Service Branding & Settings ──────────────────────────────────
+		enterprises.PATCH("/:enterpriseId/branding", eh.UpdateBranding)
+		enterprises.PATCH("/:enterpriseId/settings", eh.UpdateSettings)
+
+		// ── Status, Domain, Audit ─────────────────────────────────────────────
+		enterprises.GET("/:enterpriseId/status", eh.GetStatus)
+		enterprises.POST("/:enterpriseId/validate-domain", eh.ValidateDomain)
+		enterprises.GET("/:enterpriseId/summary", eh.GetSummary)
+		enterprises.GET("/:enterpriseId/audit-logs", eh.GetAuditLogs)
+
+		// ── Subscription Management ───────────────────────────────────────────
+		enterprises.POST("/:enterpriseId/subscription", sh.UpdateSubscription)
+		enterprises.POST("/:enterpriseId/subscription/cancel", sh.CancelSubscription)
+		enterprises.POST("/:enterpriseId/subscription/renew", sh.RenewSubscription)
+		enterprises.GET("/:enterpriseId/subscription", sh.GetSubscriptionInfo)
+		enterprises.POST("/:enterpriseId/suspend-payment", sh.SuspendForPayment)
+
+		// ── Enterprise User Management ────────────────────────────────────────
+		enterprises.POST("/:enterpriseId/users", uh.CreateUser)
+		enterprises.GET("/:enterpriseId/users", uh.ListUsers)
+		enterprises.GET("/:enterpriseId/users/:userId", uh.GetUser)
+		enterprises.PATCH("/:enterpriseId/users/:userId", uh.UpdateUser)
+		enterprises.PATCH("/:enterpriseId/users/:userId/deactivate", uh.DeactivateUser)
+		enterprises.POST("/:enterpriseId/users/:userId/reset-password", uh.ResetPassword)
 	}
 
 	return engine

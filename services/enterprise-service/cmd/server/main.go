@@ -39,15 +39,19 @@ func main() {
 	// 4. Initialize Repositories
 	userRepo := postgres.NewUserRepository(dbClient)
 	enterpriseRepo := postgres.NewEnterpriseRepository(dbClient)
+	auditRepo := postgres.NewAuditRepository(dbClient)
 
 	// 5. Initialize Usecases
-	enterpriseUC := usecase.NewEnterpriseUsecase(userRepo, enterpriseRepo)
+	enterpriseUC := usecase.NewEnterpriseUsecase(userRepo, enterpriseRepo, auditRepo)
+	userUC := usecase.NewUserUsecase(userRepo, enterpriseRepo, auditRepo)
 
 	// 6. Initialize Handlers
 	enterpriseHandler := handler.NewEnterpriseHandler(enterpriseUC)
+	subscriptionHandler := handler.NewSubscriptionHandler(enterpriseUC)
+	userHandler := handler.NewUserHandler(userUC)
 
 	// 7. Initialize Router
-	r := router.NewRouter(enterpriseHandler)
+	r := router.NewRouter(enterpriseHandler, subscriptionHandler, userHandler)
 
 	// 8. Start HTTP Server
 	server := &http.Server{
