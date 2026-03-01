@@ -17,11 +17,55 @@ func (g *RouterGroup) RegisterAuthRoutes(proxy http.Handler) {
 
 // RegisterEnterpriseRoutes attaches Enterprise Service proxy routes
 func (g *RouterGroup) RegisterEnterpriseRoutes(proxy http.Handler) {
+	sysAdmin := g.authWithRoles(domain.RoleSystemAdmin)
+	entAdmin := g.authWithRoles(domain.RoleEnterpriseAdmin)
+	sysOrEntAdmin := g.authWithRoles(domain.RoleSystemAdmin, domain.RoleEnterpriseAdmin)
+	allAuth := g.authWithRoles(domain.RoleAll)
+
+	// Registration (anyone can register an enterprise)
 	g.register("POST", "/enterprises", proxy)
-	g.register("POST", "/enterprises/:enterpriseId/approve", proxy, g.authWithRoles(domain.RoleSystemAdmin)...)
-	g.register("PATCH", "/enterprises/:enterpriseId", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
-	g.register("POST", "/enterprises/:enterpriseId/suspend", proxy, g.authWithRoles(domain.RoleSystemAdmin)...)
-	g.register("DELETE", "/enterprises/:enterpriseId", proxy, g.authWithRoles(domain.RoleSystemAdmin)...)
+
+	// Discovery
+	g.register("GET", "/enterprises", proxy, sysAdmin...)
+	g.register("GET", "/enterprises/me", proxy, entAdmin...)
+	g.register("GET", "/enterprises/slug/:slug", proxy, allAuth...) // internal gateway routing
+
+	// Single enterprise read & general update
+	g.register("GET", "/enterprises/:enterpriseId", proxy, sysOrEntAdmin...)
+	g.register("PATCH", "/enterprises/:enterpriseId", proxy, entAdmin...)
+
+	// Admin lifecycle
+	g.register("POST", "/enterprises/:enterpriseId/approve", proxy, sysAdmin...)
+	g.register("POST", "/enterprises/:enterpriseId/suspend", proxy, sysAdmin...)
+	g.register("DELETE", "/enterprises/:enterpriseId", proxy, sysAdmin...)
+	g.register("POST", "/enterprises/:enterpriseId/reactivate", proxy, sysAdmin...)
+	g.register("POST", "/enterprises/:enterpriseId/restore", proxy, sysAdmin...)
+	g.register("DELETE", "/enterprises/:enterpriseId/permanent", proxy, sysAdmin...)
+
+	// Self-service branding & settings (owner-scoped)
+	g.register("PATCH", "/enterprises/:enterpriseId/branding", proxy, entAdmin...)
+	g.register("PATCH", "/enterprises/:enterpriseId/settings", proxy, entAdmin...)
+
+	// Status, domain validation, audit
+	g.register("GET", "/enterprises/:enterpriseId/status", proxy, sysOrEntAdmin...)
+	g.register("POST", "/enterprises/:enterpriseId/validate-domain", proxy, entAdmin...)
+	g.register("GET", "/enterprises/:enterpriseId/summary", proxy, sysOrEntAdmin...)
+	g.register("GET", "/enterprises/:enterpriseId/audit-logs", proxy, sysOrEntAdmin...)
+
+	// Subscription management
+	g.register("POST", "/enterprises/:enterpriseId/subscription", proxy, sysAdmin...)
+	g.register("POST", "/enterprises/:enterpriseId/subscription/cancel", proxy, sysAdmin...)
+	g.register("POST", "/enterprises/:enterpriseId/subscription/renew", proxy, sysAdmin...)
+	g.register("GET", "/enterprises/:enterpriseId/subscription", proxy, sysOrEntAdmin...)
+	g.register("POST", "/enterprises/:enterpriseId/suspend-payment", proxy, sysAdmin...)
+
+	// Enterprise user management
+	g.register("POST", "/enterprises/:enterpriseId/users", proxy, entAdmin...)
+	g.register("GET", "/enterprises/:enterpriseId/users", proxy, entAdmin...)
+	g.register("GET", "/enterprises/:enterpriseId/users/:userId", proxy, entAdmin...)
+	g.register("PATCH", "/enterprises/:enterpriseId/users/:userId", proxy, entAdmin...)
+	g.register("PATCH", "/enterprises/:enterpriseId/users/:userId/deactivate", proxy, entAdmin...)
+	g.register("POST", "/enterprises/:enterpriseId/users/:userId/reset-password", proxy, entAdmin...)
 }
 
 // RegisterPaymentRoutes attaches Payment Service proxy routes

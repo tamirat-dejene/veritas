@@ -34,6 +34,7 @@ func (g *RouterGroup) defaultAuthChain() []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		middleware.JWTAuth(g.jwtSecret),
 		middleware.TenantResolver(),
+		middleware.InjectUserHeaders(), // forward X-User-ID, X-User-Role, X-Enterprise-ID to downstream
 	}
 }
 
