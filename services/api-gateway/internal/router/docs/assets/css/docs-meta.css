@@ -93,6 +93,30 @@
     gap: 8px;
 }
 
+.doc-links-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.doc-links-row a {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--accent);
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.doc-links-row a:hover {
+    background: var(--bg-secondary);
+    border-color: var(--accent);
+}
+
 /* Footer */
 footer {
     text-align: center;
