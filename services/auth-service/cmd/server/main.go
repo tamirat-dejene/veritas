@@ -7,7 +7,12 @@
 //
 //	@contact.name	Veritas Platform Team
 //
-//	@host		localhost:8081
+//	@tag.name		auth
+//	@tag.description	Authentication endpoints for login, token refresh, and logout.
+//	@tag.name		system
+//	@tag.description	Operational and health endpoints.
+//
+//	@schemes		http https
 //	@BasePath	/
 
 package main

@@ -30,6 +30,7 @@ const docTemplate = `{
                     "auth"
                 ],
                 "summary": "Authenticate a user",
+                "operationId": "authLogin",
                 "parameters": [
                     {
                         "description": "Login credentials",
@@ -46,30 +47,60 @@ const docTemplate = `{
                         "description": "JWT access and refresh tokens",
                         "schema": {
                             "$ref": "#/definitions/internal_handler.TokenResponse"
+                        },
+                        "headers": {
+                            "X-Request-ID": {
+                                "type": "string",
+                                "description": "Request correlation ID"
+                            }
                         }
                     },
                     "400": {
                         "description": "Missing or malformed request body",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.BadRequestErrorResponse"
+                        },
+                        "headers": {
+                            "X-Request-ID": {
+                                "type": "string",
+                                "description": "Request correlation ID"
+                            }
                         }
                     },
                     "401": {
-                        "description": "Invalid email or password / expired/revoked token",
+                        "description": "Invalid email or password",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.UnauthorizedErrorResponse"
+                        },
+                        "headers": {
+                            "X-Request-ID": {
+                                "type": "string",
+                                "description": "Request correlation ID"
+                            }
                         }
                     },
                     "403": {
                         "description": "Account locked, inactive, deleted, or role not permitted",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ForbiddenErrorResponse"
+                        },
+                        "headers": {
+                            "X-Request-ID": {
+                                "type": "string",
+                                "description": "Request correlation ID"
+                            }
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.InternalErrorResponse"
+                        },
+                        "headers": {
+                            "X-Request-ID": {
+                                "type": "string",
+                                "description": "Request correlation ID"
+                            }
                         }
                     }
                 }
@@ -77,7 +108,7 @@ const docTemplate = `{
         },
         "/auth/logout": {
             "post": {
-                "description": "Immediately revokes the supplied refresh token so it cannot be used for future token refreshes.",
+                "description": "Immediately revokes the supplied refresh token so it cannot be used for future token refreshes.\nThis endpoint is idempotent: invalid, unknown, expired, or already-revoked tokens return 204 to prevent token enumeration.",
                 "consumes": [
                     "application/json"
                 ],
@@ -88,6 +119,7 @@ const docTemplate = `{
                     "auth"
                 ],
                 "summary": "Revoke a refresh token",
+                "operationId": "authLogout",
                 "parameters": [
                     {
                         "description": "Refresh token to revoke",
@@ -101,24 +133,36 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Token revoked — no content"
+                        "description": "Token revoked — no content",
+                        "headers": {
+                            "X-Request-ID": {
+                                "type": "string",
+                                "description": "Request correlation ID"
+                            }
+                        }
                     },
                     "400": {
                         "description": "Missing or malformed request body",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Refresh token invalid, revoked, or expired",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.BadRequestErrorResponse"
+                        },
+                        "headers": {
+                            "X-Request-ID": {
+                                "type": "string",
+                                "description": "Request correlation ID"
+                            }
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.InternalErrorResponse"
+                        },
+                        "headers": {
+                            "X-Request-ID": {
+                                "type": "string",
+                                "description": "Request correlation ID"
+                            }
                         }
                     }
                 }
@@ -137,6 +181,7 @@ const docTemplate = `{
                     "auth"
                 ],
                 "summary": "Refresh an access token",
+                "operationId": "authRefresh",
                 "parameters": [
                     {
                         "description": "Refresh token",
@@ -153,24 +198,48 @@ const docTemplate = `{
                         "description": "New JWT access and refresh tokens",
                         "schema": {
                             "$ref": "#/definitions/internal_handler.TokenResponse"
+                        },
+                        "headers": {
+                            "X-Request-ID": {
+                                "type": "string",
+                                "description": "Request correlation ID"
+                            }
                         }
                     },
                     "400": {
                         "description": "Missing or malformed request body",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.BadRequestErrorResponse"
+                        },
+                        "headers": {
+                            "X-Request-ID": {
+                                "type": "string",
+                                "description": "Request correlation ID"
+                            }
                         }
                     },
                     "401": {
                         "description": "Refresh token invalid, revoked, or expired",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.UnauthorizedErrorResponse"
+                        },
+                        "headers": {
+                            "X-Request-ID": {
+                                "type": "string",
+                                "description": "Request correlation ID"
+                            }
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.InternalErrorResponse"
+                        },
+                        "headers": {
+                            "X-Request-ID": {
+                                "type": "string",
+                                "description": "Request correlation ID"
+                            }
                         }
                     }
                 }
@@ -186,6 +255,7 @@ const docTemplate = `{
                     "system"
                 ],
                 "summary": "Health check",
+                "operationId": "healthCheck",
                 "responses": {
                     "200": {
                         "description": "Service is healthy",
@@ -194,6 +264,12 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        },
+                        "headers": {
+                            "X-Request-ID": {
+                                "type": "string",
+                                "description": "Request correlation ID"
+                            }
                         }
                     }
                 }
@@ -201,12 +277,54 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "internal_handler.ErrorResponse": {
+        "internal_handler.BadRequestErrorResponse": {
             "type": "object",
             "properties": {
-                "error": {
+                "code": {
                     "type": "string",
-                    "example": "invalid email or password"
+                    "example": "invalid_request"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "invalid request body"
+                },
+                "requestId": {
+                    "type": "string",
+                    "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                }
+            }
+        },
+        "internal_handler.ForbiddenErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "access_denied"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "access denied"
+                },
+                "requestId": {
+                    "type": "string",
+                    "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                }
+            }
+        },
+        "internal_handler.InternalErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "internal_error"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "internal server error"
+                },
+                "requestId": {
+                    "type": "string",
+                    "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
                 }
             }
         },
@@ -223,7 +341,24 @@ const docTemplate = `{
                 },
                 "refreshToken": {
                     "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                    "example": "b8a54f0f0cc6d2f68dd0b457ea4bb7f814ff69ec487f474f5c6f1781b6f0a0d3"
+                }
+            }
+        },
+        "internal_handler.UnauthorizedErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "invalid_credentials"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "invalid email or password"
+                },
+                "requestId": {
+                    "type": "string",
+                    "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
                 }
             }
         },
@@ -236,6 +371,7 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string",
+                    "format": "email",
                     "example": "admin@veritas.io"
                 },
                 "password": {
@@ -253,7 +389,9 @@ const docTemplate = `{
             "properties": {
                 "refreshToken": {
                     "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                    "maxLength": 64,
+                    "minLength": 64,
+                    "example": "b8a54f0f0cc6d2f68dd0b457ea4bb7f814ff69ec487f474f5c6f1781b6f0a0d3"
                 }
             }
         },
@@ -265,19 +403,31 @@ const docTemplate = `{
             "properties": {
                 "refreshToken": {
                     "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                    "maxLength": 64,
+                    "minLength": 64,
+                    "example": "b8a54f0f0cc6d2f68dd0b457ea4bb7f814ff69ec487f474f5c6f1781b6f0a0d3"
                 }
             }
         }
-    }
+    },
+    "tags": [
+        {
+            "description": "Authentication endpoints for login, token refresh, and logout.",
+            "name": "auth"
+        },
+        {
+            "description": "Operational and health endpoints.",
+            "name": "system"
+        }
+    ]
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8081",
+	Host:             "",
 	BasePath:         "/",
-	Schemes:          []string{},
+	Schemes:          []string{"http", "https"},
 	Title:            "Veritas Auth Service API",
 	Description:      "JWT-based authentication service for the Veritas platform.\nHandles login, token refresh, and token revocation for privileged roles.",
 	InfoInstanceName: "swagger",

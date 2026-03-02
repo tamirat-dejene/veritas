@@ -42,10 +42,12 @@ func NewRouter(authHandler *handler.AuthHandler, log *zap.Logger) *gin.Engine {
 // healthCheck returns 200 OK if the service is running.
 //
 //	@Summary		Health check
+//	@ID			healthCheck
 //	@Description	Returns a simple JSON indicating the service is alive.
 //	@Tags			system
 //	@Produce		json
 //	@Success		200	{object}	map[string]string	"Service is healthy"
+//	@Header			200	{string}	X-Request-ID		"Request correlation ID"
 //	@Router			/health [get]
 func healthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})

@@ -4,6 +4,22 @@ The Auth Service exposes REST APIs for authentication management. All requests a
 
 ## Authentication Endpoints
 
+### Error Response Format
+
+All non-2xx responses follow a standard structure:
+
+```json
+{
+  "code": "invalid_request",
+  "message": "invalid request body",
+  "requestId": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+}
+```
+
+- `code`: Stable, machine-readable error identifier.
+- `message`: Human-readable error message.
+- `requestId`: Correlation ID (also returned in `X-Request-ID` header).
+
 ### Login
 Authenticates a user and returns a token pair.
 
@@ -45,7 +61,7 @@ Exchanges a valid refresh token for a new access/refresh token pair (Token Rotat
 **Request Body**
 ```json
 {
-  "refreshToken": "raw_random_token_string"
+  "refreshToken": "b8a54f0f0cc6d2f68dd0b457ea4bb7f814ff69ec487f474f5c6f1781b6f0a0d3"
 }
 ```
 
@@ -67,14 +83,14 @@ Revokes the provided refresh token.
 **Request Body**
 ```json
 {
-  "refreshToken": "raw_random_token_string"
+  "refreshToken": "b8a54f0f0cc6d2f68dd0b457ea4bb7f814ff69ec487f474f5c6f1781b6f0a0d3"
 }
 ```
 
 **Success Response (204 No Content)**
 - Successful revocation.
 
-**Note**: This endpoint is idempotent. Revoking an already revoked or non-existent token returns success to prevent information leakage.
+**Note**: This endpoint is idempotent. Revoking an already revoked, expired, invalid, or non-existent token returns success (`204`) to prevent information leakage.
 
 ---
 

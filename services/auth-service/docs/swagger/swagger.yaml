@@ -1,9 +1,39 @@
 basePath: /
 definitions:
-  internal_handler.ErrorResponse:
+  internal_handler.BadRequestErrorResponse:
     properties:
-      error:
-        example: invalid email or password
+      code:
+        example: invalid_request
+        type: string
+      message:
+        example: invalid request body
+        type: string
+      requestId:
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+        type: string
+    type: object
+  internal_handler.ForbiddenErrorResponse:
+    properties:
+      code:
+        example: access_denied
+        type: string
+      message:
+        example: access denied
+        type: string
+      requestId:
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+        type: string
+    type: object
+  internal_handler.InternalErrorResponse:
+    properties:
+      code:
+        example: internal_error
+        type: string
+      message:
+        example: internal server error
+        type: string
+      requestId:
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
         type: string
     type: object
   internal_handler.TokenResponse:
@@ -15,13 +45,26 @@ definitions:
         example: 3600
         type: integer
       refreshToken:
-        example: 550e8400-e29b-41d4-a716-446655440000
+        example: b8a54f0f0cc6d2f68dd0b457ea4bb7f814ff69ec487f474f5c6f1781b6f0a0d3
+        type: string
+    type: object
+  internal_handler.UnauthorizedErrorResponse:
+    properties:
+      code:
+        example: invalid_credentials
+        type: string
+      message:
+        example: invalid email or password
+        type: string
+      requestId:
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
         type: string
     type: object
   internal_handler.loginRequest:
     properties:
       email:
         example: admin@veritas.io
+        format: email
         type: string
       password:
         example: s3cur3P@ssw0rd
@@ -34,7 +77,9 @@ definitions:
   internal_handler.logoutRequest:
     properties:
       refreshToken:
-        example: 550e8400-e29b-41d4-a716-446655440000
+        example: b8a54f0f0cc6d2f68dd0b457ea4bb7f814ff69ec487f474f5c6f1781b6f0a0d3
+        maxLength: 64
+        minLength: 64
         type: string
     required:
     - refreshToken
@@ -42,12 +87,13 @@ definitions:
   internal_handler.refreshRequest:
     properties:
       refreshToken:
-        example: 550e8400-e29b-41d4-a716-446655440000
+        example: b8a54f0f0cc6d2f68dd0b457ea4bb7f814ff69ec487f474f5c6f1781b6f0a0d3
+        maxLength: 64
+        minLength: 64
         type: string
     required:
     - refreshToken
     type: object
-host: localhost:8081
 info:
   contact:
     name: Veritas Platform Team
@@ -64,6 +110,7 @@ paths:
       description: |-
         Validates email/password credentials and returns a JWT access token plus a refresh token.
         Only users with roles SystemAdmin, EnterpriseAdmin, EnterpriseAuto, or EnterpriseStaff may authenticate via this service.
+      operationId: authLogin
       parameters:
       - description: Login credentials
         in: body
@@ -76,24 +123,44 @@ paths:
       responses:
         "200":
           description: JWT access and refresh tokens
+          headers:
+            X-Request-ID:
+              description: Request correlation ID
+              type: string
           schema:
             $ref: '#/definitions/internal_handler.TokenResponse'
         "400":
           description: Missing or malformed request body
+          headers:
+            X-Request-ID:
+              description: Request correlation ID
+              type: string
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.BadRequestErrorResponse'
         "401":
-          description: Invalid email or password / expired/revoked token
+          description: Invalid email or password
+          headers:
+            X-Request-ID:
+              description: Request correlation ID
+              type: string
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.UnauthorizedErrorResponse'
         "403":
           description: Account locked, inactive, deleted, or role not permitted
+          headers:
+            X-Request-ID:
+              description: Request correlation ID
+              type: string
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ForbiddenErrorResponse'
         "500":
           description: Internal server error
+          headers:
+            X-Request-ID:
+              description: Request correlation ID
+              type: string
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.InternalErrorResponse'
       summary: Authenticate a user
       tags:
       - auth
@@ -101,8 +168,10 @@ paths:
     post:
       consumes:
       - application/json
-      description: Immediately revokes the supplied refresh token so it cannot be
-        used for future token refreshes.
+      description: |-
+        Immediately revokes the supplied refresh token so it cannot be used for future token refreshes.
+        This endpoint is idempotent: invalid, unknown, expired, or already-revoked tokens return 204 to prevent token enumeration.
+      operationId: authLogout
       parameters:
       - description: Refresh token to revoke
         in: body
@@ -115,18 +184,26 @@ paths:
       responses:
         "204":
           description: Token revoked — no content
+          headers:
+            X-Request-ID:
+              description: Request correlation ID
+              type: string
         "400":
           description: Missing or malformed request body
+          headers:
+            X-Request-ID:
+              description: Request correlation ID
+              type: string
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
-        "401":
-          description: Refresh token invalid, revoked, or expired
-          schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.BadRequestErrorResponse'
         "500":
           description: Internal server error
+          headers:
+            X-Request-ID:
+              description: Request correlation ID
+              type: string
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.InternalErrorResponse'
       summary: Revoke a refresh token
       tags:
       - auth
@@ -136,6 +213,7 @@ paths:
       - application/json
       description: Exchanges a valid refresh token for a new JWT access token and
         a rotated refresh token. The old refresh token is invalidated.
+      operationId: authRefresh
       parameters:
       - description: Refresh token
         in: body
@@ -148,31 +226,52 @@ paths:
       responses:
         "200":
           description: New JWT access and refresh tokens
+          headers:
+            X-Request-ID:
+              description: Request correlation ID
+              type: string
           schema:
             $ref: '#/definitions/internal_handler.TokenResponse'
         "400":
           description: Missing or malformed request body
+          headers:
+            X-Request-ID:
+              description: Request correlation ID
+              type: string
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.BadRequestErrorResponse'
         "401":
           description: Refresh token invalid, revoked, or expired
+          headers:
+            X-Request-ID:
+              description: Request correlation ID
+              type: string
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.UnauthorizedErrorResponse'
         "500":
           description: Internal server error
+          headers:
+            X-Request-ID:
+              description: Request correlation ID
+              type: string
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.InternalErrorResponse'
       summary: Refresh an access token
       tags:
       - auth
   /health:
     get:
       description: Returns a simple JSON indicating the service is alive.
+      operationId: healthCheck
       produces:
       - application/json
       responses:
         "200":
           description: Service is healthy
+          headers:
+            X-Request-ID:
+              description: Request correlation ID
+              type: string
           schema:
             additionalProperties:
               type: string
@@ -180,4 +279,12 @@ paths:
       summary: Health check
       tags:
       - system
+schemes:
+- http
+- https
 swagger: "2.0"
+tags:
+- description: Authentication endpoints for login, token refresh, and logout.
+  name: auth
+- description: Operational and health endpoints.
+  name: system
