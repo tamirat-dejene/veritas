@@ -104,6 +104,9 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 	if err := routerGroup.RegisterDocs(); err != nil {
 		return nil, err
 	}
+	routerGroup.RegisterSwaggerRoutes(map[string]http.Handler{
+		"auth": authProxy,
+	})
 
 	routerGroup.RegisterAuthRoutes(authProxy)
 	routerGroup.RegisterEnterpriseRoutes(enterpriseProxy)
