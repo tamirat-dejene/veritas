@@ -1,164 +1,164 @@
 /* Access Badges */
 .access-badges {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  align-items: center;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
 }
 
 .badge {
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 600;
-  border: 1px solid;
-  flex-shrink: 0;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    border: 1px solid;
+    flex-shrink: 0;
 }
 
 .badge-public {
-  background: #f0f2f7;
-  color: #2a2f36;
-  border-color: #d9dde4;
+    background: #f0f2f7;
+    color: #2a2f36;
+    border-color: #d9dde4;
 }
 
 .badge-all {
-  background: #eef0f3;
-  color: #2d3640;
-  border-color: #d9dde4;
+    background: #eef0f3;
+    color: #2d3640;
+    border-color: #d9dde4;
 }
 
 .badge-candidate {
-  background: #e7f0ff;
-  color: #2f4b8f;
-  border-color: #c7d9ff;
+    background: #e7f0ff;
+    color: #2f4b8f;
+    border-color: #c7d9ff;
 }
 
 .badge-admin {
-  background: #e8f4f3;
-  color: #0a7b83;
-  border-color: #cfe9e7;
+    background: #e8f4f3;
+    color: #0a7b83;
+    border-color: #cfe9e7;
 }
 
 .badge-enterprise-staff {
-  background: #e8eefc;
-  color: #28407a;
-  border-color: #cdd9f5;
+    background: #e8eefc;
+    color: #28407a;
+    border-color: #cdd9f5;
 }
 
 .badge-staff {
-  background: #f8f0ff;
-  color: #6b2f8f;
-  border-color: #e2c6ff;
+    background: #f8f0ff;
+    color: #6b2f8f;
+    border-color: #e2c6ff;
 }
 
 .badge-super {
-  background: #fff0e6;
-  color: #9a4a00;
-  border-color: #ffd7b8;
+    background: #fff0e6;
+    color: #9a4a00;
+    border-color: #ffd7b8;
 }
 
 .badge-system {
-  background: #ecebff;
-  color: #3e3a99;
-  border-color: #cfcaff;
+    background: #ecebff;
+    color: #3e3a99;
+    border-color: #cfcaff;
 }
 
 .badge-premium {
-  background: #fff6d6;
-  color: #7a5a00;
-  border-color: #ffe39d;
+    background: #fff6d6;
+    color: #7a5a00;
+    border-color: #ffe39d;
 }
 
 /* Legend */
 .legend {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 40px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 40px;
 }
 
 .legend h3 {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--ink);
-  margin-bottom: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 12px;
 }
 
 .badge-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 /* Footer */
 footer {
-  text-align: center;
-  color: var(--muted);
-  font-size: 0.9rem;
-  padding: 32px 24px;
-  border-top: 1px solid var(--border);
-  background: var(--bg-secondary);
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.9rem;
+    padding: 32px 24px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-secondary);
 }
 
 /* Animations */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .section {
-  animation: fadeIn 0.4s ease-out both;
+    animation: fadeIn 0.4s ease-out both;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .header-content {
-    flex-direction: column;
-    gap: 16px;
-  }
+    .header-content {
+        flex-direction: column;
+        gap: 16px;
+    }
 
-  .search-container {
-    width: 100%;
-    max-width: none;
-    margin: 0;
-  }
+    .search-container {
+        width: 100%;
+        max-width: none;
+        margin: 0;
+    }
 
-  .endpoint-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
+    .endpoint-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
 
-  .copy-btn {
-    opacity: 1;
-    align-self: flex-end;
-  }
+    .copy-btn {
+        opacity: 1;
+        align-self: flex-end;
+    }
 
-  .section-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
 }
 
 @media (max-width: 480px) {
-  .method {
-    min-width: 60px;
-    font-size: 0.65rem;
-    padding: 5px 8px;
-  }
+    .method {
+        min-width: 60px;
+        font-size: 0.65rem;
+        padding: 5px 8px;
+    }
 
-  .endpoint-path {
-    font-size: 0.85rem;
-  }
+    .endpoint-path {
+        font-size: 0.85rem;
+    }
 }
