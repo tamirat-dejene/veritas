@@ -36,23 +36,24 @@ func NewAuthHandler(
 
 // loginRequest is the validated JSON body for POST /auth/login.
 type loginRequest struct {
-	Email    string `json:"email"    binding:"required,email"    example:"admin@veritas.io"`
+	Email    string `json:"email"    binding:"required,email"    example:"admin@veritas.io" format:"email"`
 	Password string `json:"password" binding:"required,min=1"    example:"s3cur3P@ssw0rd"`
 }
 
 // refreshRequest is the validated JSON body for POST /auth/refresh.
 type refreshRequest struct {
-	RefreshToken string `json:"refreshToken" binding:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	RefreshToken string `json:"refreshToken" binding:"required,len=64,hexadecimal" example:"b8a54f0f0cc6d2f68dd0b457ea4bb7f814ff69ec487f474f5c6f1781b6f0a0d3" minLength:"64" maxLength:"64" pattern:"^[a-f0-9]{64}$"`
 }
 
 // logoutRequest is the validated JSON body for POST /auth/logout.
 type logoutRequest struct {
-	RefreshToken string `json:"refreshToken" binding:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	RefreshToken string `json:"refreshToken" binding:"required,len=64,hexadecimal" example:"b8a54f0f0cc6d2f68dd0b457ea4bb7f814ff69ec487f474f5c6f1781b6f0a0d3" minLength:"64" maxLength:"64" pattern:"^[a-f0-9]{64}$"`
 }
 
 // Login handles POST /auth/login.
 //
 //	@Summary		Authenticate a user
+//	@ID			authLogin
 //	@Description	Validates email/password credentials and returns a JWT access token plus a refresh token.
 //	@Description	Only users with roles SystemAdmin, EnterpriseAdmin, EnterpriseAuto, or EnterpriseStaff may authenticate via this service.
 //	@Tags			auth
@@ -60,15 +61,20 @@ type logoutRequest struct {
 //	@Produce		json
 //	@Param			body	body		loginRequest	true	"Login credentials"
 //	@Success		200		{object}	TokenResponse	"JWT access and refresh tokens"
-//	@Failure		400		{object}	ErrorResponse	"Missing or malformed request body"
-//	@Failure		401		{object}	ErrorResponse	"Invalid email or password / expired/revoked token"
-//	@Failure		403		{object}	ErrorResponse	"Account locked, inactive, deleted, or role not permitted"
-//	@Failure		500		{object}	ErrorResponse	"Internal server error"
+//	@Header			200		{string}	X-Request-ID	"Request correlation ID"
+//	@Failure		400		{object}	BadRequestErrorResponse	"Missing or malformed request body"
+//	@Header			400		{string}	X-Request-ID	"Request correlation ID"
+//	@Failure		401		{object}	UnauthorizedErrorResponse	"Invalid email or password"
+//	@Header			401		{string}	X-Request-ID	"Request correlation ID"
+//	@Failure		403		{object}	ForbiddenErrorResponse	"Account locked, inactive, deleted, or role not permitted"
+//	@Header			403		{string}	X-Request-ID	"Request correlation ID"
+//	@Failure		500		{object}	InternalErrorResponse	"Internal server error"
+//	@Header			500		{string}	X-Request-ID	"Request correlation ID"
 //	@Router			/auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "invalid request body")
+		writeError(c, http.StatusBadRequest, "invalid_request", "invalid request body")
 		return
 	}
 
@@ -91,20 +97,25 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // Refresh handles POST /auth/refresh.
 //
 //	@Summary		Refresh an access token
+//	@ID			authRefresh
 //	@Description	Exchanges a valid refresh token for a new JWT access token and a rotated refresh token. The old refresh token is invalidated.
 //	@Tags			auth
 //	@Accept			json
 //	@Produce		json
 //	@Param			body	body		refreshRequest	true	"Refresh token"
 //	@Success		200		{object}	TokenResponse	"New JWT access and refresh tokens"
-//	@Failure		400		{object}	ErrorResponse	"Missing or malformed request body"
-//	@Failure		401		{object}	ErrorResponse	"Refresh token invalid, revoked, or expired"
-//	@Failure		500		{object}	ErrorResponse	"Internal server error"
+//	@Header			200		{string}	X-Request-ID	"Request correlation ID"
+//	@Failure		400		{object}	BadRequestErrorResponse	"Missing or malformed request body"
+//	@Header			400		{string}	X-Request-ID	"Request correlation ID"
+//	@Failure		401		{object}	UnauthorizedErrorResponse	"Refresh token invalid, revoked, or expired"
+//	@Header			401		{string}	X-Request-ID	"Request correlation ID"
+//	@Failure		500		{object}	InternalErrorResponse	"Internal server error"
+//	@Header			500		{string}	X-Request-ID	"Request correlation ID"
 //	@Router			/auth/refresh [post]
 func (h *AuthHandler) Refresh(c *gin.Context) {
 	var req refreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "invalid request body")
+		writeError(c, http.StatusBadRequest, "invalid_request", "invalid request body")
 		return
 	}
 
@@ -122,20 +133,24 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 // Logout handles POST /auth/logout.
 //
 //	@Summary		Revoke a refresh token
+//	@ID			authLogout
 //	@Description	Immediately revokes the supplied refresh token so it cannot be used for future token refreshes.
+//	@Description	This endpoint is idempotent: invalid, unknown, expired, or already-revoked tokens return 204 to prevent token enumeration.
 //	@Tags			auth
 //	@Accept			json
 //	@Produce		json
 //	@Param			body	body	logoutRequest	true	"Refresh token to revoke"
 //	@Success		204		"Token revoked — no content"
-//	@Failure		400		{object}	ErrorResponse	"Missing or malformed request body"
-//	@Failure		401		{object}	ErrorResponse	"Refresh token invalid, revoked, or expired"
-//	@Failure		500		{object}	ErrorResponse	"Internal server error"
+//	@Header			204		{string}	X-Request-ID	"Request correlation ID"
+//	@Failure		400		{object}	BadRequestErrorResponse	"Missing or malformed request body"
+//	@Header			400		{string}	X-Request-ID	"Request correlation ID"
+//	@Failure		500		{object}	InternalErrorResponse	"Internal server error"
+//	@Header			500		{string}	X-Request-ID	"Request correlation ID"
 //	@Router			/auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
 	var req logoutRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "invalid request body")
+		writeError(c, http.StatusBadRequest, "invalid_request", "invalid request body")
 		return
 	}
 
@@ -154,23 +169,23 @@ func (h *AuthHandler) handleUseCaseError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, domain.ErrInvalidCredentials),
 		errors.Is(err, domain.ErrUserNotFound):
-		writeError(c, http.StatusUnauthorized, "invalid email or password")
+		writeError(c, http.StatusUnauthorized, "invalid_credentials", "invalid email or password")
 
 	case errors.Is(err, domain.ErrAccountLocked):
-		writeError(c, http.StatusForbidden, "account is temporarily locked")
+		writeError(c, http.StatusForbidden, "account_locked", "account is temporarily locked")
 
 	case errors.Is(err, domain.ErrUserInactive),
 		errors.Is(err, domain.ErrUserDeleted),
 		errors.Is(err, domain.ErrRoleNotPermitted):
-		writeError(c, http.StatusForbidden, "access denied")
+		writeError(c, http.StatusForbidden, "access_denied", "access denied")
 
 	case errors.Is(err, domain.ErrTokenNotFound),
 		errors.Is(err, domain.ErrTokenRevoked),
 		errors.Is(err, domain.ErrTokenExpired):
-		writeError(c, http.StatusUnauthorized, "invalid or expired token")
+		writeError(c, http.StatusUnauthorized, "invalid_token", "invalid or expired token")
 
 	default:
 		h.log.Error("unhandled use case error", zap.Error(err))
-		writeError(c, http.StatusInternalServerError, "internal server error")
+		writeError(c, http.StatusInternalServerError, "internal_error", "internal server error")
 	}
 }
