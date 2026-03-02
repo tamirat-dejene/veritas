@@ -154,7 +154,7 @@ func (g *RouterGroup) RegisterHealthCheck(cfg *config.Config) {
 
 		tmpl, err := template.New("health.html").Funcs(template.FuncMap{
 			"stringsContains": strings.Contains,
-		}).ParseFS(docsFS, "docs/health.html")
+		}).ParseFS(docsFS, "docs/pages/health.html")
 		if err != nil {
 			c.String(http.StatusInternalServerError, "Failed to load health template: "+err.Error())
 			return
