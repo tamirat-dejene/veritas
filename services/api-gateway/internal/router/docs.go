@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//go:embed docs/index.html docs/styles.css docs/health.html docs/health.css
+//go:embed docs
 var docsFS embed.FS
 
 // RegisterDocs sets up the static documentation route
