@@ -9,55 +9,107 @@
 </head>
 
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="logo">
-                <div class="logo-icon">V</div>
-                <div class="logo-text">
-                    <h1>Veritas API Gateway</h1>
-                    <span class="version">v1.0</span>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-text">
+                        <h1>Veritas</h1>
+                        <span class="version">API Gateway v1.0</span>
+                    </div>
                 </div>
             </div>
-            <div class="search-container">
+
+            <div class="sidebar-search">
                 <input type="text" id="searchBox" class="search-box" placeholder="Search endpoints..."
                     autocomplete="off" />
             </div>
-        </div>
-    </header>
 
-    <!-- Main Content -->
-    <main>
-        <!-- Legend -->
-        <div class="legend">
-            <h3>Access Control Roles</h3>
-            <div class="badge-row">
-                <span class="badge badge-public">Public</span>
-                <span class="badge badge-all">All</span>
-                <span class="badge badge-candidate">ExamCandidate</span>
-                <span class="badge badge-admin">EnterpriseAdmin</span>
-                <span class="badge badge-staff">EnterpriseStaff</span>
-                <span class="badge badge-super">SystemAdmin</span>
-                <span class="badge badge-system">EnterpriseAuto</span>
-                <span class="badge badge-premium">Premium</span>
+            <nav class="sidebar-nav">
+                <div class="nav-label">Services</div>
+                <ul id="serviceList" class="service-list">
+                    <!-- Populated by JS -->
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="nav-label">Documentation</div>
+                <div class="footer-links">
+                    <a href="https://github.com/tamirat-dejene/veritas" target="_blank">Repository</a>
+                </div>
             </div>
-        </div>
+        </aside>
 
-        <div class="legend swagger-links">
-            <h3>Service Swagger Docs</h3>
-            <div class="doc-links-row">
-                <a href="/swagger/auth/index.html" target="_blank" rel="noopener noreferrer">Auth Service Swagger</a>
+        <!-- Main Content -->
+        <main class="content-area">
+            <header class="content-header">
+                <div class="header-breadcrumb">
+                    <button id="backToHome" class="back-btn" title="Back to Dashboard">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                    </button>
+                    <h2 id="activeServiceName">Dashboard</h2>
+                </div>
+                <div id="headerActions" class="header-actions">
+                    <!-- Swagger link populated by JS -->
+                </div>
+            </header>
+
+            <div id="serviceSections" data-section-base="assets/sections">
+                <div id="dashboardView" class="dashboard-view">
+                    <div class="dashboard-hero">
+                        <h2>Veritas API Ecosystem</h2>
+                        <p>Comprehensive technical documentation for all microservices in the Veritas platform.</p>
+                    </div>
+                    <div id="serviceCards" class="service-cards-grid">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <div class="dashboard-roles">
+                        <div class="nav-label">Access Control Roles Legend</div>
+                        <div class="roles-showcase">
+                            <div class="role-card">
+                                <span class="badge badge-public">Public</span>
+                                <p>Open access to all users without authentication.</p>
+                            </div>
+                            <div class="role-card">
+                                <span class="badge badge-all">All</span>
+                                <p>Requires a valid token but no specific permissions.</p>
+                            </div>
+                            <div class="role-card">
+                                <span class="badge badge-candidate">Candidate</span>
+                                <p>Permissions for test-takers and students.</p>
+                            </div>
+                            <div class="role-card">
+                                <span class="badge badge-admin">Admin</span>
+                                <p>Standard administrative access for managing resources.</p>
+                            </div>
+                            <div class="role-card">
+                                <span class="badge badge-staff">Staff</span>
+                                <p>Operational access for platform support and evaluation.</p>
+                            </div>
+                            <div class="role-card">
+                                <span class="badge badge-super">Super</span>
+                                <p>Elevated administrative privileges across organizations.</p>
+                            </div>
+                            <div class="role-card">
+                                <span class="badge badge-system">System</span>
+                                <p>Internal service-to-service communication only.</p>
+                            </div>
+                            <div class="role-card">
+                                <span class="badge badge-premium">Premium</span>
+                                <p>Access restricted to premium tiered accounts and features.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-
-        <div id="serviceSections" data-section-base="assets/sections"></div>
-
-    </main>
-
-    <!-- Footer -->
-    <footer>
-        <p>Veritas API Gateway • Version 1.0 • Documentation</p>
-    </footer>
+        </main>
+    </div>
 
     <script src="assets/js/docs-page.js"></script>
 </body>
