@@ -1,466 +1,118 @@
-    <!-- Enterprise Management -->
-    <section class="section" data-service="enterprise">
-      <div class="section-header">
+<!-- Enterprise Management -->
+<section class="section" data-service="enterprise">
+    <div class="section-header">
         <h2>Enterprise Management</h2>
         <span class="section-count">29 endpoints</span>
-      </div>
-      <div class="endpoint-list">
+    </div>
+    <div class="endpoint-list">
         <!-- Discovery & Listing -->
         <h3 class="endpoint-group-title">Discovery & Listing</h3>
-        <div class="endpoint-item">
-          <span class="method post">POST</span>
-          <span class="endpoint-path">/enterprises</span>
-          <div class="access-badges">
+        <endpoint-item method="POST" path="/enterprises">
             <span class="badge badge-public">Public</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method get">GET</span>
-          <span class="endpoint-path">/enterprises</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="GET" path="/enterprises">
             <span class="badge badge-super">SystemAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method get">GET</span>
-          <span class="endpoint-path">/enterprises/me</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="GET" path="/enterprises/me">
             <span class="badge badge-admin">EnterpriseAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/me">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method get">GET</span>
-          <span class="endpoint-path">/enterprises/slug/:slug</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="GET" path="/enterprises/slug/:slug">
             <span class="badge badge-all">All</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/slug/:slug">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
+        </endpoint-item>
 
         <!-- Lifecycle & Governance -->
         <h3 class="endpoint-group-title">Lifecycle & Governance</h3>
-        <div class="endpoint-item">
-          <span class="method get">GET</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId</span>
-          <div class="access-badges">
+        <endpoint-item method="GET" path="/enterprises/:enterpriseId">
             <span class="badge badge-super">SystemAdmin</span>
             <span class="badge badge-admin">EnterpriseAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method patch">PATCH</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="PATCH" path="/enterprises/:enterpriseId">
             <span class="badge badge-admin">EnterpriseAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method post">POST</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/approve</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="POST" path="/enterprises/:enterpriseId/approve">
             <span class="badge badge-super">SystemAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/approve">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method post">POST</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/suspend</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="POST" path="/enterprises/:enterpriseId/suspend">
             <span class="badge badge-super">SystemAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/suspend">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method post">POST</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/reactivate</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="POST" path="/enterprises/:enterpriseId/reactivate">
             <span class="badge badge-super">SystemAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/reactivate">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method delete">DELETE</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="DELETE" path="/enterprises/:enterpriseId">
             <span class="badge badge-super">SystemAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method post">POST</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/restore</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="POST" path="/enterprises/:enterpriseId/restore">
             <span class="badge badge-super">SystemAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/restore">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method delete">DELETE</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/permanent</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="DELETE" path="/enterprises/:enterpriseId/permanent">
             <span class="badge badge-super">SystemAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/permanent">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
+        </endpoint-item>
 
         <!-- Branding & Settings -->
         <h3 class="endpoint-group-title">Branding & Settings</h3>
-        <div class="endpoint-item">
-          <span class="method patch">PATCH</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/branding</span>
-          <div class="access-badges">
+        <endpoint-item method="PATCH" path="/enterprises/:enterpriseId/branding">
             <span class="badge badge-admin">EnterpriseAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/branding">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method patch">PATCH</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/settings</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="PATCH" path="/enterprises/:enterpriseId/settings">
             <span class="badge badge-admin">EnterpriseAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/settings">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method post">POST</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/validate-domain</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="POST" path="/enterprises/:enterpriseId/validate-domain">
             <span class="badge badge-admin">EnterpriseAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/validate-domain">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
+        </endpoint-item>
 
         <!-- Enterprise User Management -->
         <h3 class="endpoint-group-title">Enterprise User Management</h3>
-        <div class="endpoint-item">
-          <span class="method post">POST</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/users</span>
-          <div class="access-badges">
+        <endpoint-item method="POST" path="/enterprises/:enterpriseId/users">
             <span class="badge badge-admin">EnterpriseAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/users">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method get">GET</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/users</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="GET" path="/enterprises/:enterpriseId/users">
             <span class="badge badge-admin">EnterpriseAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/users">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method get">GET</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/users/:userId</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="GET" path="/enterprises/:enterpriseId/users/:userId">
             <span class="badge badge-admin">EnterpriseAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/users/:userId">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method patch">PATCH</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/users/:userId</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="PATCH" path="/enterprises/:enterpriseId/users/:userId">
             <span class="badge badge-admin">EnterpriseAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/users/:userId">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method patch">PATCH</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/users/:userId/deactivate</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="PATCH" path="/enterprises/:enterpriseId/users/:userId/deactivate">
             <span class="badge badge-admin">EnterpriseAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/users/:userId/deactivate">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method post">POST</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/users/:userId/reset-password</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="POST" path="/enterprises/:enterpriseId/users/:userId/reset-password">
             <span class="badge badge-admin">EnterpriseAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/users/:userId/reset-password">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
+        </endpoint-item>
 
         <!-- Subscription Management -->
         <h3 class="endpoint-group-title">Subscription Management</h3>
-        <div class="endpoint-item">
-          <span class="method get">GET</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/subscription</span>
-          <div class="access-badges">
+        <endpoint-item method="GET" path="/enterprises/:enterpriseId/subscription">
             <span class="badge badge-super">SystemAdmin</span>
             <span class="badge badge-admin">EnterpriseAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/subscription">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method post">POST</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/subscription</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="POST" path="/enterprises/:enterpriseId/subscription">
             <span class="badge badge-super">SystemAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/subscription">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method post">POST</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/subscription/renew</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="POST" path="/enterprises/:enterpriseId/subscription/renew">
             <span class="badge badge-super">SystemAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/subscription/renew">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method post">POST</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/subscription/cancel</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="POST" path="/enterprises/:enterpriseId/subscription/cancel">
             <span class="badge badge-super">SystemAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/subscription/cancel">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method post">POST</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/suspend-payment</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="POST" path="/enterprises/:enterpriseId/suspend-payment">
             <span class="badge badge-super">SystemAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/suspend-payment">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
+        </endpoint-item>
 
         <!-- Status & Audit -->
         <h3 class="endpoint-group-title">Status & Audit</h3>
-        <div class="endpoint-item">
-          <span class="method get">GET</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/status</span>
-          <div class="access-badges">
+        <endpoint-item method="GET" path="/enterprises/:enterpriseId/status">
             <span class="badge badge-super">SystemAdmin</span>
             <span class="badge badge-admin">EnterpriseAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/status">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method get">GET</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/summary</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="GET" path="/enterprises/:enterpriseId/summary">
             <span class="badge badge-super">SystemAdmin</span>
             <span class="badge badge-admin">EnterpriseAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/summary">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-        <div class="endpoint-item">
-          <span class="method get">GET</span>
-          <span class="endpoint-path">/enterprises/:enterpriseId/audit-logs</span>
-          <div class="access-badges">
+        </endpoint-item>
+        <endpoint-item method="GET" path="/enterprises/:enterpriseId/audit-logs">
             <span class="badge badge-super">SystemAdmin</span>
             <span class="badge badge-admin">EnterpriseAdmin</span>
-          </div>
-          <button class="copy-btn" data-path="/enterprises/:enterpriseId/audit-logs">
-            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span class="copy-text">Copy</span>
-          </button>
-        </div>
-      </div>
-    </section>
+        </endpoint-item>
+    </div>
+</section>
