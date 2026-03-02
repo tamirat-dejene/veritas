@@ -1,0 +1,165 @@
+/* Section */
+.section {
+  margin-bottom: 48px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+}
+
+.section-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.section-count {
+  background: var(--bg-secondary);
+  color: var(--muted);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.endpoint-group-title {
+  background: var(--bg-secondary);
+  padding: 12px 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+}
+
+.endpoint-group-title:first-child {
+  border-top: none;
+}
+
+/* Endpoint List */
+.endpoint-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.endpoint-item {
+  background: var(--bg);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.endpoint-item:hover {
+  background: var(--bg-secondary);
+}
+
+.endpoint-item:hover .copy-btn {
+  opacity: 1;
+}
+
+/* Method Badge */
+.method {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  min-width: 70px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.method.get {
+  color: #0b3d91;
+  background: #e5edff;
+}
+
+.method.post {
+  color: #0a7b83;
+  background: #e8f4f3;
+}
+
+.method.patch {
+  color: #7b5c00;
+  background: #fff4d7;
+}
+
+.method.delete {
+  color: #8b1d2c;
+  background: #ffe7eb;
+}
+
+.method.put {
+  color: #6b46c1;
+  background: #f3e8ff;
+}
+
+/* Endpoint Path */
+.endpoint-path {
+  font-family: "SF Mono", "Monaco", "Inconsolata", "Fira Code", "Droid Sans Mono", monospace;
+  font-size: 0.95rem;
+  color: var(--ink);
+  font-weight: 500;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.endpoint-path code {
+  background: var(--code-bg);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+/* Copy Button */
+.copy-btn {
+  background: none;
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  transition: all 0.2s ease;
+  opacity: 0;
+  flex-shrink: 0;
+}
+
+.copy-btn:hover {
+  background: var(--bg-secondary);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.copy-btn.copied {
+  background: #e6fffa;
+  border-color: var(--success);
+  color: var(--success);
+  opacity: 1;
+}
+
+.copy-icon {
+  width: 14px;
+  height: 14px;
+}

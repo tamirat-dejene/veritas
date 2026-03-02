@@ -176,7 +176,8 @@ main.container {
 
 .status-down .status-label {
     background: #ffe7eb;
-    color: var(--error); }
+    color: var(--error);
+}
 
 .status-up .status-label {
     color: var(--success);
