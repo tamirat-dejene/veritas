@@ -1,0 +1,34 @@
+basePath: /
+info:
+  contact:
+    name: Veritas Platform Team
+  description: Candidate lifecycle, enrollment, exam access, and session management
+    service.
+  title: Veritas Candidate Service API
+  version: "1.0"
+paths:
+  /health:
+    get:
+      description: Returns a simple JSON indicating the service is alive.
+      operationId: healthCheck
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Service is healthy
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - system
+schemes:
+- http
+- https
+swagger: "2.0"
+tags:
+- description: Candidate, enrollment, access, session, and submission endpoints.
+  name: candidate
+- description: Operational and health endpoints.
+  name: system

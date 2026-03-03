@@ -1,0 +1,52 @@
+{
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "Candidate lifecycle, enrollment, exam access, and session management service.",
+        "title": "Veritas Candidate Service API",
+        "contact": {
+            "name": "Veritas Platform Team"
+        },
+        "version": "1.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/health": {
+            "get": {
+                "description": "Returns a simple JSON indicating the service is alive.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "Health check",
+                "operationId": "healthCheck",
+                "responses": {
+                    "200": {
+                        "description": "Service is healthy",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "description": "Candidate, enrollment, access, session, and submission endpoints.",
+            "name": "candidate"
+        },
+        {
+            "description": "Operational and health endpoints.",
+            "name": "system"
+        }
+    ]
+}
