@@ -1,3 +1,19 @@
+// Package main is the entry-point for the Veritas candidate-service.
+//
+//	@title			Veritas Candidate Service API
+//	@version		1.0
+//	@description	Candidate lifecycle, enrollment, exam access, and session management service.
+//
+//	@contact.name	Veritas Platform Team
+//
+//	@tag.name		candidate
+//	@tag.description	Candidate, enrollment, access, session, and submission endpoints.
+//	@tag.name		system
+//	@tag.description	Operational and health endpoints.
+//
+//	@schemes		http https
+//	@BasePath	/
+
 package main
 
 import (
@@ -18,6 +34,9 @@ import (
 	pg "github.com/tamirat-dejene/veritas/shared/db/pg"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
+
+	// Import generated swagger docs so the spec is registered at startup.
+	_ "github.com/tamirat-dejene/veritas/services/candidate-service/docs/swagger"
 )
 
 func main() {

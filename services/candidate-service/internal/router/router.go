@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	c_http "github.com/tamirat-dejene/veritas/services/candidate-service/internal/handler/http"
 )
 
@@ -18,9 +20,7 @@ func NewRouter(
 	engine.Use(gin.Recovery())
 	engine.Use(gin.Logger())
 
-	engine.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok", "service": "candidate-service"})
-	})
+	engine.GET("/health", healthCheck)
 
 	// Role checks and enterprise_id mapping happen upstream (API Gateway) or via intercept middlewares.
 
@@ -79,5 +79,21 @@ func NewRouter(
 		submissions.GET("/:submissionId", mh.GetSubmissionDetail)
 	}
 
+	// Swagger UI — available at /swagger/index.html
+	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	return engine
+}
+
+// healthCheck returns 200 OK if the service is running.
+//
+//	@Summary		Health check
+//	@ID			healthCheck
+//	@Description	Returns a simple JSON indicating the service is alive.
+//	@Tags			system
+//	@Produce		json
+//	@Success		200	{object}	map[string]string	"Service is healthy"
+//	@Router			/health [get]
+func healthCheck(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "service": "candidate-service"})
 }
