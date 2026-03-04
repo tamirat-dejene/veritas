@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  internal_handler.BadRequestErrorResponse:
+  BadRequestErrorResponse:
     properties:
       code:
         example: invalid_request
@@ -12,7 +12,7 @@ definitions:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
         type: string
     type: object
-  internal_handler.ForbiddenErrorResponse:
+  ForbiddenErrorResponse:
     properties:
       code:
         example: access_denied
@@ -24,7 +24,7 @@ definitions:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
         type: string
     type: object
-  internal_handler.InternalErrorResponse:
+  InternalErrorResponse:
     properties:
       code:
         example: internal_error
@@ -36,7 +36,7 @@ definitions:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
         type: string
     type: object
-  internal_handler.TokenResponse:
+  TokenResponse:
     properties:
       accessToken:
         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -48,7 +48,7 @@ definitions:
         example: b8a54f0f0cc6d2f68dd0b457ea4bb7f814ff69ec487f474f5c6f1781b6f0a0d3
         type: string
     type: object
-  internal_handler.UnauthorizedErrorResponse:
+  UnauthorizedErrorResponse:
     properties:
       code:
         example: invalid_credentials
@@ -60,7 +60,7 @@ definitions:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
         type: string
     type: object
-  internal_handler.loginRequest:
+  loginRequest:
     properties:
       email:
         example: admin@veritas.io
@@ -74,7 +74,7 @@ definitions:
     - email
     - password
     type: object
-  internal_handler.logoutRequest:
+  logoutRequest:
     properties:
       refreshToken:
         example: b8a54f0f0cc6d2f68dd0b457ea4bb7f814ff69ec487f474f5c6f1781b6f0a0d3
@@ -84,7 +84,7 @@ definitions:
     required:
     - refreshToken
     type: object
-  internal_handler.refreshRequest:
+  refreshRequest:
     properties:
       refreshToken:
         example: b8a54f0f0cc6d2f68dd0b457ea4bb7f814ff69ec487f474f5c6f1781b6f0a0d3
@@ -117,7 +117,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.loginRequest'
+          $ref: '#/definitions/loginRequest'
       produces:
       - application/json
       responses:
@@ -128,7 +128,7 @@ paths:
               description: Request correlation ID
               type: string
           schema:
-            $ref: '#/definitions/internal_handler.TokenResponse'
+            $ref: '#/definitions/TokenResponse'
         "400":
           description: Missing or malformed request body
           headers:
@@ -136,7 +136,7 @@ paths:
               description: Request correlation ID
               type: string
           schema:
-            $ref: '#/definitions/internal_handler.BadRequestErrorResponse'
+            $ref: '#/definitions/BadRequestErrorResponse'
         "401":
           description: Invalid email or password
           headers:
@@ -144,7 +144,7 @@ paths:
               description: Request correlation ID
               type: string
           schema:
-            $ref: '#/definitions/internal_handler.UnauthorizedErrorResponse'
+            $ref: '#/definitions/UnauthorizedErrorResponse'
         "403":
           description: Account locked, inactive, deleted, or role not permitted
           headers:
@@ -152,7 +152,7 @@ paths:
               description: Request correlation ID
               type: string
           schema:
-            $ref: '#/definitions/internal_handler.ForbiddenErrorResponse'
+            $ref: '#/definitions/ForbiddenErrorResponse'
         "500":
           description: Internal server error
           headers:
@@ -160,7 +160,7 @@ paths:
               description: Request correlation ID
               type: string
           schema:
-            $ref: '#/definitions/internal_handler.InternalErrorResponse'
+            $ref: '#/definitions/InternalErrorResponse'
       summary: Authenticate a user
       tags:
       - auth
@@ -178,7 +178,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.logoutRequest'
+          $ref: '#/definitions/logoutRequest'
       produces:
       - application/json
       responses:
@@ -195,7 +195,7 @@ paths:
               description: Request correlation ID
               type: string
           schema:
-            $ref: '#/definitions/internal_handler.BadRequestErrorResponse'
+            $ref: '#/definitions/BadRequestErrorResponse'
         "500":
           description: Internal server error
           headers:
@@ -203,7 +203,7 @@ paths:
               description: Request correlation ID
               type: string
           schema:
-            $ref: '#/definitions/internal_handler.InternalErrorResponse'
+            $ref: '#/definitions/InternalErrorResponse'
       summary: Revoke a refresh token
       tags:
       - auth
@@ -220,7 +220,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.refreshRequest'
+          $ref: '#/definitions/refreshRequest'
       produces:
       - application/json
       responses:
@@ -231,7 +231,7 @@ paths:
               description: Request correlation ID
               type: string
           schema:
-            $ref: '#/definitions/internal_handler.TokenResponse'
+            $ref: '#/definitions/TokenResponse'
         "400":
           description: Missing or malformed request body
           headers:
@@ -239,7 +239,7 @@ paths:
               description: Request correlation ID
               type: string
           schema:
-            $ref: '#/definitions/internal_handler.BadRequestErrorResponse'
+            $ref: '#/definitions/BadRequestErrorResponse'
         "401":
           description: Refresh token invalid, revoked, or expired
           headers:
@@ -247,7 +247,7 @@ paths:
               description: Request correlation ID
               type: string
           schema:
-            $ref: '#/definitions/internal_handler.UnauthorizedErrorResponse'
+            $ref: '#/definitions/UnauthorizedErrorResponse'
         "500":
           description: Internal server error
           headers:
@@ -255,7 +255,7 @@ paths:
               description: Request correlation ID
               type: string
           schema:
-            $ref: '#/definitions/internal_handler.InternalErrorResponse'
+            $ref: '#/definitions/InternalErrorResponse'
       summary: Refresh an access token
       tags:
       - auth

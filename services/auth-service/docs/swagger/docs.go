@@ -38,7 +38,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.loginRequest"
+                            "$ref": "#/definitions/loginRequest"
                         }
                     }
                 ],
@@ -46,7 +46,7 @@ const docTemplate = `{
                     "200": {
                         "description": "JWT access and refresh tokens",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.TokenResponse"
+                            "$ref": "#/definitions/TokenResponse"
                         },
                         "headers": {
                             "X-Request-ID": {
@@ -58,7 +58,7 @@ const docTemplate = `{
                     "400": {
                         "description": "Missing or malformed request body",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.BadRequestErrorResponse"
+                            "$ref": "#/definitions/BadRequestErrorResponse"
                         },
                         "headers": {
                             "X-Request-ID": {
@@ -70,7 +70,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Invalid email or password",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.UnauthorizedErrorResponse"
+                            "$ref": "#/definitions/UnauthorizedErrorResponse"
                         },
                         "headers": {
                             "X-Request-ID": {
@@ -82,7 +82,7 @@ const docTemplate = `{
                     "403": {
                         "description": "Account locked, inactive, deleted, or role not permitted",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ForbiddenErrorResponse"
+                            "$ref": "#/definitions/ForbiddenErrorResponse"
                         },
                         "headers": {
                             "X-Request-ID": {
@@ -94,7 +94,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.InternalErrorResponse"
+                            "$ref": "#/definitions/InternalErrorResponse"
                         },
                         "headers": {
                             "X-Request-ID": {
@@ -127,7 +127,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.logoutRequest"
+                            "$ref": "#/definitions/logoutRequest"
                         }
                     }
                 ],
@@ -144,7 +144,7 @@ const docTemplate = `{
                     "400": {
                         "description": "Missing or malformed request body",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.BadRequestErrorResponse"
+                            "$ref": "#/definitions/BadRequestErrorResponse"
                         },
                         "headers": {
                             "X-Request-ID": {
@@ -156,7 +156,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.InternalErrorResponse"
+                            "$ref": "#/definitions/InternalErrorResponse"
                         },
                         "headers": {
                             "X-Request-ID": {
@@ -189,7 +189,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.refreshRequest"
+                            "$ref": "#/definitions/refreshRequest"
                         }
                     }
                 ],
@@ -197,7 +197,7 @@ const docTemplate = `{
                     "200": {
                         "description": "New JWT access and refresh tokens",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.TokenResponse"
+                            "$ref": "#/definitions/TokenResponse"
                         },
                         "headers": {
                             "X-Request-ID": {
@@ -209,7 +209,7 @@ const docTemplate = `{
                     "400": {
                         "description": "Missing or malformed request body",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.BadRequestErrorResponse"
+                            "$ref": "#/definitions/BadRequestErrorResponse"
                         },
                         "headers": {
                             "X-Request-ID": {
@@ -221,7 +221,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Refresh token invalid, revoked, or expired",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.UnauthorizedErrorResponse"
+                            "$ref": "#/definitions/UnauthorizedErrorResponse"
                         },
                         "headers": {
                             "X-Request-ID": {
@@ -233,7 +233,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.InternalErrorResponse"
+                            "$ref": "#/definitions/InternalErrorResponse"
                         },
                         "headers": {
                             "X-Request-ID": {
@@ -277,7 +277,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "internal_handler.BadRequestErrorResponse": {
+        "BadRequestErrorResponse": {
             "type": "object",
             "properties": {
                 "code": {
@@ -294,7 +294,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_handler.ForbiddenErrorResponse": {
+        "ForbiddenErrorResponse": {
             "type": "object",
             "properties": {
                 "code": {
@@ -311,7 +311,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_handler.InternalErrorResponse": {
+        "InternalErrorResponse": {
             "type": "object",
             "properties": {
                 "code": {
@@ -328,7 +328,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_handler.TokenResponse": {
+        "TokenResponse": {
             "type": "object",
             "properties": {
                 "accessToken": {
@@ -345,7 +345,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_handler.UnauthorizedErrorResponse": {
+        "UnauthorizedErrorResponse": {
             "type": "object",
             "properties": {
                 "code": {
@@ -362,7 +362,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_handler.loginRequest": {
+        "loginRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -381,7 +381,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_handler.logoutRequest": {
+        "logoutRequest": {
             "type": "object",
             "required": [
                 "refreshToken"
@@ -395,7 +395,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_handler.refreshRequest": {
+        "refreshRequest": {
             "type": "object",
             "required": [
                 "refreshToken"

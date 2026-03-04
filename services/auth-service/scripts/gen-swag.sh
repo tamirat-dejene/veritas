@@ -16,4 +16,11 @@ fi
 
 $SWAG_BIN init -g cmd/server/main.go -o docs/swagger --parseDependency --parseInternal
 
+# Swaggo emits package-qualified schema names. Normalize to clean model names.
+PREFIX_HTTP="internal_handler."
+
+for f in docs/swagger/docs.go docs/swagger/swagger.json docs/swagger/swagger.yaml; do
+  sed -i "s/${PREFIX_HTTP}//g" "$f"
+done
+
 echo "Generated Swagger docs in docs/swagger"
