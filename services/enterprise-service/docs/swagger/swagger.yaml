@@ -1,4 +1,403 @@
 basePath: /
+definitions:
+  AuditEvent:
+    enum:
+    - enterprise.approved
+    - enterprise.suspended
+    - enterprise.deleted
+    - enterprise.reactivated
+    - enterprise.restored
+    - enterprise.hard_deleted
+    - enterprise.branding_updated
+    - enterprise.settings_updated
+    - subscription.updated
+    - subscription.canceled
+    - subscription.renewed
+    - subscription.payment_suspended
+    - user.created
+    - user.updated
+    - user.deactivated
+    - user.password_reset
+    - enterprise.domain_validated
+    type: string
+    x-enum-varnames:
+    - EventEnterpriseApproved
+    - EventEnterpriseSuspended
+    - EventEnterpriseDeleted
+    - EventEnterpriseReactivated
+    - EventEnterpriseRestored
+    - EventEnterpriseHardDeleted
+    - EventBrandingUpdated
+    - EventSettingsUpdated
+    - EventSubscriptionUpdated
+    - EventSubscriptionCanceled
+    - EventSubscriptionRenewed
+    - EventSubscriptionSuspended
+    - EventUserCreated
+    - EventUserUpdated
+    - EventUserDeactivated
+    - EventUserPasswordReset
+    - EventDomainValidated
+  AuditLog:
+    properties:
+      actor_id:
+        type: string
+      actor_role:
+        type: string
+      created_at:
+        type: string
+      enterprise_id:
+        type: string
+      event:
+        $ref: '#/definitions/AuditEvent'
+      id:
+        type: string
+      metadata:
+        additionalProperties: true
+        type: object
+    type: object
+  CreateUserRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      honorific:
+        type: string
+      last_name:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      phone:
+        type: string
+      role:
+        $ref: '#/definitions/Role'
+    required:
+    - email
+    - password
+    - role
+    type: object
+  DomainValidationResult:
+    properties:
+      cname_found:
+        type: boolean
+      details:
+        type: string
+      domain:
+        type: string
+      txt_record_found:
+        type: boolean
+      valid:
+        type: boolean
+    type: object
+  Enterprise:
+    properties:
+      addressLine1:
+        type: string
+      addressLine2:
+        type: string
+      approvedAt:
+        type: string
+      city:
+        type: string
+      contactEmail:
+        type: string
+      contactPhone:
+        type: string
+      country:
+        type: string
+      createdAt:
+        type: string
+      createdBy:
+        type: string
+      currentPeriodEnd:
+        type: string
+      currentPeriodStart:
+        type: string
+      customDomain:
+        type: string
+      deletedAt:
+        type: string
+      displayName:
+        type: string
+      id:
+        type: string
+      legalName:
+        type: string
+      logoURL:
+        type: string
+      ownerAccountID:
+        type: string
+      primaryColor:
+        type: string
+      retentionUntil:
+        type: string
+      secondaryColor:
+        type: string
+      settings:
+        additionalProperties: true
+        type: object
+      slug:
+        type: string
+      status:
+        $ref: '#/definitions/EnterpriseStatus'
+      subscriptionPlanID:
+        type: string
+      subscriptionStatus:
+        $ref: '#/definitions/SubscriptionStatus'
+      suspendedAt:
+        type: string
+      updatedAt:
+        type: string
+      updatedBy:
+        type: string
+    type: object
+  EnterpriseStatus:
+    enum:
+    - PendingApproval
+    - Active
+    - Suspended
+    - Deleted
+    type: string
+    x-enum-varnames:
+    - StatusPendingApproval
+    - StatusActive
+    - StatusSuspended
+    - StatusDeleted
+  EnterpriseStatusResponse:
+    properties:
+      approved_at:
+        type: string
+      current_period_end:
+        type: string
+      deleted_at:
+        type: string
+      enterprise_id:
+        type: string
+      retention_until:
+        type: string
+      status:
+        $ref: '#/definitions/EnterpriseStatus'
+      subscription_status:
+        $ref: '#/definitions/SubscriptionStatus'
+      suspended_at:
+        type: string
+    type: object
+  EnterpriseSummary:
+    properties:
+      active_exam_count:
+        description: ActiveExamCount and ActiveSessionCount require inter-service
+          calls – set to -1 when unavailable.
+        type: integer
+      active_session_count:
+        type: integer
+      display_name:
+        type: string
+      enterprise_id:
+        type: string
+      status:
+        $ref: '#/definitions/EnterpriseStatus'
+      subscription_expiry:
+        type: string
+      subscription_status:
+        $ref: '#/definitions/SubscriptionStatus'
+      user_count:
+        type: integer
+    type: object
+  Role:
+    enum:
+    - SystemAdmin
+    - EnterpriseAdmin
+    - EnterpriseAuto
+    - EnterpriseStaff
+    - ExamCandidate
+    type: string
+    x-enum-varnames:
+    - RoleSystemAdmin
+    - RoleEnterpriseAdmin
+    - RoleEnterpriseAuto
+    - RoleEnterpriseStaff
+    - RoleExamCandidate
+  SubscriptionStatus:
+    enum:
+    - Trial
+    - Active
+    - PastDue
+    - Canceled
+    - Expired
+    type: string
+    x-enum-varnames:
+    - SubTrial
+    - SubActive
+    - SubPastDue
+    - SubCanceled
+    - SubExpired
+  UpdateBrandingRequest:
+    properties:
+      logo_url:
+        type: string
+      primary_color:
+        type: string
+      secondary_color:
+        type: string
+    type: object
+  UpdateSubscriptionRequest:
+    properties:
+      period_end:
+        type: string
+      period_start:
+        type: string
+      subscription_plan_id:
+        type: string
+      subscription_status:
+        $ref: '#/definitions/SubscriptionStatus'
+    type: object
+  UpdateUserRequest:
+    properties:
+      first_name:
+        type: string
+      honorific:
+        type: string
+      last_name:
+        type: string
+      phone:
+        type: string
+      role:
+        $ref: '#/definitions/Role'
+    type: object
+  User:
+    properties:
+      createdAt:
+        type: string
+      email:
+        type: string
+      emailVerified:
+        type: boolean
+      emailVerifiedAt:
+        type: string
+      enterpriseID:
+        type: string
+      failedLoginAttempts:
+        type: integer
+      firstName:
+        type: string
+      honorific:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      isDeleted:
+        type: boolean
+      lastLoginAt:
+        type: string
+      lastLoginIP:
+        type: string
+      lastName:
+        type: string
+      lastUserAgent:
+        type: string
+      lockedUntil:
+        type: string
+      mustChangePassword:
+        type: boolean
+      passwordChangedAt:
+        type: string
+      passwordHash:
+        type: string
+      phone:
+        type: string
+      role:
+        $ref: '#/definitions/Role'
+      updatedAt:
+        type: string
+    type: object
+  AuditLogListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/AuditLog'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  EnterpriseListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/Enterprise'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  EnterpriseRegisterRequest:
+    properties:
+      contactEmail:
+        type: string
+      displayName:
+        type: string
+      legalName:
+        type: string
+      ownerEmail:
+        type: string
+      ownerPassword:
+        minLength: 8
+        type: string
+      slug:
+        type: string
+    required:
+    - contactEmail
+    - displayName
+    - legalName
+    - ownerEmail
+    - ownerPassword
+    - slug
+    type: object
+  ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  ResetPasswordResponse:
+    properties:
+      temporary_password:
+        type: string
+    type: object
+  SubscriptionInfoResponse:
+    properties:
+      current_period_end:
+        type: string
+      current_period_start:
+        type: string
+      enterprise_id:
+        type: string
+      subscription_plan_id:
+        type: string
+      subscription_status:
+        $ref: '#/definitions/SubscriptionStatus'
+    type: object
+  UserListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/User'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
 info:
   contact:
     name: Veritas Platform Team
@@ -7,6 +406,1127 @@ info:
   title: Veritas Enterprise Service API
   version: "1.0"
 paths:
+  /enterprises:
+    get:
+      description: List enterprises with optional status and search filters.
+      parameters:
+      - description: Enterprise status
+        in: query
+        name: status
+        type: string
+      - description: Subscription status
+        in: query
+        name: subscription_status
+        type: string
+      - description: Search by slug or display name
+        in: query
+        name: search
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/EnterpriseListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: List enterprises
+      tags:
+      - enterprise
+    post:
+      consumes:
+      - application/json
+      description: Register a new enterprise with an owner account.
+      parameters:
+      - description: Registration payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/EnterpriseRegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/Enterprise'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Register enterprise
+      tags:
+      - enterprise
+  /enterprises/{enterpriseId}:
+    delete:
+      description: Soft-delete enterprise and start retention period.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Delete enterprise
+      tags:
+      - enterprise
+    get:
+      description: Get enterprise details by enterprise ID.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Enterprise'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get enterprise
+      tags:
+      - enterprise
+    patch:
+      consumes:
+      - application/json
+      description: Update enterprise profile fields.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Enterprise patch payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/Enterprise'
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Update enterprise
+      tags:
+      - enterprise
+  /enterprises/{enterpriseId}/approve:
+    post:
+      description: Approve enterprise onboarding request.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Approve enterprise
+      tags:
+      - enterprise
+  /enterprises/{enterpriseId}/audit-logs:
+    get:
+      description: List paginated audit logs for enterprise actions.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AuditLogListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get audit logs
+      tags:
+      - enterprise
+  /enterprises/{enterpriseId}/branding:
+    patch:
+      consumes:
+      - application/json
+      description: Update logo and brand color values.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      - description: Branding patch
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateBrandingRequest'
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Update branding
+      tags:
+      - enterprise
+  /enterprises/{enterpriseId}/permanent:
+    delete:
+      description: Permanently delete enterprise data.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Hard delete enterprise
+      tags:
+      - enterprise
+  /enterprises/{enterpriseId}/reactivate:
+    post:
+      description: Reactivate enterprise from suspended state.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Reactivate enterprise
+      tags:
+      - enterprise
+  /enterprises/{enterpriseId}/restore:
+    post:
+      description: Restore a soft-deleted enterprise.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Restore enterprise
+      tags:
+      - enterprise
+  /enterprises/{enterpriseId}/settings:
+    patch:
+      consumes:
+      - application/json
+      description: Merge/patch enterprise settings object.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      - description: Settings patch object
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Update settings
+      tags:
+      - enterprise
+  /enterprises/{enterpriseId}/status:
+    get:
+      description: Get lifecycle and subscription status view.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/EnterpriseStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get enterprise status
+      tags:
+      - enterprise
+  /enterprises/{enterpriseId}/subscription:
+    get:
+      description: Return enterprise subscription details only.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SubscriptionInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get subscription info
+      tags:
+      - subscription
+    post:
+      consumes:
+      - application/json
+      description: Update enterprise subscription plan/status/period fields.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      - description: Subscription update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateSubscriptionRequest'
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Update subscription
+      tags:
+      - subscription
+  /enterprises/{enterpriseId}/subscription/cancel:
+    post:
+      description: Cancel the current enterprise subscription.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Cancel subscription
+      tags:
+      - subscription
+  /enterprises/{enterpriseId}/subscription/renew:
+    post:
+      description: Renew the current enterprise subscription period.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Renew subscription
+      tags:
+      - subscription
+  /enterprises/{enterpriseId}/summary:
+    get:
+      description: Get compact operational summary for an enterprise.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/EnterpriseSummary'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get enterprise summary
+      tags:
+      - enterprise
+  /enterprises/{enterpriseId}/suspend:
+    post:
+      description: Suspend an active enterprise.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Suspend enterprise
+      tags:
+      - enterprise
+  /enterprises/{enterpriseId}/suspend-payment:
+    post:
+      description: Suspend enterprise subscription due to payment failure.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Suspend for payment
+      tags:
+      - subscription
+  /enterprises/{enterpriseId}/users:
+    get:
+      description: List users belonging to the specified enterprise.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/UserListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: List enterprise users
+      tags:
+      - user
+    post:
+      consumes:
+      - application/json
+      description: Create a user account scoped to an enterprise.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      - description: Create user payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Create enterprise user
+      tags:
+      - user
+  /enterprises/{enterpriseId}/users/{userId}:
+    get:
+      description: Get a specific enterprise user by user ID.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: User ID (UUID)
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get enterprise user
+      tags:
+      - user
+    patch:
+      consumes:
+      - application/json
+      description: Update profile and role fields for an enterprise user.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: User ID (UUID)
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      - description: Update user payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateUserRequest'
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Update enterprise user
+      tags:
+      - user
+  /enterprises/{enterpriseId}/users/{userId}/deactivate:
+    patch:
+      description: Deactivate user account without permanent deletion.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: User ID (UUID)
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Deactivate enterprise user
+      tags:
+      - user
+  /enterprises/{enterpriseId}/users/{userId}/reset-password:
+    post:
+      description: Reset user password and return temporary password for secure handoff.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: User ID (UUID)
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ResetPasswordResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Reset user password
+      tags:
+      - user
+  /enterprises/{enterpriseId}/validate-domain:
+    post:
+      description: Validate TXT/CNAME records for enterprise custom domain.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/DomainValidationResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Validate custom domain
+      tags:
+      - enterprise
+  /enterprises/me:
+    get:
+      description: Get enterprise inferred from X-Enterprise-ID header.
+      parameters:
+      - description: Caller enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Enterprise'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get my enterprise
+      tags:
+      - enterprise
+  /enterprises/slug/{slug}:
+    get:
+      description: Resolve enterprise details using slug.
+      parameters:
+      - description: Enterprise slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Enterprise'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get enterprise by slug
+      tags:
+      - enterprise
   /health:
     get:
       description: Returns a simple JSON indicating the service is alive.

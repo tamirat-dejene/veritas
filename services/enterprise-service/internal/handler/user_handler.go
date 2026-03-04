@@ -16,6 +16,22 @@ func NewUserHandler(uc domain.UserUsecase) *UserHandler {
 	return &UserHandler{usecase: uc}
 }
 
+// CreateUser creates a new user under an enterprise.
+//
+//	@Summary		Create enterprise user
+//	@Description	Create a user account scoped to an enterprise.
+//	@Tags			user
+//	@Accept			json
+//	@Produce		json
+//	@Param			enterpriseId	path	string				true	"Enterprise ID (UUID)"
+//	@Param			X-User-ID	header	string				false	"Actor user ID (UUID)"
+//	@Param			body			body	domain.CreateUserRequest	true	"Create user payload"
+//	@Success		201			{object}	domain.User
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		409			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/enterprises/{enterpriseId}/users [post]
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	id, ok := ParseEnterpriseID(c)
 	if !ok {
@@ -36,6 +52,20 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	writeJSON(c, http.StatusCreated, user)
 }
 
+// ListUsers lists enterprise users with pagination.
+//
+//	@Summary		List enterprise users
+//	@Description	List users belonging to the specified enterprise.
+//	@Tags			user
+//	@Produce		json
+//	@Param			enterpriseId	path	string	true	"Enterprise ID (UUID)"
+//	@Param			page			query	int	false	"Page number"
+//	@Param			limit			query	int	false	"Page size"
+//	@Success		200			{object}	UserListResponse
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/enterprises/{enterpriseId}/users [get]
 func (h *UserHandler) ListUsers(c *gin.Context) {
 	id, ok := ParseEnterpriseID(c)
 	if !ok {
@@ -56,6 +86,19 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 	})
 }
 
+// GetUser gets one enterprise user by ID.
+//
+//	@Summary		Get enterprise user
+//	@Description	Get a specific enterprise user by user ID.
+//	@Tags			user
+//	@Produce		json
+//	@Param			enterpriseId	path	string	true	"Enterprise ID (UUID)"
+//	@Param			userId			path	string	true	"User ID (UUID)"
+//	@Success		200			{object}	domain.User
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/enterprises/{enterpriseId}/users/{userId} [get]
 func (h *UserHandler) GetUser(c *gin.Context) {
 	enterpriseID, ok := ParseEnterpriseID(c)
 	if !ok {
@@ -75,6 +118,22 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	writeJSON(c, http.StatusOK, user)
 }
 
+// UpdateUser updates an enterprise user.
+//
+//	@Summary		Update enterprise user
+//	@Description	Update profile and role fields for an enterprise user.
+//	@Tags			user
+//	@Accept			json
+//	@Param			enterpriseId	path	string				true	"Enterprise ID (UUID)"
+//	@Param			userId			path	string				true	"User ID (UUID)"
+//	@Param			X-User-ID	header	string				false	"Actor user ID (UUID)"
+//	@Param			body			body	domain.UpdateUserRequest	true	"Update user payload"
+//	@Success		204			{string}	string				"No Content"
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		409			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/enterprises/{enterpriseId}/users/{userId} [patch]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	enterpriseID, ok := ParseEnterpriseID(c)
 	if !ok {
@@ -99,6 +158,19 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// DeactivateUser deactivates an enterprise user account.
+//
+//	@Summary		Deactivate enterprise user
+//	@Description	Deactivate user account without permanent deletion.
+//	@Tags			user
+//	@Param			enterpriseId	path	string	true	"Enterprise ID (UUID)"
+//	@Param			userId			path	string	true	"User ID (UUID)"
+//	@Param			X-User-ID	header	string	false	"Actor user ID (UUID)"
+//	@Success		204			{string}	string	"No Content"
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/enterprises/{enterpriseId}/users/{userId}/deactivate [patch]
 func (h *UserHandler) DeactivateUser(c *gin.Context) {
 	enterpriseID, ok := ParseEnterpriseID(c)
 	if !ok {
@@ -118,6 +190,20 @@ func (h *UserHandler) DeactivateUser(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// ResetPassword resets an enterprise user's password and returns a temporary password.
+//
+//	@Summary		Reset user password
+//	@Description	Reset user password and return temporary password for secure handoff.
+//	@Tags			user
+//	@Produce		json
+//	@Param			enterpriseId	path	string	true	"Enterprise ID (UUID)"
+//	@Param			userId			path	string	true	"User ID (UUID)"
+//	@Param			X-User-ID	header	string	false	"Actor user ID (UUID)"
+//	@Success		200			{object}	ResetPasswordResponse
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/enterprises/{enterpriseId}/users/{userId}/reset-password [post]
 func (h *UserHandler) ResetPassword(c *gin.Context) {
 	enterpriseID, ok := ParseEnterpriseID(c)
 	if !ok {

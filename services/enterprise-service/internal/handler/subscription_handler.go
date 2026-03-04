@@ -16,6 +16,21 @@ func NewSubscriptionHandler(uc domain.EnterpriseUsecase) *SubscriptionHandler {
 	return &SubscriptionHandler{usecase: uc}
 }
 
+// UpdateSubscription updates enterprise subscription details.
+//
+//	@Summary		Update subscription
+//	@Description	Update enterprise subscription plan/status/period fields.
+//	@Tags			subscription
+//	@Accept			json
+//	@Param			enterpriseId	path	string					true	"Enterprise ID (UUID)"
+//	@Param			X-User-ID	header	string					false	"Actor user ID (UUID)"
+//	@Param			body			body	domain.UpdateSubscriptionRequest	true	"Subscription update payload"
+//	@Success		204			{string}	string					"No Content"
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		409			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/enterprises/{enterpriseId}/subscription [post]
 func (h *SubscriptionHandler) UpdateSubscription(c *gin.Context) {
 	id, ok := ParseEnterpriseID(c)
 	if !ok {
@@ -35,6 +50,19 @@ func (h *SubscriptionHandler) UpdateSubscription(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// CancelSubscription cancels enterprise subscription.
+//
+//	@Summary		Cancel subscription
+//	@Description	Cancel the current enterprise subscription.
+//	@Tags			subscription
+//	@Param			enterpriseId	path	string	true	"Enterprise ID (UUID)"
+//	@Param			X-User-ID	header	string	false	"Actor user ID (UUID)"
+//	@Success		204			{string}	string	"No Content"
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		409			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/enterprises/{enterpriseId}/subscription/cancel [post]
 func (h *SubscriptionHandler) CancelSubscription(c *gin.Context) {
 	id, ok := ParseEnterpriseID(c)
 	if !ok {
@@ -49,6 +77,19 @@ func (h *SubscriptionHandler) CancelSubscription(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// RenewSubscription renews enterprise subscription.
+//
+//	@Summary		Renew subscription
+//	@Description	Renew the current enterprise subscription period.
+//	@Tags			subscription
+//	@Param			enterpriseId	path	string	true	"Enterprise ID (UUID)"
+//	@Param			X-User-ID	header	string	false	"Actor user ID (UUID)"
+//	@Success		204			{string}	string	"No Content"
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		409			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/enterprises/{enterpriseId}/subscription/renew [post]
 func (h *SubscriptionHandler) RenewSubscription(c *gin.Context) {
 	id, ok := ParseEnterpriseID(c)
 	if !ok {
@@ -63,6 +104,19 @@ func (h *SubscriptionHandler) RenewSubscription(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// GetSubscriptionInfo returns subscription-focused view for enterprise.
+//
+//	@Summary		Get subscription info
+//	@Description	Return enterprise subscription details only.
+//	@Tags			subscription
+//	@Produce		json
+//	@Param			enterpriseId	path	string	true	"Enterprise ID (UUID)"
+//	@Success		200			{object}	SubscriptionInfoResponse
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		409			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/enterprises/{enterpriseId}/subscription [get]
 func (h *SubscriptionHandler) GetSubscriptionInfo(c *gin.Context) {
 	id, ok := ParseEnterpriseID(c)
 	if !ok {
@@ -84,6 +138,19 @@ func (h *SubscriptionHandler) GetSubscriptionInfo(c *gin.Context) {
 	})
 }
 
+// SuspendForPayment suspends an enterprise due to payment issues.
+//
+//	@Summary		Suspend for payment
+//	@Description	Suspend enterprise subscription due to payment failure.
+//	@Tags			subscription
+//	@Param			enterpriseId	path	string	true	"Enterprise ID (UUID)"
+//	@Param			X-User-ID	header	string	false	"Actor user ID (UUID)"
+//	@Success		204			{string}	string	"No Content"
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		409			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/enterprises/{enterpriseId}/suspend-payment [post]
 func (h *SubscriptionHandler) SuspendForPayment(c *gin.Context) {
 	id, ok := ParseEnterpriseID(c)
 	if !ok {
