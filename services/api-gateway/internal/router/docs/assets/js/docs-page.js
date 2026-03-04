@@ -7,18 +7,13 @@ const dashboardView = document.getElementById('dashboardView');
 const serviceCards = document.getElementById('serviceCards');
 const backToHome = document.getElementById('backToHome');
 
-const serviceOrder = [
-    'auth',
-    'enterprise',
-    'payment',
-    'exam',
-    'candidate',
-    'proctoring',
-    'face',
-    'grading',
-    'reporting',
-    'monitoring',
-];
+const serviceGroups = {
+    go: ['auth', 'enterprise', 'payment', 'exam', 'candidate'],
+    python: ['proctoring', 'face', 'grading', 'reporting'],
+    monitoring: ['monitoring'],
+};
+
+const serviceOrder = [...serviceGroups.go, ...serviceGroups.python, ...serviceGroups.monitoring];
 
 const serviceDetails = {
     auth: { description: 'Identity and Access Management service handling authentication and authorization.', swagger: '/swagger/auth/index.html' },
@@ -138,11 +133,24 @@ function switchService(serviceName) {
 
 function renderSidebar() {
     if (!serviceList) return;
-    serviceList.innerHTML = serviceOrder.map(service => `
-        <li class="service-item" data-service="${service}">
-            <span class="service-name">${service.charAt(0).toUpperCase() + service.slice(1)}</span>
-        </li>
-    `).join('');
+    const renderGroup = (label, services) => {
+        const items = services.map(service => `
+            <li class="service-item" data-service="${service}">
+                <span class="service-name">${service.charAt(0).toUpperCase() + service.slice(1)}</span>
+            </li>
+        `).join('');
+
+        return `
+            <li class="service-group-label">${label}</li>
+            ${items}
+        `;
+    };
+
+    serviceList.innerHTML = [
+        renderGroup('Go Services', serviceGroups.go),
+        renderGroup('Python Services', serviceGroups.python),
+        renderGroup('Monitoring', serviceGroups.monitoring),
+    ].join('');
 
     serviceList.addEventListener('click', async (e) => {
         const item = e.target.closest('.service-item');
