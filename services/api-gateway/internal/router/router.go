@@ -109,6 +109,7 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 		"candidate": candidateProxy,
 		"enterprise": enterpriseProxy,
 		"exam": examProxy,
+		"payment": paymentProxy,
 	})
 
 	routerGroup.RegisterAuthRoutes(authProxy)
