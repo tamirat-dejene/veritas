@@ -1,3 +1,21 @@
+// Package main is the entry-point for the Veritas exam-service.
+//
+//	@title			Veritas Exam Service API
+//	@version		1.0
+//	@description	Exam authoring, scheduling, publishing, and question bank management service.
+//
+//	@contact.name	Veritas Platform Team
+//
+//	@tag.name		exam
+//	@tag.description	Exam lifecycle and assembly endpoints.
+//	@tag.name		question
+//	@tag.description	Question bank management endpoints.
+//	@tag.name		system
+//	@tag.description	Operational and health endpoints.
+//
+//	@schemes		http https
+//	@BasePath	/
+
 package main
 
 import (
@@ -17,6 +35,9 @@ import (
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/usecase"
 	pg "github.com/tamirat-dejene/veritas/shared/db/pg"
 	"go.uber.org/zap"
+
+	// Import generated swagger docs so the spec is registered at startup.
+	_ "github.com/tamirat-dejene/veritas/services/exam-service/docs/swagger"
 )
 
 func main() {

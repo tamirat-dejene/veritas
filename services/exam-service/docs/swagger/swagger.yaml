@@ -1,0 +1,1143 @@
+basePath: /
+definitions:
+  DifficultyLevel:
+    enum:
+    - Easy
+    - Medium
+    - Hard
+    type: string
+    x-enum-varnames:
+    - DifficultyEasy
+    - DifficultyMedium
+    - DifficultyHard
+  Exam:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: string
+      description:
+        type: string
+      durationMinutes:
+        type: integer
+      enterpriseId:
+        type: string
+      id:
+        type: string
+      invitationMethod:
+        description: Email, Link, Token
+        type: string
+      maxParticipants:
+        type: integer
+      negativeMarking:
+        type: boolean
+      passingScorePercent:
+        type: number
+      questions:
+        description: Relational data
+        items:
+          $ref: '#/definitions/ExamQuestion'
+        type: array
+      randomizationRules:
+        items:
+          $ref: '#/definitions/ExamRandomizationRule'
+        type: array
+      scheduledEnd:
+        type: string
+      scheduledStart:
+        type: string
+      settings:
+        additionalProperties: true
+        type: object
+      status:
+        $ref: '#/definitions/ExamStatus'
+      templateSourceId:
+        type: string
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  ExamQuestion:
+    properties:
+      examId:
+        type: string
+      id:
+        type: string
+      orderIndex:
+        type: integer
+      pointsOverride:
+        type: integer
+      question:
+        allOf:
+        - $ref: '#/definitions/Question'
+        description: populated if joined
+      questionId:
+        type: string
+    type: object
+  ExamRandomizationRule:
+    properties:
+      difficulty:
+        $ref: '#/definitions/DifficultyLevel'
+      examId:
+        type: string
+      id:
+        type: string
+      questionCount:
+        type: integer
+      topic:
+        type: string
+    type: object
+  ExamStatus:
+    enum:
+    - Draft
+    - Scheduled
+    - Active
+    - Closed
+    - Archived
+    type: string
+    x-enum-varnames:
+    - ExamDraft
+    - ExamScheduled
+    - ExamActive
+    - ExamClosed
+    - ExamArchived
+  Question:
+    properties:
+      content:
+        type: string
+      createdAt:
+        type: string
+      createdBy:
+        type: string
+      difficulty:
+        $ref: '#/definitions/DifficultyLevel'
+      enterpriseId:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      mediaUrl:
+        type: string
+      metadata:
+        additionalProperties: true
+        type: object
+      negativePoints:
+        type: number
+      options:
+        items:
+          $ref: '#/definitions/QuestionOption'
+        type: array
+      points:
+        type: integer
+      title:
+        type: string
+      topic:
+        type: string
+      type:
+        $ref: '#/definitions/QuestionType'
+      updatedAt:
+        type: string
+    type: object
+  QuestionOption:
+    properties:
+      content:
+        type: string
+      id:
+        type: string
+      isCorrect:
+        type: boolean
+      questionId:
+        type: string
+    type: object
+  QuestionType:
+    enum:
+    - MCQ
+    - TrueFalse
+    - ShortAnswer
+    - Essay
+    type: string
+    x-enum-varnames:
+    - QuestionTypeMCQ
+    - QuestionTypeTrueFalse
+    - QuestionTypeShortAnswer
+    - QuestionTypeEssay
+  AddExamQuestionRequest:
+    properties:
+      orderIndex:
+        type: integer
+      pointsOverride:
+        type: integer
+      questionId:
+        type: string
+    required:
+    - questionId
+    type: object
+  CloneExamRequest:
+    properties:
+      title:
+        type: string
+    required:
+    - title
+    type: object
+  ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  ExamRuleRequest:
+    properties:
+      difficulty:
+        $ref: '#/definitions/DifficultyLevel'
+      questionCount:
+        type: integer
+      topic:
+        type: string
+    required:
+    - questionCount
+    type: object
+  ScheduleExamRequest:
+    properties:
+      endTime:
+        example: "2026-03-01T12:00:00Z"
+        type: string
+      startTime:
+        example: "2026-03-01T10:00:00Z"
+        type: string
+    required:
+    - endTime
+    - startTime
+    type: object
+  UpdateExamQuestionRequest:
+    properties:
+      orderIndex:
+        type: integer
+      pointsOverride:
+        type: integer
+    type: object
+info:
+  contact:
+    name: Veritas Platform Team
+  description: Exam authoring, scheduling, publishing, and question bank management
+    service.
+  title: Veritas Exam Service API
+  version: "1.0"
+paths:
+  /exams:
+    get:
+      description: List all exams for the caller enterprise.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/Exam'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: List exams
+      tags:
+      - exam
+    post:
+      consumes:
+      - application/json
+      description: Create one exam under the caller enterprise.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Exam payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/Exam'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/Exam'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Create exam
+      tags:
+      - exam
+  /exams/{examId}:
+    delete:
+      description: Delete one exam by ID.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Exam ID (UUID)
+        in: path
+        name: examId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Delete exam
+      tags:
+      - exam
+    get:
+      description: Get one exam for the caller enterprise.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Exam ID (UUID)
+        in: path
+        name: examId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Exam'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get exam
+      tags:
+      - exam
+    patch:
+      consumes:
+      - application/json
+      description: Update exam fields by ID.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Exam ID (UUID)
+        in: path
+        name: examId
+        required: true
+        type: string
+      - description: Exam payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/Exam'
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Update exam
+      tags:
+      - exam
+  /exams/{examId}/clone:
+    post:
+      consumes:
+      - application/json
+      description: Clone exam content into a new exam with provided title.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Source Exam ID (UUID)
+        in: path
+        name: examId
+        required: true
+        type: string
+      - description: Clone payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/CloneExamRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/Exam'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Clone exam
+      tags:
+      - exam
+  /exams/{examId}/close:
+    post:
+      description: Close an active exam.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Exam ID (UUID)
+        in: path
+        name: examId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Close exam
+      tags:
+      - exam
+  /exams/{examId}/publish:
+    post:
+      description: Publish exam after validation checks.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Exam ID (UUID)
+        in: path
+        name: examId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Publish exam
+      tags:
+      - exam
+  /exams/{examId}/questions:
+    get:
+      description: Get question mappings for one exam.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Exam ID (UUID)
+        in: path
+        name: examId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/ExamQuestion'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get exam questions
+      tags:
+      - exam
+    post:
+      consumes:
+      - application/json
+      description: Attach question to exam with optional override points and order
+        index.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Exam ID (UUID)
+        in: path
+        name: examId
+        required: true
+        type: string
+      - description: Exam question payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/AddExamQuestionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/ExamQuestion'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Add question to exam
+      tags:
+      - exam
+  /exams/{examId}/questions/{questionId}:
+    delete:
+      description: Remove one question mapping from exam.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Exam ID (UUID)
+        in: path
+        name: examId
+        required: true
+        type: string
+      - description: Question ID (UUID)
+        in: path
+        name: questionId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Remove question from exam
+      tags:
+      - exam
+    patch:
+      consumes:
+      - application/json
+      description: Update points override or order index for an exam question mapping.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Exam ID (UUID)
+        in: path
+        name: examId
+        required: true
+        type: string
+      - description: Question ID (UUID)
+        in: path
+        name: questionId
+        required: true
+        type: string
+      - description: Update mapping payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateExamQuestionRequest'
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Update exam question mapping
+      tags:
+      - exam
+  /exams/{examId}/rules:
+    post:
+      consumes:
+      - application/json
+      description: Add rule for selecting random questions by topic/difficulty.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Exam ID (UUID)
+        in: path
+        name: examId
+        required: true
+        type: string
+      - description: Rule payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ExamRuleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/ExamRandomizationRule'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Add randomization rule
+      tags:
+      - exam
+  /exams/{examId}/rules/{ruleId}:
+    delete:
+      description: Delete one randomization rule from an exam.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Exam ID (UUID)
+        in: path
+        name: examId
+        required: true
+        type: string
+      - description: Rule ID (UUID)
+        in: path
+        name: ruleId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Delete randomization rule
+      tags:
+      - exam
+    patch:
+      consumes:
+      - application/json
+      description: Update topic/difficulty/questionCount for a rule.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Exam ID (UUID)
+        in: path
+        name: examId
+        required: true
+        type: string
+      - description: Rule ID (UUID)
+        in: path
+        name: ruleId
+        required: true
+        type: string
+      - description: Rule payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ExamRuleRequest'
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Update randomization rule
+      tags:
+      - exam
+  /exams/{examId}/schedule:
+    post:
+      consumes:
+      - application/json
+      description: Set start and end times for an exam.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Exam ID (UUID)
+        in: path
+        name: examId
+        required: true
+        type: string
+      - description: Schedule payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ScheduleExamRequest'
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Schedule exam
+      tags:
+      - exam
+  /health:
+    get:
+      description: Returns a simple JSON indicating the service is alive.
+      operationId: healthCheck
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Service is healthy
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - system
+  /questions:
+    get:
+      description: List all questions for the caller enterprise.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/Question'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: List questions
+      tags:
+      - question
+    post:
+      consumes:
+      - application/json
+      description: Create one question under the caller enterprise.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Question payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/Question'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/Question'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Create question
+      tags:
+      - question
+  /questions/{questionId}:
+    delete:
+      description: Delete one question from the caller enterprise.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Question ID (UUID)
+        in: path
+        name: questionId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Delete question
+      tags:
+      - question
+    get:
+      description: Get a question by ID for the caller enterprise.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Question ID (UUID)
+        in: path
+        name: questionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Question'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get question
+      tags:
+      - question
+    patch:
+      consumes:
+      - application/json
+      description: Update question fields by ID.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Question ID (UUID)
+        in: path
+        name: questionId
+        required: true
+        type: string
+      - description: Question payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/Question'
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Update question
+      tags:
+      - question
+schemes:
+- http
+- https
+swagger: "2.0"
+tags:
+- description: Exam lifecycle and assembly endpoints.
+  name: exam
+- description: Question bank management endpoints.
+  name: question
+- description: Operational and health endpoints.
+  name: system

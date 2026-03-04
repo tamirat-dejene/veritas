@@ -16,6 +16,21 @@ func NewQuestionHandler(uc domain.QuestionUsecase) *QuestionHandler {
 	return &QuestionHandler{usecase: uc}
 }
 
+// CreateQuestion creates a new question in enterprise question bank.
+//
+//	@Summary		Create question
+//	@Description	Create one question under the caller enterprise.
+//	@Tags			question
+//	@Accept			json
+//	@Produce		json
+//	@Param			X-Enterprise-ID	header	string				true	"Enterprise ID (UUID)"
+//	@Param			X-User-ID	header	string				true	"Actor user ID (UUID)"
+//	@Param			body			body	domain.Question	true	"Question payload"
+//	@Success		201			{object}	domain.Question
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/questions [post]
 func (h *QuestionHandler) CreateQuestion(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
@@ -46,6 +61,17 @@ func (h *QuestionHandler) CreateQuestion(c *gin.Context) {
 	writeJSON(c, http.StatusCreated, created)
 }
 
+// ListQuestions lists enterprise questions.
+//
+//	@Summary		List questions
+//	@Description	List all questions for the caller enterprise.
+//	@Tags			question
+//	@Produce		json
+//	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
+//	@Success		200			{array}	domain.Question
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/questions [get]
 func (h *QuestionHandler) ListQuestions(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
@@ -67,6 +93,20 @@ func (h *QuestionHandler) ListQuestions(c *gin.Context) {
 	writeJSON(c, http.StatusOK, questions)
 }
 
+// GetQuestion gets one question by ID.
+//
+//	@Summary		Get question
+//	@Description	Get a question by ID for the caller enterprise.
+//	@Tags			question
+//	@Produce		json
+//	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
+//	@Param			questionId		path	string	true	"Question ID (UUID)"
+//	@Success		200			{object}	domain.Question
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/questions/{questionId} [get]
 func (h *QuestionHandler) GetQuestion(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
@@ -94,6 +134,22 @@ func (h *QuestionHandler) GetQuestion(c *gin.Context) {
 	writeJSON(c, http.StatusOK, q)
 }
 
+// UpdateQuestion updates an existing question.
+//
+//	@Summary		Update question
+//	@Description	Update question fields by ID.
+//	@Tags			question
+//	@Accept			json
+//	@Param			X-Enterprise-ID	header	string				true	"Enterprise ID (UUID)"
+//	@Param			X-User-ID	header	string				true	"Actor user ID (UUID)"
+//	@Param			questionId		path	string				true	"Question ID (UUID)"
+//	@Param			body			body	domain.Question	true	"Question payload"
+//	@Success		204			{string}	string				"No Content"
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/questions/{questionId} [patch]
 func (h *QuestionHandler) UpdateQuestion(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
@@ -135,6 +191,19 @@ func (h *QuestionHandler) UpdateQuestion(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// DeleteQuestion deletes a question by ID.
+//
+//	@Summary		Delete question
+//	@Description	Delete one question from the caller enterprise.
+//	@Tags			question
+//	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
+//	@Param			questionId		path	string	true	"Question ID (UUID)"
+//	@Success		204			{string}	string	"No Content"
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/questions/{questionId} [delete]
 func (h *QuestionHandler) DeleteQuestion(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {

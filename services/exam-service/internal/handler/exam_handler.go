@@ -17,6 +17,21 @@ func NewExamHandler(uc domain.ExamUsecase) *ExamHandler {
 	return &ExamHandler{usecase: uc}
 }
 
+// CreateExam creates a new exam.
+//
+//	@Summary		Create exam
+//	@Description	Create one exam under the caller enterprise.
+//	@Tags			exam
+//	@Accept			json
+//	@Produce		json
+//	@Param			X-Enterprise-ID	header	string		true	"Enterprise ID (UUID)"
+//	@Param			X-User-ID	header	string		true	"Actor user ID (UUID)"
+//	@Param			body			body	domain.Exam	true	"Exam payload"
+//	@Success		201			{object}	domain.Exam
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/exams [post]
 func (h *ExamHandler) CreateExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
@@ -47,6 +62,23 @@ func (h *ExamHandler) CreateExam(c *gin.Context) {
 	writeJSON(c, http.StatusCreated, created)
 }
 
+// UpdateExam updates a draft exam.
+//
+//	@Summary		Update exam
+//	@Description	Update exam fields by ID.
+//	@Tags			exam
+//	@Accept			json
+//	@Param			X-Enterprise-ID	header	string		true	"Enterprise ID (UUID)"
+//	@Param			X-User-ID	header	string		true	"Actor user ID (UUID)"
+//	@Param			examId			path	string		true	"Exam ID (UUID)"
+//	@Param			body			body	domain.Exam	true	"Exam payload"
+//	@Success		204			{string}	string		"No Content"
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		409			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/exams/{examId} [patch]
 func (h *ExamHandler) UpdateExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
@@ -92,11 +124,23 @@ func (h *ExamHandler) UpdateExam(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-type scheduleRequest struct {
-	StartTime time.Time `json:"startTime" binding:"required"`
-	EndTime   time.Time `json:"endTime" binding:"required"`
-}
-
+// ScheduleExam schedules an exam window.
+//
+//	@Summary		Schedule exam
+//	@Description	Set start and end times for an exam.
+//	@Tags			exam
+//	@Accept			json
+//	@Param			X-Enterprise-ID	header	string				true	"Enterprise ID (UUID)"
+//	@Param			X-User-ID	header	string				true	"Actor user ID (UUID)"
+//	@Param			examId			path	string				true	"Exam ID (UUID)"
+//	@Param			body			body	ScheduleExamRequest	true	"Schedule payload"
+//	@Success		204			{string}	string				"No Content"
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		409			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/exams/{examId}/schedule [post]
 func (h *ExamHandler) ScheduleExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
@@ -117,13 +161,24 @@ func (h *ExamHandler) ScheduleExam(c *gin.Context) {
 		return
 	}
 
-	var req scheduleRequest
+	var req ScheduleExamRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	if err := h.usecase.ScheduleExam(c.Request.Context(), examID, enterpriseID, req.StartTime, req.EndTime, userID); err != nil {
+	startTime, err := time.Parse(time.RFC3339, req.StartTime)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid startTime format")
+		return
+	}
+	endTime, err := time.Parse(time.RFC3339, req.EndTime)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid endTime format")
+		return
+	}
+
+	if err := h.usecase.ScheduleExam(c.Request.Context(), examID, enterpriseID, startTime, endTime, userID); err != nil {
 		if err == domain.ErrExamNotFound {
 			writeError(c, http.StatusNotFound, "exam not found")
 			return
@@ -139,10 +194,23 @@ func (h *ExamHandler) ScheduleExam(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-type cloneRequest struct {
-	Title string `json:"title" binding:"required"`
-}
-
+// CloneExam clones an existing exam into a new draft.
+//
+//	@Summary		Clone exam
+//	@Description	Clone exam content into a new exam with provided title.
+//	@Tags			exam
+//	@Accept			json
+//	@Produce		json
+//	@Param			X-Enterprise-ID	header	string			true	"Enterprise ID (UUID)"
+//	@Param			X-User-ID	header	string			true	"Actor user ID (UUID)"
+//	@Param			examId			path	string			true	"Source Exam ID (UUID)"
+//	@Param			body			body	CloneExamRequest	true	"Clone payload"
+//	@Success		201			{object}	domain.Exam
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/exams/{examId}/clone [post]
 func (h *ExamHandler) CloneExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
@@ -163,7 +231,7 @@ func (h *ExamHandler) CloneExam(c *gin.Context) {
 		return
 	}
 
-	var req cloneRequest
+	var req CloneExamRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "invalid request body")
 		return
@@ -182,6 +250,17 @@ func (h *ExamHandler) CloneExam(c *gin.Context) {
 	writeJSON(c, http.StatusCreated, cloned)
 }
 
+// ListExams lists enterprise exams.
+//
+//	@Summary		List exams
+//	@Description	List all exams for the caller enterprise.
+//	@Tags			exam
+//	@Produce		json
+//	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
+//	@Success		200			{array}	domain.Exam
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/exams [get]
 func (h *ExamHandler) ListExams(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
@@ -202,6 +281,20 @@ func (h *ExamHandler) ListExams(c *gin.Context) {
 	writeJSON(c, http.StatusOK, exams)
 }
 
+// GetExam gets one exam by ID.
+//
+//	@Summary		Get exam
+//	@Description	Get one exam for the caller enterprise.
+//	@Tags			exam
+//	@Produce		json
+//	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
+//	@Param			examId			path	string	true	"Exam ID (UUID)"
+//	@Success		200			{object}	domain.Exam
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/exams/{examId} [get]
 func (h *ExamHandler) GetExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
@@ -229,6 +322,20 @@ func (h *ExamHandler) GetExam(c *gin.Context) {
 	writeJSON(c, http.StatusOK, e)
 }
 
+// GetExamQuestions lists mapped questions for an exam.
+//
+//	@Summary		Get exam questions
+//	@Description	Get question mappings for one exam.
+//	@Tags			exam
+//	@Produce		json
+//	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
+//	@Param			examId			path	string	true	"Exam ID (UUID)"
+//	@Success		200			{array}	domain.ExamQuestion
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/exams/{examId}/questions [get]
 func (h *ExamHandler) GetExamQuestions(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
@@ -260,6 +367,19 @@ func (h *ExamHandler) GetExamQuestions(c *gin.Context) {
 	writeJSON(c, http.StatusOK, questions)
 }
 
+// PublishExam publishes a draft/scheduled exam.
+//
+//	@Summary		Publish exam
+//	@Description	Publish exam after validation checks.
+//	@Tags			exam
+//	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
+//	@Param			examId			path	string	true	"Exam ID (UUID)"
+//	@Success		204			{string}	string	"No Content"
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		409			{object}	ErrorResponse
+//	@Router			/exams/{examId}/publish [post]
 func (h *ExamHandler) PublishExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
@@ -290,6 +410,20 @@ func (h *ExamHandler) PublishExam(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// CloseExam closes an active exam.
+//
+//	@Summary		Close exam
+//	@Description	Close an active exam.
+//	@Tags			exam
+//	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
+//	@Param			examId			path	string	true	"Exam ID (UUID)"
+//	@Success		204			{string}	string	"No Content"
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		409			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/exams/{examId}/close [post]
 func (h *ExamHandler) CloseExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
@@ -320,6 +454,19 @@ func (h *ExamHandler) CloseExam(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// DeleteExam deletes an exam.
+//
+//	@Summary		Delete exam
+//	@Description	Delete one exam by ID.
+//	@Tags			exam
+//	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
+//	@Param			examId			path	string	true	"Exam ID (UUID)"
+//	@Success		204			{string}	string	"No Content"
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/exams/{examId} [delete]
 func (h *ExamHandler) DeleteExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
@@ -346,12 +493,21 @@ func (h *ExamHandler) DeleteExam(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-type examQuestionRequest struct {
-	QuestionID     uuid.UUID `json:"questionId" binding:"required"`
-	PointsOverride *int      `json:"pointsOverride,omitempty"`
-	OrderIndex     *int      `json:"orderIndex,omitempty"`
-}
-
+// AddQuestionToExam maps a question into an exam.
+//
+//	@Summary		Add question to exam
+//	@Description	Attach question to exam with optional override points and order index.
+//	@Tags			exam
+//	@Accept			json
+//	@Produce		json
+//	@Param			X-Enterprise-ID	header	string					true	"Enterprise ID (UUID)"
+//	@Param			examId			path	string					true	"Exam ID (UUID)"
+//	@Param			body			body	AddExamQuestionRequest	true	"Exam question payload"
+//	@Success		201			{object}	domain.ExamQuestion
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/exams/{examId}/questions [post]
 func (h *ExamHandler) AddQuestionToExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
@@ -366,13 +522,19 @@ func (h *ExamHandler) AddQuestionToExam(c *gin.Context) {
 		return
 	}
 
-	var req examQuestionRequest
+	var req AddExamQuestionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	eq, err := h.usecase.AddQuestionToExam(c.Request.Context(), enterpriseID, examID, req.QuestionID, req.PointsOverride, req.OrderIndex)
+	questionID, err := uuid.Parse(req.QuestionID)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid question ID")
+		return
+	}
+
+	eq, err := h.usecase.AddQuestionToExam(c.Request.Context(), enterpriseID, examID, questionID, req.PointsOverride, req.OrderIndex)
 	if err != nil {
 		writeError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -381,6 +543,19 @@ func (h *ExamHandler) AddQuestionToExam(c *gin.Context) {
 	writeJSON(c, http.StatusCreated, eq)
 }
 
+// RemoveQuestionFromExam removes a mapped question from an exam.
+//
+//	@Summary		Remove question from exam
+//	@Description	Remove one question mapping from exam.
+//	@Tags			exam
+//	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
+//	@Param			examId			path	string	true	"Exam ID (UUID)"
+//	@Param			questionId		path	string	true	"Question ID (UUID)"
+//	@Success		204			{string}	string	"No Content"
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/exams/{examId}/questions/{questionId} [delete]
 func (h *ExamHandler) RemoveQuestionFromExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
@@ -410,11 +585,21 @@ func (h *ExamHandler) RemoveQuestionFromExam(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-type updateExamQuestionRequest struct {
-	PointsOverride *int `json:"pointsOverride,omitempty"`
-	OrderIndex     *int `json:"orderIndex,omitempty"`
-}
-
+// UpdateExamQuestion updates exam-question mapping details.
+//
+//	@Summary		Update exam question mapping
+//	@Description	Update points override or order index for an exam question mapping.
+//	@Tags			exam
+//	@Accept			json
+//	@Param			X-Enterprise-ID	header	string					true	"Enterprise ID (UUID)"
+//	@Param			examId			path	string					true	"Exam ID (UUID)"
+//	@Param			questionId		path	string					true	"Question ID (UUID)"
+//	@Param			body			body	UpdateExamQuestionRequest	true	"Update mapping payload"
+//	@Success		204			{string}	string					"No Content"
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/exams/{examId}/questions/{questionId} [patch]
 func (h *ExamHandler) UpdateExamQuestion(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
@@ -436,7 +621,7 @@ func (h *ExamHandler) UpdateExamQuestion(c *gin.Context) {
 		return
 	}
 
-	var req updateExamQuestionRequest
+	var req UpdateExamQuestionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "invalid request body")
 		return
@@ -450,12 +635,21 @@ func (h *ExamHandler) UpdateExamQuestion(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-type examRuleRequest struct {
-	Topic         *string                 `json:"topic,omitempty"`
-	Difficulty    *domain.DifficultyLevel `json:"difficulty,omitempty"`
-	QuestionCount int                     `json:"questionCount" binding:"required"`
-}
-
+// AddRandomizationRule adds a randomization rule to an exam.
+//
+//	@Summary		Add randomization rule
+//	@Description	Add rule for selecting random questions by topic/difficulty.
+//	@Tags			exam
+//	@Accept			json
+//	@Produce		json
+//	@Param			X-Enterprise-ID	header	string			true	"Enterprise ID (UUID)"
+//	@Param			examId			path	string			true	"Exam ID (UUID)"
+//	@Param			body			body	ExamRuleRequest	true	"Rule payload"
+//	@Success		201			{object}	domain.ExamRandomizationRule
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/exams/{examId}/rules [post]
 func (h *ExamHandler) AddRandomizationRule(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
@@ -470,7 +664,7 @@ func (h *ExamHandler) AddRandomizationRule(c *gin.Context) {
 		return
 	}
 
-	var req examRuleRequest
+	var req ExamRuleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "invalid request body")
 		return
@@ -485,6 +679,21 @@ func (h *ExamHandler) AddRandomizationRule(c *gin.Context) {
 	writeJSON(c, http.StatusCreated, rule)
 }
 
+// UpdateRandomizationRule updates an existing randomization rule.
+//
+//	@Summary		Update randomization rule
+//	@Description	Update topic/difficulty/questionCount for a rule.
+//	@Tags			exam
+//	@Accept			json
+//	@Param			X-Enterprise-ID	header	string			true	"Enterprise ID (UUID)"
+//	@Param			examId			path	string			true	"Exam ID (UUID)"
+//	@Param			ruleId			path	string			true	"Rule ID (UUID)"
+//	@Param			body			body	ExamRuleRequest	true	"Rule payload"
+//	@Success		204			{string}	string			"No Content"
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/exams/{examId}/rules/{ruleId} [patch]
 func (h *ExamHandler) UpdateRandomizationRule(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
@@ -506,7 +715,7 @@ func (h *ExamHandler) UpdateRandomizationRule(c *gin.Context) {
 		return
 	}
 
-	var req examRuleRequest
+	var req ExamRuleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "invalid request body")
 		return
@@ -520,6 +729,19 @@ func (h *ExamHandler) UpdateRandomizationRule(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// DeleteRandomizationRule deletes an exam randomization rule.
+//
+//	@Summary		Delete randomization rule
+//	@Description	Delete one randomization rule from an exam.
+//	@Tags			exam
+//	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
+//	@Param			examId			path	string	true	"Exam ID (UUID)"
+//	@Param			ruleId			path	string	true	"Rule ID (UUID)"
+//	@Success		204			{string}	string	"No Content"
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/exams/{examId}/rules/{ruleId} [delete]
 func (h *ExamHandler) DeleteRandomizationRule(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
