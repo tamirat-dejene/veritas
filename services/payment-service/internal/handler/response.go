@@ -4,12 +4,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type errorResponse struct {
-	Error string `json:"error"`
-}
-
 func writeError(c *gin.Context, code int, message string) {
-	c.JSON(code, errorResponse{Error: message})
+	c.JSON(code, ErrorResponse{Error: message})
 }
 
 func writeJSON(c *gin.Context, code int, data any) {

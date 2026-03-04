@@ -1,3 +1,23 @@
+// Package main is the entry-point for the Veritas payment-service.
+//
+//	@title			Veritas Payment Service API
+//	@version		1.0
+//	@description	Subscription plans, upgrades, invoice retrieval, payment history, and Stripe webhook processing.
+//
+//	@contact.name	Veritas Platform Team
+//
+//	@tag.name		payment
+//	@tag.description	Payment and billing operations.
+//	@tag.name		subscription
+//	@tag.description	Subscription plan and upgrade operations.
+//	@tag.name		webhook
+//	@tag.description	External payment provider webhook endpoints.
+//	@tag.name		system
+//	@tag.description	Operational and health endpoints.
+//
+//	@schemes		http https
+//	@BasePath	/
+
 package main
 
 import (
@@ -8,6 +28,7 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/tamirat-dejene/veritas/services/payment-service/docs/swagger"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/config"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/handler"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/stripe"

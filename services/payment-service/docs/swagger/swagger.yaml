@@ -1,0 +1,336 @@
+basePath: /
+definitions:
+  BillingCycle:
+    enum:
+    - monthly
+    - yearly
+    type: string
+    x-enum-varnames:
+    - BillingCycleMonthly
+    - BillingCycleYearly
+  Currency:
+    enum:
+    - ETB
+    - USD
+    - EUR
+    - GBP
+    type: string
+    x-enum-varnames:
+    - CurrencyETB
+    - CurrencyUSD
+    - CurrencyEUR
+    - CurrencyGBP
+  Invoice:
+    properties:
+      amount_due:
+        type: number
+      amount_paid:
+        type: number
+      amount_remaining:
+        type: number
+      created_at:
+        type: string
+      currency:
+        $ref: '#/definitions/Currency'
+      due_date:
+        type: string
+      enterprise_id:
+        type: string
+      hosted_invoice_url:
+        type: string
+      id:
+        type: string
+      invoice_pdf_url:
+        type: string
+      number:
+        type: string
+      paid_at:
+        type: string
+      status:
+        $ref: '#/definitions/InvoiceStatus'
+      subscription_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  InvoiceStatus:
+    enum:
+    - Draft
+    - Open
+    - Paid
+    - Void
+    - Uncollectible
+    type: string
+    x-enum-varnames:
+    - InvoiceStatusDraft
+    - InvoiceStatusOpen
+    - InvoiceStatusPaid
+    - InvoiceStatusVoid
+    - InvoiceStatusUncollectible
+  Payment:
+    properties:
+      amount:
+        type: number
+      created_at:
+        type: string
+      currency:
+        $ref: '#/definitions/Currency'
+      enterprise_id:
+        type: string
+      id:
+        type: string
+      invoice_id:
+        type: string
+      payment_method_type:
+        type: string
+      provider:
+        type: string
+      provider_error_code:
+        type: string
+      provider_error_message:
+        type: string
+      provider_payment_id:
+        type: string
+      status:
+        $ref: '#/definitions/PaymentStatus'
+    type: object
+  PaymentStatus:
+    enum:
+    - Pending
+    - Succeeded
+    - Failed
+    - Refunded
+    type: string
+    x-enum-varnames:
+    - PaymentStatusPending
+    - PaymentStatusSucceeded
+    - PaymentStatusFailed
+    - PaymentStatusRefunded
+  SubscriptionPlan:
+    properties:
+      billing_cycle:
+        $ref: '#/definitions/BillingCycle'
+      created_at:
+        type: string
+      currency:
+        $ref: '#/definitions/Currency'
+      description:
+        type: string
+      features:
+        additionalProperties: {}
+        type: object
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      price:
+        type: number
+      slug:
+        type: string
+      stripe_price_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  CheckoutURLResponse:
+    properties:
+      checkout_url:
+        type: string
+    type: object
+  ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  UpgradeSubscriptionRequest:
+    properties:
+      plan_id:
+        type: string
+    required:
+    - plan_id
+    type: object
+info:
+  contact:
+    name: Veritas Platform Team
+  description: Subscription plans, upgrades, invoice retrieval, payment history, and
+    Stripe webhook processing.
+  title: Veritas Payment Service API
+  version: "1.0"
+paths:
+  /health:
+    get:
+      description: Returns a simple JSON indicating the service is alive.
+      operationId: healthCheck
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Service is healthy
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - system
+  /invoices/{invoiceId}:
+    get:
+      description: Fetch a single invoice by invoice ID.
+      parameters:
+      - description: Invoice ID (UUID)
+        in: path
+        name: invoiceId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Invoice'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get invoice
+      tags:
+      - payment
+  /payments/history:
+    get:
+      description: Returns payment history for the specified enterprise.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: query
+        name: enterpriseId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/Payment'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: List payment history
+      tags:
+      - payment
+  /subscriptions/{enterpriseId}/upgrade:
+    post:
+      consumes:
+      - application/json
+      description: Creates a provider checkout session for upgrading an enterprise
+        subscription plan.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Upgrade request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UpgradeSubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/CheckoutURLResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Upgrade enterprise subscription
+      tags:
+      - subscription
+  /subscriptions/plans:
+    get:
+      description: Returns all available subscription plans.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/SubscriptionPlan'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: List subscription plans
+      tags:
+      - subscription
+  /webhooks/stripe:
+    post:
+      consumes:
+      - application/json
+      description: Validates and processes Stripe webhook event payload.
+      parameters:
+      - description: Stripe webhook signature
+        in: header
+        name: Stripe-Signature
+        required: true
+        type: string
+      - description: Raw webhook payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Handle Stripe webhook
+      tags:
+      - webhook
+schemes:
+- http
+- https
+swagger: "2.0"
+tags:
+- description: Payment and billing operations.
+  name: payment
+- description: Subscription plan and upgrade operations.
+  name: subscription
+- description: External payment provider webhook endpoints.
+  name: webhook
+- description: Operational and health endpoints.
+  name: system
