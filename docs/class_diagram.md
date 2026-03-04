@@ -1,49 +1,52 @@
 # Veritas — System Class Diagram
 
-> System-level class diagram covering all five implemented Go microservices.  
-> Interfaces (ports) are shown with `<<interface>>` stereotype; enumerations with `<<enumeration>>`.  
-> Cross-service identity references (e.g. `enterprise_id`, `candidate_id`) are shown as dependency arrows rather than composition, since they cross service boundaries.
+> Class diagram derived from both the Go domain models and the SQL migration files for each service.
+> Table names (e.g. `veritas_users`) are shown in class titles.
+> `<<interface>>` = Go port/usecase interface · `<<enumeration>>` = Go const block / SQL ENUM
+> Cross-service FK references are annotated on arrows; they cross service boundaries and are not always enforced by DB FK in the consuming service.
 
 ---
 
 ## Auth Service
 
+> `veritas_users` is **created** by the enterprise-service migration and **read** by the auth-service. The auth-service only owns `refresh_tokens`.
+
 ```mermaid
 classDiagram
     direction TB
 
-    class User {
-        +UUID ID
-        +string Email
-        +string PasswordHash
-        +string Honorific
-        +string FirstName
-        +string LastName
-        +string Phone
-        +Role Role
-        +UUID EnterpriseID
-        +bool IsActive
-        +bool IsDeleted
-        +bool EmailVerified
-        +time EmailVerifiedAt
-        +int FailedLoginAttempts
-        +time LockedUntil
-        +time PasswordChangedAt
-        +bool MustChangePassword
-        +time LastLoginAt
-        +string LastLoginIP
-        +string LastUserAgent
-        +time CreatedAt
-        +time UpdatedAt
+    class User["User · veritas_users"] {
+        +UUID id PK
+        +VARCHAR_255 email UNIQUE NOT NULL
+        +TEXT password_hash NOT NULL
+        +VARCHAR_50 honorific
+        +VARCHAR_255 first_name
+        +VARCHAR_255 last_name
+        +VARCHAR_50 phone
+        +VARCHAR_50 role NOT NULL
+        +UUID enterprise_id FK NULL
+        +BOOLEAN is_active DEFAULT_true
+        +BOOLEAN is_deleted DEFAULT_false
+        +BOOLEAN email_verified DEFAULT_false
+        +TIMESTAMPTZ email_verified_at
+        +INT failed_login_attempts DEFAULT_0
+        +TIMESTAMPTZ locked_until
+        +TIMESTAMPTZ password_changed_at
+        +BOOLEAN must_change_password DEFAULT_false
+        +TIMESTAMPTZ last_login_at
+        +INET last_login_ip
+        +TEXT last_user_agent
+        +TIMESTAMPTZ created_at
+        +TIMESTAMPTZ updated_at
     }
 
-    class RefreshToken {
-        +UUID ID
-        +UUID UserID
-        +string TokenHash
-        +time ExpiresAt
-        +bool Revoked
-        +time CreatedAt
+    class RefreshToken["RefreshToken · refresh_tokens"] {
+        +UUID id PK
+        +UUID user_id FK NOT NULL
+        +TEXT token_hash UNIQUE NOT NULL
+        +TIMESTAMPTZ expires_at NOT NULL
+        +BOOLEAN revoked DEFAULT_false
+        +TIMESTAMPTZ created_at
     }
 
     class Role {
@@ -74,15 +77,18 @@ classDiagram
     class TokenService {
         <<interface>>
         +GenerateAccessToken(user) string
-        +GenerateRefreshToken() (raw, hash)
+        +GenerateRefreshToken() rawToken and tokenHash
     }
 
-    User --> Role : has
-    RefreshToken --> User : belongs to
-    UserRepository ..> User : manages
+    User --> Role : role field
+    RefreshToken --> User : user_id ON DELETE CASCADE
+    UserRepository ..> User : queries
     RefreshTokenRepository ..> RefreshToken : manages
-    TokenService ..> User : uses
+    TokenService ..> User : signs claims for
 ```
+
+**Indexes:** `idx_refresh_tokens_user_id`, `idx_refresh_tokens_token_hash`
+**FK:** `refresh_tokens.user_id` → `veritas_users(id)` ON DELETE CASCADE
 
 ---
 
@@ -92,34 +98,71 @@ classDiagram
 classDiagram
     direction TB
 
-    class Enterprise {
-        +UUID ID
-        +string Slug
-        +string DisplayName
-        +string LegalName
-        +string ContactEmail
-        +UUID OwnerAccountID
-        +EnterpriseStatus Status
-        +time ApprovedAt
-        +time SuspendedAt
-        +time DeletedAt
-        +UUID SubscriptionPlanID
-        +SubscriptionStatus SubscriptionStatus
-        +time CurrentPeriodStart
-        +time CurrentPeriodEnd
-        +string LogoURL
-        +string PrimaryColor
-        +string SecondaryColor
-        +string CustomDomain
-        +string ContactPhone
-        +string City
-        +string Country
-        +map Settings
-        +time RetentionUntil
-        +time CreatedAt
-        +time UpdatedAt
-        +UUID CreatedBy
-        +UUID UpdatedBy
+    class User["User · veritas_users"] {
+        +UUID id PK
+        +VARCHAR_255 email UNIQUE NOT NULL
+        +TEXT password_hash NOT NULL
+        +VARCHAR_50 honorific
+        +VARCHAR_255 first_name
+        +VARCHAR_255 last_name
+        +VARCHAR_50 phone
+        +VARCHAR_50 role NOT NULL
+        +UUID enterprise_id FK NULL
+        +BOOLEAN is_active DEFAULT_true
+        +BOOLEAN is_deleted DEFAULT_false
+        +BOOLEAN email_verified DEFAULT_false
+        +TIMESTAMPTZ email_verified_at
+        +INT failed_login_attempts DEFAULT_0
+        +TIMESTAMPTZ locked_until
+        +TIMESTAMPTZ password_changed_at
+        +BOOLEAN must_change_password DEFAULT_false
+        +TIMESTAMPTZ last_login_at
+        +INET last_login_ip
+        +TEXT last_user_agent
+        +TIMESTAMPTZ created_at
+        +TIMESTAMPTZ updated_at
+    }
+
+    class Enterprise["Enterprise · veritas_enterprise"] {
+        +UUID id PK
+        +VARCHAR_120 slug UNIQUE NOT NULL
+        +VARCHAR_255 display_name NOT NULL
+        +VARCHAR_255 legal_name NOT NULL
+        +VARCHAR_255 contact_email NOT NULL
+        +UUID owner_account_id FK NOT NULL
+        +enterprise_status status DEFAULT_PendingApproval
+        +TIMESTAMPTZ approved_at
+        +TIMESTAMPTZ suspended_at
+        +TIMESTAMPTZ deleted_at
+        +TIMESTAMPTZ retention_until
+        +UUID subscription_plan_id NULL
+        +subscription_status subscription_status NULL
+        +TIMESTAMPTZ current_period_start
+        +TIMESTAMPTZ current_period_end
+        +TEXT logo_url
+        +VARCHAR_7 primary_color
+        +VARCHAR_7 secondary_color
+        +VARCHAR_255 custom_domain UNIQUE
+        +VARCHAR_50 contact_phone
+        +VARCHAR_255 address_line1
+        +VARCHAR_255 address_line2
+        +VARCHAR_100 city
+        +VARCHAR_100 country
+        +JSONB settings DEFAULT_empty
+        +TIMESTAMPTZ created_at
+        +TIMESTAMPTZ updated_at
+        +UUID created_by NOT NULL
+        +UUID updated_by NOT NULL
+    }
+
+    class AuditLog["AuditLog · veritas_enterprise_audit_logs"] {
+        +UUID id PK
+        +UUID enterprise_id FK NOT NULL
+        +UUID actor_id NOT NULL
+        +VARCHAR_50 actor_role NOT NULL
+        +VARCHAR_100 event NOT NULL
+        +JSONB metadata DEFAULT_empty
+        +TIMESTAMPTZ created_at
     }
 
     class EnterpriseStatus {
@@ -137,51 +180,6 @@ classDiagram
         PastDue
         Canceled
         Expired
-    }
-
-    class AuditLog {
-        +UUID ID
-        +UUID EnterpriseID
-        +UUID ActorID
-        +string ActorRole
-        +AuditEvent Event
-        +map Metadata
-        +time CreatedAt
-    }
-
-    class AuditEvent {
-        <<enumeration>>
-        enterprise.approved
-        enterprise.suspended
-        enterprise.deleted
-        enterprise.reactivated
-        enterprise.hard_deleted
-        enterprise.branding_updated
-        enterprise.settings_updated
-        subscription.updated
-        subscription.canceled
-        subscription.renewed
-        subscription.payment_suspended
-        user.created
-        user.updated
-        user.deactivated
-        user.password_reset
-        enterprise.domain_validated
-    }
-
-    class EnterpriseUser {
-        +UUID ID
-        +string Email
-        +string PasswordHash
-        +string FirstName
-        +string LastName
-        +Role Role
-        +UUID EnterpriseID
-        +bool IsActive
-        +bool IsDeleted
-        +bool EmailVerified
-        +time CreatedAt
-        +time UpdatedAt
     }
 
     class EnterpriseRepository {
@@ -224,7 +222,6 @@ classDiagram
         +UpdateSettings(ctx, id, patch, adminID) error
         +UpdateSubscription(ctx, id, req, adminID) error
         +CancelSubscription(ctx, id, adminID) error
-        +RenewSubscription(ctx, id, adminID) error
         +GetEnterpriseStatus(ctx, id) EnterpriseStatusResponse
         +GetEnterpriseSummary(ctx, id) EnterpriseSummary
         +GetAuditLogs(ctx, id) List~AuditLog~
@@ -240,50 +237,92 @@ classDiagram
         +ResetUserPassword(ctx, enterpriseID, userID, adminID) string
     }
 
-    Enterprise --> EnterpriseStatus : has
-    Enterprise --> SubscriptionStatus : has
-    AuditLog --> Enterprise : references
-    AuditLog --> AuditEvent : categorized by
-    EnterpriseUser --> Enterprise : belongs to
+    Enterprise --> EnterpriseStatus : status ENUM
+    Enterprise --> SubscriptionStatus : subscription_status ENUM
+    Enterprise --> User : owner_account_id ON DELETE RESTRICT
+    AuditLog --> Enterprise : enterprise_id ON DELETE CASCADE
     EnterpriseRepository ..> Enterprise : manages
-    UserRepository ..> EnterpriseUser : manages
+    UserRepository ..> User : manages
     AuditRepository ..> AuditLog : manages
     EnterpriseUsecase ..> EnterpriseRepository : uses
     EnterpriseUsecase ..> AuditRepository : uses
     UserUsecase ..> UserRepository : uses
 ```
 
+**Indexes:** `idx_enterprises_status`, `idx_enterprises_owner`, `idx_enterprises_subscription_status`,
+`idx_enterprises_active` (partial WHERE Active), `idx_enterprises_subscription_expiry` (partial), `idx_enterprises_settings` (GIN),
+`idx_veritas_users_email`, `idx_veritas_users_role`, `idx_veritas_users_enterprise_id` (partial)
+**Constraint:** `chk_slug_format` — slug must match `^[a-z0-9-]+$`
+
 ---
 
 ## Exam Service
+
+> Cross-service FKs to `veritas_enterprise` and `veritas_users` are enforced at the DB level in this service's migration.
 
 ```mermaid
 classDiagram
     direction TB
 
-    class Question {
-        +UUID ID
-        +UUID EnterpriseID
-        +QuestionType Type
-        +string Topic
-        +DifficultyLevel Difficulty
-        +string Title
-        +string Content
-        +string MediaURL
-        +int Points
-        +float64 NegativePoints
-        +map Metadata
-        +bool IsActive
-        +UUID CreatedBy
-        +time CreatedAt
-        +time UpdatedAt
+    class Question["Question · veritas_questions"] {
+        +UUID id PK
+        +UUID enterprise_id FK NOT NULL
+        +question_type type NOT NULL
+        +VARCHAR_255 topic NOT NULL
+        +difficulty_level difficulty NOT NULL
+        +VARCHAR_500 title NOT NULL
+        +TEXT content NOT NULL
+        +TEXT media_url
+        +INT points DEFAULT_1
+        +NUMERIC_5_2 negative_points DEFAULT_0
+        +JSONB metadata DEFAULT_empty
+        +BOOLEAN is_active DEFAULT_true
+        +UUID created_by FK NOT NULL
+        +TIMESTAMPTZ created_at
+        +TIMESTAMPTZ updated_at
     }
 
-    class QuestionOption {
-        +UUID ID
-        +UUID QuestionID
-        +string Content
-        +bool IsCorrect
+    class QuestionOption["QuestionOption · veritas_question_options"] {
+        +UUID id PK
+        +UUID question_id FK NOT NULL
+        +TEXT content NOT NULL
+        +BOOLEAN is_correct DEFAULT_false
+    }
+
+    class Exam["Exam · veritas_exams"] {
+        +UUID id PK
+        +UUID enterprise_id FK NOT NULL
+        +VARCHAR_255 title NOT NULL
+        +TEXT description
+        +INT duration_minutes NOT NULL
+        +NUMERIC_5_2 passing_score_percent NOT NULL
+        +BOOLEAN negative_marking DEFAULT_false
+        +INT max_participants
+        +VARCHAR_50 invitation_method NOT NULL
+        +exam_status status DEFAULT_Draft
+        +UUID template_source_id FK NULL
+        +TIMESTAMPTZ scheduled_start
+        +TIMESTAMPTZ scheduled_end
+        +JSONB settings DEFAULT_empty
+        +UUID created_by FK NOT NULL
+        +TIMESTAMPTZ created_at
+        +TIMESTAMPTZ updated_at
+    }
+
+    class ExamQuestion["ExamQuestion · veritas_exam_questions"] {
+        +UUID id PK
+        +UUID exam_id FK NOT NULL
+        +UUID question_id FK NOT NULL
+        +INT points_override NULL
+        +INT order_index NULL
+    }
+
+    class ExamRandomizationRule["ExamRandomizationRule · veritas_exam_randomization_rules"] {
+        +UUID id PK
+        +UUID exam_id FK NOT NULL
+        +VARCHAR_255 topic NULL
+        +difficulty_level difficulty NULL
+        +INT question_count NOT NULL
     }
 
     class QuestionType {
@@ -301,26 +340,6 @@ classDiagram
         Hard
     }
 
-    class Exam {
-        +UUID ID
-        +UUID EnterpriseID
-        +string Title
-        +string Description
-        +int DurationMinutes
-        +float64 PassingScorePercent
-        +bool NegativeMarking
-        +int MaxParticipants
-        +string InvitationMethod
-        +ExamStatus Status
-        +UUID TemplateSourceID
-        +time ScheduledStart
-        +time ScheduledEnd
-        +map Settings
-        +UUID CreatedBy
-        +time CreatedAt
-        +time UpdatedAt
-    }
-
     class ExamStatus {
         <<enumeration>>
         Draft
@@ -328,22 +347,6 @@ classDiagram
         Active
         Closed
         Archived
-    }
-
-    class ExamQuestion {
-        +UUID ID
-        +UUID ExamID
-        +UUID QuestionID
-        +int PointsOverride
-        +int OrderIndex
-    }
-
-    class ExamRandomizationRule {
-        +UUID ID
-        +UUID ExamID
-        +string Topic
-        +DifficultyLevel Difficulty
-        +int QuestionCount
     }
 
     class QuestionRepository {
@@ -373,17 +376,13 @@ classDiagram
         <<interface>>
         +CreateExam(ctx, exam, userID) Exam
         +GetExams(ctx, enterpriseID) List~Exam~
-        +GetExam(ctx, id, enterpriseID) Exam
-        +UpdateExam(ctx, exam, userID) error
-        +ScheduleExam(ctx, id, enterpriseID, startTime, endTime, userID) error
+        +ScheduleExam(ctx, id, startTime, endTime, userID) error
         +CloneExam(ctx, sourceID, enterpriseID, title, userID) Exam
         +PublishExam(ctx, id, enterpriseID) error
         +CloseExam(ctx, id, enterpriseID) error
-        +DeleteExam(ctx, id, enterpriseID) error
-        +AddQuestionToExam(ctx, enterpriseID, examID, questionID) ExamQuestion
-        +GetExamQuestions(ctx, examID, enterpriseID) List~ExamQuestion~
-        +RemoveQuestionFromExam(ctx, enterpriseID, examID, questionID) error
-        +AddRandomizationRule(ctx, enterpriseID, examID, topic, difficulty) ExamRandomizationRule
+        +AddQuestionToExam(ctx, ...) ExamQuestion
+        +GetExamQuestions(ctx, ...) List~ExamQuestion~
+        +AddRandomizationRule(ctx, ...) ExamRandomizationRule
     }
 
     class QuestionUsecase {
@@ -395,20 +394,25 @@ classDiagram
         +DeleteQuestion(ctx, id, enterpriseID) error
     }
 
-    Question --> QuestionType : has
-    Question --> DifficultyLevel : has
-    Question "1" *-- "0..*" QuestionOption : contains
-    Exam --> ExamStatus : has
-    Exam "1" *-- "0..*" ExamQuestion : contains
-    Exam "1" *-- "0..*" ExamRandomizationRule : contains
-    ExamQuestion --> Question : references
-    ExamRandomizationRule --> DifficultyLevel : filtered by
+    Question --> QuestionType : type ENUM
+    Question --> DifficultyLevel : difficulty ENUM
+    Question "1" *-- "0..*" QuestionOption : ON DELETE CASCADE
+    Exam --> ExamStatus : status ENUM
+    Exam --> Exam : template_source_id self-ref ON DELETE SET NULL
+    Exam "1" *-- "0..*" ExamQuestion : ON DELETE CASCADE
+    Exam "1" *-- "0..*" ExamRandomizationRule : ON DELETE CASCADE
+    ExamQuestion --> Question : question_id ON DELETE CASCADE
+    ExamRandomizationRule --> DifficultyLevel : difficulty ENUM
     QuestionRepository ..> Question : manages
     ExamRepository ..> Exam : manages
     ExamUsecase ..> ExamRepository : uses
     QuestionUsecase ..> QuestionRepository : uses
     ExamUsecase ..> QuestionRepository : uses
 ```
+
+**Unique constraint:** `(exam_id, question_id)` on `veritas_exam_questions`
+**Indexes:** `idx_questions_enterprise`, `idx_exams_enterprise`, `idx_exams_status`, `idx_exam_schedule`,
+`idx_question_options_question`, `idx_exam_questions_exam`, `idx_random_rules_exam`
 
 ---
 
@@ -418,49 +422,78 @@ classDiagram
 classDiagram
     direction TB
 
-    class CandidateProfile {
-        +UUID ID
-        +UUID EnterpriseID
-        +string ExternalID
-        +string FirstName
-        +string LastName
-        +string Email
-        +string FaceReferenceURL
-        +bool IsActive
-        +time CreatedAt
+    class CandidateProfile["CandidateProfile · candidate_profiles"] {
+        +UUID id PK
+        +UUID enterprise_id NOT NULL
+        +VARCHAR_255 external_id NOT NULL
+        +VARCHAR_255 first_name NOT NULL
+        +VARCHAR_255 last_name NOT NULL
+        +VARCHAR_255 email NULL
+        +TEXT face_reference_url NULL
+        +BOOLEAN is_active DEFAULT_true
+        +TIMESTAMPTZ created_at
     }
 
-    class ExamEnrollment {
-        +UUID ID
-        +UUID EnterpriseID
-        +UUID ExamID
-        +UUID CandidateID
-        +string InvitationMethod
-        +string AccessTokenHash
-        +time TokenExpiresAt
-        +int MaxAttempts
-        +int AttemptsUsed
-        +string Status
-        +time CreatedAt
+    class ExamEnrollment["ExamEnrollment · exam_enrollments"] {
+        +UUID id PK
+        +UUID enterprise_id NOT NULL
+        +UUID exam_id NOT NULL
+        +UUID candidate_id FK NOT NULL
+        +VARCHAR_50 invitation_method NOT NULL
+        +TEXT access_token_hash NOT NULL
+        +TIMESTAMPTZ token_expires_at NOT NULL
+        +INT max_attempts DEFAULT_1
+        +INT attempts_used DEFAULT_0
+        +VARCHAR_50 status DEFAULT_Invited
+        +TIMESTAMPTZ created_at
     }
 
-    class ExamSession {
-        +UUID ID
-        +UUID EnterpriseID
-        +UUID ExamID
-        +UUID CandidateID
-        +UUID EnrollmentID
-        +SessionStatus Status
-        +time StartedAt
-        +time ExpiresAt
-        +time SubmittedAt
-        +time TerminatedAt
-        +string TerminationReason
-        +string ClientIP
-        +string UserAgent
-        +string FaceRegisteredURL
-        +float64 CheatingScore
-        +time CreatedAt
+    class ExamSession["ExamSession · exam_sessions"] {
+        +UUID id PK
+        +UUID enterprise_id NOT NULL
+        +UUID exam_id NOT NULL
+        +UUID candidate_id FK NOT NULL
+        +UUID enrollment_id FK NOT NULL
+        +session_status status DEFAULT_Active
+        +TIMESTAMPTZ started_at DEFAULT_NOW
+        +TIMESTAMPTZ expires_at NOT NULL
+        +TIMESTAMPTZ submitted_at NULL
+        +TIMESTAMPTZ terminated_at NULL
+        +TEXT termination_reason NULL
+        +INET client_ip NULL
+        +TEXT user_agent NULL
+        +TEXT face_registered_url NULL
+        +NUMERIC_5_2 cheating_score NULL
+        +TIMESTAMPTZ created_at
+    }
+
+    class SessionQuestion["SessionQuestion · session_questions"] {
+        +UUID id PK
+        +UUID session_id FK NOT NULL
+        +UUID question_id NOT NULL
+        +JSONB question_snapshot NOT NULL
+        +INT order_index NOT NULL
+        +INT points NOT NULL
+        +NUMERIC_5_2 negative_points DEFAULT_0
+    }
+
+    class SessionAnswer["SessionAnswer · session_answers"] {
+        +UUID id PK
+        +UUID session_id FK NOT NULL
+        +UUID session_question_id FK NOT NULL
+        +JSONB answer_data NOT NULL
+        +BOOLEAN is_final DEFAULT_false
+        +TIMESTAMPTZ saved_at DEFAULT_NOW
+    }
+
+    class ExamSubmission["ExamSubmission · exam_submissions"] {
+        +UUID id PK
+        +UUID session_id FK UNIQUE NOT NULL
+        +TIMESTAMPTZ submitted_at NOT NULL
+        +BOOLEAN auto_submitted DEFAULT_false
+        +NUMERIC_6_2 total_score NULL
+        +VARCHAR_50 grading_status DEFAULT_Pending
+        +TIMESTAMPTZ created_at
     }
 
     class SessionStatus {
@@ -469,35 +502,6 @@ classDiagram
         Submitted
         Terminated
         Expired
-    }
-
-    class SessionQuestion {
-        +UUID ID
-        +UUID SessionID
-        +UUID QuestionID
-        +JSON QuestionSnapshot
-        +int OrderIndex
-        +int Points
-        +float64 NegativePoints
-    }
-
-    class SessionAnswer {
-        +UUID ID
-        +UUID SessionID
-        +UUID SessionQuestionID
-        +JSON AnswerData
-        +bool IsFinal
-        +time SavedAt
-    }
-
-    class ExamSubmission {
-        +UUID ID
-        +UUID SessionID
-        +time SubmittedAt
-        +bool AutoSubmitted
-        +float64 TotalScore
-        +string GradingStatus
-        +time CreatedAt
     }
 
     class CandidateRepository {
@@ -562,7 +566,7 @@ classDiagram
         +ResumeActiveSession(ctx, candidateID) ExamSession
         +GetSessionDetails(ctx, sessionID, userID, role) ExamSession
         +GetSessionQuestionsSnapshot(ctx, sessionID, candidateID) List~SessionQuestion~
-        +SaveAnswers(ctx, sessionID, candidateID, questionID, answerData) error
+        +SaveAnswers(ctx, sessionID, candidateID, questionID, data) error
         +SubmitExam(ctx, sessionID, candidateID, autoSubmitted) ExamSubmission
         +TerminateSession(ctx, sessionID, enterpriseID, reason) error
     }
@@ -575,13 +579,14 @@ classDiagram
         +CandidateGetResult(ctx, sessionID, candidateID) ExamSubmission
     }
 
-    ExamEnrollment --> CandidateProfile : references
-    ExamSession --> ExamEnrollment : originates from
-    ExamSession --> SessionStatus : has
-    ExamSession "1" *-- "0..*" SessionQuestion : contains
-    ExamSession "1" *-- "0..*" SessionAnswer : collects
-    ExamSession "1" *-- "0..1" ExamSubmission : produces
-    SessionAnswer --> SessionQuestion : responds to
+    ExamEnrollment --> CandidateProfile : candidate_id ON DELETE CASCADE
+    ExamSession --> CandidateProfile : candidate_id ON DELETE CASCADE
+    ExamSession --> ExamEnrollment : enrollment_id ON DELETE CASCADE
+    ExamSession --> SessionStatus : status ENUM
+    ExamSession "1" *-- "0..*" SessionQuestion : session_id ON DELETE CASCADE
+    ExamSession "1" *-- "0..*" SessionAnswer : session_id ON DELETE CASCADE
+    ExamSession "1" *-- "0..1" ExamSubmission : session_id UNIQUE ON DELETE CASCADE
+    SessionAnswer --> SessionQuestion : session_question_id ON DELETE CASCADE
     CandidateRepository ..> CandidateProfile : manages
     EnrollmentRepository ..> ExamEnrollment : manages
     SessionRepository ..> ExamSession : manages
@@ -591,6 +596,12 @@ classDiagram
     MonitoringUseCase ..> SessionRepository : uses
 ```
 
+**Unique constraints:** `(enterprise_id, external_id)` on `candidate_profiles`; `(exam_id, candidate_id)` on `exam_enrollments`;
+`session_id` on `exam_submissions`; `(session_id, session_question_id)` on `session_answers`
+**Indexes:** `idx_candidate_enterprise`, `idx_enrollment_exam`, `idx_enrollment_candidate`, `idx_enrollment_status`,
+`idx_session_exam`, `idx_session_candidate`, `idx_session_enrollment`, `idx_session_status`,
+`idx_sq_session`, `idx_answers_session`, `idx_submissions_session`
+
 ---
 
 ## Payment Service
@@ -599,68 +610,67 @@ classDiagram
 classDiagram
     direction TB
 
-    class SubscriptionPlan {
-        +UUID ID
-        +string Name
-        +string Slug
-        +string Description
-        +float64 Price
-        +Currency Currency
-        +BillingCycle BillingCycle
-        +map Features
-        +string StripePriceID
-        +bool IsActive
-        +time CreatedAt
-        +time UpdatedAt
+    class SubscriptionPlan["SubscriptionPlan · veritas_subscription_plans"] {
+        +UUID id PK
+        +VARCHAR_100 name UNIQUE NOT NULL
+        +VARCHAR_100 slug UNIQUE NOT NULL
+        +TEXT description
+        +DECIMAL_12_2 price DEFAULT_0
+        +currency_type currency DEFAULT_ETB
+        +billing_cycle_type billing_cycle DEFAULT_monthly
+        +JSONB features DEFAULT_empty
+        +BOOLEAN is_active DEFAULT_true
+        +TIMESTAMPTZ created_at
+        +TIMESTAMPTZ updated_at
     }
 
-    class EnterpriseSubscription {
-        +UUID ID
-        +UUID EnterpriseID
-        +UUID PlanID
-        +SubscriptionStatus Status
-        +time CurrentPeriodStart
-        +time CurrentPeriodEnd
-        +bool CancelAtPeriodEnd
-        +time CanceledAt
-        +time EndedAt
-        +string StripeCustomerID
-        +string StripeSubscriptionID
-        +time CreatedAt
-        +time UpdatedAt
+    class EnterpriseSubscription["EnterpriseSubscription · veritas_enterprise_subscriptions"] {
+        +UUID id PK
+        +UUID enterprise_id UNIQUE NOT NULL
+        +UUID plan_id FK NOT NULL
+        +sub_status_type status DEFAULT_Active
+        +TIMESTAMPTZ current_period_start DEFAULT_NOW
+        +TIMESTAMPTZ current_period_end NOT NULL
+        +BOOLEAN cancel_at_period_end DEFAULT_false
+        +TIMESTAMPTZ canceled_at NULL
+        +TIMESTAMPTZ ended_at NULL
+        +VARCHAR_255 stripe_customer_id NULL
+        +VARCHAR_255 stripe_subscription_id NULL
+        +TIMESTAMPTZ created_at
+        +TIMESTAMPTZ updated_at
     }
 
-    class Invoice {
-        +UUID ID
-        +UUID EnterpriseID
-        +UUID SubscriptionID
-        +string Number
-        +InvoiceStatus Status
-        +float64 AmountDue
-        +float64 AmountPaid
-        +float64 AmountRemaining
-        +Currency Currency
-        +time DueDate
-        +time PaidAt
-        +string HostedInvoiceURL
-        +string InvoicePDFURL
-        +time CreatedAt
-        +time UpdatedAt
+    class Invoice["Invoice · veritas_invoices"] {
+        +UUID id PK
+        +UUID enterprise_id FK NOT NULL
+        +UUID subscription_id FK NOT NULL
+        +VARCHAR_50 number UNIQUE NOT NULL
+        +invoice_status_type status DEFAULT_Draft
+        +DECIMAL_12_2 amount_due NOT NULL
+        +DECIMAL_12_2 amount_paid DEFAULT_0
+        +DECIMAL_12_2 amount_remaining NOT NULL
+        +currency_type currency DEFAULT_ETB
+        +TIMESTAMPTZ due_date NOT NULL
+        +TIMESTAMPTZ paid_at NULL
+        +TEXT hosted_invoice_url NULL
+        +TEXT invoice_pdf_url NULL
+        +TIMESTAMPTZ created_at
+        +TIMESTAMPTZ updated_at
     }
 
-    class Payment {
-        +UUID ID
-        +UUID EnterpriseID
-        +UUID InvoiceID
-        +float64 Amount
-        +Currency Currency
-        +PaymentStatus Status
-        +string PaymentMethodType
-        +string Provider
-        +string ProviderPaymentID
-        +string ProviderErrorCode
-        +string ProviderErrorMessage
-        +time CreatedAt
+    class Payment["Payment · veritas_payments"] {
+        +UUID id PK
+        +UUID enterprise_id FK NOT NULL
+        +UUID invoice_id FK NULL
+        +DECIMAL_12_2 amount NOT NULL
+        +currency_type currency DEFAULT_ETB
+        +payment_status_type status NOT NULL
+        +VARCHAR_50 payment_method_type NULL
+        +VARCHAR_50 provider NOT NULL
+        +VARCHAR_255 provider_payment_id UNIQUE NOT NULL
+        +VARCHAR_100 provider_error_code NULL
+        +TEXT provider_error_message NULL
+        +TIMESTAMPTZ created_at
     }
 
     class BillingCycle {
@@ -703,15 +713,22 @@ classDiagram
         Refunded
     }
 
-    EnterpriseSubscription --> SubscriptionPlan : subscribes to
-    EnterpriseSubscription --> SubscriptionStatus : has
-    Invoice --> EnterpriseSubscription : billed under
-    Invoice --> InvoiceStatus : has
-    Payment --> Invoice : settles
-    Payment --> PaymentStatus : has
-    SubscriptionPlan --> BillingCycle : has
-    SubscriptionPlan --> Currency : priced in
+    EnterpriseSubscription --> SubscriptionPlan : plan_id ON DELETE RESTRICT
+    EnterpriseSubscription --> SubscriptionStatus : status ENUM
+    Invoice --> EnterpriseSubscription : enterprise_id and subscription_id ON DELETE CASCADE
+    Invoice --> InvoiceStatus : status ENUM
+    Payment --> EnterpriseSubscription : enterprise_id ON DELETE CASCADE
+    Payment --> Invoice : invoice_id ON DELETE SET NULL
+    Payment --> PaymentStatus : status ENUM
+    SubscriptionPlan --> BillingCycle : billing_cycle ENUM
+    SubscriptionPlan --> Currency : currency ENUM
 ```
+
+**Unique constraints:** `enterprise_id` on `veritas_enterprise_subscriptions` (one per enterprise);
+`provider_payment_id` on `veritas_payments`; `number` on `veritas_invoices`
+**FK note:** `veritas_invoices.enterprise_id` references `veritas_enterprise_subscriptions(enterprise_id)`, not `veritas_enterprise(id)`
+**Indexes:** `idx_subs_enterprise`, `idx_subs_status`, `idx_invoices_enterprise`, `idx_invoices_status`,
+`idx_payments_enterprise`, `idx_payments_status`, `idx_plans_slug`
 
 ---
 
@@ -721,45 +738,48 @@ classDiagram
 classDiagram
     direction LR
 
-    class AuthUser["auth-service · User"] {
-        +UUID ID
-        +UUID EnterpriseID
-        +Role Role
+    class AuthService["auth-service"] {
+        reads veritas_users
+        owns refresh_tokens
     }
 
-    class EnterpriseService["enterprise-service · Enterprise"] {
-        +UUID ID
-        +UUID OwnerAccountID
-        +SubscriptionStatus SubscriptionStatus
+    class EnterpriseService["enterprise-service"] {
+        owns veritas_users
+        owns veritas_enterprise
+        owns veritas_enterprise_audit_logs
     }
 
-    class ExamService["exam-service · Exam"] {
-        +UUID ID
-        +UUID EnterpriseID
-        +UUID CreatedBy
+    class ExamService["exam-service"] {
+        owns veritas_questions
+        owns veritas_question_options
+        owns veritas_exams
+        owns veritas_exam_questions
+        owns veritas_exam_randomization_rules
+        DB-FK to veritas_enterprise and veritas_users
     }
 
-    class CandidateService["candidate-service · CandidateProfile"] {
-        +UUID ID
-        +UUID EnterpriseID
+    class CandidateService["candidate-service"] {
+        owns candidate_profiles
+        owns exam_enrollments
+        owns exam_sessions
+        owns session_questions
+        owns session_answers
+        owns exam_submissions
+        soft-ref exam_id to exam-service
     }
 
-    class PaymentService["payment-service · EnterpriseSubscription"] {
-        +UUID ID
-        +UUID EnterpriseID
-        +UUID PlanID
+    class PaymentService["payment-service"] {
+        owns veritas_subscription_plans
+        owns veritas_enterprise_subscriptions
+        owns veritas_invoices
+        owns veritas_payments
+        soft-ref enterprise_id to enterprise-service
     }
 
-    class SessionService["candidate-service · ExamSession"] {
-        +UUID ExamID
-        +UUID CandidateID
-        +UUID EnrollmentID
-    }
-
-    AuthUser ..> EnterpriseService : belongs to (EnterpriseID)
-    EnterpriseService ..> PaymentService : has subscription (EnterpriseID)
-    ExamService ..> EnterpriseService : scoped to (EnterpriseID)
-    CandidateService ..> EnterpriseService : registered under (EnterpriseID)
-    SessionService ..> ExamService : runs exam (ExamID)
-    SessionService ..> CandidateService : for candidate (CandidateID)
+    AuthService ..> EnterpriseService : reads veritas_users
+    ExamService ..> EnterpriseService : FK enterprise_id and created_by
+    CandidateService ..> EnterpriseService : enterprise_id no DB FK
+    CandidateService ..> ExamService : exam_id no DB FK
+    PaymentService ..> EnterpriseService : enterprise_id no DB FK
+    EnterpriseService ..> PaymentService : subscription_plan_id ref
 ```
