@@ -1,0 +1,38 @@
+basePath: /
+info:
+  contact:
+    name: Veritas Platform Team
+  description: Enterprise onboarding, account management, subscription, and user administration
+    service.
+  title: Veritas Enterprise Service API
+  version: "1.0"
+paths:
+  /health:
+    get:
+      description: Returns a simple JSON indicating the service is alive.
+      operationId: healthCheck
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Service is healthy
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - system
+schemes:
+- http
+- https
+swagger: "2.0"
+tags:
+- description: Enterprise profile and lifecycle management endpoints.
+  name: enterprise
+- description: Subscription and billing lifecycle endpoints.
+  name: subscription
+- description: Enterprise user management endpoints.
+  name: user
+- description: Operational and health endpoints.
+  name: system

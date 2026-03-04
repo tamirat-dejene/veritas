@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/handler"
 )
 
@@ -21,9 +23,7 @@ func NewRouter(
 	engine.Use(gin.Recovery())
 	engine.Use(gin.Logger())
 
-	engine.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
-	})
+	engine.GET("/health", healthCheck)
 
 	enterprises := engine.Group("/enterprises")
 	{
@@ -73,5 +73,21 @@ func NewRouter(
 		enterprises.POST("/:enterpriseId/users/:userId/reset-password", uh.ResetPassword)
 	}
 
+	// Swagger UI — available at /swagger/index.html
+	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	return engine
+}
+
+// healthCheck returns 200 OK if the service is running.
+//
+//	@Summary		Health check
+//	@ID			healthCheck
+//	@Description	Returns a simple JSON indicating the service is alive.
+//	@Tags			system
+//	@Produce		json
+//	@Success		200	{object}	map[string]string	"Service is healthy"
+//	@Router			/health [get]
+func healthCheck(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "service": "enterprise-service"})
 }

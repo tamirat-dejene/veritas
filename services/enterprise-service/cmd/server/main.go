@@ -1,3 +1,23 @@
+// Package main is the entry-point for the Veritas enterprise-service.
+//
+//	@title			Veritas Enterprise Service API
+//	@version		1.0
+//	@description	Enterprise onboarding, account management, subscription, and user administration service.
+//
+//	@contact.name	Veritas Platform Team
+//
+//	@tag.name		enterprise
+//	@tag.description	Enterprise profile and lifecycle management endpoints.
+//	@tag.name		subscription
+//	@tag.description	Subscription and billing lifecycle endpoints.
+//	@tag.name		user
+//	@tag.description	Enterprise user management endpoints.
+//	@tag.name		system
+//	@tag.description	Operational and health endpoints.
+//
+//	@schemes		http https
+//	@BasePath	/
+
 package main
 
 import (
@@ -17,6 +37,9 @@ import (
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/usecase"
 	pg "github.com/tamirat-dejene/veritas/shared/db/pg"
 	"go.uber.org/zap"
+
+	// Import generated swagger docs so the spec is registered at startup.
+	_ "github.com/tamirat-dejene/veritas/services/enterprise-service/docs/swagger"
 )
 
 func main() {
