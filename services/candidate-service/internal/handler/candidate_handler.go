@@ -1,4 +1,4 @@
-package http
+package handler
 
 import (
 	"io"
@@ -36,6 +36,21 @@ func getEnterpriseID(c *gin.Context) (uuid.UUID, error) {
 	return uuid.Parse(val.(string))
 }
 
+// Create registers a single candidate profile for the current enterprise.
+//
+//	@Summary		Create candidate
+//	@Description	Create one candidate profile under the caller enterprise.
+//	@Tags			candidate
+//	@Accept			json
+//	@Produce		json
+//	@Param			X-Enterprise-Id	header		string				false	"Enterprise ID (fallback if middleware context is absent)"
+//	@Param			body				body		CandidateCreateRequest	true	"Candidate payload"
+//	@Success		201				{object}	CandidateResponse
+//	@Failure		400				{object}	ErrorResponse
+//	@Failure		401				{object}	ErrorResponse
+//	@Failure		409				{object}	ErrorResponse
+//	@Failure		500				{object}	ErrorResponse
+//	@Router			/candidates [post]
 func (h *CandidateHandler) Create(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
@@ -43,13 +58,7 @@ func (h *CandidateHandler) Create(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		ExternalID       string  `json:"externalId" binding:"required"`
-		FirstName        string  `json:"firstName" binding:"required"`
-		LastName         string  `json:"lastName" binding:"required"`
-		Email            *string `json:"email"`
-		FaceReferenceURL *string `json:"faceReferenceUrl"`
-	}
+	var req CandidateCreateRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -79,6 +88,21 @@ func (h *CandidateHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"data": created})
 }
 
+// BulkUpload creates candidates from a CSV file upload.
+//
+//	@Summary		Bulk upload candidates
+//	@Description	Create many candidate profiles from a CSV file (max 5MB).
+//	@Tags			candidate
+//	@Accept			multipart/form-data
+//	@Produce		json
+//	@Param			X-Enterprise-Id	header		string	false	"Enterprise ID (fallback if middleware context is absent)"
+//	@Param			file				formData	file	true	"CSV file"
+//	@Success		201				{object}	BulkUploadResponse
+//	@Failure		400				{object}	ErrorResponse
+//	@Failure		401				{object}	ErrorResponse
+//	@Failure		413				{object}	ErrorResponse
+//	@Failure		500				{object}	ErrorResponse
+//	@Router			/candidates/bulk [post]
 func (h *CandidateHandler) BulkUpload(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
@@ -113,6 +137,17 @@ func (h *CandidateHandler) BulkUpload(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Bulk upload successful", "count": count})
 }
 
+// List returns all candidates for the caller enterprise.
+//
+//	@Summary		List candidates
+//	@Description	List candidate profiles for the caller enterprise.
+//	@Tags			candidate
+//	@Produce		json
+//	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
+//	@Success		200				{object}	CandidateListResponse
+//	@Failure		401				{object}	ErrorResponse
+//	@Failure		500				{object}	ErrorResponse
+//	@Router			/candidates [get]
 func (h *CandidateHandler) List(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
@@ -129,6 +164,20 @@ func (h *CandidateHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": list})
 }
 
+// Get retrieves a candidate by candidate ID.
+//
+//	@Summary		Get candidate
+//	@Description	Get one candidate profile by ID for the caller enterprise.
+//	@Tags			candidate
+//	@Produce		json
+//	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
+//	@Param			candidateId		path	string	true	"Candidate ID (UUID)"
+//	@Success		200				{object}	CandidateResponse
+//	@Failure		400				{object}	ErrorResponse
+//	@Failure		401				{object}	ErrorResponse
+//	@Failure		404				{object}	ErrorResponse
+//	@Failure		500				{object}	ErrorResponse
+//	@Router			/candidates/{candidateId} [get]
 func (h *CandidateHandler) Get(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
@@ -156,6 +205,22 @@ func (h *CandidateHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": candidate})
 }
 
+// Update modifies an existing candidate profile.
+//
+//	@Summary		Update candidate
+//	@Description	Update candidate profile fields by ID.
+//	@Tags			candidate
+//	@Accept			json
+//	@Produce		json
+//	@Param			X-Enterprise-Id	header		string				false	"Enterprise ID (fallback if middleware context is absent)"
+//	@Param			candidateId		path		string				true	"Candidate ID (UUID)"
+//	@Param			body				body		CandidateUpdateRequest	true	"Updated candidate payload"
+//	@Success		200				{object}	MessageResponse
+//	@Failure		400				{object}	ErrorResponse
+//	@Failure		401				{object}	ErrorResponse
+//	@Failure		404				{object}	ErrorResponse
+//	@Failure		500				{object}	ErrorResponse
+//	@Router			/candidates/{candidateId} [patch]
 func (h *CandidateHandler) Update(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
@@ -170,13 +235,7 @@ func (h *CandidateHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		FirstName        string  `json:"firstName" binding:"required"`
-		LastName         string  `json:"lastName" binding:"required"`
-		Email            *string `json:"email"`
-		FaceReferenceURL *string `json:"faceReferenceUrl"`
-		IsActive         bool    `json:"isActive"`
-	}
+	var req CandidateUpdateRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -205,6 +264,20 @@ func (h *CandidateHandler) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Candidate updated"})
 }
 
+// Deactivate disables a candidate profile.
+//
+//	@Summary		Deactivate candidate
+//	@Description	Soft-deactivate a candidate profile by ID.
+//	@Tags			candidate
+//	@Produce		json
+//	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
+//	@Param			candidateId		path	string	true	"Candidate ID (UUID)"
+//	@Success		200				{object}	MessageResponse
+//	@Failure		400				{object}	ErrorResponse
+//	@Failure		401				{object}	ErrorResponse
+//	@Failure		404				{object}	ErrorResponse
+//	@Failure		500				{object}	ErrorResponse
+//	@Router			/candidates/{candidateId}/deactivate [patch]
 func (h *CandidateHandler) Deactivate(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {

@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	c_http "github.com/tamirat-dejene/veritas/services/candidate-service/internal/handler/http"
+	c_http "github.com/tamirat-dejene/veritas/services/candidate-service/internal/handler"
 )
 
 func NewRouter(

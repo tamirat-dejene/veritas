@@ -1,8 +1,7 @@
-package http
+package handler
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -22,6 +21,21 @@ func NewEnrollmentHandler(uc domain.EnrollmentUseCase, logger *zap.Logger) *Enro
 	}
 }
 
+// Enroll enrolls one or more candidates to an exam.
+//
+//	@Summary		Enroll candidates
+//	@Description	Create enrollments for an exam and return generated raw access tokens.
+//	@Tags			enrollment
+//	@Accept			json
+//	@Produce		json
+//	@Param			X-Enterprise-Id	header		string			false	"Enterprise ID (fallback if middleware context is absent)"
+//	@Param			examId			path		string			true	"Exam ID (UUID)"
+//	@Param			body				body		EnrollmentRequest	true	"Enrollment payload"
+//	@Success		201				{object}	EnrollmentCreateResponse
+//	@Failure		400				{object}	ErrorResponse
+//	@Failure		401				{object}	ErrorResponse
+//	@Failure		500				{object}	ErrorResponse
+//	@Router			/exams/{examId}/enrollments [post]
 func (h *EnrollmentHandler) Enroll(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
@@ -36,12 +50,7 @@ func (h *EnrollmentHandler) Enroll(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		CandidateIDs     []uuid.UUID `json:"candidateIds" binding:"required,min=1"`
-		InvitationMethod string      `json:"invitationMethod" binding:"required"`
-		MaxAttempts      int         `json:"maxAttempts" binding:"required,min=1"`
-		TokenExpiresAt   time.Time   `json:"tokenExpiresAt" binding:"required"`
-	}
+	var req EnrollmentRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -57,6 +66,19 @@ func (h *EnrollmentHandler) Enroll(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Enrolled successfully", "rawTokens": tokens})
 }
 
+// ListByExam lists all enrollments for an exam.
+//
+//	@Summary		List enrollments by exam
+//	@Description	List exam enrollments for the caller enterprise.
+//	@Tags			enrollment
+//	@Produce		json
+//	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
+//	@Param			examId			path	string	true	"Exam ID (UUID)"
+//	@Success		200				{object}	EnrollmentListResponse
+//	@Failure		400				{object}	ErrorResponse
+//	@Failure		401				{object}	ErrorResponse
+//	@Failure		500				{object}	ErrorResponse
+//	@Router			/exams/{examId}/enrollments [get]
 func (h *EnrollmentHandler) ListByExam(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
@@ -80,6 +102,20 @@ func (h *EnrollmentHandler) ListByExam(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": list})
 }
 
+// Get fetches enrollment details by enrollment ID.
+//
+//	@Summary		Get enrollment
+//	@Description	Get one enrollment by ID.
+//	@Tags			enrollment
+//	@Produce		json
+//	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
+//	@Param			enrollmentId		path	string	true	"Enrollment ID (UUID)"
+//	@Success		200				{object}	EnrollmentResponse
+//	@Failure		400				{object}	ErrorResponse
+//	@Failure		401				{object}	ErrorResponse
+//	@Failure		404				{object}	ErrorResponse
+//	@Failure		500				{object}	ErrorResponse
+//	@Router			/enrollments/{enrollmentId} [get]
 func (h *EnrollmentHandler) Get(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
@@ -107,6 +143,20 @@ func (h *EnrollmentHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": enr})
 }
 
+// RegenerateToken rotates the enrollment access token.
+//
+//	@Summary		Regenerate enrollment token
+//	@Description	Regenerate and return a new raw token for an enrollment.
+//	@Tags			enrollment
+//	@Produce		json
+//	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
+//	@Param			enrollmentId		path	string	true	"Enrollment ID (UUID)"
+//	@Success		200				{object}	EnrollmentTokenResponse
+//	@Failure		400				{object}	ErrorResponse
+//	@Failure		401				{object}	ErrorResponse
+//	@Failure		404				{object}	ErrorResponse
+//	@Failure		500				{object}	ErrorResponse
+//	@Router			/enrollments/{enrollmentId}/regenerate-token [post]
 func (h *EnrollmentHandler) RegenerateToken(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
@@ -134,6 +184,20 @@ func (h *EnrollmentHandler) RegenerateToken(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Token regenerated", "rawToken": newToken})
 }
 
+// Revoke revokes an enrollment.
+//
+//	@Summary		Revoke enrollment
+//	@Description	Revoke an enrollment and prevent future use.
+//	@Tags			enrollment
+//	@Produce		json
+//	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
+//	@Param			enrollmentId		path	string	true	"Enrollment ID (UUID)"
+//	@Success		200				{object}	MessageResponse
+//	@Failure		400				{object}	ErrorResponse
+//	@Failure		401				{object}	ErrorResponse
+//	@Failure		404				{object}	ErrorResponse
+//	@Failure		500				{object}	ErrorResponse
+//	@Router			/enrollments/{enrollmentId}/revoke [patch]
 func (h *EnrollmentHandler) Revoke(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
@@ -160,6 +224,20 @@ func (h *EnrollmentHandler) Revoke(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Enrollment revoked"})
 }
 
+// ResetAttempts resets enrollment attempt counters.
+//
+//	@Summary		Reset enrollment attempts
+//	@Description	Reset attempts used to zero for an enrollment.
+//	@Tags			enrollment
+//	@Produce		json
+//	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
+//	@Param			enrollmentId		path	string	true	"Enrollment ID (UUID)"
+//	@Success		200				{object}	MessageResponse
+//	@Failure		400				{object}	ErrorResponse
+//	@Failure		401				{object}	ErrorResponse
+//	@Failure		404				{object}	ErrorResponse
+//	@Failure		500				{object}	ErrorResponse
+//	@Router			/enrollments/{enrollmentId}/reset-attempts [post]
 func (h *EnrollmentHandler) ResetAttempts(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {

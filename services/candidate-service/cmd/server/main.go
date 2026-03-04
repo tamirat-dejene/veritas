@@ -7,7 +7,13 @@
 //	@contact.name	Veritas Platform Team
 //
 //	@tag.name		candidate
-//	@tag.description	Candidate, enrollment, access, session, and submission endpoints.
+//	@tag.description	Candidate profile management endpoints.
+//	@tag.name		enrollment
+//	@tag.description	Exam enrollment and enrollment token management endpoints.
+//	@tag.name		session
+//	@tag.description	Session lifecycle, access validation, answers, and submission endpoints.
+//	@tag.name		monitoring
+//	@tag.description	Session monitoring and submission/result retrieval endpoints.
 //	@tag.name		system
 //	@tag.description	Operational and health endpoints.
 //
@@ -26,7 +32,7 @@ import (
 	"time"
 
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/config"
-	c_http "github.com/tamirat-dejene/veritas/services/candidate-service/internal/handler/http"
+	c_http "github.com/tamirat-dejene/veritas/services/candidate-service/internal/handler"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/infrastructure/client"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/router"
