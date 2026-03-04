@@ -8,6 +8,43 @@ main.container {
     padding: 40px 24px 80px;
 }
 
+/* Health page header */
+.status-page .header {
+    border-bottom: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+}
+
+.status-page .header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.status-page .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.status-page .logo-text h1 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0;
+}
+
+.status-page .logo-text .version {
+    display: inline-block;
+    margin-top: 2px;
+    font-size: 0.82rem;
+    color: var(--muted);
+}
+
 /* Header action button */
 .refresh-action {
     display: inline-flex;
@@ -54,7 +91,8 @@ main.container {
     border-bottom: 2px solid var(--border);
 }
 
-/* Health Service List (formerly .service-list) */
+/* Health Service List */
+.status-page .service-list,
 .health-service-list {
     display: flex;
     flex-direction: column;
