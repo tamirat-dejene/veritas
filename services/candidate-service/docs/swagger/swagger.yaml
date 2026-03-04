@@ -1,4 +1,359 @@
 basePath: /
+definitions:
+  CandidateProfile:
+    properties:
+      createdAt:
+        type: string
+      email:
+        type: string
+      enterpriseId:
+        type: string
+      externalId:
+        type: string
+      faceReferenceUrl:
+        type: string
+      firstName:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      lastName:
+        type: string
+    type: object
+  ExamEnrollment:
+    properties:
+      attemptsUsed:
+        type: integer
+      candidateId:
+        type: string
+      createdAt:
+        type: string
+      enterpriseId:
+        type: string
+      examId:
+        type: string
+      id:
+        type: string
+      invitationMethod:
+        type: string
+      maxAttempts:
+        type: integer
+      status:
+        type: string
+      tokenExpiresAt:
+        type: string
+    type: object
+  ExamSession:
+    properties:
+      answers:
+        items:
+          $ref: '#/definitions/SessionAnswer'
+        type: array
+      candidateId:
+        type: string
+      cheatingScore:
+        type: number
+      clientIp:
+        type: string
+      createdAt:
+        type: string
+      enrollmentId:
+        type: string
+      enterpriseId:
+        type: string
+      examId:
+        type: string
+      expiresAt:
+        type: string
+      faceRegisteredUrl:
+        type: string
+      id:
+        type: string
+      questions:
+        description: Relations
+        items:
+          $ref: '#/definitions/SessionQuestion'
+        type: array
+      startedAt:
+        type: string
+      status:
+        $ref: '#/definitions/SessionStatus'
+      submission:
+        $ref: '#/definitions/ExamSubmission'
+      submittedAt:
+        type: string
+      terminatedAt:
+        type: string
+      terminationReason:
+        type: string
+      userAgent:
+        type: string
+    type: object
+  ExamSubmission:
+    properties:
+      autoSubmitted:
+        type: boolean
+      createdAt:
+        type: string
+      gradingStatus:
+        type: string
+      id:
+        type: string
+      sessionId:
+        type: string
+      submittedAt:
+        type: string
+      totalScore:
+        type: number
+    type: object
+  SessionAnswer:
+    properties:
+      answerData:
+        items:
+          type: integer
+        type: array
+      id:
+        type: string
+      isFinal:
+        type: boolean
+      savedAt:
+        type: string
+      sessionId:
+        type: string
+      sessionQuestionId:
+        type: string
+    type: object
+  SessionQuestion:
+    properties:
+      id:
+        type: string
+      negativePoints:
+        type: number
+      orderIndex:
+        type: integer
+      points:
+        type: integer
+      questionId:
+        type: string
+      questionSnapshot:
+        items:
+          type: integer
+        type: array
+      sessionId:
+        type: string
+    type: object
+  SessionStatus:
+    enum:
+    - Active
+    - Submitted
+    - Terminated
+    - Expired
+    type: string
+    x-enum-varnames:
+    - SessionActive
+    - SessionSubmitted
+    - SessionTerminated
+    - SessionExpired
+  AccessValidateRequest:
+    properties:
+      token:
+        type: string
+    required:
+    - token
+    type: object
+  AccessValidateResponse:
+    properties:
+      data:
+        additionalProperties: true
+        type: object
+    type: object
+  BulkUploadResponse:
+    properties:
+      count:
+        type: integer
+      message:
+        type: string
+    type: object
+  CandidateCreateRequest:
+    properties:
+      email:
+        type: string
+      externalId:
+        type: string
+      faceReferenceUrl:
+        type: string
+      firstName:
+        type: string
+      lastName:
+        type: string
+    required:
+    - externalId
+    - firstName
+    - lastName
+    type: object
+  CandidateListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/CandidateProfile'
+        type: array
+    type: object
+  CandidateResponse:
+    properties:
+      data:
+        $ref: '#/definitions/CandidateProfile'
+    type: object
+  CandidateUpdateRequest:
+    properties:
+      email:
+        type: string
+      faceReferenceUrl:
+        type: string
+      firstName:
+        type: string
+      isActive:
+        type: boolean
+      lastName:
+        type: string
+    required:
+    - firstName
+    - lastName
+    type: object
+  EnrollmentCreateResponse:
+    properties:
+      message:
+        type: string
+      rawTokens:
+        items:
+          type: string
+        type: array
+    type: object
+  EnrollmentListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/ExamEnrollment'
+        type: array
+    type: object
+  EnrollmentRequest:
+    properties:
+      candidateIds:
+        items:
+          type: string
+        minItems: 1
+        type: array
+      invitationMethod:
+        type: string
+      maxAttempts:
+        minimum: 1
+        type: integer
+      tokenExpiresAt:
+        type: string
+    required:
+    - candidateIds
+    - invitationMethod
+    - maxAttempts
+    - tokenExpiresAt
+    type: object
+  EnrollmentResponse:
+    properties:
+      data:
+        $ref: '#/definitions/ExamEnrollment'
+    type: object
+  EnrollmentTokenResponse:
+    properties:
+      message:
+        type: string
+      rawToken:
+        type: string
+    type: object
+  ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  SaveAnswerRequest:
+    properties:
+      answerData:
+        items:
+          type: integer
+        type: array
+      questionId:
+        type: string
+    required:
+    - answerData
+    - questionId
+    type: object
+  SessionAnswerListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/SessionAnswer'
+        type: array
+    type: object
+  SessionListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/ExamSession'
+        type: array
+    type: object
+  SessionQuestionListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/SessionQuestion'
+        type: array
+    type: object
+  SessionResponse:
+    properties:
+      data:
+        $ref: '#/definitions/ExamSession'
+    type: object
+  SessionStartRequest:
+    properties:
+      token:
+        type: string
+    required:
+    - token
+    type: object
+  SubmissionListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/ExamSubmission'
+        type: array
+    type: object
+  SubmissionResponse:
+    properties:
+      data:
+        $ref: '#/definitions/ExamSubmission'
+    type: object
+  SubmitRequest:
+    properties:
+      autoSubmitted:
+        type: boolean
+    type: object
+  SubmitResponse:
+    properties:
+      data:
+        $ref: '#/definitions/ExamSubmission'
+      message:
+        type: string
+    type: object
+  TerminateSessionRequest:
+    properties:
+      reason:
+        type: string
+    required:
+    - reason
+    type: object
 info:
   contact:
     name: Veritas Platform Team
@@ -7,6 +362,581 @@ info:
   title: Veritas Candidate Service API
   version: "1.0"
 paths:
+  /access/validate:
+    post:
+      consumes:
+      - application/json
+      description: Validate exam access token before session start.
+      parameters:
+      - description: Access token
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/AccessValidateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AccessValidateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Validate access token
+      tags:
+      - session
+  /candidates:
+    get:
+      description: List candidate profiles for the caller enterprise.
+      parameters:
+      - description: Enterprise ID (fallback if middleware context is absent)
+        in: header
+        name: X-Enterprise-Id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/CandidateListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: List candidates
+      tags:
+      - candidate
+    post:
+      consumes:
+      - application/json
+      description: Create one candidate profile under the caller enterprise.
+      parameters:
+      - description: Enterprise ID (fallback if middleware context is absent)
+        in: header
+        name: X-Enterprise-Id
+        type: string
+      - description: Candidate payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/CandidateCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/CandidateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Create candidate
+      tags:
+      - candidate
+  /candidates/{candidateId}:
+    get:
+      description: Get one candidate profile by ID for the caller enterprise.
+      parameters:
+      - description: Enterprise ID (fallback if middleware context is absent)
+        in: header
+        name: X-Enterprise-Id
+        type: string
+      - description: Candidate ID (UUID)
+        in: path
+        name: candidateId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/CandidateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get candidate
+      tags:
+      - candidate
+    patch:
+      consumes:
+      - application/json
+      description: Update candidate profile fields by ID.
+      parameters:
+      - description: Enterprise ID (fallback if middleware context is absent)
+        in: header
+        name: X-Enterprise-Id
+        type: string
+      - description: Candidate ID (UUID)
+        in: path
+        name: candidateId
+        required: true
+        type: string
+      - description: Updated candidate payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/CandidateUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Update candidate
+      tags:
+      - candidate
+  /candidates/{candidateId}/deactivate:
+    patch:
+      description: Soft-deactivate a candidate profile by ID.
+      parameters:
+      - description: Enterprise ID (fallback if middleware context is absent)
+        in: header
+        name: X-Enterprise-Id
+        type: string
+      - description: Candidate ID (UUID)
+        in: path
+        name: candidateId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Deactivate candidate
+      tags:
+      - candidate
+  /candidates/bulk:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Create many candidate profiles from a CSV file (max 5MB).
+      parameters:
+      - description: Enterprise ID (fallback if middleware context is absent)
+        in: header
+        name: X-Enterprise-Id
+        type: string
+      - description: CSV file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/BulkUploadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Bulk upload candidates
+      tags:
+      - candidate
+  /enrollments/{enrollmentId}:
+    get:
+      description: Get one enrollment by ID.
+      parameters:
+      - description: Enterprise ID (fallback if middleware context is absent)
+        in: header
+        name: X-Enterprise-Id
+        type: string
+      - description: Enrollment ID (UUID)
+        in: path
+        name: enrollmentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/EnrollmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get enrollment
+      tags:
+      - enrollment
+  /enrollments/{enrollmentId}/regenerate-token:
+    post:
+      description: Regenerate and return a new raw token for an enrollment.
+      parameters:
+      - description: Enterprise ID (fallback if middleware context is absent)
+        in: header
+        name: X-Enterprise-Id
+        type: string
+      - description: Enrollment ID (UUID)
+        in: path
+        name: enrollmentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/EnrollmentTokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Regenerate enrollment token
+      tags:
+      - enrollment
+  /enrollments/{enrollmentId}/reset-attempts:
+    post:
+      description: Reset attempts used to zero for an enrollment.
+      parameters:
+      - description: Enterprise ID (fallback if middleware context is absent)
+        in: header
+        name: X-Enterprise-Id
+        type: string
+      - description: Enrollment ID (UUID)
+        in: path
+        name: enrollmentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Reset enrollment attempts
+      tags:
+      - enrollment
+  /enrollments/{enrollmentId}/revoke:
+    patch:
+      description: Revoke an enrollment and prevent future use.
+      parameters:
+      - description: Enterprise ID (fallback if middleware context is absent)
+        in: header
+        name: X-Enterprise-Id
+        type: string
+      - description: Enrollment ID (UUID)
+        in: path
+        name: enrollmentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Revoke enrollment
+      tags:
+      - enrollment
+  /exams/{examId}/enrollments:
+    get:
+      description: List exam enrollments for the caller enterprise.
+      parameters:
+      - description: Enterprise ID (fallback if middleware context is absent)
+        in: header
+        name: X-Enterprise-Id
+        type: string
+      - description: Exam ID (UUID)
+        in: path
+        name: examId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/EnrollmentListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: List enrollments by exam
+      tags:
+      - enrollment
+    post:
+      consumes:
+      - application/json
+      description: Create enrollments for an exam and return generated raw access
+        tokens.
+      parameters:
+      - description: Enterprise ID (fallback if middleware context is absent)
+        in: header
+        name: X-Enterprise-Id
+        type: string
+      - description: Exam ID (UUID)
+        in: path
+        name: examId
+        required: true
+        type: string
+      - description: Enrollment payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/EnrollmentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/EnrollmentCreateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Enroll candidates
+      tags:
+      - enrollment
+  /exams/{examId}/sessions:
+    get:
+      description: 'List sessions for an exam. Optional query filters: status and
+        candidateId.'
+      parameters:
+      - description: Enterprise ID (fallback if middleware context is absent)
+        in: header
+        name: X-Enterprise-Id
+        type: string
+      - description: Exam ID (UUID)
+        in: path
+        name: examId
+        required: true
+        type: string
+      - description: Session status
+        in: query
+        name: status
+        type: string
+      - description: Candidate ID (UUID)
+        in: query
+        name: candidateId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SessionListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: List exam sessions
+      tags:
+      - monitoring
+  /exams/{examId}/submissions:
+    get:
+      description: List all submissions for an exam under the caller enterprise.
+      parameters:
+      - description: Enterprise ID (fallback if middleware context is absent)
+        in: header
+        name: X-Enterprise-Id
+        type: string
+      - description: Exam ID (UUID)
+        in: path
+        name: examId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SubmissionListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: List exam submissions
+      tags:
+      - monitoring
   /health:
     get:
       description: Returns a simple JSON indicating the service is alive.
@@ -23,12 +953,456 @@ paths:
       summary: Health check
       tags:
       - system
+  /sessions/{sessionId}:
+    get:
+      description: Get session details for a candidate/admin context.
+      parameters:
+      - description: Session ID (UUID)
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Candidate ID (fallback if middleware context is absent)
+        in: header
+        name: X-Subject-Id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get session details
+      tags:
+      - session
+  /sessions/{sessionId}/answers:
+    get:
+      description: Return answers saved by the authenticated candidate for a session.
+      parameters:
+      - description: Session ID (UUID)
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Candidate ID (fallback if middleware context is absent)
+        in: header
+        name: X-Subject-Id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SessionAnswerListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get my answers
+      tags:
+      - session
+    patch:
+      consumes:
+      - application/json
+      description: Save or update one question answer in a session.
+      parameters:
+      - description: Session ID (UUID)
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Candidate ID (fallback if middleware context is absent)
+        in: header
+        name: X-Subject-Id
+        type: string
+      - description: Answer payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SaveAnswerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Save session answer
+      tags:
+      - session
+  /sessions/{sessionId}/expire:
+    post:
+      description: Force-expire a session by enterprise/admin action.
+      parameters:
+      - description: Enterprise ID
+        in: header
+        name: X-Enterprise-Id
+        required: true
+        type: string
+      - description: Session ID (UUID)
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Expire session
+      tags:
+      - session
+  /sessions/{sessionId}/questions:
+    get:
+      description: Get question snapshots for a candidate session.
+      parameters:
+      - description: Session ID (UUID)
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Candidate ID (fallback if middleware context is absent)
+        in: header
+        name: X-Subject-Id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SessionQuestionListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get session questions
+      tags:
+      - session
+  /sessions/{sessionId}/result:
+    get:
+      description: Return candidate result if release policy allows it.
+      parameters:
+      - description: Session ID (UUID)
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Candidate ID (fallback if middleware context is absent)
+        in: header
+        name: X-Subject-Id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SubmissionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get candidate result
+      tags:
+      - monitoring
+  /sessions/{sessionId}/submit:
+    post:
+      consumes:
+      - application/json
+      description: Submit candidate exam session and create a submission record.
+      parameters:
+      - description: Session ID (UUID)
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Candidate ID (fallback if middleware context is absent)
+        in: header
+        name: X-Subject-Id
+        type: string
+      - description: Submission metadata
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/SubmitRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/SubmitResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Submit exam session
+      tags:
+      - session
+  /sessions/{sessionId}/summary:
+    get:
+      description: Get one session summary by session ID.
+      parameters:
+      - description: Enterprise ID (fallback if middleware context is absent)
+        in: header
+        name: X-Enterprise-Id
+        type: string
+      - description: Session ID (UUID)
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get session summary
+      tags:
+      - monitoring
+  /sessions/{sessionId}/terminate:
+    post:
+      consumes:
+      - application/json
+      description: Terminate a session on enterprise/admin action.
+      parameters:
+      - description: Enterprise ID
+        in: header
+        name: X-Enterprise-Id
+        required: true
+        type: string
+      - description: Session ID (UUID)
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Termination reason
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/TerminateSessionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Terminate session
+      tags:
+      - session
+  /sessions/me/active:
+    get:
+      description: Return the active session for the authenticated candidate.
+      parameters:
+      - description: Candidate ID (fallback if middleware context is absent)
+        in: header
+        name: X-Subject-Id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SessionResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Resume active session
+      tags:
+      - session
+  /sessions/start:
+    post:
+      consumes:
+      - application/json
+      description: Create and initialize a candidate exam session.
+      parameters:
+      - description: Session start payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SessionStartRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/SessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Start session
+      tags:
+      - session
+  /submissions/{submissionId}:
+    get:
+      description: Get submission detail by submission ID.
+      parameters:
+      - description: Enterprise ID (fallback if middleware context is absent)
+        in: header
+        name: X-Enterprise-Id
+        type: string
+      - description: Submission ID (UUID)
+        in: path
+        name: submissionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SubmissionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get submission detail
+      tags:
+      - monitoring
 schemes:
 - http
 - https
 swagger: "2.0"
 tags:
-- description: Candidate, enrollment, access, session, and submission endpoints.
+- description: Candidate profile management endpoints.
   name: candidate
+- description: Exam enrollment and enrollment token management endpoints.
+  name: enrollment
+- description: Session lifecycle, access validation, answers, and submission endpoints.
+  name: session
+- description: Session monitoring and submission/result retrieval endpoints.
+  name: monitoring
 - description: Operational and health endpoints.
   name: system
