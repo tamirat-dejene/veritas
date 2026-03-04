@@ -6,7 +6,7 @@ import (
 )
 
 type Config struct {
-	Port                       string
+	API_Gateway_Port           string
 	AuthServiceURL             string
 	EnterpriseServiceURL       string
 	PaymentServiceURL          string
@@ -17,7 +17,8 @@ type Config struct {
 	GradingServiceURL          string
 	ReportingServiceURL        string
 	JWTSecret                  string
-	RedisAddr                  string
+	RedisHost                  string
+	RedisPort                  int
 	RedisPassword              string
 	RedisDB                    int
 	DatabaseURL                string
@@ -28,7 +29,7 @@ type Config struct {
 
 func Load() *Config {
 	return &Config{
-		Port:                       getEnv("PORT", "8080"),
+		API_Gateway_Port:           getEnv("API_GATEWAY_PORT", "8080"),
 		AuthServiceURL:             getEnv("AUTH_SERVICE_URL", "http://localhost:8081"),
 		EnterpriseServiceURL:       getEnv("ENTERPRISE_SERVICE_URL", "http://localhost:8082"),
 		PaymentServiceURL:          getEnv("PAYMENT_SERVICE_URL", "http://localhost:8083"),
@@ -39,7 +40,8 @@ func Load() *Config {
 		GradingServiceURL:          getEnv("GRADING_SERVICE_URL", "http://localhost:8088"),
 		ReportingServiceURL:        getEnv("REPORTING_SERVICE_URL", "http://localhost:8089"),
 		JWTSecret:                  getEnv("JWT_SECRET", "super-secret-key"),
-		RedisAddr:                  getEnv("REDIS_ADDR", "redis:6379"),
+		RedisHost:                  getEnv("REDIS_HOST", "redis"),
+		RedisPort:                  getEnvInt("REDIS_PORT", 6379),
 		RedisPassword:              getEnv("REDIS_PASSWORD", ""),
 		RedisDB:                    getEnvInt("REDIS_DB", 0),
 		CORSAllowedOrigins:         getEnv("CORS_ALLOWED_ORIGINS", "*"),

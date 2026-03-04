@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -74,7 +75,7 @@ func (g *RouterGroup) RegisterHealthCheck(cfg *config.Config) {
 					Type string
 				}{
 					{"PostgreSQL Database", cfg.DatabaseURL, "postgres"},
-					{"Redis Cache", cfg.RedisAddr, "redis"},
+					{"Redis Cache", cfg.RedisHost + ":" + strconv.Itoa(cfg.RedisPort), "redis"},
 				},
 			},
 		}
