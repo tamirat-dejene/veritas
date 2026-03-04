@@ -2,7 +2,7 @@
 <section class="section" data-service="candidate">
     <div class="section-header">
         <h2>Exam Candidate & Sessions</h2>
-        <span class="section-count">19 endpoints</span>
+        <span class="section-count">27 endpoints</span>
     </div>
     <div class="endpoint-list">
         <!-- Candidates -->
@@ -39,6 +39,12 @@
             <span class="badge badge-admin">EnterpriseAdmin</span>
             <span class="badge badge-staff">EnterpriseStaff</span>
         </endpoint-item>
+        <endpoint-item method="GET" path="/exams/:examId/sessions">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+        </endpoint-item>
+        <endpoint-item method="GET" path="/exams/:examId/submissions">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+        </endpoint-item>
         <endpoint-item method="GET" path="/enrollments/:enrollmentId">
             <span class="badge badge-admin">EnterpriseAdmin</span>
             <span class="badge badge-staff">EnterpriseStaff</span>
@@ -64,6 +70,10 @@
         <endpoint-item method="GET" path="/sessions/me/active">
             <span class="badge badge-candidate">ExamCandidate</span>
         </endpoint-item>
+        <endpoint-item method="GET" path="/sessions/:sessionId">
+            <span class="badge badge-candidate">ExamCandidate</span>
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+        </endpoint-item>
         <endpoint-item method="GET" path="/sessions/:sessionId/questions">
             <span class="badge badge-candidate">ExamCandidate</span>
         </endpoint-item>
@@ -82,6 +92,15 @@
         <endpoint-item method="POST" path="/sessions/:sessionId/expire">
             <span class="badge badge-admin">EnterpriseAdmin</span>
             <span class="badge badge-system">EnterpriseAuto</span>
+        </endpoint-item>
+        <endpoint-item method="GET" path="/sessions/:sessionId/summary">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+        </endpoint-item>
+        <endpoint-item method="GET" path="/sessions/:sessionId/result">
+            <span class="badge badge-candidate">ExamCandidate</span>
+        </endpoint-item>
+        <endpoint-item method="GET" path="/submissions/:submissionId">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
         </endpoint-item>
     </div>
 </section>
