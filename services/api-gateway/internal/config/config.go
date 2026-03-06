@@ -6,7 +6,7 @@ import (
 )
 
 type Config struct {
-	API_Gateway_Port           string
+	Port           string
 	AuthServiceURL             string
 	EnterpriseServiceURL       string
 	PaymentServiceURL          string
@@ -29,7 +29,7 @@ type Config struct {
 
 func Load() *Config {
 	return &Config{
-		API_Gateway_Port:           getEnv("API_GATEWAY_PORT", "8080"),
+		Port:           getEnv("GO_PORT", "8080"),
 		AuthServiceURL:             getEnv("AUTH_SERVICE_URL", "http://localhost:8081"),
 		EnterpriseServiceURL:       getEnv("ENTERPRISE_SERVICE_URL", "http://localhost:8082"),
 		PaymentServiceURL:          getEnv("PAYMENT_SERVICE_URL", "http://localhost:8083"),

@@ -61,10 +61,10 @@ func main() {
 		zap.L().Fatal("Failed to initialize router", zap.Error(err))
 	}
 
-	zap.L().Info("Service api-gateway starting", zap.String("port", cfg.API_Gateway_Port))
+	zap.L().Info("Service api-gateway starting", zap.String("port", cfg.Port))
 
 	server := &http.Server{
-		Addr:              ":" + cfg.API_Gateway_Port,
+		Addr:              ":" + cfg.Port,
 		Handler:           handler,
 		ReadTimeout:       15 * time.Second,
 		ReadHeaderTimeout: 10 * time.Second,

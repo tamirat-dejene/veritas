@@ -19,7 +19,7 @@ type Config struct {
 
 func Load() *Config {
 	cfg := &Config{
-		Port:                getEnv("PORT", "8085"),
+		Port:                getEnv("GO_PORT", "8080"),
 		Pg_Veritas_Host:     getEnv("PG_VERITAS_HOST", "localhost"),
 		Pg_Veritas_Port:     getEnv("PG_VERITAS_PORT", "5432"),
 		Pg_Veritas_User:     getEnv("PG_VERITAS_USER", "postgres"),

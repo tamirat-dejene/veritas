@@ -27,7 +27,7 @@ type Config struct {
 // All values have sensible, secure defaults for local development only.
 func Load() *Config {
 	cfg := &Config{
-		Port:            getEnv("PORT", "8081"),
+		Port:            getEnv("GO_PORT", "8080"),
 		JWTSecret:       getEnv("JWT_SECRET", "change-me-in-production-super-secret-key"),
 		AccessTokenTTL:  getDurationEnv("ACCESS_TOKEN_TTL", 15*time.Minute),
 		RefreshTokenTTL: getDurationEnv("REFRESH_TOKEN_TTL", 7*24*time.Hour),
