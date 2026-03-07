@@ -68,7 +68,7 @@ func (g *RouterGroup) RegisterHealthCheck(cfg *config.Config) {
 				},
 			},
 			{
-				Title: "Backbone Infrastructure",
+				Title: "Infrastructure",
 				Services: []struct {
 					Name string
 					URL  string
@@ -76,6 +76,7 @@ func (g *RouterGroup) RegisterHealthCheck(cfg *config.Config) {
 				}{
 					{"PostgreSQL Database", cfg.DatabaseURL, "postgres"},
 					{"Redis Cache", cfg.RedisHost + ":" + strconv.Itoa(cfg.RedisPort), "redis"},
+					{"Kafka Broker", cfg.KafkaBootstrapServers, "kafka"},
 				},
 			},
 		}
@@ -128,7 +129,7 @@ func (g *RouterGroup) RegisterHealthCheck(cfg *config.Config) {
 						} else {
 							errMsg = err.Error()
 						}
-					case "redis":
+					case "redis", "kafka":
 						conn, err := net.DialTimeout("tcp", url, 2*time.Second)
 						if err == nil {
 							status = "UP"
