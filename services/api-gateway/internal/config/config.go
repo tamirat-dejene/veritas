@@ -1,12 +1,13 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 )
 
 type Config struct {
-	Port           string
+	Port                       string
 	AuthServiceURL             string
 	EnterpriseServiceURL       string
 	PaymentServiceURL          string
@@ -22,6 +23,7 @@ type Config struct {
 	RedisPassword              string
 	RedisDB                    int
 	DatabaseURL                string
+	KafkaBootstrapServers      string
 	CORSAllowedOrigins         string
 	CORSAllowedMethods         string
 	CORSAllowedHeaders         string
@@ -29,7 +31,7 @@ type Config struct {
 
 func Load() *Config {
 	return &Config{
-		Port:           getEnv("GO_PORT", "8080"),
+		Port:                       getEnv("GO_PORT", "8080"),
 		AuthServiceURL:             getEnv("AUTH_SERVICE_URL", "http://localhost:8081"),
 		EnterpriseServiceURL:       getEnv("ENTERPRISE_SERVICE_URL", "http://localhost:8082"),
 		PaymentServiceURL:          getEnv("PAYMENT_SERVICE_URL", "http://localhost:8083"),
@@ -44,9 +46,17 @@ func Load() *Config {
 		RedisPort:                  getEnvInt("REDIS_PORT", 6379),
 		RedisPassword:              getEnv("REDIS_PASSWORD", ""),
 		RedisDB:                    getEnvInt("REDIS_DB", 0),
+		KafkaBootstrapServers:      getEnv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
 		CORSAllowedOrigins:         getEnv("CORS_ALLOWED_ORIGINS", "*"),
 		CORSAllowedMethods:         getEnv("CORS_ALLOWED_METHODS", "GET,POST,PATCH,DELETE,OPTIONS"),
 		CORSAllowedHeaders:         getEnv("CORS_ALLOWED_HEADERS", "Authorization,Content-Type,X-Request-ID"),
+		DatabaseURL: fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
+			getEnv("PG_VERITAS_USER", "postgres"),
+			getEnv("PG_VERITAS_PASSWORD", "postgres"),
+			getEnv("PG_VERITAS_HOST", "postgres"),
+			getEnv("PG_VERITAS_PORT", "5432"),
+			getEnv("PG_VERITAS_CORE_DB", "veritas_core"),
+		),
 	}
 }
 
