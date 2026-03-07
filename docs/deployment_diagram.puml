@@ -1,4 +1,5 @@
 @startuml Veritas Deployment Diagram
+!pragma layout smetana
 
 header Veritas System Architecture
 footer Deployment View - Microservices with Dedicated Databases
