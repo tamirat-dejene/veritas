@@ -14,7 +14,11 @@ import (
 
 func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler, error) {
 	// Initialize Gin engine without default logger/recovery so we can use our custom ones
-	gin.SetMode(gin.ReleaseMode)
+	if cfg.SystemMode == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	} else {
+		gin.SetMode(gin.DebugMode)
+	}
 	engine := gin.New()
 
 	// --- Global Middleware ---
@@ -105,11 +109,11 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 		return nil, err
 	}
 	routerGroup.RegisterSwaggerRoutes(map[string]http.Handler{
-		"auth": authProxy,
-		"candidate": candidateProxy,
+		"auth":       authProxy,
+		"candidate":  candidateProxy,
 		"enterprise": enterpriseProxy,
-		"exam": examProxy,
-		"payment": paymentProxy,
+		"exam":       examProxy,
+		"payment":    paymentProxy,
 	})
 
 	routerGroup.RegisterAuthRoutes(authProxy)

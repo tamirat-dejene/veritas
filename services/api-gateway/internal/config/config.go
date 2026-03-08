@@ -7,6 +7,7 @@ import (
 )
 
 type Config struct {
+	SystemMode                 string
 	Port                       string
 	AuthServiceURL             string
 	EnterpriseServiceURL       string
@@ -31,6 +32,7 @@ type Config struct {
 
 func Load() *Config {
 	return &Config{
+		SystemMode:                 getEnv("SYSTEM_MODE", "development"),
 		Port:                       getEnv("GO_PORT", "8080"),
 		AuthServiceURL:             getEnv("AUTH_SERVICE_URL", "http://localhost:8081"),
 		EnterpriseServiceURL:       getEnv("ENTERPRISE_SERVICE_URL", "http://localhost:8082"),
