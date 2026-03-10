@@ -34,6 +34,7 @@ type LoginUseCase struct {
 	refreshService   domain.TokenService
 	accessTokenTTL   time.Duration
 	refreshTokenTTL  time.Duration
+	eventPublisher   domain.EventPublisher
 	log              *zap.Logger
 }
 
@@ -45,6 +46,7 @@ func NewLoginUseCase(
 	refreshService domain.TokenService,
 	accessTokenTTL time.Duration,
 	refreshTokenTTL time.Duration,
+	eventPublisher domain.EventPublisher,
 	log *zap.Logger,
 ) *LoginUseCase {
 	return &LoginUseCase{
@@ -54,6 +56,7 @@ func NewLoginUseCase(
 		refreshService:   refreshService,
 		accessTokenTTL:   accessTokenTTL,
 		refreshTokenTTL:  refreshTokenTTL,
+		eventPublisher:   eventPublisher,
 		log:              log,
 	}
 }
@@ -140,6 +143,13 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 	}
 
 	uc.log.Info("user logged in successfully", zap.String("userId", user.ID.String()))
+
+	// 10. Publish Login Event (Fire and Forget or handle as secondary)
+	go func() {
+		if err := uc.eventPublisher.PublishLogin(context.Background(), user.ID, user.Email); err != nil {
+			uc.log.Error("failed to publish login event", zap.Error(err))
+		}
+	}()
 
 	return &LoginOutput{
 		AccessToken:  accessToken,

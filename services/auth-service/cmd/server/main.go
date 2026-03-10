@@ -29,12 +29,14 @@ import (
 
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/config"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/handler"
+	inframsg "github.com/tamirat-dejene/veritas/services/auth-service/internal/infrastructure/messaging"
 	infratoken "github.com/tamirat-dejene/veritas/services/auth-service/internal/infrastructure/token"
 	pgRepo "github.com/tamirat-dejene/veritas/services/auth-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/usecase"
 	postgres "github.com/tamirat-dejene/veritas/shared/db/pg"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
+	"github.com/tamirat-dejene/veritas/shared/pkg/messaging/kafka"
 	"go.uber.org/zap"
 
 	// Import generated swagger docs so the spec is registered at startup.
@@ -53,11 +55,6 @@ func main() {
 
 	// --- Config ---
 	cfg := config.Load()
-	log.Info("auth-service starting",
-		zap.String("port", cfg.Port),
-		zap.Duration("accessTokenTTL", cfg.AccessTokenTTL),
-		zap.Duration("refreshTokenTTL", cfg.RefreshTokenTTL),
-	)
 
 	// --- Database ---
 	db, err := postgres.NewPostgresClient(cfg.DSN)
@@ -71,6 +68,17 @@ func main() {
 	jwtService := infratoken.NewJWTService(cfg.JWTSecret, cfg.AccessTokenTTL)
 	refreshService := infratoken.NewRefreshTokenService(cfg.RefreshTokenTTL)
 
+	// --- Messaging: Kafka ---
+	kafkaProducer, err := kafka.NewProducer(kafka.Config{
+		Brokers: cfg.KafkaBrokers,
+	})
+	if err != nil {
+		log.Fatal("failed to initialize kafka producer", zap.Error(err))
+	}
+	defer kafkaProducer.Close()
+
+	eventPublisher := inframsg.NewKafkaPublisher(kafkaProducer)
+
 	// --- Repositories ---
 	userRepo := pgRepo.NewUserRepository(db)
 	refreshTokenRepo := pgRepo.NewRefreshTokenRepository(db)
@@ -83,6 +91,7 @@ func main() {
 		refreshService,
 		cfg.AccessTokenTTL,
 		cfg.RefreshTokenTTL,
+		eventPublisher,
 		log,
 	)
 	refreshUC := usecase.NewRefreshUseCase(
