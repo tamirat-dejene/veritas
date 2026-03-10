@@ -28,3 +28,8 @@ type TokenService interface {
 	GenerateAccessToken(user *User) (tokenString string, err error)
 	GenerateRefreshToken() (rawToken string, tokenHash string, err error)
 }
+
+// EventPublisher is the port for publishing domain events.
+type EventPublisher interface {
+	PublishLogin(ctx context.Context, userID uuid.UUID, email string) error
+}
