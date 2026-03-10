@@ -21,6 +21,7 @@ type Config struct {
 	Pg_Veritas_Password string
 	Pg_Veritas_Core_DB  string
 	DSN                 string
+	KafkaBrokers        []string
 }
 
 // Load reads configuration from environment variables and returns a Config.
@@ -38,8 +39,8 @@ func Load() *Config {
 		Pg_Veritas_Password: getEnv("PG_VERITAS_PASSWORD", "postgres"),
 		Pg_Veritas_Core_DB:  getEnv("PG_VERITAS_CORE_DB", "veritas_core"),
 	}
-	cfg.DSN = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		cfg.Pg_Veritas_User, cfg.Pg_Veritas_Password, cfg.Pg_Veritas_Host, cfg.Pg_Veritas_Port, cfg.Pg_Veritas_Core_DB)
+	cfg.DSN = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", cfg.Pg_Veritas_User, cfg.Pg_Veritas_Password, cfg.Pg_Veritas_Host, cfg.Pg_Veritas_Port, cfg.Pg_Veritas_Core_DB)
+	cfg.KafkaBrokers = []string{getEnv("KAFKA_BROKERS", "localhost:9092")}
 
 	return cfg
 }
