@@ -76,7 +76,12 @@ func (g *RouterGroup) RegisterHealthCheck(cfg *config.Config) {
 				}{
 					{"PostgreSQL Database", cfg.DatabaseURL, "postgres"},
 					{"Redis Cache", cfg.RedisHost + ":" + strconv.Itoa(cfg.RedisPort), "redis"},
-					{"Kafka Broker", cfg.KafkaBootstrapServers, "kafka"},
+					{"Kafka Broker", func() string {
+						if len(cfg.KafkaBrokers) > 0 {
+							return cfg.KafkaBrokers[0]
+						}
+						return "kafka:9092"
+					}(), "kafka"},
 				},
 			},
 		}

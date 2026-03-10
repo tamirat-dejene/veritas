@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Config struct {
@@ -24,7 +25,7 @@ type Config struct {
 	RedisPassword              string
 	RedisDB                    int
 	DatabaseURL                string
-	KafkaBootstrapServers      string
+	KafkaBrokers               []string
 	CORSAllowedOrigins         string
 	CORSAllowedMethods         string
 	CORSAllowedHeaders         string
@@ -48,7 +49,7 @@ func Load() *Config {
 		RedisPort:                  getEnvInt("REDIS_PORT", 6379),
 		RedisPassword:              getEnv("REDIS_PASSWORD", ""),
 		RedisDB:                    getEnvInt("REDIS_DB", 0),
-		KafkaBootstrapServers:      getEnv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
+		KafkaBrokers:               strings.Split(getEnv("KAFKA_BROKERS", "kafka:9092"), ","),
 		CORSAllowedOrigins:         getEnv("CORS_ALLOWED_ORIGINS", "*"),
 		CORSAllowedMethods:         getEnv("CORS_ALLOWED_METHODS", "GET,POST,PATCH,DELETE,OPTIONS"),
 		CORSAllowedHeaders:         getEnv("CORS_ALLOWED_HEADERS", "Authorization,Content-Type,X-Request-ID"),
