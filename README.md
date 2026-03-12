@@ -33,6 +33,26 @@ To build and start all services:
 docker-compose up --build
 ```
 
+### Database Migrations
+
+Run migrations from the repository root using:
+
+```bash
+./scripts/migrate.sh up
+```
+
+Other commands:
+
+```bash
+./scripts/migrate.sh down   # rollback all migrations (reverse order)
+./scripts/migrate.sh reset  # down then up
+```
+
+Notes:
+- The script starts the `postgres` container automatically.
+- It creates the target database if it does not exist.
+- It enables the `pgcrypto` extension required by `gen_random_uuid()`.
+
 ### Accessing Services
 
 | Service | Local Host Port |
