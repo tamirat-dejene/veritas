@@ -2331,7 +2331,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "",
-	BasePath:         "/",
+	BasePath:         "/api/v1",
 	Schemes:          []string{"http", "https"},
 	Title:            "Veritas Enterprise Service API",
 	Description:      "Enterprise onboarding, account management, subscription, and user administration service.",
