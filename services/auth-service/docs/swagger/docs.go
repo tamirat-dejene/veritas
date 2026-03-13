@@ -426,7 +426,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "",
-	BasePath:         "/",
+	BasePath:         "/api/v1",
 	Schemes:          []string{"http", "https"},
 	Title:            "Veritas Auth Service API",
 	Description:      "JWT-based authentication service for the Veritas platform.\nHandles login, token refresh, and token revocation for privileged roles.",

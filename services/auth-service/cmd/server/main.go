@@ -13,7 +13,7 @@
 //	@tag.description	Operational and health endpoints.
 //
 //	@schemes		http https
-//	@BasePath	/
+//	@BasePath	/api/v1
 
 package main
 
