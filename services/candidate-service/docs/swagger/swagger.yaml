@@ -1,4 +1,4 @@
-basePath: /
+basePath: /api/v1
 definitions:
   CandidateProfile:
     properties:
@@ -165,7 +165,7 @@ definitions:
   AccessValidateResponse:
     properties:
       data:
-        additionalProperties: true
+        additionalProperties: {}
         type: object
     type: object
   BulkUploadResponse:

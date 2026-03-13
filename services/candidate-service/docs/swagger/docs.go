@@ -1821,7 +1821,7 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "type": "object",
-                    "additionalProperties": true
+                    "additionalProperties": {}
                 }
             }
         },
@@ -2140,7 +2140,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "",
-	BasePath:         "/",
+	BasePath:         "/api/v1",
 	Schemes:          []string{"http", "https"},
 	Title:            "Veritas Candidate Service API",
 	Description:      "Candidate lifecycle, enrollment, exam access, and session management service.",
