@@ -60,16 +60,16 @@ services:
     env_file:
       - .env
     depends_on:
-      auth-service:
-        condition: service_healthy
+      # auth-service:
+      #   condition: service_healthy
       redis:
         condition: service_healthy
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
-        ]
+    # healthcheck:
+    #   test:
+    #     [
+    #       "CMD-SHELL",
+    #       "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
+    #     ]
       # interval: 10s
       # timeout: 5s
       # retries: 5
@@ -91,12 +91,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
-        ]
+    # healthcheck:
+    #   test:
+    #     [
+    #       "CMD-SHELL",
+    #       "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
+    #     ]
       # interval: 10s
       # timeout: 5s
       # retries: 5
@@ -118,12 +118,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
-        ]
+    # healthcheck:
+    #   test:
+    #     [
+    #       "CMD-SHELL",
+    #       "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
+    #     ]
       # interval: 10s
       # timeout: 5s
       # retries: 5
@@ -145,12 +145,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
-        ]
+    # healthcheck:
+    #   test:
+    #     [
+    #       "CMD-SHELL",
+    #       "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
+    #     ]
       # interval: 10s
       # timeout: 5s
       # retries: 5
@@ -172,12 +172,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
-        ]
+    # healthcheck:
+    #   test:
+    #     [
+    #       "CMD-SHELL",
+    #       "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
+    #     ]
       # interval: 10s
       # timeout: 5s
       # retries: 5
@@ -199,12 +199,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
-        ]
+    # healthcheck:
+    #   test:
+    #     [
+    #       "CMD-SHELL",
+    #       "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
+    #     ]
       # interval: 10s
       # timeout: 5s
       # retries: 5
@@ -222,12 +222,12 @@ services:
       - ./shared:/app/shared:ro
     env_file:
       - .env
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          'python3 -c ''import urllib.request; urllib.request.urlopen("http://localhost:8000/health").read()'' || exit 1',
-        ]
+    # healthcheck:
+    #   test:
+    #     [
+    #       "CMD-SHELL",
+    #       'python3 -c ''import urllib.request; urllib.request.urlopen("http://localhost:8000/health").read()'' || exit 1',
+    #     ]
       # interval: 10s
       # timeout: 5s
       # retries: 5
@@ -247,12 +247,12 @@ services:
       - ./shared:/app/shared:ro
     env_file:
       - .env
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          'python3 -c ''import urllib.request; urllib.request.urlopen("http://localhost:8000/health").read()'' || exit 1',
-        ]
+    # healthcheck:
+    #   test:
+    #     [
+    #       "CMD-SHELL",
+    #       'python3 -c ''import urllib.request; urllib.request.urlopen("http://localhost:8000/health").read()'' || exit 1',
+    #     ]
       # interval: 10s
       # timeout: 5s
       # retries: 5
@@ -272,12 +272,12 @@ services:
       - ./shared:/app/shared:ro
     env_file:
       - .env
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          'python3 -c ''import urllib.request; urllib.request.urlopen("http://localhost:8000/health").read()'' || exit 1',
-        ]
+    # healthcheck:
+    #   test:
+    #     [
+    #       "CMD-SHELL",
+    #       'python3 -c ''import urllib.request; urllib.request.urlopen("http://localhost:8000/health").read()'' || exit 1',
+    #     ]
       # interval: 10s
       # timeout: 5s
       # retries: 5
@@ -297,8 +297,8 @@ services:
       - ./shared:/app/shared:ro
     env_file:
       - .env
-    healthcheck:
-      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/health\").read()' || exit 1"]
+    # healthcheck:
+    #   test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/health\").read()' || exit 1"]
       # interval: 10s
       # timeout: 5s
       # retries: 5
