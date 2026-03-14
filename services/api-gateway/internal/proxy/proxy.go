@@ -65,14 +65,13 @@ func NewProxy(target string, circuitBreaker domain.CircuitBreaker, serviceName s
 
 // ServeHTTP implements http.Handler with circuit breaker protection.
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Execute request through circuit breaker
-	err := p.circuitBreaker.Execute(func() error {
-		// Use a custom response writer to capture errors
-		rw := &responseWriter{
-			ResponseWriter: w,
-			statusCode:     http.StatusOK,
-		}
+	// Use a custom response writer to capture errors
+	rw := &responseWriter{
+		ResponseWriter: w,
+		statusCode:     http.StatusOK,
+	}
 
+	err := p.circuitBreaker.Execute(func() error {
 		p.reverseProxy.ServeHTTP(rw, r)
 
 		// Consider 5xx responses as failures for circuit breaker
@@ -83,21 +82,28 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 
+	// If error is not nil, circuit breaker triggered OR backend returned 5xx
 	if err != nil {
-		// Circuit breaker is open or request failed
 		p.mu.Lock()
 		p.lastError = err
 		p.mu.Unlock()
 
 		zap.L().Warn(
-			"Circuit breaker triggered",
+			"Circuit breaker triggered or backend error",
 			zap.String("service", p.serviceName),
 			zap.String("state", p.circuitBreaker.State()),
 			zap.String("path", r.URL.Path),
 			zap.Error(err),
 		)
 
-		// Return 503 Service Unavailable
+		// Check if we already wrote a response during Execute
+		// This can happen if the backend returned 5xx
+		if rw, ok := w.(*responseWriter); ok && rw.wroteHeader {
+			// Response already sent, don't try to send 503
+			return
+		}
+
+		// Return 503 Service Unavailable (only if not already written)
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Retry-After", "30")
 		w.WriteHeader(http.StatusServiceUnavailable)
@@ -129,17 +135,22 @@ func (p *Proxy) errorHandler(w http.ResponseWriter, r *http.Request, err error) 
 // responseWriter wraps http.ResponseWriter to capture status codes.
 type responseWriter struct {
 	http.ResponseWriter
-	statusCode int
+	statusCode  int
+	wroteHeader bool
 }
 
 func (rw *responseWriter) WriteHeader(code int) {
+	if rw.wroteHeader {
+		return
+	}
 	rw.statusCode = code
+	rw.wroteHeader = true
 	rw.ResponseWriter.WriteHeader(code)
 }
 
 func (rw *responseWriter) Write(b []byte) (int, error) {
-	if rw.statusCode == 0 {
-		rw.statusCode = http.StatusOK
+	if !rw.wroteHeader {
+		rw.WriteHeader(http.StatusOK)
 	}
 	return rw.ResponseWriter.Write(b)
 }

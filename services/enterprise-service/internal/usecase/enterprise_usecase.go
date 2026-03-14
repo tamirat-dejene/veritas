@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/domain"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -48,21 +49,34 @@ func (uc *enterpriseUsecase) emit(ctx context.Context, enterpriseID, actorID uui
 }
 
 func (uc *enterpriseUsecase) RegisterEnterprise(ctx context.Context, e *domain.Enterprise, owner *domain.User) (*domain.Enterprise, error) {
+	zap.L().Info("Registering new enterprise", zap.String("slug", e.Slug), zap.String("owner_email", owner.Email))
+
 	// 1. Check if slug exists
-	existing, _ := uc.enterpriseRepo.FindBySlug(ctx, e.Slug)
+	existing, err := uc.enterpriseRepo.FindBySlug(ctx, e.Slug)
+	if err != nil && err != domain.ErrEnterpriseNotFound {
+		zap.L().Error("Failed to check if slug exists", zap.Error(err), zap.String("slug", e.Slug))
+		return nil, err
+	}
 	if existing != nil {
+		zap.L().Warn("Enterprise slug already exists", zap.String("slug", e.Slug))
 		return nil, domain.ErrSlugAlreadyExists
 	}
 
 	// 2. Check if owner email exists
-	existingUser, _ := uc.userRepo.FindByEmail(ctx, owner.Email)
+	existingUser, err := uc.userRepo.FindByEmail(ctx, owner.Email)
+	if err != nil && err != domain.ErrUserNotFound {
+		zap.L().Error("Failed to check if owner email exists", zap.Error(err), zap.String("email", owner.Email))
+		return nil, err
+	}
 	if existingUser != nil {
+		zap.L().Warn("Owner email already exists", zap.String("email", owner.Email))
 		return nil, domain.ErrEmailAlreadyExists
 	}
 
 	// 3. Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(owner.PasswordHash), bcrypt.DefaultCost)
 	if err != nil {
+		zap.L().Error("Failed to hash password", zap.Error(err))
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 	owner.PasswordHash = string(hashedPassword)
@@ -76,28 +90,36 @@ func (uc *enterpriseUsecase) RegisterEnterprise(ctx context.Context, e *domain.E
 	owner.PasswordChangedAt = owner.CreatedAt
 
 	if err := uc.userRepo.Create(ctx, owner); err != nil {
+		zap.L().Error("Failed to create owner user", zap.Error(err), zap.String("email", owner.Email))
 		return nil, fmt.Errorf("failed to create owner user: %w", err)
 	}
+	zap.L().Info("Owner user created", zap.String("user_id", owner.ID.String()))
 
 	// 5. Create Enterprise
 	e.ID = uuid.New()
+	if e.Settings == nil {
+		e.Settings = make(map[string]interface{})
+	}
 	e.OwnerAccountID = owner.ID
 	e.Status = domain.StatusPendingApproval
 	e.CreatedAt = time.Now()
 	e.UpdatedAt = e.CreatedAt
-	e.CreatedBy = owner.ID // Initially created by owner
+	e.CreatedBy = owner.ID
 	e.UpdatedBy = owner.ID
 
 	if err := uc.enterpriseRepo.Create(ctx, e); err != nil {
-		// Cleanup owner if enterprise creation fails? (In a real app, use a transaction)
+		zap.L().Error("Failed to create enterprise", zap.Error(err), zap.String("slug", e.Slug))
 		return nil, fmt.Errorf("failed to create enterprise: %w", err)
 	}
+	zap.L().Info("Enterprise created", zap.String("enterprise_id", e.ID.String()))
 
 	// 6. Update Owner's EnterpriseID
 	owner.EnterpriseID = &e.ID
 	if err := uc.userRepo.Update(ctx, owner); err != nil {
+		zap.L().Error("Failed to update owner with enterprise ID", zap.Error(err), zap.String("user_id", owner.ID.String()))
 		return nil, fmt.Errorf("failed to update owner with enterprise ID: %w", err)
 	}
+	zap.L().Info("Owner updated with enterprise ID", zap.String("user_id", owner.ID.String()))
 
 	return e, nil
 }

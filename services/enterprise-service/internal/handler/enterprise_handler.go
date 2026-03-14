@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/domain"
+	"go.uber.org/zap"
 )
 
 // EnterpriseHandler handles enterprise-level HTTP requests.
@@ -58,6 +59,7 @@ func (h *EnterpriseHandler) Register(c *gin.Context) {
 		case domain.ErrEmailAlreadyExists:
 			writeError(c, http.StatusConflict, "owner email already exists")
 		default:
+			zap.L().Error("Enterprise registration failed", zap.Error(err), zap.String("slug", req.Slug), zap.String("email", req.OwnerEmail))
 			writeError(c, http.StatusInternalServerError, "failed to register enterprise")
 		}
 		return
@@ -608,6 +610,7 @@ func (h *EnterpriseHandler) handleEnterpriseError(c *gin.Context, err error) {
 	case domain.ErrDomainValidation:
 		writeError(c, http.StatusUnprocessableEntity, "domain validation error")
 	default:
+		zap.L().Error("Unhandled enterprise error", zap.Error(err))
 		writeError(c, http.StatusInternalServerError, "internal server error")
 	}
 }
