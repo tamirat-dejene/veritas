@@ -39,7 +39,7 @@ func Load() *Config {
 		Pg_Veritas_User:     getEnv("PG_VERITAS_USER", "postgres"),
 		Pg_Veritas_Password: getEnv("PG_VERITAS_PASSWORD", ""),
 		Pg_Veritas_Core_DB:  getEnv("PG_VERITAS_CORE_DB", "veritas_core"),
-		Pg_SSL_Mode:         getEnv("PG_SSL_MODE", "require"),
+		Pg_SSL_Mode:         getEnv("PG_SSL_MODE", "disable"),
 	}
 	cfg.DSN = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", cfg.Pg_Veritas_User, cfg.Pg_Veritas_Password, cfg.Pg_Veritas_Host, cfg.Pg_Veritas_Port, cfg.Pg_Veritas_Core_DB, cfg.Pg_SSL_Mode)
 	cfg.KafkaBrokers = []string{getEnv("KAFKA_BROKERS", "localhost:9092")}
