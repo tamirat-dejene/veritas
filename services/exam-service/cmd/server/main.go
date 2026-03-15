@@ -28,12 +28,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/config"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/handler"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/usecase"
-	pg "github.com/tamirat-dejene/veritas/shared/db/pg"
 	"go.uber.org/zap"
 
 	// Import generated swagger docs so the spec is registered at startup.
@@ -49,21 +49,21 @@ func main() {
 	// 2. Load Configuration
 	cfg := config.Load()
 
-	// 3. Initialize Database Client
-	dbClient, err := pg.NewPostgresClient(cfg.DSN)
+	// 3. Initialize pgxpool directly
+	pool, err := pgxpool.New(context.Background(), cfg.DSN)
 	if err != nil {
 		logger.Fatal("failed to connect to database", zap.Error(err))
 	}
-	defer dbClient.Close()
-	dbClient.LogConnectionInfo()
+	defer pool.Close()
+	logger.Info("connected to postgres (via pgxpool)")
 
-	// 4. Initialize Repositories
-	questionRepo := postgres.NewQuestionRepository(dbClient)
-	examRepo := postgres.NewExamRepository(dbClient)
+	// 4. Initialize Repositories (passing pool as DBTX)
+	questionRepo := postgres.NewQuestionRepository(pool)
+	examRepo := postgres.NewExamRepository(pool)
 
 	// 5. Initialize Usecases
-	questionUC := usecase.NewQuestionUsecase(questionRepo)
-	examUC := usecase.NewExamUsecase(examRepo, questionRepo)
+	questionUC := usecase.NewQuestionUsecase(pool, questionRepo)
+	examUC := usecase.NewExamUsecase(pool, examRepo, questionRepo)
 
 	// 6. Initialize Handlers
 	questionHandler := handler.NewQuestionHandler(questionUC)
