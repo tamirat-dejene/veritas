@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/domain"
 )
 
@@ -31,12 +32,12 @@ const userFields = `
 `
 
 func scanUser(row pgx.Row) (*domain.User, error) {
-	var u domain.User
+	var m userModel
 	err := row.Scan(
-		&u.ID, &u.Email, &u.PasswordHash, &u.Honorific, &u.FirstName, &u.LastName, &u.Phone, &u.Role, &u.EnterpriseID,
-		&u.IsActive, &u.IsDeleted, &u.EmailVerified, &u.EmailVerifiedAt, &u.FailedLoginAttempts, &u.LockedUntil,
-		&u.PasswordChangedAt, &u.MustChangePassword, &u.LastLoginAt, &u.LastLoginIP, &u.LastUserAgent,
-		&u.CreatedAt, &u.UpdatedAt,
+		&m.ID, &m.Email, &m.PasswordHash, &m.Honorific, &m.FirstName, &m.LastName, &m.Phone, &m.Role, &m.EnterpriseID,
+		&m.IsActive, &m.IsDeleted, &m.EmailVerified, &m.EmailVerifiedAt, &m.FailedLoginAttempts, &m.LockedUntil,
+		&m.PasswordChangedAt, &m.MustChangePassword, &m.LastLoginAt, &m.LastLoginIP, &m.LastUserAgent,
+		&m.CreatedAt, &m.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -44,7 +45,7 @@ func scanUser(row pgx.Row) (*domain.User, error) {
 		}
 		return nil, err
 	}
-	return &u, nil
+	return m.toDomain(), nil
 }
 
 func (r *userRepository) Create(ctx context.Context, u *domain.User) error {
@@ -166,4 +167,50 @@ func (r *userRepository) CountByEnterprise(ctx context.Context, enterpriseID uui
 	const q = "SELECT COUNT(*) FROM veritas_users WHERE enterprise_id = $1 AND is_deleted = false AND is_active = true"
 	err := r.db.QueryRow(ctx, q, enterpriseID).Scan(&count)
 	return count, err
+}
+
+func (r *userRepository) UpdateLoginSuccess(ctx context.Context, userID uuid.UUID, ip, userAgent string) error {
+	const query = `
+		UPDATE veritas_users
+		SET last_login_at = NOW(),
+		    last_login_ip = $2,
+		    last_user_agent = $3,
+		    failed_login_attempts = 0,
+		    locked_until = NULL,
+		    updated_at = NOW()
+		WHERE id = $1
+	`
+	commandTag, err := r.db.Exec(ctx, query, userID, ip, userAgent)
+	if err != nil {
+		return err
+	}
+	if commandTag.RowsAffected() == 0 {
+		return domain.ErrUserNotFound
+	}
+	return nil
+}
+
+func (r *userRepository) UpdateLoginFailure(ctx context.Context, userID uuid.UUID, lockUntil *time.Time, failedLoginAttempts int) error {
+	const query = `
+		UPDATE veritas_users
+		SET failed_login_attempts = $3,
+		    locked_until = $2,
+		    updated_at = NOW()
+		WHERE id = $1
+	`
+	var pgLockUntil pgtype.Timestamptz
+	if lockUntil != nil {
+		pgLockUntil = pgtype.Timestamptz{Time: *lockUntil, Valid: true}
+	} else {
+		pgLockUntil = pgtype.Timestamptz{Valid: false}
+	}
+
+	commandTag, err := r.db.Exec(ctx, query, userID, pgLockUntil, failedLoginAttempts)
+	if err != nil {
+		return err
+	}
+	if commandTag.RowsAffected() == 0 {
+		return domain.ErrUserNotFound
+	}
+	return nil
 }

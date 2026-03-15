@@ -37,6 +37,7 @@ import (
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/usecase"
 	"go.uber.org/zap"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	// Import generated swagger docs so the spec is registered at startup.
@@ -56,7 +57,13 @@ func main() {
 	ctxSetup, cancelSetup := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancelSetup()
 
-	pool, err := pgxpool.New(ctxSetup, cfg.DSN)
+	poolCfg, err := pgxpool.ParseConfig(cfg.DSN)
+	if err != nil {
+		logger.Fatal("failed to parse database config", zap.Error(err))
+	}
+	poolCfg.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+
+	pool, err := pgxpool.NewWithConfig(ctxSetup, poolCfg)
 	if err != nil {
 		logger.Fatal("failed to connect to database", zap.Error(err))
 	}

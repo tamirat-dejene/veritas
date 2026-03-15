@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -29,11 +30,16 @@ func (r *auditRepository) Create(ctx context.Context, log *domain.AuditLog) erro
 		  (id, enterprise_id, actor_id, actor_role, event, metadata, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
+	metadataJson, err := json.Marshal(log.Metadata)
+	if err != nil {
+		return err
+	}
+
 	if log.ID == uuid.Nil {
 		log.ID = uuid.New()
 	}
-	_, err := r.db.Exec(ctx, query,
-		log.ID, log.EnterpriseID, log.ActorID, log.ActorRole, log.Event, log.Metadata, log.CreatedAt,
+	_, err = r.db.Exec(ctx, query,
+		log.ID, log.EnterpriseID, log.ActorID, log.ActorRole, log.Event, string(metadataJson), log.CreatedAt,
 	)
 	return err
 }

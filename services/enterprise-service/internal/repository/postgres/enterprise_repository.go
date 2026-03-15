@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -33,13 +34,13 @@ const enterpriseFields = `
 `
 
 func scanEnterprise(row pgx.Row) (*domain.Enterprise, error) {
-	var e domain.Enterprise
+	var m enterpriseModel
 	err := row.Scan(
-		&e.ID, &e.Slug, &e.DisplayName, &e.LegalName, &e.ContactEmail, &e.OwnerAccountID, &e.Status, &e.ApprovedAt,
-		&e.SuspendedAt, &e.DeletedAt, &e.RetentionUntil, &e.SubscriptionPlanID, &e.SubscriptionStatus,
-		&e.CurrentPeriodStart, &e.CurrentPeriodEnd, &e.LogoURL, &e.PrimaryColor, &e.SecondaryColor,
-		&e.CustomDomain, &e.ContactPhone, &e.AddressLine1, &e.AddressLine2, &e.City, &e.Country, &e.Settings,
-		&e.CreatedAt, &e.UpdatedAt, &e.CreatedBy, &e.UpdatedBy,
+		&m.ID, &m.Slug, &m.DisplayName, &m.LegalName, &m.ContactEmail, &m.OwnerAccountID, &m.Status, &m.ApprovedAt,
+		&m.SuspendedAt, &m.DeletedAt, &m.RetentionUntil, &m.SubscriptionPlanID, &m.SubscriptionStatus,
+		&m.CurrentPeriodStart, &m.CurrentPeriodEnd, &m.LogoURL, &m.PrimaryColor, &m.SecondaryColor,
+		&m.CustomDomain, &m.ContactPhone, &m.AddressLine1, &m.AddressLine2, &m.City, &m.Country, &m.Settings,
+		&m.CreatedAt, &m.UpdatedAt, &m.CreatedBy, &m.UpdatedBy,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -47,7 +48,7 @@ func scanEnterprise(row pgx.Row) (*domain.Enterprise, error) {
 		}
 		return nil, err
 	}
-	return &e, nil
+	return m.toDomain(), nil
 }
 
 func (r *enterpriseRepository) Create(ctx context.Context, e *domain.Enterprise) error {
@@ -59,6 +60,12 @@ func (r *enterpriseRepository) Create(ctx context.Context, e *domain.Enterprise)
 			created_at, updated_at, created_by, updated_by
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
 	`
+
+	settingsJson, err := json.Marshal(e.Settings)
+	if err != nil {
+		return err
+	}
+
 	if e.ID == uuid.Nil {
 		e.ID = uuid.New()
 	}
@@ -70,10 +77,10 @@ func (r *enterpriseRepository) Create(ctx context.Context, e *domain.Enterprise)
 		e.UpdatedAt = now
 	}
 
-	_, err := r.db.Exec(ctx, query,
+	_, err = r.db.Exec(ctx, query,
 		e.ID, e.Slug, e.DisplayName, e.LegalName, e.ContactEmail, e.OwnerAccountID, e.Status,
 		e.LogoURL, e.PrimaryColor, e.SecondaryColor, e.CustomDomain, e.ContactPhone,
-		e.AddressLine1, e.AddressLine2, e.City, e.Country, e.Settings,
+		e.AddressLine1, e.AddressLine2, e.City, e.Country, string(settingsJson),
 		e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy,
 	)
 	return err
@@ -103,13 +110,18 @@ func (r *enterpriseRepository) Update(ctx context.Context, e *domain.Enterprise)
 		    country = $23, settings = $24, updated_at = NOW(), updated_by = $25
 		WHERE id = $1
 	`
-	_, err := r.db.Exec(ctx, query,
+
+	settingsJson, err := json.Marshal(e.Settings)
+	if err != nil {
+		return err
+	}
+	_, err = r.db.Exec(ctx, query,
 		e.ID, e.Slug, e.DisplayName, e.LegalName, e.ContactEmail, e.Status,
 		e.ApprovedAt, e.SuspendedAt, e.DeletedAt, e.RetentionUntil,
 		e.SubscriptionPlanID, e.SubscriptionStatus, e.CurrentPeriodStart, e.CurrentPeriodEnd,
 		e.LogoURL, e.PrimaryColor, e.SecondaryColor, e.CustomDomain,
 		e.ContactPhone, e.AddressLine1, e.AddressLine2, e.City,
-		e.Country, e.Settings, e.UpdatedBy,
+		e.Country, string(settingsJson), e.UpdatedBy,
 	)
 	return err
 }
