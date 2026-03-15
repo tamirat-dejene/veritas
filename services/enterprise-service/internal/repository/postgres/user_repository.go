@@ -9,15 +9,18 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/domain"
-	postgres "github.com/tamirat-dejene/veritas/shared/db/pg"
 )
 
 type userRepository struct {
-	db postgres.PostgresClient
+	db DBTX
 }
 
-func NewUserRepository(db postgres.PostgresClient) domain.UserRepository {
+func NewUserRepository(db DBTX) domain.UserRepository {
 	return &userRepository{db: db}
+}
+
+func (r *userRepository) WithTx(tx pgx.Tx) domain.UserRepository {
+	return &userRepository{db: tx}
 }
 
 const userFields = `
@@ -27,7 +30,7 @@ const userFields = `
 	created_at, updated_at
 `
 
-func scanUser(row postgres.Row) (*domain.User, error) {
+func scanUser(row pgx.Row) (*domain.User, error) {
 	var u domain.User
 	err := row.Scan(
 		&u.ID, &u.Email, &u.PasswordHash, &u.Honorific, &u.FirstName, &u.LastName, &u.Phone, &u.Role, &u.EnterpriseID,

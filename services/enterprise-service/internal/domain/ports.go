@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 // ─── Repository Interfaces ───────────────────────────────────────────────────
@@ -18,6 +19,7 @@ type UserRepository interface {
 	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, page, limit int) ([]*User, int, error)
 	FindByEnterpriseAndID(ctx context.Context, enterpriseID, userID uuid.UUID) (*User, error)
 	CountByEnterprise(ctx context.Context, enterpriseID uuid.UUID) (int, error)
+	WithTx(tx pgx.Tx) UserRepository
 }
 
 type EnterpriseRepository interface {
@@ -30,11 +32,13 @@ type EnterpriseRepository interface {
 	// Extended
 	ListPaginated(ctx context.Context, filter EnterpriseFilter) ([]*Enterprise, int, error)
 	HardDelete(ctx context.Context, id uuid.UUID) error
+	WithTx(tx pgx.Tx) EnterpriseRepository
 }
 
 type AuditRepository interface {
 	Create(ctx context.Context, log *AuditLog) error
 	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, page, limit int) ([]*AuditLog, int, error)
+	WithTx(tx pgx.Tx) AuditRepository
 }
 
 // ─── Usecase Interfaces ──────────────────────────────────────────────────────

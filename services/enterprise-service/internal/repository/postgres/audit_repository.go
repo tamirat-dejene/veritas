@@ -5,17 +5,21 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/domain"
-	postgres "github.com/tamirat-dejene/veritas/shared/db/pg"
 )
 
 type auditRepository struct {
-	db postgres.PostgresClient
+	db DBTX
 }
 
 // NewAuditRepository creates a new audit repository.
-func NewAuditRepository(db postgres.PostgresClient) domain.AuditRepository {
+func NewAuditRepository(db DBTX) domain.AuditRepository {
 	return &auditRepository{db: db}
+}
+
+func (r *auditRepository) WithTx(tx pgx.Tx) domain.AuditRepository {
+	return &auditRepository{db: tx}
 }
 
 // Create inserts a new audit log record.

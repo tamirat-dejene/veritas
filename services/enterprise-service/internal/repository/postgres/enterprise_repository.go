@@ -10,15 +10,18 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/domain"
-	postgres "github.com/tamirat-dejene/veritas/shared/db/pg"
 )
 
 type enterpriseRepository struct {
-	db postgres.PostgresClient
+	db DBTX
 }
 
-func NewEnterpriseRepository(db postgres.PostgresClient) domain.EnterpriseRepository {
+func NewEnterpriseRepository(db DBTX) domain.EnterpriseRepository {
 	return &enterpriseRepository{db: db}
+}
+
+func (r *enterpriseRepository) WithTx(tx pgx.Tx) domain.EnterpriseRepository {
+	return &enterpriseRepository{db: tx}
 }
 
 const enterpriseFields = `
@@ -29,7 +32,7 @@ const enterpriseFields = `
 	created_at, updated_at, created_by, updated_by
 `
 
-func scanEnterprise(row postgres.Row) (*domain.Enterprise, error) {
+func scanEnterprise(row pgx.Row) (*domain.Enterprise, error) {
 	var e domain.Enterprise
 	err := row.Scan(
 		&e.ID, &e.Slug, &e.DisplayName, &e.LegalName, &e.ContactEmail, &e.OwnerAccountID, &e.Status, &e.ApprovedAt,

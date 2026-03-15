@@ -10,6 +10,8 @@ import (
 type AuditEvent string
 
 const (
+	EventEnterpriseCreated     AuditEvent = "enterprise.created"
+	EventEnterpriseUpdated     AuditEvent = "enterprise.updated"
 	EventEnterpriseApproved    AuditEvent = "enterprise.approved"
 	EventEnterpriseSuspended   AuditEvent = "enterprise.suspended"
 	EventEnterpriseDeleted     AuditEvent = "enterprise.deleted"
@@ -36,6 +38,6 @@ type AuditLog struct {
 	ActorID      uuid.UUID              `db:"actor_id"      json:"actor_id"`
 	ActorRole    string                 `db:"actor_role"    json:"actor_role"`
 	Event        AuditEvent             `db:"event"         json:"event"`
-	Metadata     map[string]interface{} `db:"metadata"      json:"metadata"`
+	Metadata     map[string]any `db:"metadata"      json:"metadata"`
 	CreatedAt    time.Time              `db:"created_at"    json:"created_at"`
 }
