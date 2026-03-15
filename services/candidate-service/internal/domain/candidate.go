@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 type CandidateProfile struct {
@@ -27,6 +28,7 @@ type CandidateRepository interface {
 	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]*CandidateProfile, error)
 	Update(ctx context.Context, candidate *CandidateProfile) error
 	Deactivate(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
+	WithTx(tx pgx.Tx) CandidateRepository
 }
 
 type CandidateUseCase interface {

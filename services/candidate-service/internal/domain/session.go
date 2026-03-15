@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 type SessionStatus string
@@ -85,6 +86,7 @@ type SessionRepository interface {
 	CreateSubmission(ctx context.Context, submission *ExamSubmission) error
 	GetSubmissionBySession(ctx context.Context, sessionID uuid.UUID) (*ExamSubmission, error)
 	GetSubmissionsByExam(ctx context.Context, examID uuid.UUID) ([]*ExamSubmission, error)
+	WithTx(tx pgx.Tx) SessionRepository
 }
 
 // SessionUseCase covers Candidate Access Flow

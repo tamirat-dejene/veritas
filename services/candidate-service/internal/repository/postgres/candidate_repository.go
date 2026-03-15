@@ -9,14 +9,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
-	postgres "github.com/tamirat-dejene/veritas/shared/db/pg"
 )
 
 type candidateRepository struct {
-	db postgres.PostgresClient
+	db DBTX
 }
 
-func NewCandidateRepository(db postgres.PostgresClient) domain.CandidateRepository {
+func NewCandidateRepository(db DBTX) domain.CandidateRepository {
 	return &candidateRepository{db: db}
 }
 
@@ -25,7 +24,7 @@ const candidateFields = `
 	face_reference_url, is_active, created_at
 `
 
-func scanCandidate(row postgres.Row) (*domain.CandidateProfile, error) {
+func scanCandidate(row pgx.Row) (*domain.CandidateProfile, error) {
 	var c domain.CandidateProfile
 	err := row.Scan(
 		&c.ID, &c.EnterpriseID, &c.ExternalID, &c.FirstName, &c.LastName, &c.Email,
@@ -89,7 +88,14 @@ func (r *candidateRepository) CreateBulk(ctx context.Context, candidates []*doma
 		})
 	}
 
-	_, err := r.db.CopyFrom(
+	conn, ok := r.db.(interface {
+		CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error)
+	})
+	if !ok {
+		return fmt.Errorf("bulk insert not supported by current DB context")
+	}
+
+	_, err := conn.CopyFrom(
 		ctx,
 		pgx.Identifier{"candidate_profiles"},
 		cols,
@@ -147,7 +153,7 @@ func (r *candidateRepository) Update(ctx context.Context, c *domain.CandidatePro
 	if err != nil {
 		return err
 	}
-	if tag == 0 {
+	if tag.RowsAffected() == 0 {
 		return domain.ErrCandidateNotFound
 	}
 	return nil
@@ -163,8 +169,12 @@ func (r *candidateRepository) Deactivate(ctx context.Context, id uuid.UUID, ente
 	if err != nil {
 		return err
 	}
-	if tag == 0 {
+	if tag.RowsAffected() == 0 {
 		return domain.ErrCandidateNotFound
 	}
 	return nil
+}
+
+func (r *candidateRepository) WithTx(tx pgx.Tx) domain.CandidateRepository {
+	return &candidateRepository{db: tx}
 }

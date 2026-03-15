@@ -9,14 +9,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
-	postgres "github.com/tamirat-dejene/veritas/shared/db/pg"
 )
 
 type sessionRepository struct {
-	db postgres.PostgresClient
+	db DBTX
 }
 
-func NewSessionRepository(db postgres.PostgresClient) domain.SessionRepository {
+func NewSessionRepository(db DBTX) domain.SessionRepository {
 	return &sessionRepository{db: db}
 }
 
@@ -30,7 +29,7 @@ const sessionFields = `
 	client_ip, user_agent, face_registered_url, cheating_score, created_at
 `
 
-func scanSession(row postgres.Row) (*domain.ExamSession, error) {
+func scanSession(row pgx.Row) (*domain.ExamSession, error) {
 	var s domain.ExamSession
 	err := row.Scan(
 		&s.ID, &s.EnterpriseID, &s.ExamID, &s.CandidateID, &s.EnrollmentID, &s.Status,
@@ -117,7 +116,7 @@ func (r *sessionRepository) UpdateSessionStatus(ctx context.Context, id uuid.UUI
 	if err != nil {
 		return err
 	}
-	if tag == 0 {
+	if tag.RowsAffected() == 0 {
 		return domain.ErrSessionNotFound
 	}
 	return nil
@@ -279,4 +278,8 @@ func (r *sessionRepository) GetSubmissionsByExam(ctx context.Context, examID uui
 		list = append(list, &s)
 	}
 	return list, nil
+}
+
+func (r *sessionRepository) WithTx(tx pgx.Tx) domain.SessionRepository {
+	return &sessionRepository{db: tx}
 }

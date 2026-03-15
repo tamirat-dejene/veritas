@@ -9,14 +9,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
-	postgres "github.com/tamirat-dejene/veritas/shared/db/pg"
 )
 
 type enrollmentRepository struct {
-	db postgres.PostgresClient
+	db DBTX
 }
 
-func NewEnrollmentRepository(db postgres.PostgresClient) domain.EnrollmentRepository {
+func NewEnrollmentRepository(db DBTX) domain.EnrollmentRepository {
 	return &enrollmentRepository{db: db}
 }
 
@@ -25,7 +24,7 @@ const enrollmentFields = `
 	token_expires_at, max_attempts, attempts_used, status, created_at
 `
 
-func scanEnrollment(row postgres.Row) (*domain.ExamEnrollment, error) {
+func scanEnrollment(row pgx.Row) (*domain.ExamEnrollment, error) {
 	var e domain.ExamEnrollment
 	err := row.Scan(
 		&e.ID, &e.EnterpriseID, &e.ExamID, &e.CandidateID, &e.InvitationMethod,
@@ -106,7 +105,7 @@ func (r *enrollmentRepository) Update(ctx context.Context, e *domain.ExamEnrollm
 	if err != nil {
 		return err
 	}
-	if tag == 0 {
+	if tag.RowsAffected() == 0 {
 		return domain.ErrEnrollmentNotFound
 	}
 	return nil
@@ -122,8 +121,12 @@ func (r *enrollmentRepository) IncrementAttempt(ctx context.Context, id uuid.UUI
 	if err != nil {
 		return err
 	}
-	if tag == 0 {
+	if tag.RowsAffected() == 0 {
 		return domain.ErrEnrollmentNotFound
 	}
 	return nil
+}
+
+func (r *enrollmentRepository) WithTx(tx pgx.Tx) domain.EnrollmentRepository {
+	return &enrollmentRepository{db: tx}
 }

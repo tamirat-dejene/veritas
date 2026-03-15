@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 type ExamEnrollment struct {
@@ -28,6 +29,7 @@ type EnrollmentRepository interface {
 	ListByExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID) ([]*ExamEnrollment, error)
 	Update(ctx context.Context, enrollment *ExamEnrollment) error
 	IncrementAttempt(ctx context.Context, id uuid.UUID) error
+	WithTx(tx pgx.Tx) EnrollmentRepository
 }
 
 type EnrollmentUseCase interface {
