@@ -2,15 +2,13 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
-	pg "github.com/tamirat-dejene/veritas/shared/db/pg"
 )
 
 const (
@@ -19,10 +17,10 @@ const (
 )
 
 type subscriptionRepository struct {
-	db pg.PostgresClient
+	db DBTX
 }
 
-func NewSubscriptionRepository(db pg.PostgresClient) domain.SubscriptionRepository {
+func NewSubscriptionRepository(db DBTX) domain.SubscriptionRepository {
 	return &subscriptionRepository{db: db}
 }
 
@@ -55,7 +53,7 @@ func (r *subscriptionRepository) GetPlanByID(ctx context.Context, id uuid.UUID) 
 		&p.ID, &p.Name, &p.Slug, &p.Description, &p.Price, &p.Currency, &p.BillingCycle, &p.Features, &p.IsActive, &p.CreatedAt, &p.UpdatedAt,
 	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) || strings.Contains(err.Error(), "no rows") {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrPlanNotFound
 		}
 		return nil, err
@@ -70,7 +68,7 @@ func (r *subscriptionRepository) GetPlanBySlug(ctx context.Context, slug string)
 		&p.ID, &p.Name, &p.Slug, &p.Description, &p.Price, &p.Currency, &p.BillingCycle, &p.Features, &p.IsActive, &p.CreatedAt, &p.UpdatedAt,
 	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) || strings.Contains(err.Error(), "no rows") {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrPlanNotFound
 		}
 		return nil, err
@@ -85,7 +83,7 @@ func (r *subscriptionRepository) GetSubscriptionByEnterpriseID(ctx context.Conte
 		&s.ID, &s.EnterpriseID, &s.PlanID, &s.Status, &s.CurrentPeriodStart, &s.CurrentPeriodEnd, &s.CancelAtPeriodEnd, &s.CanceledAt, &s.EndedAt, &s.StripeCustomerID, &s.StripeSubscriptionID, &s.CreatedAt, &s.UpdatedAt,
 	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) || strings.Contains(err.Error(), "no rows") {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrSubscriptionNotFound
 		}
 		return nil, err
@@ -131,4 +129,8 @@ func (r *subscriptionRepository) UpdateSubscription(ctx context.Context, s *doma
 		s.StripeCustomerID, s.StripeSubscriptionID, s.UpdatedAt, s.ID,
 	)
 	return err
+}
+
+func (r *subscriptionRepository) WithTx(tx pgx.Tx) domain.SubscriptionRepository {
+	return &subscriptionRepository{db: tx}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 type SubscriptionRepository interface {
@@ -14,6 +15,7 @@ type SubscriptionRepository interface {
 	GetSubscriptionByEnterpriseID(ctx context.Context, enterpriseID uuid.UUID) (*EnterpriseSubscription, error)
 	CreateSubscription(ctx context.Context, sub *EnterpriseSubscription) error
 	UpdateSubscription(ctx context.Context, sub *EnterpriseSubscription) error
+	WithTx(tx pgx.Tx) SubscriptionRepository
 }
 
 type BillingRepository interface {
@@ -25,6 +27,7 @@ type BillingRepository interface {
 
 	CreatePayment(ctx context.Context, p *Payment) error
 	ListPaymentsByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]*Payment, error)
+	WithTx(tx pgx.Tx) BillingRepository
 }
 
 type PaymentProvider interface {

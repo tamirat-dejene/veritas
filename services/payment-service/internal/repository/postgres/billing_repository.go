@@ -2,15 +2,13 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
-	pg "github.com/tamirat-dejene/veritas/shared/db/pg"
 )
 
 const (
@@ -19,10 +17,10 @@ const (
 )
 
 type billingRepository struct {
-	db pg.PostgresClient
+	db DBTX
 }
 
-func NewBillingRepository(db pg.PostgresClient) domain.BillingRepository {
+func NewBillingRepository(db DBTX) domain.BillingRepository {
 	return &billingRepository{db: db}
 }
 
@@ -56,7 +54,7 @@ func (r *billingRepository) GetInvoiceByID(ctx context.Context, id uuid.UUID) (*
 		&i.ID, &i.EnterpriseID, &i.SubscriptionID, &i.Number, &i.Status, &i.AmountDue, &i.AmountPaid, &i.AmountRemaining, &i.Currency, &i.DueDate, &i.PaidAt, &i.HostedInvoiceURL, &i.InvoicePDFURL, &i.CreatedAt, &i.UpdatedAt,
 	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) || strings.Contains(err.Error(), "no rows") {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrInvoiceNotFound
 		}
 		return nil, err
@@ -71,7 +69,7 @@ func (r *billingRepository) GetInvoiceByNumber(ctx context.Context, number strin
 		&i.ID, &i.EnterpriseID, &i.SubscriptionID, &i.Number, &i.Status, &i.AmountDue, &i.AmountPaid, &i.AmountRemaining, &i.Currency, &i.DueDate, &i.PaidAt, &i.HostedInvoiceURL, &i.InvoicePDFURL, &i.CreatedAt, &i.UpdatedAt,
 	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) || strings.Contains(err.Error(), "no rows") {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrInvoiceNotFound
 		}
 		return nil, err
@@ -112,6 +110,10 @@ func (r *billingRepository) UpdateInvoice(ctx context.Context, i *domain.Invoice
 		i.Status, i.AmountPaid, i.AmountRemaining, i.PaidAt, i.UpdatedAt, i.ID,
 	)
 	return err
+}
+
+func (r *billingRepository) WithTx(tx pgx.Tx) domain.BillingRepository {
+	return &billingRepository{db: tx}
 }
 
 func (r *billingRepository) CreatePayment(ctx context.Context, p *domain.Payment) error {
