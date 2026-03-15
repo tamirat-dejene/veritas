@@ -7,20 +7,24 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/infrastructure/client"
 	"go.uber.org/zap"
 )
 
 type sessionUseCase struct {
+	pool           *pgxpool.Pool
 	sessionRepo    domain.SessionRepository
 	enrollmentRepo domain.EnrollmentRepository
 	examClient     client.ExamServiceClient
 	logger         *zap.Logger
 }
 
-func NewSessionUseCase(sRepo domain.SessionRepository, eRepo domain.EnrollmentRepository, eClient client.ExamServiceClient, logger *zap.Logger) domain.SessionUseCase {
+func NewSessionUseCase(pool *pgxpool.Pool, sRepo domain.SessionRepository, eRepo domain.EnrollmentRepository, eClient client.ExamServiceClient, logger *zap.Logger) domain.SessionUseCase {
 	return &sessionUseCase{
+		pool:           pool,
 		sessionRepo:    sRepo,
 		enrollmentRepo: eRepo,
 		examClient:     eClient,
@@ -83,7 +87,7 @@ func (uc *sessionUseCase) StartSession(ctx context.Context, token string, client
 		return nil, fmt.Errorf("failed to fetch question snapshot: %v", err)
 	}
 
-	// 5. Create Session
+	// 5. Create Session and Save Question Snapshots in a transaction
 	sessionID := uuid.New()
 	session := &domain.ExamSession{
 		ID:           sessionID,
@@ -98,30 +102,41 @@ func (uc *sessionUseCase) StartSession(ctx context.Context, token string, client
 		UserAgent:    &userAgent,
 	}
 
-	if err := uc.sessionRepo.CreateSession(ctx, session); err != nil {
-		return nil, err
-	}
-
-	var snapshots []domain.SessionQuestion
-	for _, qm := range questionsMeta {
-		oReq := 0
-		if qm.OrderIndex != nil {
-			oReq = *qm.OrderIndex
+	err = RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		// 3. Mark attempt used atomically
+		if err := uc.enrollmentRepo.WithTx(tx).IncrementAttempt(ctx, e.ID); err != nil {
+			return fmt.Errorf("increment attempt: %w", err)
 		}
 
-		snapshots = append(snapshots, domain.SessionQuestion{
-			SessionID:        sessionID,
-			QuestionID:       qm.ID,
-			QuestionSnapshot: qm.Content,
-			OrderIndex:       oReq,
-			Points:           qm.Points,
-			NegativePoints:   qm.NegativePoints,
-		})
-	}
+		if err := uc.sessionRepo.WithTx(tx).CreateSession(ctx, session); err != nil {
+			return fmt.Errorf("create session: %w", err)
+		}
 
-	if err := uc.sessionRepo.SaveQuestionsSnapshot(ctx, sessionID, snapshots); err != nil {
-		uc.logger.Error("failed to save question snapshots", zap.Error(err))
-		// We still return session, but log failure
+		var snapshots []domain.SessionQuestion
+		for _, qm := range questionsMeta {
+			oReq := 0
+			if qm.OrderIndex != nil {
+				oReq = *qm.OrderIndex
+			}
+
+			snapshots = append(snapshots, domain.SessionQuestion{
+				SessionID:        sessionID,
+				QuestionID:       qm.ID,
+				QuestionSnapshot: qm.Content,
+				OrderIndex:       oReq,
+				Points:           qm.Points,
+				NegativePoints:   qm.NegativePoints,
+			})
+		}
+
+		if err := uc.sessionRepo.WithTx(tx).SaveQuestionsSnapshot(ctx, sessionID, snapshots); err != nil {
+			return fmt.Errorf("save snapshots: %w", err)
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("StartSession transaction: %w", err)
 	}
 
 	return session, nil
@@ -179,32 +194,42 @@ func (uc *sessionUseCase) SubmitExam(ctx context.Context, sessionID uuid.UUID, c
 		return nil, domain.ErrSessionNotActive
 	}
 
-	// 1. Mark term reason
-	reason := "Manual Submission"
-	if autoSubmitted {
-		reason = "Timer Expired / Auto-submit"
+	err = RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		// 1. Mark term reason
+		reason := "Manual Submission"
+		if autoSubmitted {
+			reason = "Timer Expired / Auto-submit"
+		}
+
+		if err := uc.sessionRepo.WithTx(tx).UpdateSessionStatus(ctx, sessionID, domain.SessionSubmitted, &reason); err != nil {
+			return fmt.Errorf("update session status: %w", err)
+		}
+
+		// 3. Create Submission
+		submission := &domain.ExamSubmission{
+			SessionID:     sessionID,
+			SubmittedAt:   time.Now(),
+			AutoSubmitted: autoSubmitted,
+			GradingStatus: "Pending", // Or 'ReadyForGrading'
+		}
+
+		if err := uc.sessionRepo.WithTx(tx).CreateSubmission(ctx, submission); err != nil {
+			return fmt.Errorf("create submission: %w", err)
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("SubmitExam transaction: %w", err)
 	}
 
-	if err := uc.sessionRepo.UpdateSessionStatus(ctx, sessionID, domain.SessionSubmitted, &reason); err != nil {
-		return nil, err
+	// Fetch the created submission to return it (or we could just use the one we built if we assigned an ID)
+	sub, err := uc.sessionRepo.GetSubmissionBySession(ctx, sessionID)
+	if err != nil {
+		return nil, fmt.Errorf("fetch created submission: %w", err)
 	}
 
-	// 2. Finalize answers
-	// Normally we would loop over answers and mark IsFinal true.
-
-	// 3. Create Submission
-	submission := &domain.ExamSubmission{
-		SessionID:     sessionID,
-		SubmittedAt:   time.Now(),
-		AutoSubmitted: autoSubmitted,
-		GradingStatus: "Pending", // Or 'ReadyForGrading'
-	}
-
-	if err := uc.sessionRepo.CreateSubmission(ctx, submission); err != nil {
-		return nil, err
-	}
-
-	return submission, nil
+	return sub, nil
 }
 
 func (uc *sessionUseCase) TerminateSession(ctx context.Context, sessionID uuid.UUID, enterpriseID uuid.UUID, reason string) error {

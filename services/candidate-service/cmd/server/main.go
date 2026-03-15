@@ -31,13 +31,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/config"
 	c_http "github.com/tamirat-dejene/veritas/services/candidate-service/internal/handler"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/infrastructure/client"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/usecase"
-	pg "github.com/tamirat-dejene/veritas/shared/db/pg"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 
@@ -59,26 +59,26 @@ func main() {
 	// 2. Load Configuration
 	cfg := config.Load()
 
-	// 3. Initialize Shared Postgres DB Client
-	dbClient, err := pg.NewPostgresClient(cfg.DSN)
+	// 3. Initialize pgxpool directly
+	pool, err := pgxpool.New(context.Background(), cfg.DSN)
 	if err != nil {
 		log.Fatal("failed to connect to database", zap.Error(err))
 	}
-	defer dbClient.Close()
-	dbClient.LogConnectionInfo()
+	defer pool.Close()
+	log.Info("connected to postgres (via pgxpool)")
 
 	// 4. Initialize Infrastructure Clients (HTTP Client for Exam Service)
 	examClient := client.NewExamServiceClient(cfg.ExamServiceURL)
 
-	// 5. Initialize Repositories
-	candidateRepo := postgres.NewCandidateRepository(dbClient)
-	enrollmentRepo := postgres.NewEnrollmentRepository(dbClient)
-	sessionRepo := postgres.NewSessionRepository(dbClient)
+	// 5. Initialize Repositories (passing pool as DBTX)
+	candidateRepo := postgres.NewCandidateRepository(pool)
+	enrollmentRepo := postgres.NewEnrollmentRepository(pool)
+	sessionRepo := postgres.NewSessionRepository(pool)
 
 	// 6. Initialize UseCases
-	candidateUC := usecase.NewCandidateUseCase(candidateRepo, log)
-	enrollmentUC := usecase.NewEnrollmentUseCase(enrollmentRepo, log)
-	sessionUC := usecase.NewSessionUseCase(sessionRepo, enrollmentRepo, examClient, log)
+	candidateUC := usecase.NewCandidateUseCase(pool, candidateRepo, log)
+	enrollmentUC := usecase.NewEnrollmentUseCase(pool, enrollmentRepo, log)
+	sessionUC := usecase.NewSessionUseCase(pool, sessionRepo, enrollmentRepo, examClient, log)
 	monitoringUC := usecase.NewMonitoringUseCase(sessionRepo, log)
 
 	// 7. Initialize Handlers

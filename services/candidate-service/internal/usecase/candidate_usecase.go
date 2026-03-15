@@ -7,17 +7,21 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
 	"go.uber.org/zap"
 )
 
 type candidateUseCase struct {
+	pool   *pgxpool.Pool
 	repo   domain.CandidateRepository
 	logger *zap.Logger
 }
 
-func NewCandidateUseCase(repo domain.CandidateRepository, logger *zap.Logger) domain.CandidateUseCase {
+func NewCandidateUseCase(pool *pgxpool.Pool, repo domain.CandidateRepository, logger *zap.Logger) domain.CandidateUseCase {
 	return &candidateUseCase{
+		pool:   pool,
 		repo:   repo,
 		logger: logger,
 	}
@@ -74,7 +78,9 @@ func (uc *candidateUseCase) BulkUpload(ctx context.Context, enterpriseID uuid.UU
 		return 0, fmt.Errorf("no valid candidates found in CSV")
 	}
 
-	err = uc.repo.CreateBulk(ctx, candidates)
+	err = RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		return uc.repo.WithTx(tx).CreateBulk(ctx, candidates)
+	})
 	if err != nil {
 		uc.logger.Error("bulk upload failed", zap.Error(err))
 		return 0, err

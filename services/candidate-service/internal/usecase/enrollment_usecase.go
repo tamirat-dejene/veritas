@@ -5,20 +5,25 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
 	"go.uber.org/zap"
 )
 
 type enrollmentUseCase struct {
+	pool   *pgxpool.Pool
 	repo   domain.EnrollmentRepository
 	logger *zap.Logger
 }
 
-func NewEnrollmentUseCase(repo domain.EnrollmentRepository, logger *zap.Logger) domain.EnrollmentUseCase {
+func NewEnrollmentUseCase(pool *pgxpool.Pool, repo domain.EnrollmentRepository, logger *zap.Logger) domain.EnrollmentUseCase {
 	return &enrollmentUseCase{
+		pool:   pool,
 		repo:   repo,
 		logger: logger,
 	}
@@ -43,36 +48,41 @@ func hashToken(token string) string {
 func (uc *enrollmentUseCase) EnrollCandidates(ctx context.Context, enterpriseID uuid.UUID, examID uuid.UUID, candidateIDs []uuid.UUID, method string, maxAttempts int, expiresAt time.Time) ([]string, error) {
 	var rawTokens []string
 
-	for _, cid := range candidateIDs {
-		// Generate raw token (e.g., 32 characters -> 16 bytes encoded)
-		rawToken, err := generateSecureToken(16)
-		if err != nil {
-			uc.logger.Error("failed to generate secure token", zap.Error(err))
-			return nil, err
+	err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		for _, cid := range candidateIDs {
+			// Generate raw token (e.g., 32 characters -> 16 bytes encoded)
+			rawToken, err := generateSecureToken(16)
+			if err != nil {
+				return fmt.Errorf("generate secure token: %w", err)
+			}
+
+			hashedToken := hashToken(rawToken)
+
+			enrollment := &domain.ExamEnrollment{
+				EnterpriseID:     enterpriseID,
+				ExamID:           examID,
+				CandidateID:      cid,
+				InvitationMethod: method,
+				AccessTokenHash:  hashedToken,
+				TokenExpiresAt:   expiresAt,
+				MaxAttempts:      maxAttempts,
+				AttemptsUsed:     0,
+				Status:           "Invited",
+			}
+
+			if err := uc.repo.WithTx(tx).Create(ctx, enrollment); err != nil {
+				return fmt.Errorf("create enrollment for candidate %s: %w", cid, err)
+			}
+
+			// Store raw token exactly once to hand back to the inviter
+			rawTokens = append(rawTokens, rawToken)
 		}
+		return nil
+	})
 
-		hashedToken := hashToken(rawToken)
-
-		enrollment := &domain.ExamEnrollment{
-			EnterpriseID:     enterpriseID,
-			ExamID:           examID,
-			CandidateID:      cid,
-			InvitationMethod: method,
-			AccessTokenHash:  hashedToken,
-			TokenExpiresAt:   expiresAt,
-			MaxAttempts:      maxAttempts,
-			AttemptsUsed:     0,
-			Status:           "Invited",
-		}
-
-		if err := uc.repo.Create(ctx, enrollment); err != nil {
-			uc.logger.Error("failed to create enrollment", zap.Error(err), zap.String("candidate", cid.String()))
-			// Depending on exact requirements, we might want to continue, but here we abort.
-			return nil, err
-		}
-
-		// Store raw token exactly once to hand back to the inviter
-		rawTokens = append(rawTokens, rawToken)
+	if err != nil {
+		uc.logger.Error("bulk enrollment failed", zap.Error(err))
+		return nil, err
 	}
 
 	return rawTokens, nil
@@ -87,19 +97,28 @@ func (uc *enrollmentUseCase) GetEnrollment(ctx context.Context, id uuid.UUID, en
 }
 
 func (uc *enrollmentUseCase) RegenerateToken(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (string, error) {
-	e, err := uc.repo.GetByID(ctx, id, enterpriseID)
+	var rawToken string
+	err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		e, err := uc.repo.WithTx(tx).GetByID(ctx, id, enterpriseID)
+		if err != nil {
+			return err
+		}
+
+		rt, err := generateSecureToken(16)
+		if err != nil {
+			return err
+		}
+		rawToken = rt
+
+		e.AccessTokenHash = hashToken(rawToken)
+
+		if err := uc.repo.WithTx(tx).Update(ctx, e); err != nil {
+			return err
+		}
+		return nil
+	})
+
 	if err != nil {
-		return "", err
-	}
-
-	rawToken, err := generateSecureToken(16)
-	if err != nil {
-		return "", err
-	}
-
-	e.AccessTokenHash = hashToken(rawToken)
-
-	if err := uc.repo.Update(ctx, e); err != nil {
 		return "", err
 	}
 
