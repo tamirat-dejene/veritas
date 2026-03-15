@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 type QuestionType string
@@ -57,6 +58,7 @@ type QuestionRepository interface {
 	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]*Question, error)
 	Update(ctx context.Context, q *Question) error
 	Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
+	WithTx(tx pgx.Tx) QuestionRepository
 }
 
 type QuestionUsecase interface {

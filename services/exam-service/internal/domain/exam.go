@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 type ExamStatus string
@@ -73,6 +74,7 @@ type ExamRepository interface {
 	AddRandomizationRule(ctx context.Context, examID uuid.UUID, rule *ExamRandomizationRule) error
 	UpdateRandomizationRule(ctx context.Context, examID uuid.UUID, rule *ExamRandomizationRule) error
 	DeleteRandomizationRule(ctx context.Context, examID uuid.UUID, ruleID uuid.UUID) error
+	WithTx(tx pgx.Tx) ExamRepository
 }
 
 type ExamUsecase interface {

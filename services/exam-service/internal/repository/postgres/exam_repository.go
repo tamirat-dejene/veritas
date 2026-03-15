@@ -9,14 +9,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/domain"
-	postgres "github.com/tamirat-dejene/veritas/shared/db/pg"
 )
 
 type examRepository struct {
-	db postgres.PostgresClient
+	db DBTX
 }
 
-func NewExamRepository(db postgres.PostgresClient) domain.ExamRepository {
+func NewExamRepository(db DBTX) domain.ExamRepository {
 	return &examRepository{db: db}
 }
 
@@ -26,7 +25,7 @@ const examFields = `
 	scheduled_start, scheduled_end, settings, created_by, created_at, updated_at
 `
 
-func scanExam(row postgres.Row) (*domain.Exam, error) {
+func scanExam(row pgx.Row) (*domain.Exam, error) {
 	var e domain.Exam
 	err := row.Scan(
 		&e.ID, &e.EnterpriseID, &e.Title, &e.Description, &e.DurationMinutes, &e.PassingScorePercent,
@@ -42,7 +41,7 @@ func scanExam(row postgres.Row) (*domain.Exam, error) {
 	return &e, nil
 }
 
-func scanExamQuestion(row postgres.Row) (*domain.ExamQuestion, error) {
+func scanExamQuestion(row pgx.Row) (*domain.ExamQuestion, error) {
 	var eq domain.ExamQuestion
 	err := row.Scan(&eq.ID, &eq.ExamID, &eq.QuestionID, &eq.PointsOverride, &eq.OrderIndex)
 	if err != nil {
@@ -51,7 +50,7 @@ func scanExamQuestion(row postgres.Row) (*domain.ExamQuestion, error) {
 	return &eq, nil
 }
 
-func scanExamRandomizationRule(row postgres.Row) (*domain.ExamRandomizationRule, error) {
+func scanExamRandomizationRule(row pgx.Row) (*domain.ExamRandomizationRule, error) {
 	var r domain.ExamRandomizationRule
 	err := row.Scan(&r.ID, &r.ExamID, &r.Topic, &r.Difficulty, &r.QuestionCount)
 	if err != nil {
@@ -200,7 +199,7 @@ func (r *examRepository) Delete(ctx context.Context, id uuid.UUID, enterpriseID 
 	if err != nil {
 		return err
 	}
-	if tag == 0 {
+	if tag.RowsAffected() == 0 {
 		return domain.ErrExamNotFound
 	}
 	return nil
@@ -226,7 +225,7 @@ func (r *examRepository) RemoveQuestion(ctx context.Context, examID uuid.UUID, q
 	if err != nil {
 		return err
 	}
-	if tag == 0 {
+	if tag.RowsAffected() == 0 {
 		return fmt.Errorf("exam question mapping not found")
 	}
 	return nil
@@ -242,7 +241,7 @@ func (r *examRepository) UpdateQuestionMapping(ctx context.Context, examID uuid.
 	if err != nil {
 		return err
 	}
-	if tag == 0 {
+	if tag.RowsAffected() == 0 {
 		return fmt.Errorf("exam question mapping not found")
 	}
 	return nil
@@ -272,7 +271,7 @@ func (r *examRepository) UpdateRandomizationRule(ctx context.Context, examID uui
 	if err != nil {
 		return err
 	}
-	if tag == 0 {
+	if tag.RowsAffected() == 0 {
 		return fmt.Errorf("randomization rule not found")
 	}
 	return nil
@@ -284,8 +283,12 @@ func (r *examRepository) DeleteRandomizationRule(ctx context.Context, examID uui
 	if err != nil {
 		return err
 	}
-	if tag == 0 {
+	if tag.RowsAffected() == 0 {
 		return fmt.Errorf("randomization rule not found")
 	}
 	return nil
+}
+
+func (r *examRepository) WithTx(tx pgx.Tx) domain.ExamRepository {
+	return &examRepository{db: tx}
 }

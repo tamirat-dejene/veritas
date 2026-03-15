@@ -9,14 +9,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/domain"
-	postgres "github.com/tamirat-dejene/veritas/shared/db/pg"
 )
 
 type questionRepository struct {
-	db postgres.PostgresClient
+	db DBTX
 }
 
-func NewQuestionRepository(db postgres.PostgresClient) domain.QuestionRepository {
+func NewQuestionRepository(db DBTX) domain.QuestionRepository {
 	return &questionRepository{db: db}
 }
 
@@ -25,7 +24,7 @@ const questionFields = `
 	points, negative_points, metadata, is_active, created_by, created_at, updated_at
 `
 
-func scanQuestion(row postgres.Row) (*domain.Question, error) {
+func scanQuestion(row pgx.Row) (*domain.Question, error) {
 	var q domain.Question
 	err := row.Scan(
 		&q.ID, &q.EnterpriseID, &q.Type, &q.Topic, &q.Difficulty, &q.Title, &q.Content, &q.MediaURL,
@@ -40,7 +39,7 @@ func scanQuestion(row postgres.Row) (*domain.Question, error) {
 	return &q, nil
 }
 
-func scanQuestionOption(row postgres.Row) (*domain.QuestionOption, error) {
+func scanQuestionOption(row pgx.Row) (*domain.QuestionOption, error) {
 	var o domain.QuestionOption
 	err := row.Scan(&o.ID, &o.QuestionID, &o.Content, &o.IsCorrect)
 	if err != nil {
@@ -221,8 +220,12 @@ func (r *questionRepository) Delete(ctx context.Context, id uuid.UUID, enterpris
 	if err != nil {
 		return err
 	}
-	if tag == 0 {
+	if tag.RowsAffected() == 0 {
 		return domain.ErrQuestionNotFound
 	}
 	return nil
+}
+
+func (r *questionRepository) WithTx(tx pgx.Tx) domain.QuestionRepository {
+	return &questionRepository{db: tx}
 }
