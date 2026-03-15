@@ -29,13 +29,14 @@ import (
 	"time"
 
 	_ "github.com/tamirat-dejene/veritas/services/payment-service/docs/swagger"
+	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/tamirat-dejene/veritas/services/payment-service/docs/swagger"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/config"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/handler"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/stripe"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/usecase"
-	pg_client "github.com/tamirat-dejene/veritas/shared/db/pg"
 	"go.uber.org/zap"
 )
 
@@ -47,19 +48,20 @@ func main() {
 	// Load configuration
 	cfg := config.Load()
 
-	// Database connection
-	db, err := pg_client.NewPostgresClient(cfg.DSN)
+	// Database connection (using pgxpool directly)
+	pool, err := pgxpool.New(context.Background(), cfg.DSN)
 	if err != nil {
 		logger.Fatal("failed to connect to database", zap.Error(err))
 	}
-	defer db.Close()
+	defer pool.Close()
+	logger.Info("connected to postgres (via pgxpool)")
 
 	// Wire dependencies
-	subRepo := postgres.NewSubscriptionRepository(db)
-	billingRepo := postgres.NewBillingRepository(db)
+	subRepo := postgres.NewSubscriptionRepository(pool)
+	billingRepo := postgres.NewBillingRepository(pool)
 	payProvider := stripe.NewStripeProvider(cfg.StripeSecretKey, cfg.StripeWebhookSecret)
 
-	payUsecase := usecase.NewPaymentUsecase(subRepo, billingRepo, payProvider)
+	payUsecase := usecase.NewPaymentUsecase(pool, subRepo, billingRepo, payProvider)
 	payHandler := handler.NewPaymentHandler(payUsecase)
 
 	r := router.NewRouter(payHandler)

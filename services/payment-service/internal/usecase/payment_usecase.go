@@ -6,18 +6,22 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stripe/stripe-go/v74"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
 )
 
 type paymentUsecase struct {
+	pool        *pgxpool.Pool
 	subRepo     domain.SubscriptionRepository
 	billingRepo domain.BillingRepository
 	payProvider domain.PaymentProvider
 }
 
-func NewPaymentUsecase(subRepo domain.SubscriptionRepository, billingRepo domain.BillingRepository, payProvider domain.PaymentProvider) domain.PaymentUsecase {
+func NewPaymentUsecase(pool *pgxpool.Pool, subRepo domain.SubscriptionRepository, billingRepo domain.BillingRepository, payProvider domain.PaymentProvider) domain.PaymentUsecase {
 	return &paymentUsecase{
+		pool:        pool,
 		subRepo:     subRepo,
 		billingRepo: billingRepo,
 		payProvider: payProvider,
@@ -82,28 +86,33 @@ func (u *paymentUsecase) handleCheckoutSessionCompleted(ctx context.Context, eve
 	enterpriseID, _ := uuid.Parse(enterpriseIDStr)
 	planID, _ := uuid.Parse(planIDStr)
 
-	plan, _ := u.subRepo.GetPlanByID(ctx, planID)
-
-	sub, err := u.subRepo.GetSubscriptionByEnterpriseID(ctx, enterpriseID)
-	if err != nil {
-		if err == domain.ErrSubscriptionNotFound {
-			newSub := &domain.EnterpriseSubscription{
-				ID:                 uuid.New(),
-				EnterpriseID:       enterpriseID,
-				PlanID:             planID,
-				Status:             domain.SubStatusActive,
-				CurrentPeriodStart: time.Now(),
-				CurrentPeriodEnd:   u.calculatePeriodEnd(time.Now(), plan.BillingCycle),
-			}
-			return u.subRepo.CreateSubscription(ctx, newSub)
+	return RunInTx(ctx, u.pool, func(tx pgx.Tx) error {
+		plan, err := u.subRepo.WithTx(tx).GetPlanByID(ctx, planID)
+		if err != nil {
+			return err
 		}
-		return err
-	}
 
-	sub.PlanID = planID
-	sub.Status = domain.SubStatusActive
-	sub.UpdatedAt = time.Now()
-	return u.subRepo.UpdateSubscription(ctx, sub)
+		sub, err := u.subRepo.WithTx(tx).GetSubscriptionByEnterpriseID(ctx, enterpriseID)
+		if err != nil {
+			if err == domain.ErrSubscriptionNotFound {
+				newSub := &domain.EnterpriseSubscription{
+					ID:                 uuid.New(),
+					EnterpriseID:       enterpriseID,
+					PlanID:             planID,
+					Status:             domain.SubStatusActive,
+					CurrentPeriodStart: time.Now(),
+					CurrentPeriodEnd:   u.calculatePeriodEnd(time.Now(), plan.BillingCycle),
+				}
+				return u.subRepo.WithTx(tx).CreateSubscription(ctx, newSub)
+			}
+			return err
+		}
+
+		sub.PlanID = planID
+		sub.Status = domain.SubStatusActive
+		sub.UpdatedAt = time.Now()
+		return u.subRepo.WithTx(tx).UpdateSubscription(ctx, sub)
+	})
 }
 
 func (u *paymentUsecase) handleInvoicePaid(ctx context.Context, event *stripe.Event) error {
@@ -113,30 +122,34 @@ func (u *paymentUsecase) handleInvoicePaid(ctx context.Context, event *stripe.Ev
 	amountPaid := float64(invoiceObj["amount_paid"].(int64)) / 100
 	currency := domain.Currency(invoiceObj["currency"].(string))
 
-	inv, err := u.billingRepo.GetInvoiceByNumber(ctx, invoiceNumber)
-	if err != nil {
-		return err
-	}
+	return RunInTx(ctx, u.pool, func(tx pgx.Tx) error {
+		inv, err := u.billingRepo.WithTx(tx).GetInvoiceByNumber(ctx, invoiceNumber)
+		if err != nil {
+			return err
+		}
 
-	inv.Status = domain.InvoiceStatusPaid
-	inv.AmountPaid = amountPaid
-	inv.AmountRemaining = 0
-	now := time.Now()
-	inv.PaidAt = &now
-	_ = u.billingRepo.UpdateInvoice(ctx, inv)
+		inv.Status = domain.InvoiceStatusPaid
+		inv.AmountPaid = amountPaid
+		inv.AmountRemaining = 0
+		now := time.Now()
+		inv.PaidAt = &now
+		if err := u.billingRepo.WithTx(tx).UpdateInvoice(ctx, inv); err != nil {
+			return err
+		}
 
-	payment := &domain.Payment{
-		ID:                uuid.New(),
-		EnterpriseID:      inv.EnterpriseID,
-		InvoiceID:         &inv.ID,
-		Amount:            amountPaid,
-		Currency:          currency,
-		Status:            domain.PaymentStatusSucceeded,
-		Provider:          "stripe",
-		ProviderPaymentID: event.ID,
-		CreatedAt:         time.Now(),
-	}
-	return u.billingRepo.CreatePayment(ctx, payment)
+		payment := &domain.Payment{
+			ID:                uuid.New(),
+			EnterpriseID:      inv.EnterpriseID,
+			InvoiceID:         &inv.ID,
+			Amount:            amountPaid,
+			Currency:          currency,
+			Status:            domain.PaymentStatusSucceeded,
+			Provider:          "stripe",
+			ProviderPaymentID: event.ID,
+			CreatedAt:         time.Now(),
+		}
+		return u.billingRepo.WithTx(tx).CreatePayment(ctx, payment)
+	})
 }
 
 func (u *paymentUsecase) handleInvoicePaymentFailed(ctx context.Context, event *stripe.Event) error {
