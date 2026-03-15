@@ -41,8 +41,9 @@ The service is configured via environment variables:
 | `PG_VERITAS_HOST` | `localhost` | PostgreSQL host |
 | `PG_VERITAS_PORT` | `5432` | PostgreSQL port |
 | `PG_VERITAS_USER` | `postgres` | PostgreSQL user |
-| `PG_VERITAS_PASSWORD` | `postgres` | PostgreSQL password |
+| `PG_VERITAS_PASSWORD` | - | PostgreSQL password (Required) |
 | `PG_VERITAS_CORE_DB` | `veritas_core` | PostgreSQL database name |
+| `PG_SSL_MODE` | `require` | PostgreSQL SSL mode (`require`, `verify-full`, `disable` for local only) |
 | `JWT_SECRET` | - | HMAC signing key (Required) |
 | `ACCESS_TOKEN_TTL` | `15m` | Access token expiry (e.g., 15m, 1h) |
 | `REFRESH_TOKEN_TTL` | `168h` | Refresh token expiry (default 7 days) |

@@ -20,6 +20,7 @@ type Config struct {
 	Pg_Veritas_User     string
 	Pg_Veritas_Password string
 	Pg_Veritas_Core_DB  string
+	Pg_SSL_Mode         string
 	DSN                 string
 	KafkaBrokers        []string
 }
@@ -29,17 +30,18 @@ type Config struct {
 func Load() *Config {
 	cfg := &Config{
 		Port:            getEnv("GO_PORT", "8080"),
-		JWTSecret:       getEnv("JWT_SECRET", "change-me-in-production-super-secret-key"),
+		JWTSecret:       getEnv("JWT_SECRET", ""),
 		AccessTokenTTL:  getDurationEnv("ACCESS_TOKEN_TTL", 15*time.Minute),
 		RefreshTokenTTL: getDurationEnv("REFRESH_TOKEN_TTL", 7*24*time.Hour),
 
 		Pg_Veritas_Host:     getEnv("PG_VERITAS_HOST", "localhost"),
 		Pg_Veritas_Port:     getEnv("PG_VERITAS_PORT", "5432"),
 		Pg_Veritas_User:     getEnv("PG_VERITAS_USER", "postgres"),
-		Pg_Veritas_Password: getEnv("PG_VERITAS_PASSWORD", "postgres"),
+		Pg_Veritas_Password: getEnv("PG_VERITAS_PASSWORD", ""),
 		Pg_Veritas_Core_DB:  getEnv("PG_VERITAS_CORE_DB", "veritas_core"),
+		Pg_SSL_Mode:         getEnv("PG_SSL_MODE", "require"),
 	}
-	cfg.DSN = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", cfg.Pg_Veritas_User, cfg.Pg_Veritas_Password, cfg.Pg_Veritas_Host, cfg.Pg_Veritas_Port, cfg.Pg_Veritas_Core_DB)
+	cfg.DSN = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", cfg.Pg_Veritas_User, cfg.Pg_Veritas_Password, cfg.Pg_Veritas_Host, cfg.Pg_Veritas_Port, cfg.Pg_Veritas_Core_DB, cfg.Pg_SSL_Mode)
 	cfg.KafkaBrokers = []string{getEnv("KAFKA_BROKERS", "localhost:9092")}
 
 	return cfg

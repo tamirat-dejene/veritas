@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/infrastructure/token"
 	"go.uber.org/zap"
@@ -16,16 +18,19 @@ type LogoutInput struct {
 
 // LogoutUseCase revokes the provided refresh token.
 type LogoutUseCase struct {
+	pool             *pgxpool.Pool
 	refreshTokenRepo domain.RefreshTokenRepository
 	log              *zap.Logger
 }
 
 // NewLogoutUseCase creates a new LogoutUseCase.
 func NewLogoutUseCase(
+	pool *pgxpool.Pool,
 	refreshTokenRepo domain.RefreshTokenRepository,
 	log *zap.Logger,
 ) *LogoutUseCase {
 	return &LogoutUseCase{
+		pool:             pool,
 		refreshTokenRepo: refreshTokenRepo,
 		log:              log,
 	}
@@ -37,28 +42,39 @@ func (uc *LogoutUseCase) Execute(ctx context.Context, input LogoutInput) error {
 	// 1. Hash the incoming raw token to look it up.
 	tokenHash := token.HashToken(input.RefreshToken)
 
-	// 2. Look up the token by hash.
-	rt, err := uc.refreshTokenRepo.FindByHash(ctx, tokenHash)
-	if err != nil {
-		// If token is not found, treat as a no-op (already logged out or invalid).
-		if err == domain.ErrTokenNotFound {
-			uc.log.Warn("logout attempt with unknown token (no-op)")
+	var tokenID string
+
+	// 2-4. Lock token row and revoke inside one transaction.
+	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		rt, err := uc.refreshTokenRepo.WithTx(tx).FindByHashForUpdate(ctx, tokenHash)
+		if err != nil {
+			if err == domain.ErrTokenNotFound {
+				uc.log.Warn("logout attempt with unknown token (no-op)")
+				return nil
+			}
+			return fmt.Errorf("find token for update: %w", err)
+		}
+
+		tokenID = rt.ID.String()
+
+		if rt.Revoked {
+			uc.log.Info("logout called on already-revoked token (no-op)", zap.String("tokenId", rt.ID.String()))
 			return nil
 		}
-		return fmt.Errorf("LogoutUseCase.Execute: FindByHash: %w", err)
-	}
 
-	// 3. If already revoked, treat as idempotent success.
-	if rt.Revoked {
-		uc.log.Info("logout called on already-revoked token (no-op)", zap.String("tokenId", rt.ID.String()))
+		if err := uc.refreshTokenRepo.WithTx(tx).Revoke(ctx, rt.ID); err != nil {
+			if err == domain.ErrTokenRevoked {
+				return nil
+			}
+			return fmt.Errorf("revoke: %w", err)
+		}
 		return nil
+	}); err != nil {
+		return fmt.Errorf("LogoutUseCase.Execute transaction: %w", err)
 	}
 
-	// 4. Revoke the token.
-	if err := uc.refreshTokenRepo.Revoke(ctx, rt.ID); err != nil {
-		return fmt.Errorf("LogoutUseCase.Execute: Revoke: %w", err)
+	if tokenID != "" {
+		uc.log.Info("user logged out successfully", zap.String("tokenId", tokenID))
 	}
-
-	uc.log.Info("user logged out successfully", zap.String("tokenId", rt.ID.String()))
 	return nil
 }

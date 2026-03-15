@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/domain"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
@@ -28,6 +30,7 @@ type LoginOutput struct {
 
 // LoginUseCase orchestrates user authentication with security auditing.
 type LoginUseCase struct {
+	pool             *pgxpool.Pool
 	userRepo         domain.UserRepository
 	refreshTokenRepo domain.RefreshTokenRepository
 	jwtService       domain.TokenService
@@ -40,6 +43,7 @@ type LoginUseCase struct {
 
 // NewLoginUseCase creates a new LoginUseCase.
 func NewLoginUseCase(
+	pool *pgxpool.Pool,
 	userRepo domain.UserRepository,
 	refreshTokenRepo domain.RefreshTokenRepository,
 	jwtService domain.TokenService,
@@ -50,6 +54,7 @@ func NewLoginUseCase(
 	log *zap.Logger,
 ) *LoginUseCase {
 	return &LoginUseCase{
+		pool:             pool,
 		userRepo:         userRepo,
 		refreshTokenRepo: refreshTokenRepo,
 		jwtService:       jwtService,
@@ -123,23 +128,28 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 		return nil, fmt.Errorf("LoginUseCase.Execute: GenerateRefreshToken: %w", err)
 	}
 
-	// 8. Persist refresh token hash.
-	rt := &domain.RefreshToken{
-		ID:        uuid.New(),
-		UserID:    user.ID,
-		TokenHash: tokenHash,
-		ExpiresAt: time.Now().Add(uc.refreshTokenTTL).UTC(),
-		Revoked:   false,
-		CreatedAt: time.Now().UTC(),
-	}
-	if err := uc.refreshTokenRepo.Create(ctx, rt); err != nil {
-		return nil, fmt.Errorf("LoginUseCase.Execute: Create refresh token: %w", err)
-	}
+	// 8 & 9 are combined into a transaction for ATOMICITY.
+	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		// 8. Persist refresh token hash.
+		rt := &domain.RefreshToken{
+			ID:        uuid.New(),
+			UserID:    user.ID,
+			TokenHash: tokenHash,
+			ExpiresAt: time.Now().Add(uc.refreshTokenTTL).UTC(),
+			Revoked:   false,
+			CreatedAt: time.Now().UTC(),
+		}
+		if err := uc.refreshTokenRepo.WithTx(tx).Create(ctx, rt); err != nil {
+			return fmt.Errorf("create refresh token: %w", err)
+		}
 
-	// 9. Update Login Audit Stats.
-	if err := uc.userRepo.UpdateLoginSuccess(ctx, user.ID, input.IP, input.UserAgent); err != nil {
-		uc.log.Error("failed to update login success stats", zap.Error(err))
-		// Not returning error here as the user is effectively logged in.
+		// 9. Update Login Audit Stats.
+		if err := uc.userRepo.WithTx(tx).UpdateLoginSuccess(ctx, user.ID, input.IP, input.UserAgent); err != nil {
+			return fmt.Errorf("update login success stats: %w", err)
+		}
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("LoginUseCase.Execute transaction: %w", err)
 	}
 
 	uc.log.Info("user logged in successfully", zap.String("userId", user.ID.String()))

@@ -34,10 +34,11 @@ import (
 	pgRepo "github.com/tamirat-dejene/veritas/services/auth-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/usecase"
-	postgres "github.com/tamirat-dejene/veritas/shared/db/pg"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"github.com/tamirat-dejene/veritas/shared/pkg/messaging/kafka"
 	"go.uber.org/zap"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	// Import generated swagger docs so the spec is registered at startup.
 	_ "github.com/tamirat-dejene/veritas/services/auth-service/docs/swagger"
@@ -55,14 +56,22 @@ func main() {
 
 	// --- Config ---
 	cfg := config.Load()
+	if cfg.JWTSecret == "" {
+		log.Fatal("missing required JWT secret", zap.String("env", "JWT_SECRET"))
+	}
+	if cfg.Pg_Veritas_Password == "" {
+		log.Fatal("missing required postgres password", zap.String("env", "PG_VERITAS_PASSWORD"))
+	}
 
 	// --- Database ---
-	db, err := postgres.NewPostgresClient(cfg.DSN)
+	ctxSetup, cancelSetup := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelSetup()
+
+	pool, err := pgxpool.New(ctxSetup, cfg.DSN)
 	if err != nil {
 		log.Fatal("failed to connect to database", zap.Error(err))
 	}
-	defer db.Close()
-	db.LogConnectionInfo()
+	defer pool.Close()
 
 	// --- Infrastructure: Token Services ---
 	jwtService := infratoken.NewJWTService(cfg.JWTSecret, cfg.AccessTokenTTL)
@@ -80,11 +89,12 @@ func main() {
 	eventPublisher := inframsg.NewKafkaPublisher(kafkaProducer)
 
 	// --- Repositories ---
-	userRepo := pgRepo.NewUserRepository(db)
-	refreshTokenRepo := pgRepo.NewRefreshTokenRepository(db)
+	userRepo := pgRepo.NewUserRepository(pool)
+	refreshTokenRepo := pgRepo.NewRefreshTokenRepository(pool)
 
 	// --- Use Cases ---
 	loginUC := usecase.NewLoginUseCase(
+		pool,
 		userRepo,
 		refreshTokenRepo,
 		jwtService,
@@ -95,6 +105,7 @@ func main() {
 		log,
 	)
 	refreshUC := usecase.NewRefreshUseCase(
+		pool,
 		userRepo,
 		refreshTokenRepo,
 		jwtService,
@@ -103,7 +114,7 @@ func main() {
 		cfg.RefreshTokenTTL,
 		log,
 	)
-	logoutUC := usecase.NewLogoutUseCase(refreshTokenRepo, log)
+	logoutUC := usecase.NewLogoutUseCase(pool, refreshTokenRepo, log)
 
 	// --- HTTP Layer ---
 	authHandler := handler.NewAuthHandler(loginUC, refreshUC, logoutUC, log)
