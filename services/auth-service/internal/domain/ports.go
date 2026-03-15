@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 // UserRepository is the port for user persistence operations.
@@ -13,14 +14,17 @@ type UserRepository interface {
 	FindByID(ctx context.Context, id uuid.UUID) (*User, error)
 	UpdateLoginSuccess(ctx context.Context, userID uuid.UUID, ip, userAgent string) error
 	UpdateLoginFailure(ctx context.Context, userID uuid.UUID, lockUntil *time.Time) error
+	WithTx(tx pgx.Tx) UserRepository
 }
 
 // RefreshTokenRepository is the port for refresh token persistence operations.
 type RefreshTokenRepository interface {
 	Create(ctx context.Context, token *RefreshToken) error
 	FindByHash(ctx context.Context, tokenHash string) (*RefreshToken, error)
+	FindByHashForUpdate(ctx context.Context, tokenHash string) (*RefreshToken, error)
 	Revoke(ctx context.Context, tokenID uuid.UUID) error
 	DeleteExpiredByUserID(ctx context.Context, userID uuid.UUID, before time.Time) error
+	WithTx(tx pgx.Tx) RefreshTokenRepository
 }
 
 // TokenService is the port for token generation operations.

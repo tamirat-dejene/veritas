@@ -9,17 +9,20 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/domain"
-	postgres "github.com/tamirat-dejene/veritas/shared/db/pg"
 )
 
 // userRepository implements domain.UserRepository backed by PostgreSQL.
 type userRepository struct {
-	db postgres.PostgresClient
+	db DBTX
 }
 
 // NewUserRepository creates a new UserRepository.
-func NewUserRepository(db postgres.PostgresClient) domain.UserRepository {
+func NewUserRepository(db DBTX) domain.UserRepository {
 	return &userRepository{db: db}
+}
+
+func (r *userRepository) WithTx(tx pgx.Tx) domain.UserRepository {
+	return &userRepository{db: tx}
 }
 
 const userFields = `
@@ -29,7 +32,7 @@ const userFields = `
 	created_at, updated_at
 `
 
-func scanUser(row postgres.Row) (*domain.User, error) {
+func scanUser(row pgx.Row) (*domain.User, error) {
 	var u domain.User
 	err := row.Scan(
 		&u.ID, &u.Email, &u.PasswordHash, &u.Honorific, &u.FirstName, &u.LastName, &u.Phone, &u.Role, &u.EnterpriseID,
@@ -97,9 +100,12 @@ func (r *userRepository) UpdateLoginSuccess(ctx context.Context, userID uuid.UUI
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	_, err := r.db.Exec(ctx, query, userID, ip, userAgent)
+	commandTag, err := r.db.Exec(ctx, query, userID, ip, userAgent)
 	if err != nil {
 		return fmt.Errorf("userRepository.UpdateLoginSuccess: %w", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return domain.ErrUserNotFound
 	}
 	return nil
 }
@@ -116,9 +122,12 @@ func (r *userRepository) UpdateLoginFailure(ctx context.Context, userID uuid.UUI
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	_, err := r.db.Exec(ctx, query, userID, lockUntil)
+	commandTag, err := r.db.Exec(ctx, query, userID, lockUntil)
 	if err != nil {
 		return fmt.Errorf("userRepository.UpdateLoginFailure: %w", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return domain.ErrUserNotFound
 	}
 	return nil
 }
