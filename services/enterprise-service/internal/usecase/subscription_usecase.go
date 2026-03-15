@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/domain"
 )
 
@@ -41,11 +42,16 @@ func (uc *enterpriseUsecase) UpdateSubscription(ctx context.Context, id uuid.UUI
 	e.UpdatedAt = time.Now()
 	e.UpdatedBy = adminID
 
-	if err := uc.enterpriseRepo.Update(ctx, e); err != nil {
+	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		if err := uc.enterpriseRepo.WithTx(tx).Update(ctx, e); err != nil {
+			return err
+		}
+		uc.emit(ctx, tx, id, adminID, string(domain.RoleSystemAdmin), domain.EventSubscriptionUpdated,
+			map[string]interface{}{"subscription_status": fmt.Sprintf("%v", req.SubscriptionStatus)})
+		return nil
+	}); err != nil {
 		return err
 	}
-	uc.emit(ctx, id, adminID, string(domain.RoleSystemAdmin), domain.EventSubscriptionUpdated,
-		map[string]interface{}{"subscription_status": fmt.Sprintf("%v", req.SubscriptionStatus)})
 	return nil
 }
 
@@ -61,10 +67,15 @@ func (uc *enterpriseUsecase) CancelSubscription(ctx context.Context, id uuid.UUI
 	e.SubscriptionStatus = &canceled
 	e.UpdatedAt = time.Now()
 	e.UpdatedBy = adminID
-	if err := uc.enterpriseRepo.Update(ctx, e); err != nil {
+	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		if err := uc.enterpriseRepo.WithTx(tx).Update(ctx, e); err != nil {
+			return err
+		}
+		uc.emit(ctx, tx, id, adminID, string(domain.RoleSystemAdmin), domain.EventSubscriptionCanceled, nil)
+		return nil
+	}); err != nil {
 		return err
 	}
-	uc.emit(ctx, id, adminID, string(domain.RoleSystemAdmin), domain.EventSubscriptionCanceled, nil)
 	return nil
 }
 
@@ -87,11 +98,16 @@ func (uc *enterpriseUsecase) RenewSubscription(ctx context.Context, id uuid.UUID
 	e.CurrentPeriodEnd = &newEnd
 	e.UpdatedAt = time.Now()
 	e.UpdatedBy = adminID
-	if err := uc.enterpriseRepo.Update(ctx, e); err != nil {
+	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		if err := uc.enterpriseRepo.WithTx(tx).Update(ctx, e); err != nil {
+			return err
+		}
+		uc.emit(ctx, tx, id, adminID, string(domain.RoleSystemAdmin), domain.EventSubscriptionRenewed,
+			map[string]interface{}{"new_period_end": newEnd.Format(time.RFC3339)})
+		return nil
+	}); err != nil {
 		return err
 	}
-	uc.emit(ctx, id, adminID, string(domain.RoleSystemAdmin), domain.EventSubscriptionRenewed,
-		map[string]interface{}{"new_period_end": newEnd.Format(time.RFC3339)})
 	return nil
 }
 
@@ -114,10 +130,15 @@ func (uc *enterpriseUsecase) SuspendForPayment(ctx context.Context, id uuid.UUID
 	e.SubscriptionStatus = &pastDue
 	e.UpdatedAt = now
 	e.UpdatedBy = actorID
-	if err := uc.enterpriseRepo.Update(ctx, e); err != nil {
+	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		if err := uc.enterpriseRepo.WithTx(tx).Update(ctx, e); err != nil {
+			return err
+		}
+		uc.emit(ctx, tx, id, actorID, string(domain.RoleSystemAdmin), domain.EventSubscriptionSuspended, nil)
+		return nil
+	}); err != nil {
 		return err
 	}
-	uc.emit(ctx, id, actorID, string(domain.RoleSystemAdmin), domain.EventSubscriptionSuspended, nil)
 	return nil
 }
 

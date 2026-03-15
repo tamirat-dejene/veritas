@@ -8,11 +8,15 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/domain"
 )
 
 // userUsecase implements domain.UserUsecase.
 type userUsecase struct {
+	pool           *pgxpool.Pool
 	userRepo       domain.UserRepository
 	enterpriseRepo domain.EnterpriseRepository
 	auditRepo      domain.AuditRepository
@@ -20,11 +24,13 @@ type userUsecase struct {
 
 // NewUserUsecase creates a UserUsecase.
 func NewUserUsecase(
+	pool *pgxpool.Pool,
 	userRepo domain.UserRepository,
 	enterpriseRepo domain.EnterpriseRepository,
 	auditRepo domain.AuditRepository,
 ) domain.UserUsecase {
 	return &userUsecase{
+		pool:           pool,
 		userRepo:       userRepo,
 		enterpriseRepo: enterpriseRepo,
 		auditRepo:      auditRepo,
@@ -38,11 +44,15 @@ var allowedEnterpriseRoles = map[domain.Role]bool{
 	domain.RoleEnterpriseAuto:  true,
 }
 
-func (uc *userUsecase) emitUser(ctx context.Context, enterpriseID, actorID uuid.UUID, role string, event domain.AuditEvent, meta map[string]interface{}) {
+func (uc *userUsecase) emitUser(ctx context.Context, tx pgx.Tx, enterpriseID, actorID uuid.UUID, role string, event domain.AuditEvent, meta map[string]interface{}) {
 	if meta == nil {
 		meta = map[string]interface{}{}
 	}
-	_ = uc.auditRepo.Create(ctx, &domain.AuditLog{
+	repo := uc.auditRepo
+	if tx != nil {
+		repo = repo.WithTx(tx)
+	}
+	_ = repo.Create(ctx, &domain.AuditLog{
 		ID:           uuid.New(),
 		EnterpriseID: enterpriseID,
 		ActorID:      actorID,
@@ -93,12 +103,17 @@ func (uc *userUsecase) CreateEnterpriseUser(ctx context.Context, enterpriseID uu
 		UpdatedAt:          now,
 	}
 
-	if err := uc.userRepo.Create(ctx, user); err != nil {
+	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		if err := uc.userRepo.WithTx(tx).Create(ctx, user); err != nil {
+			return err
+		}
+
+		uc.emitUser(ctx, tx, enterpriseID, adminID, string(domain.RoleEnterpriseAdmin), domain.EventUserCreated,
+			map[string]interface{}{"user_id": user.ID.String(), "email": user.Email, "role": string(user.Role)})
+		return nil
+	}); err != nil {
 		return nil, err
 	}
-
-	uc.emitUser(ctx, enterpriseID, adminID, string(domain.RoleEnterpriseAdmin), domain.EventUserCreated,
-		map[string]interface{}{"user_id": user.ID.String(), "email": user.Email, "role": string(user.Role)})
 
 	return user, nil
 }
@@ -140,11 +155,16 @@ func (uc *userUsecase) UpdateEnterpriseUser(ctx context.Context, enterpriseID, u
 	}
 	u.UpdatedAt = time.Now()
 
-	if err := uc.userRepo.Update(ctx, u); err != nil {
+	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		if err := uc.userRepo.WithTx(tx).Update(ctx, u); err != nil {
+			return err
+		}
+		uc.emitUser(ctx, tx, enterpriseID, adminID, string(domain.RoleEnterpriseAdmin), domain.EventUserUpdated,
+			map[string]interface{}{"user_id": userID.String()})
+		return nil
+	}); err != nil {
 		return err
 	}
-	uc.emitUser(ctx, enterpriseID, adminID, string(domain.RoleEnterpriseAdmin), domain.EventUserUpdated,
-		map[string]interface{}{"user_id": userID.String()})
 	return nil
 }
 
@@ -155,11 +175,16 @@ func (uc *userUsecase) DeactivateEnterpriseUser(ctx context.Context, enterpriseI
 	}
 	u.IsActive = false
 	u.UpdatedAt = time.Now()
-	if err := uc.userRepo.Update(ctx, u); err != nil {
+	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		if err := uc.userRepo.WithTx(tx).Update(ctx, u); err != nil {
+			return err
+		}
+		uc.emitUser(ctx, tx, enterpriseID, adminID, string(domain.RoleEnterpriseAdmin), domain.EventUserDeactivated,
+			map[string]interface{}{"user_id": userID.String()})
+		return nil
+	}); err != nil {
 		return err
 	}
-	uc.emitUser(ctx, enterpriseID, adminID, string(domain.RoleEnterpriseAdmin), domain.EventUserDeactivated,
-		map[string]interface{}{"user_id": userID.String()})
 	return nil
 }
 
@@ -182,12 +207,17 @@ func (uc *userUsecase) ResetUserPassword(ctx context.Context, enterpriseID, user
 	u.MustChangePassword = true
 	u.UpdatedAt = now
 
-	if err := uc.userRepo.Update(ctx, u); err != nil {
+	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		if err := uc.userRepo.WithTx(tx).Update(ctx, u); err != nil {
+			return err
+		}
+
+		uc.emitUser(ctx, tx, enterpriseID, adminID, string(domain.RoleEnterpriseAdmin), domain.EventUserPasswordReset,
+			map[string]interface{}{"user_id": userID.String()})
+		return nil
+	}); err != nil {
 		return "", err
 	}
-
-	uc.emitUser(ctx, enterpriseID, adminID, string(domain.RoleEnterpriseAdmin), domain.EventUserPasswordReset,
-		map[string]interface{}{"user_id": userID.String()})
 
 	return tempPassword, nil
 }

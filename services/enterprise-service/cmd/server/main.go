@@ -35,8 +35,9 @@ import (
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/usecase"
-	pg "github.com/tamirat-dejene/veritas/shared/db/pg"
 	"go.uber.org/zap"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	// Import generated swagger docs so the spec is registered at startup.
 	_ "github.com/tamirat-dejene/veritas/services/enterprise-service/docs/swagger"
@@ -52,21 +53,23 @@ func main() {
 	cfg := config.Load()
 
 	// 3. Initialize Database Client
-	dbClient, err := pg.NewPostgresClient(cfg.DSN)
+	ctxSetup, cancelSetup := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelSetup()
+
+	pool, err := pgxpool.New(ctxSetup, cfg.DSN)
 	if err != nil {
 		logger.Fatal("failed to connect to database", zap.Error(err))
 	}
-	defer dbClient.Close()
-	dbClient.LogConnectionInfo()
+	defer pool.Close()
 
 	// 4. Initialize Repositories
-	userRepo := postgres.NewUserRepository(dbClient)
-	enterpriseRepo := postgres.NewEnterpriseRepository(dbClient)
-	auditRepo := postgres.NewAuditRepository(dbClient)
+	userRepo := postgres.NewUserRepository(pool)
+	enterpriseRepo := postgres.NewEnterpriseRepository(pool)
+	auditRepo := postgres.NewAuditRepository(pool)
 
 	// 5. Initialize Usecases
-	enterpriseUC := usecase.NewEnterpriseUsecase(userRepo, enterpriseRepo, auditRepo)
-	userUC := usecase.NewUserUsecase(userRepo, enterpriseRepo, auditRepo)
+	enterpriseUC := usecase.NewEnterpriseUsecase(pool, userRepo, enterpriseRepo, auditRepo)
+	userUC := usecase.NewUserUsecase(pool, userRepo, enterpriseRepo, auditRepo)
 
 	// 6. Initialize Handlers
 	enterpriseHandler := handler.NewEnterpriseHandler(enterpriseUC)

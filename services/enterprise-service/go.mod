@@ -9,7 +9,6 @@ require (
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.1
 	github.com/swaggo/swag v1.16.6
-	github.com/tamirat-dejene/veritas/shared v0.0.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.48.0
 )
