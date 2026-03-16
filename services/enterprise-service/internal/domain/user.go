@@ -48,3 +48,26 @@ type User struct {
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 }
+
+// NewUser provides a standard way to initialize a User with default values.
+func NewUser(id uuid.UUID, email, passwordHash string, role Role) *User {
+	now := time.Now().UTC()
+	return &User{
+		ID:                 id,
+		Email:              email,
+		PasswordHash:       passwordHash,
+
+		Role:               role,
+
+		IsActive:           true,
+		IsDeleted:          false,
+
+		EmailVerified:      false,
+
+		PasswordChangedAt:  now,
+		MustChangePassword: true,
+
+		CreatedAt:          now,
+		UpdatedAt:          now,
+	}
+}

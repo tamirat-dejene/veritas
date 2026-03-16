@@ -113,7 +113,7 @@ type Enterprise struct {
 	City         *string `db:"city"`
 	Country      *string `db:"country"`
 
-	Settings map[string]interface{} `db:"settings"`
+	Settings map[string]any `db:"settings"`
 
 	RetentionUntil *time.Time `db:"retention_until"`
 
@@ -121,4 +121,21 @@ type Enterprise struct {
 	UpdatedAt time.Time `db:"updated_at"`
 	CreatedBy uuid.UUID `db:"created_by"`
 	UpdatedBy uuid.UUID `db:"updated_by"`
+}
+
+// NewEnterprise provides a standard way to initialize an Enterprise.
+func NewEnterprise(id uuid.UUID, slug, displayName string, ownerID uuid.UUID) *Enterprise {
+	now := time.Now().UTC()
+	return &Enterprise{
+		ID:             id,
+		Slug:           slug,
+		DisplayName:    displayName,
+		OwnerAccountID: ownerID,
+		Status:         StatusPendingApproval,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+		CreatedBy:      ownerID,
+		UpdatedBy:      ownerID,
+		Settings:       make(map[string]any),
+	}
 }

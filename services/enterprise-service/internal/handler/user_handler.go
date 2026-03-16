@@ -2,9 +2,12 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/domain"
+	"go.uber.org/zap"
 )
 
 // UserHandler manages enterprise users.
@@ -236,6 +239,84 @@ func (h *UserHandler) handleErr(c *gin.Context, err error) {
 	case domain.ErrInvalidRole:
 		writeError(c, http.StatusBadRequest, "role not allowed for enterprise users")
 	default:
+		zap.L().Error("Unhandled user error", zap.Error(err))
 		writeError(c, http.StatusInternalServerError, "internal server error")
 	}
+}
+
+// Internal endpoints for service-to-service communication
+
+func (h *UserHandler) GetByEmail(c *gin.Context) {
+	email := c.Query("email")
+	if email == "" {
+		writeError(c, http.StatusBadRequest, "email query parameter is required")
+		return
+	}
+	user, err := h.usecase.GetByEmail(c.Request.Context(), email)
+	if err != nil {
+		h.handleErr(c, err)
+		return
+	}
+
+	writeJSON(c, http.StatusOK, user)
+}
+
+func (h *UserHandler) GetByID(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+	user, err := h.usecase.GetByID(c.Request.Context(), id)
+	if err != nil {
+		h.handleErr(c, err)
+		return
+	}
+
+	writeJSON(c, http.StatusOK, user)
+}
+
+func (h *UserHandler) RecordLoginSuccess(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+	var req struct {
+		IP        string `json:"ip"`
+		UserAgent string `json:"user_agent"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if err := h.usecase.RecordLoginSuccess(c.Request.Context(), id, req.IP, req.UserAgent); err != nil {
+		h.handleErr(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+func (h *UserHandler) RecordLoginFailure(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+	var req struct {
+		LockedUntil *time.Time `json:"locked_until"`
+		FailedLoginAttempts int        `json:"failed_login_attempts"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if err := h.usecase.RecordLoginFailure(c.Request.Context(), id, req.LockedUntil, req.FailedLoginAttempts); err != nil {
+		h.handleErr(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
 }

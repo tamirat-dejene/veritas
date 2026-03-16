@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -19,6 +20,8 @@ type UserRepository interface {
 	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, page, limit int) ([]*User, int, error)
 	FindByEnterpriseAndID(ctx context.Context, enterpriseID, userID uuid.UUID) (*User, error)
 	CountByEnterprise(ctx context.Context, enterpriseID uuid.UUID) (int, error)
+	UpdateLoginSuccess(ctx context.Context, userID uuid.UUID, ip, userAgent string) error
+	UpdateLoginFailure(ctx context.Context, userID uuid.UUID, lockUntil *time.Time, failedLoginAttempts int) error
 	WithTx(tx pgx.Tx) UserRepository
 }
 
@@ -87,4 +90,8 @@ type UserUsecase interface {
 	UpdateEnterpriseUser(ctx context.Context, enterpriseID, userID uuid.UUID, req UpdateUserRequest, adminID uuid.UUID) error
 	DeactivateEnterpriseUser(ctx context.Context, enterpriseID, userID, adminID uuid.UUID) error
 	ResetUserPassword(ctx context.Context, enterpriseID, userID, adminID uuid.UUID) (string, error)
+	RecordLoginSuccess(ctx context.Context, userID uuid.UUID, ip, userAgent string) error
+	RecordLoginFailure(ctx context.Context, userID uuid.UUID, lockUntil *time.Time, failedLoginAttempts int) error
+	GetByEmail(ctx context.Context, email string) (*User, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*User, error)
 }

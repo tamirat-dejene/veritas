@@ -73,6 +73,18 @@ func NewRouter(
 		enterprises.POST("/:enterpriseId/users/:userId/reset-password", uh.ResetPassword)
 	}
 
+	// ── Internal Auth Lookups (Service-to-Service) ────────────────────────
+	internal := engine.Group("/internal")
+	{
+		users := internal.Group("/users")
+		{
+			users.GET("", uh.GetByEmail) // GET /internal/users?email=...
+			users.GET("/:id", uh.GetByID)
+			users.POST("/:id/login-success", uh.RecordLoginSuccess)
+			users.POST("/:id/login-failure", uh.RecordLoginFailure)
+		}
+	}
+
 	// Swagger UI — available at /swagger/index.html
 	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

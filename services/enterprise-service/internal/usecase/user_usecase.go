@@ -84,24 +84,14 @@ func (uc *userUsecase) CreateEnterpriseUser(ctx context.Context, enterpriseID uu
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	now := time.Now()
-	user := &domain.User{
-		ID:                 uuid.New(),
-		Email:              req.Email,
-		PasswordHash:       string(hash),
-		Role:               req.Role,
-		EnterpriseID:       &enterpriseID,
-		FirstName:          req.FirstName,
-		LastName:           req.LastName,
-		Phone:              req.Phone,
-		Honorific:          req.Honorific,
-		IsActive:           true,
-		IsDeleted:          false,
-		PasswordChangedAt:  now,
-		MustChangePassword: true, // force password change on first login
-		CreatedAt:          now,
-		UpdatedAt:          now,
-	}
+	// Use NewUser constructor
+	user := domain.NewUser(uuid.New(), req.Email, string(hash), req.Role)
+	user.EnterpriseID = &enterpriseID
+	user.FirstName = req.FirstName
+	user.LastName = req.LastName
+	user.Phone = req.Phone
+	user.Honorific = req.Honorific
+	user.MustChangePassword = true // force password change on first login
 
 	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		if err := uc.userRepo.WithTx(tx).Create(ctx, user); err != nil {
@@ -220,4 +210,20 @@ func (uc *userUsecase) ResetUserPassword(ctx context.Context, enterpriseID, user
 	}
 
 	return tempPassword, nil
+}
+
+func (uc *userUsecase) RecordLoginSuccess(ctx context.Context, userID uuid.UUID, ip, userAgent string) error {
+	return uc.userRepo.UpdateLoginSuccess(ctx, userID, ip, userAgent)
+}
+
+func (uc *userUsecase) RecordLoginFailure(ctx context.Context, userID uuid.UUID, lockUntil *time.Time, failedLoginAttempts int) error {
+	return uc.userRepo.UpdateLoginFailure(ctx, userID, lockUntil, failedLoginAttempts)
+}
+
+func (uc *userUsecase) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
+	return uc.userRepo.FindByEmail(ctx, email)
+}
+
+func (uc *userUsecase) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
+	return uc.userRepo.FindByID(ctx, id)
 }

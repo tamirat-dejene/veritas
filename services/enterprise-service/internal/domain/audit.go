@@ -38,6 +38,6 @@ type AuditLog struct {
 	ActorID      uuid.UUID              `db:"actor_id"      json:"actor_id"`
 	ActorRole    string                 `db:"actor_role"    json:"actor_role"`
 	Event        AuditEvent             `db:"event"         json:"event"`
-	Metadata     map[string]any `db:"metadata"      json:"metadata"`
+	Metadata     map[string]any 		`db:"metadata"      json:"metadata"`
 	CreatedAt    time.Time              `db:"created_at"    json:"created_at"`
 }
