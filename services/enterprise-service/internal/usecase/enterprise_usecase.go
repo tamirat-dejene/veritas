@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"strings"
 	"time"
@@ -40,7 +41,7 @@ func NewEnterpriseUsecase(
 
 func (uc *enterpriseUsecase) emit(ctx context.Context, tx pgx.Tx, enterpriseID, actorID uuid.UUID, role string, event domain.AuditEvent, meta map[string]interface{}) {
 	if meta == nil {
-		meta = map[string]interface{}{}
+		meta = map[string]any{}
 	}
 	repo := uc.auditRepo
 	if tx != nil {
@@ -88,26 +89,16 @@ func (uc *enterpriseUsecase) RegisterEnterprise(ctx context.Context, e *domain.E
 		zap.L().Error("Failed to hash password", zap.Error(err))
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
-	owner.PasswordHash = string(hashedPassword)
 
-	// Seed IDs and timestamps before the transaction so they are stable.
-	owner.ID = uuid.New()
-	owner.Role = domain.RoleEnterpriseAdmin
-	owner.IsActive = true
-	owner.CreatedAt = time.Now()
-	owner.UpdatedAt = owner.CreatedAt
-	owner.PasswordChangedAt = owner.CreatedAt
+	// Use constructors for consistent initialization
+	newUser := domain.NewUser(uuid.New(), owner.Email, string(hashedPassword), domain.RoleEnterpriseAdmin)
+	newUser.MustChangePassword = false
 
-	e.ID = uuid.New()
-	if e.Settings == nil {
-		e.Settings = make(map[string]interface{})
-	}
-	e.OwnerAccountID = owner.ID
-	e.Status = domain.StatusPendingApproval
-	e.CreatedAt = time.Now()
-	e.UpdatedAt = e.CreatedAt
-	e.CreatedBy = owner.ID
-	e.UpdatedBy = owner.ID
+	newEnterprise := domain.NewEnterprise(uuid.New(), e.Slug, e.DisplayName, newUser.ID)
+	newEnterprise.LegalName = e.LegalName
+	newEnterprise.ContactEmail = e.ContactEmail
+	newEnterprise.CreatedBy = newUser.ID
+	newEnterprise.UpdatedBy = newUser.ID
 
 	if err = RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		txEnterpriseRepo := uc.enterpriseRepo.WithTx(tx)
@@ -115,20 +106,20 @@ func (uc *enterpriseUsecase) RegisterEnterprise(ctx context.Context, e *domain.E
 		txAuditRepo := uc.auditRepo.WithTx(tx)
 
 		// 4. Create Owner User
-		if err := txUserRepo.Create(ctx, owner); err != nil {
-			zap.L().Error("Failed to create owner user", zap.Error(err), zap.String("email", owner.Email))
+		if err := txUserRepo.Create(ctx, newUser); err != nil {
+			zap.L().Error("Failed to create owner user", zap.Error(err), zap.String("email", newUser.Email))
 			return fmt.Errorf("failed to create owner user: %w", err)
 		}
 
 		// 5. Create Enterprise
-		if err := txEnterpriseRepo.Create(ctx, e); err != nil {
-			zap.L().Error("Failed to create enterprise", zap.Error(err), zap.String("slug", e.Slug))
+		if err := txEnterpriseRepo.Create(ctx, newEnterprise); err != nil {
+			zap.L().Error("Failed to create enterprise", zap.Error(err), zap.String("slug", newEnterprise.Slug))
 			return fmt.Errorf("failed to create enterprise: %w", err)
 		}
 
 		// 6. Update Owner's EnterpriseID
-		owner.EnterpriseID = &e.ID
-		if err := txUserRepo.Update(ctx, owner); err != nil {
+		newUser.EnterpriseID = &newEnterprise.ID
+		if err := txUserRepo.Update(ctx, newUser); err != nil {
 			zap.L().Error("Failed to update owner with enterprise ID", zap.Error(err))
 			return fmt.Errorf("failed to update owner with enterprise ID: %w", err)
 		}
@@ -136,12 +127,12 @@ func (uc *enterpriseUsecase) RegisterEnterprise(ctx context.Context, e *domain.E
 		// 7. Audit Log
 		auditLog := &domain.AuditLog{
 			ID:           uuid.New(),
-			EnterpriseID: e.ID,
-			ActorID:      owner.ID,
-			ActorRole:    string(owner.Role),
+			EnterpriseID: newEnterprise.ID,
+			ActorID:      newUser.ID,
+			ActorRole:    string(newUser.Role),
 			Event:        domain.EventEnterpriseCreated,
 			CreatedAt:    time.Now(),
-			Metadata:     map[string]interface{}{"slug": e.Slug},
+			Metadata:     map[string]any{"slug": newEnterprise.Slug},
 		}
 		if err := txAuditRepo.Create(ctx, auditLog); err != nil {
 			zap.L().Error("Failed to create audit log", zap.Error(err))
@@ -153,7 +144,7 @@ func (uc *enterpriseUsecase) RegisterEnterprise(ctx context.Context, e *domain.E
 		return nil, err
 	}
 
-	return e, nil
+	return newEnterprise, nil
 }
 
 func (uc *enterpriseUsecase) ApproveEnterprise(ctx context.Context, id uuid.UUID, adminID uuid.UUID) error {
@@ -259,6 +250,9 @@ func (uc *enterpriseUsecase) UpdateBranding(ctx context.Context, id uuid.UUID, r
 	if err != nil {
 		return err
 	}
+
+	log.Printf("Updating branding for enterprise: %v", e)
+
 	if req.LogoURL != nil {
 		e.LogoURL = req.LogoURL
 	}
@@ -270,6 +264,7 @@ func (uc *enterpriseUsecase) UpdateBranding(ctx context.Context, id uuid.UUID, r
 	}
 	e.UpdatedAt = time.Now()
 	e.UpdatedBy = adminID
+
 	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		if err := uc.enterpriseRepo.WithTx(tx).Update(ctx, e); err != nil {
 			return err
