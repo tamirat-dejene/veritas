@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -15,14 +14,15 @@ type Config struct {
 	RefreshTokenTTL time.Duration
 
 	// PostgreSQL configuration
-	Pg_Veritas_Host     string
-	Pg_Veritas_Port     string
-	Pg_Veritas_User     string
-	Pg_Veritas_Password string
-	Pg_Veritas_Core_DB  string
-	Pg_SSL_Mode         string
-	DSN                 string
-	KafkaBrokers        []string
+	Pg_Veritas_Host      string
+	Pg_Veritas_Port      string
+	Pg_Veritas_User      string
+	Pg_Veritas_Password  string
+	Pg_Veritas_Core_DB   string
+	Pg_SSL_Mode          string
+	DSN                  string
+	KafkaBrokers         []string
+	EnterpriseServiceURL string
 }
 
 // Load reads configuration from environment variables and returns a Config.
@@ -33,6 +33,8 @@ func Load() *Config {
 		JWTSecret:       getEnv("JWT_SECRET", ""),
 		AccessTokenTTL:  getDurationEnv("ACCESS_TOKEN_TTL", 15*time.Minute),
 		RefreshTokenTTL: getDurationEnv("REFRESH_TOKEN_TTL", 7*24*time.Hour),
+		EnterpriseServiceURL: getEnv("ENTERPRISE_SERVICE_URL", "http://enterprise-service:8080"),
+		KafkaBrokers: []string{getEnv("KAFKA_BROKERS", "kafka:9092")},
 
 		Pg_Veritas_Host:     getEnv("PG_VERITAS_HOST", "localhost"),
 		Pg_Veritas_Port:     getEnv("PG_VERITAS_PORT", "5432"),
@@ -42,23 +44,12 @@ func Load() *Config {
 		Pg_SSL_Mode:         getEnv("PG_SSL_MODE", "disable"),
 	}
 	cfg.DSN = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", cfg.Pg_Veritas_User, cfg.Pg_Veritas_Password, cfg.Pg_Veritas_Host, cfg.Pg_Veritas_Port, cfg.Pg_Veritas_Core_DB, cfg.Pg_SSL_Mode)
-	cfg.KafkaBrokers = []string{getEnv("KAFKA_BROKERS", "localhost:9092")}
-
 	return cfg
 }
 
 func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok && value != "" {
 		return value
-	}
-	return fallback
-}
-
-func getEnvInt(key string, fallback int) int {
-	if value, ok := os.LookupEnv(key); ok {
-		if intValue, err := strconv.Atoi(value); err == nil {
-			return intValue
-		}
 	}
 	return fallback
 }

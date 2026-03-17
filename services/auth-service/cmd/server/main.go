@@ -29,6 +29,7 @@ import (
 
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/config"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/handler"
+	"github.com/tamirat-dejene/veritas/services/auth-service/internal/infrastructure/enterprise"
 	inframsg "github.com/tamirat-dejene/veritas/services/auth-service/internal/infrastructure/messaging"
 	infratoken "github.com/tamirat-dejene/veritas/services/auth-service/internal/infrastructure/token"
 	pgRepo "github.com/tamirat-dejene/veritas/services/auth-service/internal/repository/postgres"
@@ -89,7 +90,7 @@ func main() {
 	eventPublisher := inframsg.NewKafkaPublisher(kafkaProducer)
 
 	// --- Repositories ---
-	userRepo := pgRepo.NewUserRepository(pool)
+	userRepo := enterprise.NewUserClient(cfg.EnterpriseServiceURL)
 	refreshTokenRepo := pgRepo.NewRefreshTokenRepository(pool)
 
 	// --- Use Cases ---
