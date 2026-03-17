@@ -16,3 +16,15 @@ type RefreshToken struct {
 	Revoked   bool      `db:"revoked"`
 	CreatedAt time.Time `db:"created_at"`
 }
+
+// NewRefreshToken provides a standard way to initialize a RefreshToken.
+func NewRefreshToken(userID uuid.UUID, tokenHash string, ttl time.Duration) *RefreshToken {
+	return &RefreshToken{
+		ID:        uuid.New(),
+		UserID:    userID,
+		TokenHash: tokenHash,
+		ExpiresAt: time.Now().Add(ttl).UTC(),
+		Revoked:   false,
+		CreatedAt: time.Now().UTC(),
+	}
+}

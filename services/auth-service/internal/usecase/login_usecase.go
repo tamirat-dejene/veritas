@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/domain"
@@ -109,7 +108,8 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 			uc.log.Info("account locked due to too many failures", zap.String("userId", user.ID.String()))
 		}
 
-		if errUpdate := uc.userRepo.UpdateLoginFailure(ctx, user.ID, lockUntil); errUpdate != nil {
+		user.FailedLoginAttempts += 1
+		if errUpdate := uc.userRepo.UpdateLoginFailure(ctx, user.ID, lockUntil, user.FailedLoginAttempts); errUpdate != nil {
 			uc.log.Error("failed to update login failure stats", zap.Error(errUpdate))
 		}
 
@@ -131,14 +131,7 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 	// 8 & 9 are combined into a transaction for ATOMICITY.
 	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		// 8. Persist refresh token hash.
-		rt := &domain.RefreshToken{
-			ID:        uuid.New(),
-			UserID:    user.ID,
-			TokenHash: tokenHash,
-			ExpiresAt: time.Now().Add(uc.refreshTokenTTL).UTC(),
-			Revoked:   false,
-			CreatedAt: time.Now().UTC(),
-		}
+		rt := domain.NewRefreshToken(user.ID, tokenHash, uc.refreshTokenTTL)
 		if err := uc.refreshTokenRepo.WithTx(tx).Create(ctx, rt); err != nil {
 			return fmt.Errorf("create refresh token: %w", err)
 		}

@@ -13,7 +13,7 @@ type UserRepository interface {
 	FindByEmail(ctx context.Context, email string) (*User, error)
 	FindByID(ctx context.Context, id uuid.UUID) (*User, error)
 	UpdateLoginSuccess(ctx context.Context, userID uuid.UUID, ip, userAgent string) error
-	UpdateLoginFailure(ctx context.Context, userID uuid.UUID, lockUntil *time.Time) error
+	UpdateLoginFailure(ctx context.Context, userID uuid.UUID, lockUntil *time.Time, failedLoginAttempts int) error
 	WithTx(tx pgx.Tx) UserRepository
 }
 
