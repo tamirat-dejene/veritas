@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/domain"
+	"go.uber.org/zap"
 )
 
 type userContextKey string
@@ -27,12 +28,14 @@ func JWTAuth(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
+			zap.L().Warn("Auth: Authorization header required", zap.String("ip", c.ClientIP()))
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
 			return
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 		if tokenString == authHeader {
+			zap.L().Warn("Auth: Invalid token format", zap.String("ip", c.ClientIP()))
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token format"})
 			return
 		}
@@ -45,6 +48,7 @@ func JWTAuth(secret string) gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
+			zap.L().Warn("Auth: Invalid token", zap.Error(err), zap.String("ip", c.ClientIP()))
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token: " + err.Error()})
 			return
 		}
@@ -53,6 +57,7 @@ func JWTAuth(secret string) gin.HandlerFunc {
 			c.Set(string(UserContextKey), claims)
 			c.Next()
 		} else {
+			zap.L().Warn("Auth: Invalid token claims", zap.String("ip", c.ClientIP()))
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
 		}
 	}
@@ -62,12 +67,14 @@ func RequireRole(allowedRoles ...domain.Role) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		claimsVal, exists := c.Get(string(UserContextKey))
 		if !exists {
+			zap.L().Warn("Auth: Unauthorized (missing claims)", zap.String("ip", c.ClientIP()))
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 			return
 		}
 
 		claims, ok := claimsVal.(*UserClaims)
 		if !ok {
+			zap.L().Warn("Auth: Unauthorized (invalid claims type)", zap.String("ip", c.ClientIP()))
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 			return
 		}
@@ -83,6 +90,12 @@ func RequireRole(allowedRoles ...domain.Role) gin.HandlerFunc {
 			return
 		}
 
+		zap.L().Warn("Auth: Forbidden",
+			zap.String("userID", claims.UserID),
+			zap.String("userRole", string(claims.Role)),
+			zap.Any("allowedRoles", allowedRoles),
+			zap.String("ip", c.ClientIP()),
+		)
 		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
 	}
 }

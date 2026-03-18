@@ -5,6 +5,7 @@ import (
 
 	"github.com/sony/gobreaker"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/domain"
+	"go.uber.org/zap"
 )
 
 // CircuitBreakerSettings holds configuration for circuit breaker behavior.
@@ -41,6 +42,13 @@ func NewCircuitBreaker(name string, settings CircuitBreakerSettings) domain.Circ
 		ReadyToTrip: func(counts gobreaker.Counts) bool {
 			// Open circuit if consecutive failures exceed threshold
 			return counts.ConsecutiveFailures >= settings.FailureThreshold
+		},
+		OnStateChange: func(name string, from, to gobreaker.State) {
+			zap.L().Warn("Circuit breaker state changed",
+				zap.String("name", name),
+				zap.String("from", from.String()),
+				zap.String("to", to.String()),
+			)
 		},
 	}
 

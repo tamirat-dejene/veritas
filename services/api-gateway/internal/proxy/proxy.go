@@ -65,6 +65,9 @@ func NewProxy(target string, circuitBreaker domain.CircuitBreaker, serviceName s
 
 // ServeHTTP implements http.Handler with circuit breaker protection.
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// For now, let's just log it here at Debug level
+	zap.L().Debug("Proxying request", zap.String("service", p.serviceName), zap.String("path", r.URL.Path))
+
 	// Use a custom response writer to capture errors
 	rw := &responseWriter{
 		ResponseWriter: w,

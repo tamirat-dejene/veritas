@@ -47,6 +47,7 @@ func (m *RateLimitMiddleware) Handler() gin.HandlerFunc {
 
 		// Check if rate limit exceeded
 		if result.Allowed == 0 {
+			zap.L().Warn("Rate limit exceeded", zap.String("ip", ip), zap.Duration("retry_after", result.RetryAfter))
 			c.Header("Retry-After", strconv.FormatInt(int64(result.RetryAfter.Seconds()), 10))
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"error": "Too Many Requests"})
 			return
