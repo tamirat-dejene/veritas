@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 )
 
@@ -39,6 +40,7 @@ func NewMonitoringHandler(uc domain.MonitoringUseCase, logger *zap.Logger) *Moni
 func (h *MonitoringHandler) ListSessions(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
+		logger.WithContext(c.Request.Context(), h.logger).Warn("Enterprise ID missing in request", zap.String("ip", c.ClientIP()))
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
 		return
 	}

@@ -47,7 +47,6 @@ import (
 
 func main() {
 	// 1. Initialize Logger from Shared Library matching the original implementation
-	// 1. Initialize Logger from Shared Library matching the original implementation
 	log, err := logger.NewLogger("candidate-service")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
@@ -98,7 +97,7 @@ func main() {
 	}
 
 	go func() {
-		fmt.Printf("Candidate Service starting on port %s...\n", cfg.Port)
+		log.Info("Candidate Service starting", zap.String("port", cfg.Port))
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal("listen error", zap.Error(err))
 		}

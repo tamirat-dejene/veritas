@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 )
 
@@ -56,6 +57,7 @@ func (h *SessionHandler) ValidateAccess(c *gin.Context) {
 
 	res, err := h.uc.ValidateAccessToken(c.Request.Context(), req.Token)
 	if err != nil {
+		logger.WithContext(c.Request.Context(), h.logger).Warn("Token validation failed", zap.Error(err), zap.String("ip", c.ClientIP()))
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token mapping"})
 		return
 	}
@@ -86,6 +88,7 @@ func (h *SessionHandler) StartSession(c *gin.Context) {
 
 	session, err := h.uc.StartSession(c.Request.Context(), req.Token, clientIP, userAgent)
 	if err != nil {
+		logger.WithContext(c.Request.Context(), h.logger).Warn("Failed to start session", zap.Error(err), zap.String("ip", clientIP))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -108,6 +111,7 @@ func (h *SessionHandler) StartSession(c *gin.Context) {
 func (h *SessionHandler) ResumeActive(c *gin.Context) {
 	candidateID, err := getCandidateID(c)
 	if err != nil {
+		logger.WithContext(c.Request.Context(), h.logger).Warn("Candidate mapping missing in request", zap.String("ip", c.ClientIP()))
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Candidate mapping missing"})
 		return
 	}
@@ -183,6 +187,7 @@ func (h *SessionHandler) GetQuestions(c *gin.Context) {
 
 	candidateID, err := getCandidateID(c)
 	if err != nil {
+		logger.WithContext(c.Request.Context(), h.logger).Warn("Unauthorized context in GetQuestions", zap.String("ip", c.ClientIP()))
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized context"})
 		return
 	}
@@ -220,6 +225,7 @@ func (h *SessionHandler) SaveAnswers(c *gin.Context) {
 
 	candidateID, err := getCandidateID(c)
 	if err != nil {
+		logger.WithContext(c.Request.Context(), h.logger).Warn("Unauthorized context in SaveAnswers", zap.String("ip", c.ClientIP()))
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized context"})
 		return
 	}
@@ -298,6 +304,7 @@ func (h *SessionHandler) Submit(c *gin.Context) {
 
 	candidateID, err := getCandidateID(c)
 	if err != nil {
+		logger.WithContext(c.Request.Context(), h.logger).Warn("Unauthorized context in Submit", zap.String("ip", c.ClientIP()))
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized context"})
 		return
 	}
@@ -307,6 +314,7 @@ func (h *SessionHandler) Submit(c *gin.Context) {
 
 	sub, err := h.uc.SubmitExam(c.Request.Context(), sessionID, candidateID, req.AutoSubmitted)
 	if err != nil {
+		logger.WithContext(c.Request.Context(), h.logger).Error("Exam submission failed", zap.Error(err), zap.String("sessionID", sessionID.String()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -332,6 +340,7 @@ func (h *SessionHandler) Submit(c *gin.Context) {
 func (h *SessionHandler) TerminateWait(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
+		logger.WithContext(c.Request.Context(), h.logger).Warn("Enterprise ID missing in request", zap.String("ip", c.ClientIP()))
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
 		return
 	}
@@ -371,6 +380,7 @@ func (h *SessionHandler) TerminateWait(c *gin.Context) {
 func (h *SessionHandler) ForceExpire(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
+		logger.WithContext(c.Request.Context(), h.logger).Warn("Enterprise ID missing in request", zap.String("ip", c.ClientIP()))
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
 		return
 	}

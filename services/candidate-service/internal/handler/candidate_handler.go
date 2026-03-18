@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 )
 
@@ -54,6 +55,7 @@ func getEnterpriseID(c *gin.Context) (uuid.UUID, error) {
 func (h *CandidateHandler) Create(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
+		logger.WithContext(c.Request.Context(), h.logger).Warn("Enterprise ID missing in request", zap.String("ip", c.ClientIP()))
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
 		return
 	}
@@ -61,6 +63,7 @@ func (h *CandidateHandler) Create(c *gin.Context) {
 	var req CandidateCreateRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.WithContext(c.Request.Context(), h.logger).Warn("Invalid candidate creation request", zap.Error(err), zap.String("ip", c.ClientIP()))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -78,9 +81,11 @@ func (h *CandidateHandler) Create(c *gin.Context) {
 	created, err := h.uc.CreateCandidate(c.Request.Context(), candidate)
 	if err != nil {
 		if err == domain.ErrDuplicateExternalID {
+			logger.WithContext(c.Request.Context(), h.logger).Warn("Candidate creation conflict: duplicate external ID", zap.String("externalID", candidate.ExternalID), zap.String("enterpriseID", entID.String()))
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
 		}
+		logger.WithContext(c.Request.Context(), h.logger).Error("Failed to create candidate", zap.Error(err), zap.String("enterpriseID", entID.String()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create candidate"})
 		return
 	}

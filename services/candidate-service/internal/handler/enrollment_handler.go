@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 )
 
@@ -39,6 +40,7 @@ func NewEnrollmentHandler(uc domain.EnrollmentUseCase, logger *zap.Logger) *Enro
 func (h *EnrollmentHandler) Enroll(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
+		logger.WithContext(c.Request.Context(), h.logger).Warn("Enterprise ID missing in request", zap.String("ip", c.ClientIP()))
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
 		return
 	}
@@ -53,12 +55,14 @@ func (h *EnrollmentHandler) Enroll(c *gin.Context) {
 	var req EnrollmentRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.WithContext(c.Request.Context(), h.logger).Warn("Invalid enrollment request", zap.Error(err), zap.String("ip", c.ClientIP()))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	tokens, err := h.uc.EnrollCandidates(c.Request.Context(), entID, examID, req.CandidateIDs, req.InvitationMethod, req.MaxAttempts, req.TokenExpiresAt)
 	if err != nil {
+		logger.WithContext(c.Request.Context(), h.logger).Error("Failed to enroll candidates", zap.Error(err), zap.String("examID", examID.String()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to enroll candidates"})
 		return
 	}
