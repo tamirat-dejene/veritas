@@ -81,9 +81,11 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 
 	// 2. Reject if soft-deleted or inactive.
 	if user.IsDeleted {
+		l.Warn("login attempt for deleted user", zap.String("userId", user.ID.String()))
 		return nil, domain.ErrUserDeleted
 	}
 	if !user.IsActive {
+		l.Warn("login attempt for inactive user", zap.String("userId", user.ID.String()))
 		return nil, domain.ErrUserInactive
 	}
 
@@ -95,6 +97,7 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 
 	// 4. Reject roles not served by this service.
 	if _, ok := domain.AllowedAuthRoles[user.Role]; !ok {
+		l.Warn("login attempt for unauthorized role", zap.String("userId", user.ID.String()), zap.String("role", string(user.Role)))
 		return nil, domain.ErrRoleNotPermitted
 	}
 
@@ -144,6 +147,7 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 		}
 		return nil
 	}); err != nil {
+		l.Error("login transaction failed", zap.Error(err))
 		return nil, fmt.Errorf("LoginUseCase.Execute transaction: %w", err)
 	}
 

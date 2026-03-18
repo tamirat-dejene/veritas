@@ -72,6 +72,7 @@ func (uc *LogoutUseCase) Execute(ctx context.Context, input LogoutInput) error {
 		}
 		return nil
 	}); err != nil {
+		logger.WithContext(ctx, uc.log).Error("logout transaction failed", zap.Error(err))
 		return fmt.Errorf("LogoutUseCase.Execute transaction: %w", err)
 	}
 

@@ -80,7 +80,7 @@ func (uc *RefreshUseCase) Execute(ctx context.Context, input RefreshInput) (*Ref
 		rt, err := uc.refreshTokenRepo.WithTx(tx).FindByHashForUpdate(ctx, tokenHash)
 		if err != nil {
 			if err == domain.ErrTokenNotFound {
-				l.Warn("refresh attempt with unknown token")
+				l.Warn("refresh attempt with unknown token", zap.String("token_hash", tokenHash))
 				return domain.ErrTokenNotFound
 			}
 			return fmt.Errorf("find token for update: %w", err)
@@ -109,9 +109,11 @@ func (uc *RefreshUseCase) Execute(ctx context.Context, input RefreshInput) (*Ref
 
 		// 6. Reject if user is deleted or inactive.
 		if user.IsDeleted {
+			l.Warn("refresh attempt for deleted user", zap.String("userId", user.ID.String()))
 			return domain.ErrUserDeleted
 		}
 		if !user.IsActive {
+			l.Warn("refresh attempt for inactive user", zap.String("userId", user.ID.String()))
 			return domain.ErrUserInactive
 		}
 
@@ -149,6 +151,7 @@ func (uc *RefreshUseCase) Execute(ctx context.Context, input RefreshInput) (*Ref
 		userID = user.ID
 		return nil
 	}); err != nil {
+		logger.WithContext(ctx, uc.log).Error("refresh transaction failed", zap.Error(err))
 		return nil, fmt.Errorf("RefreshUseCase.Execute transaction: %w", err)
 	}
 

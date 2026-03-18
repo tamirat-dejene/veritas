@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/usecase"
+	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 )
 
@@ -164,28 +165,34 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// handleUseCaseError maps domain errors to HTTP status codes.
+// handleUseCaseError maps domain errors to HTTP status codes and logs warnings/errors.
 func (h *AuthHandler) handleUseCaseError(c *gin.Context, err error) {
+	l := logger.WithContext(c.Request.Context(), h.log)
+
 	switch {
 	case errors.Is(err, domain.ErrInvalidCredentials),
 		errors.Is(err, domain.ErrUserNotFound):
+		l.Warn("Authentication failed: invalid credentials", zap.String("ip", c.ClientIP()))
 		writeError(c, http.StatusUnauthorized, "invalid_credentials", "invalid email or password")
 
 	case errors.Is(err, domain.ErrAccountLocked):
+		l.Warn("Authentication failed: account locked", zap.String("ip", c.ClientIP()))
 		writeError(c, http.StatusForbidden, "account_locked", "account is temporarily locked")
 
 	case errors.Is(err, domain.ErrUserInactive),
 		errors.Is(err, domain.ErrUserDeleted),
 		errors.Is(err, domain.ErrRoleNotPermitted):
+		l.Warn("Authentication failed: access denied", zap.Error(err), zap.String("ip", c.ClientIP()))
 		writeError(c, http.StatusForbidden, "access_denied", "access denied")
 
 	case errors.Is(err, domain.ErrTokenNotFound),
 		errors.Is(err, domain.ErrTokenRevoked),
 		errors.Is(err, domain.ErrTokenExpired):
+		l.Warn("Token rotation failed: invalid or expired token", zap.Error(err), zap.String("ip", c.ClientIP()))
 		writeError(c, http.StatusUnauthorized, "invalid_token", "invalid or expired token")
 
 	default:
-		h.log.Error("unhandled use case error", zap.Error(err))
+		l.Error("Unhandled use case error", zap.Error(err))
 		writeError(c, http.StatusInternalServerError, "internal_error", "internal server error")
 	}
 }
