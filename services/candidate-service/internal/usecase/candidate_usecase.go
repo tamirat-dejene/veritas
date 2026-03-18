@@ -29,9 +29,10 @@ func NewCandidateUseCase(pool *pgxpool.Pool, repo domain.CandidateRepository, lo
 
 func (uc *candidateUseCase) CreateCandidate(ctx context.Context, candidate *domain.CandidateProfile) (*domain.CandidateProfile, error) {
 	if err := uc.repo.Create(ctx, candidate); err != nil {
-		uc.logger.Error("failed to create candidate", zap.Error(err))
+		uc.logger.Error("failed to create candidate", zap.Error(err), zap.String("enterpriseID", candidate.EnterpriseID.String()), zap.String("externalID", candidate.ExternalID))
 		return nil, err
 	}
+	uc.logger.Info("candidate created", zap.String("candidateID", candidate.ID.String()), zap.String("enterpriseID", candidate.EnterpriseID.String()))
 	return candidate, nil
 }
 
@@ -82,10 +83,11 @@ func (uc *candidateUseCase) BulkUpload(ctx context.Context, enterpriseID uuid.UU
 		return uc.repo.WithTx(tx).CreateBulk(ctx, candidates)
 	})
 	if err != nil {
-		uc.logger.Error("bulk upload failed", zap.Error(err))
+		uc.logger.Error("bulk upload failed", zap.Error(err), zap.String("enterpriseID", enterpriseID.String()))
 		return 0, err
 	}
 
+	uc.logger.Info("bulk upload successful", zap.Int("count", len(candidates)), zap.String("enterpriseID", enterpriseID.String()))
 	return len(candidates), nil
 }
 
@@ -102,5 +104,10 @@ func (uc *candidateUseCase) UpdateCandidate(ctx context.Context, candidate *doma
 }
 
 func (uc *candidateUseCase) DeactivateCandidate(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
-	return uc.repo.Deactivate(ctx, id, enterpriseID)
+	if err := uc.repo.Deactivate(ctx, id, enterpriseID); err != nil {
+		uc.logger.Error("failed to deactivate candidate", zap.Error(err), zap.String("candidateID", id.String()))
+		return err
+	}
+	uc.logger.Info("candidate deactivated", zap.String("candidateID", id.String()), zap.String("enterpriseID", enterpriseID.String()))
+	return nil
 }

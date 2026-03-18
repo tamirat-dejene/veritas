@@ -136,9 +136,11 @@ func (uc *sessionUseCase) StartSession(ctx context.Context, token string, client
 	})
 
 	if err != nil {
+		uc.logger.Error("session start failed", zap.Error(err), zap.String("enrollmentID", e.ID.String()))
 		return nil, fmt.Errorf("StartSession transaction: %w", err)
 	}
 
+	uc.logger.Info("session started", zap.String("sessionID", session.ID.String()), zap.String("candidateID", session.CandidateID.String()), zap.String("examID", session.ExamID.String()))
 	return session, nil
 }
 
@@ -167,6 +169,7 @@ func (uc *sessionUseCase) SaveAnswers(ctx context.Context, sessionID uuid.UUID, 
 	}
 	if time.Now().After(session.ExpiresAt) {
 		_ = uc.sessionRepo.UpdateSessionStatus(ctx, sessionID, domain.SessionExpired, nil)
+		uc.logger.Info("session expired", zap.String("sessionID", sessionID.String()))
 		return domain.ErrSessionExpired
 	}
 
@@ -220,8 +223,11 @@ func (uc *sessionUseCase) SubmitExam(ctx context.Context, sessionID uuid.UUID, c
 	})
 
 	if err != nil {
+		uc.logger.Error("submission failed", zap.Error(err), zap.String("sessionID", sessionID.String()))
 		return nil, fmt.Errorf("SubmitExam transaction: %w", err)
 	}
+
+	uc.logger.Info("exam submitted", zap.String("sessionID", sessionID.String()), zap.Bool("autoSubmitted", autoSubmitted))
 
 	// Fetch the created submission to return it (or we could just use the one we built if we assigned an ID)
 	sub, err := uc.sessionRepo.GetSubmissionBySession(ctx, sessionID)
@@ -233,10 +239,18 @@ func (uc *sessionUseCase) SubmitExam(ctx context.Context, sessionID uuid.UUID, c
 }
 
 func (uc *sessionUseCase) TerminateSession(ctx context.Context, sessionID uuid.UUID, enterpriseID uuid.UUID, reason string) error {
-	return uc.sessionRepo.UpdateSessionStatus(ctx, sessionID, domain.SessionTerminated, &reason)
+	if err := uc.sessionRepo.UpdateSessionStatus(ctx, sessionID, domain.SessionTerminated, &reason); err != nil {
+		return err
+	}
+	uc.logger.Warn("session terminated", zap.String("sessionID", sessionID.String()), zap.String("reason", reason))
+	return nil
 }
 
 func (uc *sessionUseCase) ForceExpireSession(ctx context.Context, sessionID uuid.UUID, enterpriseID uuid.UUID) error {
 	msg := "Admin forced expiration"
-	return uc.sessionRepo.UpdateSessionStatus(ctx, sessionID, domain.SessionExpired, &msg)
+	if err := uc.sessionRepo.UpdateSessionStatus(ctx, sessionID, domain.SessionExpired, &msg); err != nil {
+		return err
+	}
+	uc.logger.Warn("session force-expired", zap.String("sessionID", sessionID.String()))
+	return nil
 }

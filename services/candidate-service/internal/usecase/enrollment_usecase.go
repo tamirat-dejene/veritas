@@ -81,10 +81,11 @@ func (uc *enrollmentUseCase) EnrollCandidates(ctx context.Context, enterpriseID 
 	})
 
 	if err != nil {
-		uc.logger.Error("bulk enrollment failed", zap.Error(err))
+		uc.logger.Error("bulk enrollment failed", zap.Error(err), zap.String("examID", examID.String()))
 		return nil, err
 	}
 
+	uc.logger.Info("candidates enrolled", zap.Int("count", len(candidateIDs)), zap.String("examID", examID.String()))
 	return rawTokens, nil
 }
 
@@ -119,9 +120,11 @@ func (uc *enrollmentUseCase) RegenerateToken(ctx context.Context, id uuid.UUID, 
 	})
 
 	if err != nil {
+		uc.logger.Error("failed to regenerate token", zap.Error(err), zap.String("enrollmentID", id.String()))
 		return "", err
 	}
 
+	uc.logger.Info("enrollment token regenerated", zap.String("enrollmentID", id.String()))
 	return rawToken, nil
 }
 
@@ -135,7 +138,12 @@ func (uc *enrollmentUseCase) RevokeEnrollment(ctx context.Context, id uuid.UUID,
 	// Also effectively invalidate token
 	e.TokenExpiresAt = time.Now().Add(-1 * time.Hour)
 
-	return uc.repo.Update(ctx, e)
+	if err := uc.repo.Update(ctx, e); err != nil {
+		uc.logger.Error("failed to revoke enrollment", zap.Error(err), zap.String("enrollmentID", id.String()))
+		return err
+	}
+	uc.logger.Info("enrollment revoked", zap.String("enrollmentID", id.String()))
+	return nil
 }
 
 func (uc *enrollmentUseCase) ResetAttempts(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
