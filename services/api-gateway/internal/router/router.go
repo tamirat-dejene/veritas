@@ -10,6 +10,7 @@ import (
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/infrastructure"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/middleware"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/proxy"
+	smw "github.com/tamirat-dejene/veritas/shared/pkg/middleware"
 )
 
 func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler, error) {
@@ -36,16 +37,16 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 	}
 
 	rateLimitMiddleware := middleware.NewRateLimitMiddleware(rateLimiter)
-	corsMiddleware := middleware.CORS(
+	corsMiddleware := smw.CORS(
 		parseCSV(cfg.CORSAllowedOrigins),
 		parseCSV(cfg.CORSAllowedMethods),
 		parseCSV(cfg.CORSAllowedHeaders),
 	)
 
-	engine.Use(middleware.RequestID())
-	engine.Use(middleware.Logging())
+	engine.Use(smw.RequestID())
+	engine.Use(smw.Logging())
 	engine.Use(corsMiddleware)
-	engine.Use(middleware.Recoverer())
+	engine.Use(smw.Recovery())
 	engine.Use(rateLimitMiddleware.Handler())
 
 	// --- Set up Router Group ---

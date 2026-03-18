@@ -18,7 +18,7 @@ import (
 )
 
 func main() {
-	log, err := logger.NewLogger()
+	log, err := logger.NewLogger("api-gateway")
 	if err != nil {
 		zap.NewNop().Fatal("failed to initialize logger", zap.Error(err))
 	}
