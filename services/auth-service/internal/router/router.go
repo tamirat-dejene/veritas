@@ -7,7 +7,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/handler"
-	"github.com/tamirat-dejene/veritas/services/auth-service/internal/middleware"
+	smw "github.com/tamirat-dejene/veritas/shared/pkg/middleware"
 	"go.uber.org/zap"
 )
 
@@ -18,8 +18,9 @@ func NewRouter(authHandler *handler.AuthHandler, log *zap.Logger) *gin.Engine {
 
 	// Global middleware
 	engine.Use(
-		gin.Recovery(),         // recover from panics and return 500
-		middleware.RequestID(), // attach X-Request-ID to every request
+		smw.Recovery(),  // recover from panics and return 500
+		smw.RequestID(), // attach X-Request-ID to every request
+		smw.Logging(),   // log every request
 	)
 
 	// Health check (no auth required).

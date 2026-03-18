@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/infrastructure/token"
+	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 )
 
@@ -74,11 +75,12 @@ func (uc *RefreshUseCase) Execute(ctx context.Context, input RefreshInput) (*Ref
 
 	// 2-10 are combined into one transaction to make token rotation concurrency-safe.
 	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		l := logger.WithContext(ctx, uc.log)
 		// 2. Lock and load token row.
 		rt, err := uc.refreshTokenRepo.WithTx(tx).FindByHashForUpdate(ctx, tokenHash)
 		if err != nil {
 			if err == domain.ErrTokenNotFound {
-				uc.log.Warn("refresh attempt with unknown token")
+				l.Warn("refresh attempt with unknown token")
 				return domain.ErrTokenNotFound
 			}
 			return fmt.Errorf("find token for update: %w", err)
@@ -86,13 +88,13 @@ func (uc *RefreshUseCase) Execute(ctx context.Context, input RefreshInput) (*Ref
 
 		// 3. Reject if already revoked.
 		if rt.Revoked {
-			uc.log.Warn("refresh attempt with revoked token", zap.String("tokenId", rt.ID.String()))
+			l.Warn("refresh attempt with revoked token", zap.String("tokenId", rt.ID.String()))
 			return domain.ErrTokenRevoked
 		}
 
 		// 4. Reject if expired.
 		if time.Now().UTC().After(rt.ExpiresAt) {
-			uc.log.Warn("refresh attempt with expired token", zap.String("tokenId", rt.ID.String()))
+			l.Warn("refresh attempt with expired token", zap.String("tokenId", rt.ID.String()))
 			return domain.ErrTokenExpired
 		}
 
@@ -150,7 +152,7 @@ func (uc *RefreshUseCase) Execute(ctx context.Context, input RefreshInput) (*Ref
 		return nil, fmt.Errorf("RefreshUseCase.Execute transaction: %w", err)
 	}
 
-	uc.log.Info("token refreshed successfully", zap.String("userId", userID.String()))
+	logger.WithContext(ctx, uc.log).Info("token refreshed successfully", zap.String("userId", userID.String()))
 
 	return &RefreshOutput{
 		AccessToken:  accessToken,

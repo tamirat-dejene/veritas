@@ -47,7 +47,7 @@ import (
 
 func main() {
 	// --- Logger ---
-	log, err := logger.NewLogger()
+	log, err := logger.NewLogger("auth-service")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
 		os.Exit(1)

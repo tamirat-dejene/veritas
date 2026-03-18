@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/infrastructure/token"
+	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 )
 
@@ -46,10 +47,11 @@ func (uc *LogoutUseCase) Execute(ctx context.Context, input LogoutInput) error {
 
 	// 2-4. Lock token row and revoke inside one transaction.
 	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		l := logger.WithContext(ctx, uc.log)
 		rt, err := uc.refreshTokenRepo.WithTx(tx).FindByHashForUpdate(ctx, tokenHash)
 		if err != nil {
 			if err == domain.ErrTokenNotFound {
-				uc.log.Warn("logout attempt with unknown token (no-op)")
+				l.Warn("logout attempt with unknown token (no-op)")
 				return nil
 			}
 			return fmt.Errorf("find token for update: %w", err)
@@ -58,7 +60,7 @@ func (uc *LogoutUseCase) Execute(ctx context.Context, input LogoutInput) error {
 		tokenID = rt.ID.String()
 
 		if rt.Revoked {
-			uc.log.Info("logout called on already-revoked token (no-op)", zap.String("tokenId", rt.ID.String()))
+			l.Info("logout called on already-revoked token (no-op)", zap.String("tokenId", rt.ID.String()))
 			return nil
 		}
 
@@ -74,7 +76,7 @@ func (uc *LogoutUseCase) Execute(ctx context.Context, input LogoutInput) error {
 	}
 
 	if tokenID != "" {
-		uc.log.Info("user logged out successfully", zap.String("tokenId", tokenID))
+		logger.WithContext(ctx, uc.log).Info("user logged out successfully", zap.String("tokenId", tokenID))
 	}
 	return nil
 }

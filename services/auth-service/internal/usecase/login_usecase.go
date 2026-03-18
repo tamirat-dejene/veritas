@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -68,10 +69,11 @@ func NewLoginUseCase(
 // Execute authenticates the user and returns a token pair on success.
 func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOutput, error) {
 	// 1. Find user by email.
+	l := logger.WithContext(ctx, uc.log)
 	user, err := uc.userRepo.FindByEmail(ctx, input.Email)
 	if err != nil {
 		if err == domain.ErrUserNotFound {
-			uc.log.Warn("login attempt for unknown email", zap.String("email", input.Email))
+			l.Warn("login attempt for unknown email", zap.String("email", input.Email))
 			return nil, domain.ErrInvalidCredentials
 		}
 		return nil, fmt.Errorf("LoginUseCase.Execute: FindByEmail: %w", err)
@@ -87,7 +89,7 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 
 	// 3. Check Account Lock.
 	if user.LockedUntil != nil && time.Now().Before(*user.LockedUntil) {
-		uc.log.Warn("login attempt for locked account", zap.String("userId", user.ID.String()), zap.Time("lockedUntil", *user.LockedUntil))
+		l.Warn("login attempt for locked account", zap.String("userId", user.ID.String()), zap.Time("lockedUntil", *user.LockedUntil))
 		return nil, domain.ErrAccountLocked
 	}
 
@@ -98,19 +100,19 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 
 	// 5. Verify password.
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
-		uc.log.Warn("invalid password attempt", zap.String("userId", user.ID.String()))
+		l.Warn("invalid password attempt", zap.String("userId", user.ID.String()))
 
 		// Handle Login Failure (increment count, potentially lock)
 		var lockUntil *time.Time
 		if user.FailedLoginAttempts+1 >= 5 {
-			l := time.Now().Add(15 * time.Minute)
-			lockUntil = &l
-			uc.log.Info("account locked due to too many failures", zap.String("userId", user.ID.String()))
+			lockTime := time.Now().Add(15 * time.Minute)
+			lockUntil = &lockTime
+			l.Info("account locked due to too many failures", zap.String("userId", user.ID.String()))
 		}
 
 		user.FailedLoginAttempts += 1
 		if errUpdate := uc.userRepo.UpdateLoginFailure(ctx, user.ID, lockUntil, user.FailedLoginAttempts); errUpdate != nil {
-			uc.log.Error("failed to update login failure stats", zap.Error(errUpdate))
+			l.Error("failed to update login failure stats", zap.Error(errUpdate))
 		}
 
 		return nil, domain.ErrInvalidCredentials
@@ -145,12 +147,12 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 		return nil, fmt.Errorf("LoginUseCase.Execute transaction: %w", err)
 	}
 
-	uc.log.Info("user logged in successfully", zap.String("userId", user.ID.String()))
+	l.Info("user logged in successfully", zap.String("userId", user.ID.String()))
 
 	// 10. Publish Login Event (Fire and Forget or handle as secondary)
 	go func() {
 		if err := uc.eventPublisher.PublishLogin(context.Background(), user.ID, user.Email); err != nil {
-			uc.log.Error("failed to publish login event", zap.Error(err))
+			l.Error("failed to publish login event", zap.Error(err))
 		}
 	}()
 
