@@ -7,6 +7,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/handler"
+	smw "github.com/tamirat-dejene/veritas/shared/pkg/middleware"
 )
 
 // NewRouter creates and configures the Gin engine.
@@ -20,8 +21,11 @@ func NewRouter(
 	uh *handler.UserHandler,
 ) *gin.Engine {
 	engine := gin.New()
-	engine.Use(gin.Recovery())
-	engine.Use(gin.Logger())
+	engine.Use(
+		smw.Recovery(),
+		smw.RequestID(),
+		smw.Logging(),
+	)
 
 	engine.GET("/health", healthCheck)
 
