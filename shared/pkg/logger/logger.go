@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"context"
 	"os"
 	"strings"
 
@@ -8,7 +9,16 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func NewLogger() (*zap.Logger, error) {
+type contextKey string
+
+const (
+	RequestIDKey contextKey = "requestID"
+	UserIDKey    contextKey = "userID"
+	RoleKey      contextKey = "role"
+)
+
+// NewLogger initializes a zap logger with configuration from environment variables.
+func NewLogger(serviceName string) (*zap.Logger, error) {
 	format := strings.ToLower(strings.TrimSpace(os.Getenv("LOG_FORMAT")))
 	level := strings.ToLower(strings.TrimSpace(os.Getenv("LOG_LEVEL")))
 
@@ -17,7 +27,7 @@ func NewLogger() (*zap.Logger, error) {
 		cfg = zap.NewDevelopmentConfig()
 		cfg.Encoding = "console"
 		cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-		cfg.EncoderConfig.EncodeCaller = nil // Disable caller for cleaner output
+		cfg.EncoderConfig.EncodeCaller = zapcore.ShortCallerEncoder // Re-enable caller in dev
 		cfg.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("15:04:05")
 		cfg.EncoderConfig.ConsoleSeparator = " "
 		cfg.EncoderConfig.LineEnding = zapcore.DefaultLineEnding
@@ -28,14 +38,48 @@ func NewLogger() (*zap.Logger, error) {
 	}
 
 	cfg.Level = zap.NewAtomicLevelAt(parseLevel(level))
-	return cfg.Build()
+	l, err := cfg.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	if serviceName != "" {
+		l = l.With(zap.String("service", serviceName))
+	}
+
+	return l, nil
 }
 
+// WithContext returns a logger with fields extracted from the context.
+func WithContext(ctx context.Context, log *zap.Logger) *zap.Logger {
+	if ctx == nil {
+		return log
+	}
+
+	fields := []zap.Field{}
+	if rid, ok := ctx.Value(RequestIDKey).(string); ok && rid != "" {
+		fields = append(fields, zap.String("request_id", rid))
+	}
+	if uid, ok := ctx.Value(UserIDKey).(string); ok && uid != "" {
+		fields = append(fields, zap.String("user_id", uid))
+	}
+	if role, ok := ctx.Value(RoleKey).(string); ok && role != "" {
+		fields = append(fields, zap.String("role", role))
+	}
+
+	if len(fields) > 0 {
+		return log.With(fields...)
+	}
+	return log
+}
+
+// IsConsoleFormat returns true if the LOG_FORMAT is set to console or pretty.
 func IsConsoleFormat() bool {
 	format := strings.ToLower(strings.TrimSpace(os.Getenv("LOG_FORMAT")))
 	return format == "console" || format == "pretty"
 }
 
+// GetLogStyle returns the value of LOG_STYLE environment variable.
 func GetLogStyle() string {
 	style := strings.ToLower(strings.TrimSpace(os.Getenv("LOG_STYLE")))
 	if style == "" {
