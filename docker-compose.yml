@@ -63,6 +63,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
+      - ./.env:/app/.env
       - ./services/api-gateway:/app/services/api-gateway
       - ./shared:/app/shared:ro
       - go_pkg_cache:/go/pkg/mod
@@ -81,6 +82,7 @@ services:
     ports:
       - "8081:8080"
     volumes:
+      - ./.env:/app/.env
       - ./services/auth-service:/app/services/auth-service
       - ./shared:/app/shared:ro
       - go_pkg_cache:/go/pkg/mod
@@ -99,6 +101,7 @@ services:
     ports:
       - "8082:8080"
     volumes:
+      - ./.env:/app/.env
       - ./services/enterprise-service:/app/services/enterprise-service
       - ./shared:/app/shared:ro
       - go_pkg_cache:/go/pkg/mod
@@ -117,6 +120,7 @@ services:
     ports:
       - "8083:8080"
     volumes:
+      - ./.env:/app/.env
       - ./services/exam-service:/app/services/exam-service
       - ./shared:/app/shared:ro
       - go_pkg_cache:/go/pkg/mod
@@ -135,6 +139,7 @@ services:
     ports:
       - "8084:8080"
     volumes:
+      - ./.env:/app/.env
       - ./services/candidate-service:/app/services/candidate-service
       - ./shared:/app/shared:ro
       - go_pkg_cache:/go/pkg/mod
@@ -153,6 +158,7 @@ services:
     ports:
       - "8085:8080"
     volumes:
+      - ./.env:/app/.env
       - ./services/payment-service:/app/services/payment-service
       - ./shared:/app/shared:ro
       - go_pkg_cache:/go/pkg/mod
@@ -172,6 +178,7 @@ services:
     ports:
       - "8086:8000"
     volumes:
+      - ./.env:/app/.env
       - ./services/proctoring-service:/app
       - ./shared:/app/shared:ro
     env_file:
@@ -186,6 +193,7 @@ services:
     ports:
       - "8087:8000"
     volumes:
+      - ./.env:/app/.env
       - ./services/grading-service:/app
       - ./shared:/app/shared:ro
     env_file:
@@ -200,6 +208,7 @@ services:
     ports:
       - "8088:8000"
     volumes:
+      - ./.env:/app/.env
       - ./services/reporting-service:/app
       - ./shared:/app/shared:ro
     env_file:
@@ -214,6 +223,7 @@ services:
     ports:
       - "8089:8000"
     volumes:
+      - ./.env:/app/.env
       - ./services/face-verification-service:/app
       - ./shared:/app/shared:ro
     env_file:
