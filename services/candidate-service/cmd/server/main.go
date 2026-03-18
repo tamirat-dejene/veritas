@@ -47,14 +47,15 @@ import (
 
 func main() {
 	// 1. Initialize Logger from Shared Library matching the original implementation
-	log, err := logger.NewLogger()
+	// 1. Initialize Logger from Shared Library matching the original implementation
+	log, err := logger.NewLogger("candidate-service")
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
+		os.Exit(1)
 	}
 	defer func() {
 		_ = log.Sync()
 	}()
-	zap.ReplaceGlobals(log)
 
 	// 2. Load Configuration
 	cfg := config.Load()

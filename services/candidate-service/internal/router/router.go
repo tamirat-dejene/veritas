@@ -7,6 +7,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	c_http "github.com/tamirat-dejene/veritas/services/candidate-service/internal/handler"
+	smw "github.com/tamirat-dejene/veritas/shared/pkg/middleware"
 )
 
 func NewRouter(
@@ -16,9 +17,11 @@ func NewRouter(
 	mh *c_http.MonitoringHandler,
 ) *gin.Engine {
 	engine := gin.New()
-
-	engine.Use(gin.Recovery())
-	engine.Use(gin.Logger())
+	engine.Use(
+		smw.Recovery(),
+		smw.RequestID(),
+		smw.Logging(),
+	)
 
 	engine.GET("/health", healthCheck)
 
