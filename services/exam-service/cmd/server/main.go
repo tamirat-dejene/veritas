@@ -21,7 +21,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -34,6 +33,7 @@ import (
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/usecase"
+	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 
 	// Import generated swagger docs so the spec is registered at startup.
@@ -42,9 +42,12 @@ import (
 
 func main() {
 	// 1. Initialize Logger
-	logger, _ := zap.NewProduction()
-	defer logger.Sync()
-	zap.ReplaceGlobals(logger)
+	log, err := logger.NewLogger("exam-service")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
+		os.Exit(1)
+	}
+	defer log.Sync()
 
 	// 2. Load Configuration
 	cfg := config.Load()
@@ -52,10 +55,10 @@ func main() {
 	// 3. Initialize pgxpool directly
 	pool, err := pgxpool.New(context.Background(), cfg.DSN)
 	if err != nil {
-		logger.Fatal("failed to connect to database", zap.Error(err))
+		log.Fatal("failed to connect to database", zap.Error(err))
 	}
 	defer pool.Close()
-	logger.Info("connected to postgres (via pgxpool)")
+	log.Info("connected to postgres (via pgxpool)")
 
 	// 4. Initialize Repositories (passing pool as DBTX)
 	questionRepo := postgres.NewQuestionRepository(pool)
@@ -81,7 +84,7 @@ func main() {
 	go func() {
 		fmt.Printf("Exam Service starting on port %s...\n", cfg.Port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
+			log.Fatal("listen error", zap.Error(err))
 		}
 	}()
 
@@ -90,14 +93,14 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	logger.Info("Shutting down server...")
+	log.Info("Shutting down server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		logger.Fatal("Server forced to shutdown", zap.Error(err))
+		log.Fatal("Server forced to shutdown", zap.Error(err))
 	}
 
-	logger.Info("Server exiting")
+	log.Info("Server exiting")
 }

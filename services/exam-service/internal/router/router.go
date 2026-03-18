@@ -7,13 +7,16 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/handler"
+	smw "github.com/tamirat-dejene/veritas/shared/pkg/middleware"
 )
 
 func NewRouter(qh *handler.QuestionHandler, eh *handler.ExamHandler) *gin.Engine {
 	engine := gin.New()
-
-	engine.Use(gin.Recovery())
-	engine.Use(gin.Logger())
+	engine.Use(
+		smw.Recovery(),
+		smw.RequestID(),
+		smw.Logging(),
+	)
 
 	engine.GET("/health", healthCheck)
 
