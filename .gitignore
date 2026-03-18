@@ -4,3 +4,6 @@ veritas_presentation/tex_out
 # Env files
 .env
 **/.env
+
+# Temporary
+tmp

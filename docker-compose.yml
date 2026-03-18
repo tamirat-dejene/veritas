@@ -10,9 +10,6 @@ services:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      # interval: 10s
-      # timeout: 5s
-      # retries: 5
   pgadmin:
     image: dpage/pgadmin4:9.13
     env_file:
@@ -30,285 +27,172 @@ services:
       - redis_data:/data
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
-      # interval: 10s
-      # timeout: 5s
-      # retries: 5
-
-  # prometheus:
-  #   image: prom/prometheus
-  #   ports:
-  #     - "9090:9090"
-  #   volumes:
-  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml
-
-  # grafana:
-  #   image: grafana/grafana
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     - prometheus
 
   # --- Go Services ---
   api-gateway:
     build:
       context: .
-      dockerfile: services/api-gateway/Dockerfile
+      dockerfile: infra/docker/dev/go-service.Dockerfile
+      args:
+        SERVICE_NAME: api-gateway
     ports:
       - "8080:8080"
     volumes:
+      - ./services/api-gateway:/app/services/api-gateway
       - ./shared:/app/shared:ro
+      - go_pkg_cache:/go/pkg/mod
     env_file:
       - .env
     depends_on:
-      # auth-service:
-      #   condition: service_healthy
       redis:
         condition: service_healthy
-    # healthcheck:
-    #   test:
-    #     [
-    #       "CMD-SHELL",
-    #       "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
-    #     ]
-      # interval: 10s
-      # timeout: 5s
-      # retries: 5
-    develop:
-      watch:
-        - action: rebuild
-          path: ./services/api-gateway
 
   auth-service:
     build:
       context: .
-      dockerfile: services/auth-service/Dockerfile
+      dockerfile: infra/docker/dev/go-service.Dockerfile
+      args:
+        SERVICE_NAME: auth-service
     ports:
       - "8081:8080"
     volumes:
+      - ./services/auth-service:/app/services/auth-service
       - ./shared:/app/shared:ro
+      - go_pkg_cache:/go/pkg/mod
     env_file:
       - .env
     depends_on:
       postgres:
         condition: service_healthy
-    # healthcheck:
-    #   test:
-    #     [
-    #       "CMD-SHELL",
-    #       "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
-    #     ]
-      # interval: 10s
-      # timeout: 5s
-      # retries: 5
-    develop:
-      watch:
-        - action: rebuild
-          path: ./services/auth-service
 
   enterprise-service:
     build:
       context: .
-      dockerfile: services/enterprise-service/Dockerfile
+      dockerfile: infra/docker/dev/go-service.Dockerfile
+      args:
+        SERVICE_NAME: enterprise-service
     ports:
       - "8082:8080"
     volumes:
+      - ./services/enterprise-service:/app/services/enterprise-service
       - ./shared:/app/shared:ro
+      - go_pkg_cache:/go/pkg/mod
     env_file:
       - .env
     depends_on:
       postgres:
         condition: service_healthy
-    # healthcheck:
-    #   test:
-    #     [
-    #       "CMD-SHELL",
-    #       "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
-    #     ]
-      # interval: 10s
-      # timeout: 5s
-      # retries: 5
-    develop:
-      watch:
-        - action: rebuild
-          path: ./services/enterprise-service
 
   exam-service:
     build:
       context: .
-      dockerfile: services/exam-service/Dockerfile
+      dockerfile: infra/docker/dev/go-service.Dockerfile
+      args:
+        SERVICE_NAME: exam-service
     ports:
       - "8083:8080"
     volumes:
+      - ./services/exam-service:/app/services/exam-service
       - ./shared:/app/shared:ro
+      - go_pkg_cache:/go/pkg/mod
     env_file:
       - .env
     depends_on:
       postgres:
         condition: service_healthy
-    # healthcheck:
-    #   test:
-    #     [
-    #       "CMD-SHELL",
-    #       "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
-    #     ]
-      # interval: 10s
-      # timeout: 5s
-      # retries: 5
-    develop:
-      watch:
-        - action: rebuild
-          path: ./services/exam-service
 
   candidate-service:
     build:
       context: .
-      dockerfile: services/candidate-service/Dockerfile
+      dockerfile: infra/docker/dev/go-service.Dockerfile
+      args:
+        SERVICE_NAME: candidate-service
     ports:
       - "8084:8080"
     volumes:
+      - ./services/candidate-service:/app/services/candidate-service
       - ./shared:/app/shared:ro
+      - go_pkg_cache:/go/pkg/mod
     env_file:
       - .env
     depends_on:
       postgres:
         condition: service_healthy
-    # healthcheck:
-    #   test:
-    #     [
-    #       "CMD-SHELL",
-    #       "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
-    #     ]
-      # interval: 10s
-      # timeout: 5s
-      # retries: 5
-    develop:
-      watch:
-        - action: rebuild
-          path: ./services/candidate-service
 
   payment-service:
     build:
       context: .
-      dockerfile: services/payment-service/Dockerfile
+      dockerfile: infra/docker/dev/go-service.Dockerfile
+      args:
+        SERVICE_NAME: payment-service
     ports:
       - "8085:8080"
     volumes:
+      - ./services/payment-service:/app/services/payment-service
       - ./shared:/app/shared:ro
+      - go_pkg_cache:/go/pkg/mod
     env_file:
       - .env
     depends_on:
       postgres:
         condition: service_healthy
-    # healthcheck:
-    #   test:
-    #     [
-    #       "CMD-SHELL",
-    #       "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
-    #     ]
-      # interval: 10s
-      # timeout: 5s
-      # retries: 5
-    develop:
-      watch:
-        - action: rebuild
-          path: ./services/payment-service
 
   # --- Python Services ---
   proctoring-service:
-    build: ./services/proctoring-service
+    build:
+      context: ./services/proctoring-service
+      dockerfile: ../../infra/docker/dev/python-service.Dockerfile
+      args:
+        SERVICE_NAME: proctoring-service
     ports:
       - "8086:8000"
     volumes:
+      - ./services/proctoring-service:/app
       - ./shared:/app/shared:ro
     env_file:
       - .env
-    # healthcheck:
-    #   test:
-    #     [
-    #       "CMD-SHELL",
-    #       'python3 -c ''import urllib.request; urllib.request.urlopen("http://localhost:8000/health").read()'' || exit 1',
-    #     ]
-      # interval: 10s
-      # timeout: 5s
-      # retries: 5
-    develop:
-      watch:
-        - action: sync+restart
-          path: ./services/proctoring-service
-          target: /app
-        - action: rebuild
-          path: ./services/proctoring-service/requirements.txt
 
   grading-service:
-    build: ./services/grading-service
+    build:
+      context: ./services/grading-service
+      dockerfile: ../../infra/docker/dev/python-service.Dockerfile
+      args:
+        SERVICE_NAME: grading-service
     ports:
       - "8087:8000"
     volumes:
+      - ./services/grading-service:/app
       - ./shared:/app/shared:ro
     env_file:
       - .env
-    # healthcheck:
-    #   test:
-    #     [
-    #       "CMD-SHELL",
-    #       'python3 -c ''import urllib.request; urllib.request.urlopen("http://localhost:8000/health").read()'' || exit 1',
-    #     ]
-      # interval: 10s
-      # timeout: 5s
-      # retries: 5
-    develop:
-      watch:
-        - action: sync+restart
-          path: ./services/grading-service
-          target: /app
-        - action: rebuild
-          path: ./services/grading-service/requirements.txt
 
   reporting-service:
-    build: ./services/reporting-service
+    build:
+      context: ./services/reporting-service
+      dockerfile: ../../infra/docker/dev/python-service.Dockerfile
+      args:
+        SERVICE_NAME: reporting-service
     ports:
       - "8088:8000"
     volumes:
+      - ./services/reporting-service:/app
       - ./shared:/app/shared:ro
     env_file:
       - .env
-    # healthcheck:
-    #   test:
-    #     [
-    #       "CMD-SHELL",
-    #       'python3 -c ''import urllib.request; urllib.request.urlopen("http://localhost:8000/health").read()'' || exit 1',
-    #     ]
-      # interval: 10s
-      # timeout: 5s
-      # retries: 5
-    develop:
-      watch:
-        - action: sync+restart
-          path: ./services/reporting-service
-          target: /app
-        - action: rebuild
-          path: ./services/reporting-service/requirements.txt
 
   face-verification-service:
-    build: ./services/face-verification-service
+    build:
+      context: ./services/face-verification-service
+      dockerfile: ../../infra/docker/dev/python-service.Dockerfile
+      args:
+        SERVICE_NAME: face-verification-service
     ports:
       - "8089:8000"
     volumes:
+      - ./services/face-verification-service:/app
       - ./shared:/app/shared:ro
     env_file:
       - .env
-    # healthcheck:
-    #   test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/health\").read()' || exit 1"]
-      # interval: 10s
-      # timeout: 5s
-      # retries: 5
-    develop:
-      watch:
-        - action: sync+restart
-          path: ./services/face-verification-service
-          target: /app
-        - action: rebuild
-          path: ./services/face-verification-service/requirements.txt
 
   kafka:
     image: apache/kafka:4.2.0
@@ -332,11 +216,9 @@ services:
       - kafka_data:/var/lib/kafka/data
     healthcheck:
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092"]
-      # interval: 10s
-      # timeout: 5s
-      # retries: 5
 
 volumes:
   postgres_data:
   redis_data:
   kafka_data:
+  go_pkg_cache:
