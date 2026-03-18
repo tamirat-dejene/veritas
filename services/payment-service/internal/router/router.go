@@ -7,10 +7,16 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/handler"
+	smw "github.com/tamirat-dejene/veritas/shared/pkg/middleware"
 )
 
 func NewRouter(h *handler.PaymentHandler) *gin.Engine {
-	r := gin.Default()
+	r := gin.New()
+	r.Use(
+		smw.Recovery(),
+		smw.RequestID(),
+		smw.Logging(),
+	)
 
 	r.GET("/health", healthCheck)
 

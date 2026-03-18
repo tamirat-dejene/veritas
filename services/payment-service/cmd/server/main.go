@@ -22,6 +22,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -37,13 +38,17 @@ import (
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/usecase"
+	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 )
 
 func main() {
 	// Initialize logger
-	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	log, err := logger.NewLogger("payment-service")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
+		os.Exit(1)
+	}
 
 	// Load configuration
 	cfg := config.Load()
@@ -51,10 +56,10 @@ func main() {
 	// Database connection (using pgxpool directly)
 	pool, err := pgxpool.New(context.Background(), cfg.DSN)
 	if err != nil {
-		logger.Fatal("failed to connect to database", zap.Error(err))
+		log.Fatal("failed to connect to database", zap.Error(err))
 	}
 	defer pool.Close()
-	logger.Info("connected to postgres (via pgxpool)")
+	log.Info("connected to postgres (via pgxpool)")
 
 	// Wire dependencies
 	subRepo := postgres.NewSubscriptionRepository(pool)
@@ -74,9 +79,9 @@ func main() {
 
 	// Start server in a goroutine
 	go func() {
-		logger.Info("starting payment-service", zap.String("port", cfg.Port))
+		log.Info("starting payment-service", zap.String("port", cfg.Port))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Fatal("failed to start server", zap.Error(err))
+			log.Fatal("failed to start server", zap.Error(err))
 		}
 	}()
 
@@ -85,13 +90,13 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	logger.Info("shutting down payment-service...")
+	log.Info("shutting down payment-service...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		logger.Fatal("server forced to shutdown", zap.Error(err))
+		log.Fatal("server forced to shutdown", zap.Error(err))
 	}
 
-	logger.Info("payment-service exited gracefully")
+	log.Info("payment-service exited gracefully")
 }
