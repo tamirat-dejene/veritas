@@ -2,6 +2,8 @@ basePath: /api/v1
 definitions:
   AuditEvent:
     enum:
+    - enterprise.created
+    - enterprise.updated
     - enterprise.approved
     - enterprise.suspended
     - enterprise.deleted
@@ -21,6 +23,8 @@ definitions:
     - enterprise.domain_validated
     type: string
     x-enum-varnames:
+    - EventEnterpriseCreated
+    - EventEnterpriseUpdated
     - EventEnterpriseApproved
     - EventEnterpriseSuspended
     - EventEnterpriseDeleted
@@ -53,7 +57,7 @@ definitions:
       id:
         type: string
       metadata:
-        additionalProperties: true
+        additionalProperties: {}
         type: object
     type: object
   CreateUserRequest:
@@ -136,7 +140,7 @@ definitions:
       secondaryColor:
         type: string
       settings:
-        additionalProperties: true
+        additionalProperties: {}
         type: object
       slug:
         type: string

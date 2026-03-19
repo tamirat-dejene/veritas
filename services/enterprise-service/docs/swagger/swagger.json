@@ -1735,6 +1735,8 @@
         "AuditEvent": {
             "type": "string",
             "enum": [
+                "enterprise.created",
+                "enterprise.updated",
                 "enterprise.approved",
                 "enterprise.suspended",
                 "enterprise.deleted",
@@ -1754,6 +1756,8 @@
                 "enterprise.domain_validated"
             ],
             "x-enum-varnames": [
+                "EventEnterpriseCreated",
+                "EventEnterpriseUpdated",
                 "EventEnterpriseApproved",
                 "EventEnterpriseSuspended",
                 "EventEnterpriseDeleted",
@@ -1796,7 +1800,7 @@
                 },
                 "metadata": {
                     "type": "object",
-                    "additionalProperties": true
+                    "additionalProperties": {}
                 }
             }
         },
@@ -1920,7 +1924,7 @@
                 },
                 "settings": {
                     "type": "object",
-                    "additionalProperties": true
+                    "additionalProperties": {}
                 },
                 "slug": {
                     "type": "string"

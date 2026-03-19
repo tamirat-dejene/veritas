@@ -1738,6 +1738,8 @@ const docTemplate = `{
         "AuditEvent": {
             "type": "string",
             "enum": [
+                "enterprise.created",
+                "enterprise.updated",
                 "enterprise.approved",
                 "enterprise.suspended",
                 "enterprise.deleted",
@@ -1757,6 +1759,8 @@ const docTemplate = `{
                 "enterprise.domain_validated"
             ],
             "x-enum-varnames": [
+                "EventEnterpriseCreated",
+                "EventEnterpriseUpdated",
                 "EventEnterpriseApproved",
                 "EventEnterpriseSuspended",
                 "EventEnterpriseDeleted",
@@ -1799,7 +1803,7 @@ const docTemplate = `{
                 },
                 "metadata": {
                     "type": "object",
-                    "additionalProperties": true
+                    "additionalProperties": {}
                 }
             }
         },
@@ -1923,7 +1927,7 @@ const docTemplate = `{
                 },
                 "settings": {
                     "type": "object",
-                    "additionalProperties": true
+                    "additionalProperties": {}
                 },
                 "slug": {
                     "type": "string"
