@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/services/exam-service/internal/dto"
 )
 
 type ExamHandler struct {
@@ -26,11 +27,11 @@ func NewExamHandler(uc domain.ExamUsecase) *ExamHandler {
 //	@Produce		json
 //	@Param			X-Enterprise-ID	header	string		true	"Enterprise ID (UUID)"
 //	@Param			X-User-ID	header	string		true	"Actor user ID (UUID)"
-//	@Param			body			body	domain.Exam	true	"Exam payload"
+//	@Param			body			body	dto.CreateExamRequest	true	"Exam payload"
 //	@Success		201			{object}	domain.Exam
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/exams [post]
 func (h *ExamHandler) CreateExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
@@ -45,13 +46,24 @@ func (h *ExamHandler) CreateExam(c *gin.Context) {
 		return
 	}
 
-	var e domain.Exam
-	if err := c.ShouldBindJSON(&e); err != nil {
+	var req dto.CreateExamRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	e.EnterpriseID = enterpriseID
+	e := domain.Exam{
+		EnterpriseID:        enterpriseID,
+		Title:               req.Title,
+		Description:         req.Description,
+		DurationMinutes:     req.DurationMinutes,
+		PassingScorePercent: req.PassingScorePercent,
+		NegativeMarking:     req.NegativeMarking,
+		MaxParticipants:     req.MaxParticipants,
+		InvitationMethod:    req.InvitationMethod,
+		TemplateSourceID:    req.TemplateSourceID,
+		Settings:            req.Settings,
+	}
 
 	created, err := h.usecase.CreateExam(c.Request.Context(), &e, userID)
 	if err != nil {
@@ -71,13 +83,13 @@ func (h *ExamHandler) CreateExam(c *gin.Context) {
 //	@Param			X-Enterprise-ID	header	string		true	"Enterprise ID (UUID)"
 //	@Param			X-User-ID	header	string		true	"Actor user ID (UUID)"
 //	@Param			examId			path	string		true	"Exam ID (UUID)"
-//	@Param			body			body	domain.Exam	true	"Exam payload"
+//	@Param			body			body	dto.UpdateExamRequest	true	"Exam payload"
 //	@Success		204			{string}	string		"No Content"
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		404			{object}	ErrorResponse
-//	@Failure		409			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		409			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/exams/{examId} [patch]
 func (h *ExamHandler) UpdateExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
@@ -99,14 +111,24 @@ func (h *ExamHandler) UpdateExam(c *gin.Context) {
 		return
 	}
 
-	var e domain.Exam
-	if err := c.ShouldBindJSON(&e); err != nil {
+	var req dto.UpdateExamRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	e.ID = examID
-	e.EnterpriseID = enterpriseID
+	e := domain.Exam{
+		ID:                  examID,
+		EnterpriseID:        enterpriseID,
+		Title:               req.Title,
+		Description:         req.Description,
+		DurationMinutes:     req.DurationMinutes,
+		PassingScorePercent: req.PassingScorePercent,
+		NegativeMarking:     req.NegativeMarking,
+		MaxParticipants:     req.MaxParticipants,
+		InvitationMethod:    req.InvitationMethod,
+		Settings:            req.Settings,
+	}
 
 	if err := h.usecase.UpdateExam(c.Request.Context(), &e, userID); err != nil {
 		if err == domain.ErrExamNotFound {
@@ -133,13 +155,13 @@ func (h *ExamHandler) UpdateExam(c *gin.Context) {
 //	@Param			X-Enterprise-ID	header	string				true	"Enterprise ID (UUID)"
 //	@Param			X-User-ID	header	string				true	"Actor user ID (UUID)"
 //	@Param			examId			path	string				true	"Exam ID (UUID)"
-//	@Param			body			body	ScheduleExamRequest	true	"Schedule payload"
+//	@Param			body			body	dto.ScheduleExamRequest	true	"Schedule payload"
 //	@Success		204			{string}	string				"No Content"
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		404			{object}	ErrorResponse
-//	@Failure		409			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		409			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/exams/{examId}/schedule [post]
 func (h *ExamHandler) ScheduleExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
@@ -161,7 +183,7 @@ func (h *ExamHandler) ScheduleExam(c *gin.Context) {
 		return
 	}
 
-	var req ScheduleExamRequest
+	var req dto.ScheduleExamRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "invalid request body")
 		return
@@ -204,12 +226,12 @@ func (h *ExamHandler) ScheduleExam(c *gin.Context) {
 //	@Param			X-Enterprise-ID	header	string			true	"Enterprise ID (UUID)"
 //	@Param			X-User-ID	header	string			true	"Actor user ID (UUID)"
 //	@Param			examId			path	string			true	"Source Exam ID (UUID)"
-//	@Param			body			body	CloneExamRequest	true	"Clone payload"
+//	@Param			body			body	dto.CloneExamRequest	true	"Clone payload"
 //	@Success		201			{object}	domain.Exam
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		404			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/exams/{examId}/clone [post]
 func (h *ExamHandler) CloneExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
@@ -231,7 +253,7 @@ func (h *ExamHandler) CloneExam(c *gin.Context) {
 		return
 	}
 
-	var req CloneExamRequest
+	var req dto.CloneExamRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "invalid request body")
 		return
@@ -258,8 +280,8 @@ func (h *ExamHandler) CloneExam(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
 //	@Success		200			{array}	domain.Exam
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/exams [get]
 func (h *ExamHandler) ListExams(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
@@ -290,10 +312,10 @@ func (h *ExamHandler) ListExams(c *gin.Context) {
 //	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
 //	@Param			examId			path	string	true	"Exam ID (UUID)"
 //	@Success		200			{object}	domain.Exam
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		404			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/exams/{examId} [get]
 func (h *ExamHandler) GetExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
@@ -331,10 +353,10 @@ func (h *ExamHandler) GetExam(c *gin.Context) {
 //	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
 //	@Param			examId			path	string	true	"Exam ID (UUID)"
 //	@Success		200			{array}	domain.ExamQuestion
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		404			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/exams/{examId}/questions [get]
 func (h *ExamHandler) GetExamQuestions(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
@@ -375,10 +397,10 @@ func (h *ExamHandler) GetExamQuestions(c *gin.Context) {
 //	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
 //	@Param			examId			path	string	true	"Exam ID (UUID)"
 //	@Success		204			{string}	string	"No Content"
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		404			{object}	ErrorResponse
-//	@Failure		409			{object}	ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		409			{object}	dto.ErrorResponse
 //	@Router			/exams/{examId}/publish [post]
 func (h *ExamHandler) PublishExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
@@ -418,11 +440,11 @@ func (h *ExamHandler) PublishExam(c *gin.Context) {
 //	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
 //	@Param			examId			path	string	true	"Exam ID (UUID)"
 //	@Success		204			{string}	string	"No Content"
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		404			{object}	ErrorResponse
-//	@Failure		409			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		409			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/exams/{examId}/close [post]
 func (h *ExamHandler) CloseExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
@@ -462,10 +484,10 @@ func (h *ExamHandler) CloseExam(c *gin.Context) {
 //	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
 //	@Param			examId			path	string	true	"Exam ID (UUID)"
 //	@Success		204			{string}	string	"No Content"
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		404			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/exams/{examId} [delete]
 func (h *ExamHandler) DeleteExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
@@ -502,11 +524,11 @@ func (h *ExamHandler) DeleteExam(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-ID	header	string					true	"Enterprise ID (UUID)"
 //	@Param			examId			path	string					true	"Exam ID (UUID)"
-//	@Param			body			body	AddExamQuestionRequest	true	"Exam question payload"
+//	@Param			body			body	dto.AddExamQuestionRequest	true	"Exam question payload"
 //	@Success		201			{object}	domain.ExamQuestion
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/exams/{examId}/questions [post]
 func (h *ExamHandler) AddQuestionToExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
@@ -522,7 +544,7 @@ func (h *ExamHandler) AddQuestionToExam(c *gin.Context) {
 		return
 	}
 
-	var req AddExamQuestionRequest
+	var req dto.AddExamQuestionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "invalid request body")
 		return
@@ -552,9 +574,9 @@ func (h *ExamHandler) AddQuestionToExam(c *gin.Context) {
 //	@Param			examId			path	string	true	"Exam ID (UUID)"
 //	@Param			questionId		path	string	true	"Question ID (UUID)"
 //	@Success		204			{string}	string	"No Content"
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/exams/{examId}/questions/{questionId} [delete]
 func (h *ExamHandler) RemoveQuestionFromExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
@@ -594,11 +616,11 @@ func (h *ExamHandler) RemoveQuestionFromExam(c *gin.Context) {
 //	@Param			X-Enterprise-ID	header	string					true	"Enterprise ID (UUID)"
 //	@Param			examId			path	string					true	"Exam ID (UUID)"
 //	@Param			questionId		path	string					true	"Question ID (UUID)"
-//	@Param			body			body	UpdateExamQuestionRequest	true	"Update mapping payload"
+//	@Param			body			body	dto.UpdateExamQuestionRequest	true	"Update mapping payload"
 //	@Success		204			{string}	string					"No Content"
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/exams/{examId}/questions/{questionId} [patch]
 func (h *ExamHandler) UpdateExamQuestion(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
@@ -621,7 +643,7 @@ func (h *ExamHandler) UpdateExamQuestion(c *gin.Context) {
 		return
 	}
 
-	var req UpdateExamQuestionRequest
+	var req dto.UpdateExamQuestionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "invalid request body")
 		return
@@ -644,11 +666,11 @@ func (h *ExamHandler) UpdateExamQuestion(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-ID	header	string			true	"Enterprise ID (UUID)"
 //	@Param			examId			path	string			true	"Exam ID (UUID)"
-//	@Param			body			body	ExamRuleRequest	true	"Rule payload"
+//	@Param			body			body	dto.ExamRuleRequest	true	"Rule payload"
 //	@Success		201			{object}	domain.ExamRandomizationRule
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/exams/{examId}/rules [post]
 func (h *ExamHandler) AddRandomizationRule(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
@@ -664,7 +686,7 @@ func (h *ExamHandler) AddRandomizationRule(c *gin.Context) {
 		return
 	}
 
-	var req ExamRuleRequest
+	var req dto.ExamRuleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "invalid request body")
 		return
@@ -688,11 +710,11 @@ func (h *ExamHandler) AddRandomizationRule(c *gin.Context) {
 //	@Param			X-Enterprise-ID	header	string			true	"Enterprise ID (UUID)"
 //	@Param			examId			path	string			true	"Exam ID (UUID)"
 //	@Param			ruleId			path	string			true	"Rule ID (UUID)"
-//	@Param			body			body	ExamRuleRequest	true	"Rule payload"
+//	@Param			body			body	dto.ExamRuleRequest	true	"Rule payload"
 //	@Success		204			{string}	string			"No Content"
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/exams/{examId}/rules/{ruleId} [patch]
 func (h *ExamHandler) UpdateRandomizationRule(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
@@ -715,7 +737,7 @@ func (h *ExamHandler) UpdateRandomizationRule(c *gin.Context) {
 		return
 	}
 
-	var req ExamRuleRequest
+	var req dto.ExamRuleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "invalid request body")
 		return
@@ -738,9 +760,9 @@ func (h *ExamHandler) UpdateRandomizationRule(c *gin.Context) {
 //	@Param			examId			path	string	true	"Exam ID (UUID)"
 //	@Param			ruleId			path	string	true	"Rule ID (UUID)"
 //	@Success		204			{string}	string	"No Content"
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/exams/{examId}/rules/{ruleId} [delete]
 func (h *ExamHandler) DeleteRandomizationRule(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
