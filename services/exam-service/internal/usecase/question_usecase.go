@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 type questionUsecase struct {
@@ -39,8 +40,8 @@ func (uc *questionUsecase) CreateQuestion(ctx context.Context, q *domain.Questio
 	return q, nil
 }
 
-func (uc *questionUsecase) GetQuestions(ctx context.Context, enterpriseID uuid.UUID) ([]*domain.Question, error) {
-	return uc.repo.ListByEnterprise(ctx, enterpriseID)
+func (uc *questionUsecase) GetQuestions(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*domain.Question], error) {
+	return uc.repo.ListByEnterprise(ctx, enterpriseID, params)
 }
 
 func (uc *questionUsecase) GetQuestion(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*domain.Question, error) {

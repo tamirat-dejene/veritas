@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 type QuestionType string
@@ -55,7 +56,7 @@ type Question struct {
 type QuestionRepository interface {
 	Create(ctx context.Context, q *Question) error
 	GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*Question, error)
-	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]*Question, error)
+	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*Question], error)
 	Update(ctx context.Context, q *Question) error
 	Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	WithTx(tx pgx.Tx) QuestionRepository
@@ -63,7 +64,7 @@ type QuestionRepository interface {
 
 type QuestionUsecase interface {
 	CreateQuestion(ctx context.Context, q *Question, userID uuid.UUID) (*Question, error)
-	GetQuestions(ctx context.Context, enterpriseID uuid.UUID) ([]*Question, error)
+	GetQuestions(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*Question], error)
 	GetQuestion(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*Question, error)
 	UpdateQuestion(ctx context.Context, q *Question, userID uuid.UUID) error
 	DeleteQuestion(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error

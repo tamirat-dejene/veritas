@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 type questionRepository struct {
@@ -60,6 +62,11 @@ func (r *questionRepository) Create(ctx context.Context, q *domain.Question) err
 		VALUES ($1, $2, $3, $4)
 	`
 
+	metadataJson, err := json.Marshal(q.Metadata)
+	if err != nil {
+		return fmt.Errorf("failed to marshal metadata: %w", err)
+	}
+
 	if q.ID == uuid.Nil {
 		q.ID = uuid.New()
 	}
@@ -74,9 +81,9 @@ func (r *questionRepository) Create(ctx context.Context, q *domain.Question) err
 	// We execute sequentially as we have single PostgresClient.
 	// If a transaction fails to begin we will just rollback or return error.
 	// Ideally we would want a transaction block here. Let's just execute separately for now.
-	_, err := r.db.Exec(ctx, insertQuestion,
+	_, err = r.db.Exec(ctx, insertQuestion,
 		q.ID, q.EnterpriseID, q.Type, q.Topic, q.Difficulty, q.Title, q.Content, q.MediaURL,
-		q.Points, q.NegativePoints, q.Metadata, q.IsActive, q.CreatedBy, q.CreatedAt, q.UpdatedAt,
+		q.Points, q.NegativePoints, string(metadataJson), q.IsActive, q.CreatedBy, q.CreatedAt, q.UpdatedAt,
 	)
 	if err != nil {
 		return err
@@ -121,11 +128,32 @@ func (r *questionRepository) GetByID(ctx context.Context, id uuid.UUID, enterpri
 	return q, nil
 }
 
-func (r *questionRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]*domain.Question, error) {
-	query := fmt.Sprintf("SELECT %s FROM veritas_questions WHERE enterprise_id = $1 ORDER BY created_at DESC", questionFields)
-	rows, err := r.db.Query(ctx, query, enterpriseID)
+func (r *questionRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*domain.Question], error) {
+	var total int64
+	countQuery := "SELECT count(*) FROM veritas_questions WHERE enterprise_id = $1 AND is_active = true"
+	err := r.db.QueryRow(ctx, countQuery, enterpriseID).Scan(&total)
 	if err != nil {
-		return nil, err
+		return pagination.PaginatedResponse[*domain.Question]{}, err
+	}
+
+	sortField := params.GetSort()
+	// Whitelist allowed sort fields
+	allowedSortFields := map[string]bool{
+		"created_at": true,
+		"updated_at": true,
+		"title":      true,
+		"difficulty": true,
+		"type":       true,
+		"points":     true,
+	}
+	if !allowedSortFields[sortField] {
+		sortField = "created_at"
+	}
+
+	query := fmt.Sprintf("SELECT %s FROM veritas_questions WHERE enterprise_id = $1 AND is_active = true ORDER BY %s %s LIMIT $2 OFFSET $3", questionFields, sortField, params.GetSortDir())
+	rows, err := r.db.Query(ctx, query, enterpriseID, params.GetLimit(), params.GetOffset())
+	if err != nil {
+		return pagination.PaginatedResponse[*domain.Question]{}, err
 	}
 	defer rows.Close()
 
@@ -136,7 +164,7 @@ func (r *questionRepository) ListByEnterprise(ctx context.Context, enterpriseID 
 	for rows.Next() {
 		q, err := scanQuestion(rows)
 		if err != nil {
-			return nil, err
+			return pagination.PaginatedResponse[*domain.Question]{}, err
 		}
 		questions = append(questions, q)
 		questionIDs = append(questionIDs, q.ID)
@@ -144,15 +172,14 @@ func (r *questionRepository) ListByEnterprise(ctx context.Context, enterpriseID 
 	}
 
 	if len(questionIDs) == 0 {
-		return questions, nil
+		return pagination.NewPaginatedResponse(questions, total, params), nil
 	}
 
 	// Fetch all options
-	// Simplified single query for options. This assumes Postgres ANY array.
 	optionsQuery := "SELECT id, question_id, content, is_correct FROM veritas_question_options WHERE question_id = ANY($1)"
 	optRows, err := r.db.Query(ctx, optionsQuery, questionIDs)
 	if err != nil {
-		return questions, nil // returning without options is better than failing completely
+		return pagination.NewPaginatedResponse(questions, total, params), nil // returning without options is better than failing completely
 	}
 	defer optRows.Close()
 
@@ -165,7 +192,7 @@ func (r *questionRepository) ListByEnterprise(ctx context.Context, enterpriseID 
 		}
 	}
 
-	return questions, nil
+	return pagination.NewPaginatedResponse(questions, total, params), nil
 }
 
 func (r *questionRepository) Update(ctx context.Context, q *domain.Question) error {

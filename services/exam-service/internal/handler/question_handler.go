@@ -6,6 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/services/exam-service/internal/dto"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 type QuestionHandler struct {
@@ -25,11 +27,11 @@ func NewQuestionHandler(uc domain.QuestionUsecase) *QuestionHandler {
 //	@Produce		json
 //	@Param			X-Enterprise-ID	header	string				true	"Enterprise ID (UUID)"
 //	@Param			X-User-ID	header	string				true	"Actor user ID (UUID)"
-//	@Param			body			body	domain.Question	true	"Question payload"
+//	@Param			body			body	dto.CreateQuestionRequest	true	"Question payload"
 //	@Success		201			{object}	domain.Question
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/questions [post]
 func (h *QuestionHandler) CreateQuestion(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
@@ -44,13 +46,34 @@ func (h *QuestionHandler) CreateQuestion(c *gin.Context) {
 		return
 	}
 
-	var q domain.Question
-	if err := c.ShouldBindJSON(&q); err != nil {
+	var req dto.CreateQuestionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	q.EnterpriseID = enterpriseID
+	options := make([]domain.QuestionOption, len(req.Options))
+	for i, o := range req.Options {
+		options[i] = domain.QuestionOption{
+			Content:   o.Content,
+			IsCorrect: o.IsCorrect,
+		}
+	}
+
+	q := domain.Question{
+		EnterpriseID:   enterpriseID,
+		Type:           req.Type,
+		Topic:          req.Topic,
+		Difficulty:     req.Difficulty,
+		Title:          req.Title,
+		Content:        req.Content,
+		MediaURL:       req.MediaURL,
+		Points:         req.Points,
+		NegativePoints: req.NegativePoints,
+		Metadata:       req.Metadata,
+		IsActive:       req.IsActive,
+		Options:        options,
+	}
 
 	created, err := h.usecase.CreateQuestion(c.Request.Context(), &q, userID)
 	if err != nil {
@@ -64,13 +87,17 @@ func (h *QuestionHandler) CreateQuestion(c *gin.Context) {
 // ListQuestions lists enterprise questions.
 //
 //	@Summary		List questions
-//	@Description	List all questions for the caller enterprise.
+//	@Description	List questions with pagination, sorting and filtering support for the caller enterprise.
 //	@Tags			question
 //	@Produce		json
 //	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
-//	@Success		200			{array}	domain.Question
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Param			page			query	int		false	"Page number (default: 1)"
+//	@Param			limit			query	int		false	"Number of items per page (default: 10, max: 1000)"
+//	@Param			sort			query	string	false	"Sort field (allowed: created_at, updated_at, title, difficulty, type, points) (default: created_at)"
+//	@Param			sort_dir		query	string	false	"Sort direction (asc or desc) (default: desc)"
+//	@Success		200			{object}	pagination.PaginatedResponse[domain.Question]
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/questions [get]
 func (h *QuestionHandler) ListQuestions(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
@@ -79,15 +106,12 @@ func (h *QuestionHandler) ListQuestions(c *gin.Context) {
 		return
 	}
 
-	questions, err := h.usecase.GetQuestions(c.Request.Context(), enterpriseID)
+	params := pagination.ParseGin(c)
+
+	questions, err := h.usecase.GetQuestions(c.Request.Context(), enterpriseID, params)
 	if err != nil {
 		writeError(c, http.StatusInternalServerError, "failed to fetch questions")
 		return
-	}
-
-	// Make sure we never return nil JSON arrays if questions is empty
-	if questions == nil {
-		questions = make([]*domain.Question, 0)
 	}
 
 	writeJSON(c, http.StatusOK, questions)
@@ -102,10 +126,10 @@ func (h *QuestionHandler) ListQuestions(c *gin.Context) {
 //	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
 //	@Param			questionId		path	string	true	"Question ID (UUID)"
 //	@Success		200			{object}	domain.Question
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		404			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/questions/{questionId} [get]
 func (h *QuestionHandler) GetQuestion(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
@@ -143,12 +167,12 @@ func (h *QuestionHandler) GetQuestion(c *gin.Context) {
 //	@Param			X-Enterprise-ID	header	string				true	"Enterprise ID (UUID)"
 //	@Param			X-User-ID	header	string				true	"Actor user ID (UUID)"
 //	@Param			questionId		path	string				true	"Question ID (UUID)"
-//	@Param			body			body	domain.Question	true	"Question payload"
+//	@Param			body			body	dto.UpdateQuestionRequest	true	"Question payload"
 //	@Success		204			{string}	string				"No Content"
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		404			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/questions/{questionId} [patch]
 func (h *QuestionHandler) UpdateQuestion(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
@@ -170,14 +194,35 @@ func (h *QuestionHandler) UpdateQuestion(c *gin.Context) {
 		return
 	}
 
-	var q domain.Question
-	if err := c.ShouldBindJSON(&q); err != nil {
+	var req dto.UpdateQuestionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	q.ID = questionID
-	q.EnterpriseID = enterpriseID
+	options := make([]domain.QuestionOption, len(req.Options))
+	for i, o := range req.Options {
+		options[i] = domain.QuestionOption{
+			Content:   o.Content,
+			IsCorrect: o.IsCorrect,
+		}
+	}
+
+	q := domain.Question{
+		ID:             questionID,
+		EnterpriseID:   enterpriseID,
+		Type:           req.Type,
+		Topic:          req.Topic,
+		Difficulty:     req.Difficulty,
+		Title:          req.Title,
+		Content:        req.Content,
+		MediaURL:       req.MediaURL,
+		Points:         req.Points,
+		NegativePoints: req.NegativePoints,
+		Metadata:       req.Metadata,
+		IsActive:       req.IsActive,
+		Options:        options,
+	}
 
 	if err := h.usecase.UpdateQuestion(c.Request.Context(), &q, userID); err != nil {
 		if err == domain.ErrQuestionNotFound {
@@ -199,10 +244,10 @@ func (h *QuestionHandler) UpdateQuestion(c *gin.Context) {
 //	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
 //	@Param			questionId		path	string	true	"Question ID (UUID)"
 //	@Success		204			{string}	string	"No Content"
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		404			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/questions/{questionId} [delete]
 func (h *QuestionHandler) DeleteQuestion(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
