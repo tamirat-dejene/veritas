@@ -181,6 +181,68 @@ definitions:
     required:
     - title
     type: object
+  CreateExamRequest:
+    properties:
+      description:
+        type: string
+      durationMinutes:
+        type: integer
+      invitationMethod:
+        type: string
+      maxParticipants:
+        type: integer
+      negativeMarking:
+        type: boolean
+      passingScorePercent:
+        type: number
+      settings:
+        additionalProperties: true
+        type: object
+      templateSourceId:
+        type: string
+      title:
+        type: string
+    required:
+    - durationMinutes
+    - invitationMethod
+    - passingScorePercent
+    - title
+    type: object
+  CreateQuestionRequest:
+    properties:
+      content:
+        type: string
+      difficulty:
+        $ref: '#/definitions/DifficultyLevel'
+      isActive:
+        type: boolean
+      mediaUrl:
+        type: string
+      metadata:
+        additionalProperties: true
+        type: object
+      negativePoints:
+        type: number
+      options:
+        items:
+          $ref: '#/definitions/QuestionOptionDTO'
+        type: array
+      points:
+        type: integer
+      title:
+        type: string
+      topic:
+        type: string
+      type:
+        $ref: '#/definitions/QuestionType'
+    required:
+    - content
+    - difficulty
+    - points
+    - title
+    - topic
+    - type
+    type: object
   ErrorResponse:
     properties:
       error:
@@ -196,6 +258,15 @@ definitions:
         type: string
     required:
     - questionCount
+    type: object
+  QuestionOptionDTO:
+    properties:
+      content:
+        type: string
+      isCorrect:
+        type: boolean
+    required:
+    - content
     type: object
   ScheduleExamRequest:
     properties:
@@ -215,6 +286,78 @@ definitions:
         type: integer
       pointsOverride:
         type: integer
+    type: object
+  UpdateExamRequest:
+    properties:
+      description:
+        type: string
+      durationMinutes:
+        type: integer
+      invitationMethod:
+        type: string
+      maxParticipants:
+        type: integer
+      negativeMarking:
+        type: boolean
+      passingScorePercent:
+        type: number
+      settings:
+        additionalProperties: true
+        type: object
+      title:
+        type: string
+    type: object
+  UpdateQuestionRequest:
+    properties:
+      content:
+        type: string
+      difficulty:
+        $ref: '#/definitions/DifficultyLevel'
+      isActive:
+        type: boolean
+      mediaUrl:
+        type: string
+      metadata:
+        additionalProperties: true
+        type: object
+      negativePoints:
+        type: number
+      options:
+        items:
+          $ref: '#/definitions/QuestionOptionDTO'
+        type: array
+      points:
+        type: integer
+      title:
+        type: string
+      topic:
+        type: string
+      type:
+        $ref: '#/definitions/QuestionType'
+    type: object
+  pagination.Metadata:
+    properties:
+      current_page:
+        type: integer
+      has_next:
+        type: boolean
+      has_previous:
+        type: boolean
+      page_size:
+        type: integer
+      total_elements:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  pagination.PaginatedResponse-Question:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/Question'
+        type: array
+      metadata:
+        $ref: '#/definitions/pagination.Metadata'
     type: object
 info:
   contact:
@@ -273,7 +416,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/Exam'
+          $ref: '#/definitions/CreateExamRequest'
       produces:
       - application/json
       responses:
@@ -398,7 +541,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/Exam'
+          $ref: '#/definitions/UpdateExamRequest'
       responses:
         "204":
           description: No Content
@@ -933,12 +1076,30 @@ paths:
       - system
   /questions:
     get:
-      description: List all questions for the caller enterprise.
+      description: List questions with pagination, sorting and filtering support for
+        the caller enterprise.
       parameters:
       - description: Enterprise ID (UUID)
         in: header
         name: X-Enterprise-ID
         required: true
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 10, max: 1000)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Sort field (allowed: created_at, updated_at, title, difficulty,
+          type, points) (default: created_at)'
+        in: query
+        name: sort
+        type: string
+      - description: 'Sort direction (asc or desc) (default: desc)'
+        in: query
+        name: sort_dir
         type: string
       produces:
       - application/json
@@ -946,9 +1107,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/Question'
-            type: array
+            $ref: '#/definitions/pagination.PaginatedResponse-Question'
         "401":
           description: Unauthorized
           schema:
@@ -980,7 +1139,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/Question'
+          $ref: '#/definitions/CreateQuestionRequest'
       produces:
       - application/json
       responses:
@@ -1105,7 +1264,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/Question'
+          $ref: '#/definitions/UpdateQuestionRequest'
       responses:
         "204":
           description: No Content

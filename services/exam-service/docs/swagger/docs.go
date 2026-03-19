@@ -93,7 +93,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/Exam"
+                            "$ref": "#/definitions/CreateExamRequest"
                         }
                     }
                 ],
@@ -276,7 +276,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/Exam"
+                            "$ref": "#/definitions/UpdateExamRequest"
                         }
                     }
                 ],
@@ -1072,7 +1072,7 @@ const docTemplate = `{
         },
         "/questions": {
             "get": {
-                "description": "List all questions for the caller enterprise.",
+                "description": "List questions with pagination, sorting and filtering support for the caller enterprise.",
                 "produces": [
                     "application/json"
                 ],
@@ -1087,16 +1087,37 @@ const docTemplate = `{
                         "name": "X-Enterprise-ID",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 10, max: 1000)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort field (allowed: created_at, updated_at, title, difficulty, type, points) (default: created_at)",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort direction (asc or desc) (default: desc)",
+                        "name": "sort_dir",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/Question"
-                            }
+                            "$ref": "#/definitions/pagination.PaginatedResponse-Question"
                         }
                     },
                     "401": {
@@ -1146,7 +1167,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/Question"
+                            "$ref": "#/definitions/CreateQuestionRequest"
                         }
                     }
                 ],
@@ -1329,7 +1350,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/Question"
+                            "$ref": "#/definitions/UpdateQuestionRequest"
                         }
                     }
                 ],
@@ -1635,6 +1656,95 @@ const docTemplate = `{
                 }
             }
         },
+        "CreateExamRequest": {
+            "type": "object",
+            "required": [
+                "durationMinutes",
+                "invitationMethod",
+                "passingScorePercent",
+                "title"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "durationMinutes": {
+                    "type": "integer"
+                },
+                "invitationMethod": {
+                    "type": "string"
+                },
+                "maxParticipants": {
+                    "type": "integer"
+                },
+                "negativeMarking": {
+                    "type": "boolean"
+                },
+                "passingScorePercent": {
+                    "type": "number"
+                },
+                "settings": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "templateSourceId": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "CreateQuestionRequest": {
+            "type": "object",
+            "required": [
+                "content",
+                "difficulty",
+                "points",
+                "title",
+                "topic",
+                "type"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "difficulty": {
+                    "$ref": "#/definitions/DifficultyLevel"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "mediaUrl": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "negativePoints": {
+                    "type": "number"
+                },
+                "options": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/QuestionOptionDTO"
+                    }
+                },
+                "points": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "topic": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/QuestionType"
+                }
+            }
+        },
         "ErrorResponse": {
             "type": "object",
             "properties": {
@@ -1657,6 +1767,20 @@ const docTemplate = `{
                 },
                 "topic": {
                     "type": "string"
+                }
+            }
+        },
+        "QuestionOptionDTO": {
+            "type": "object",
+            "required": [
+                "content"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "isCorrect": {
+                    "type": "boolean"
                 }
             }
         },
@@ -1685,6 +1809,115 @@ const docTemplate = `{
                 },
                 "pointsOverride": {
                     "type": "integer"
+                }
+            }
+        },
+        "UpdateExamRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "durationMinutes": {
+                    "type": "integer"
+                },
+                "invitationMethod": {
+                    "type": "string"
+                },
+                "maxParticipants": {
+                    "type": "integer"
+                },
+                "negativeMarking": {
+                    "type": "boolean"
+                },
+                "passingScorePercent": {
+                    "type": "number"
+                },
+                "settings": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "UpdateQuestionRequest": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "difficulty": {
+                    "$ref": "#/definitions/DifficultyLevel"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "mediaUrl": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "negativePoints": {
+                    "type": "number"
+                },
+                "options": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/QuestionOptionDTO"
+                    }
+                },
+                "points": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "topic": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/QuestionType"
+                }
+            }
+        },
+        "pagination.Metadata": {
+            "type": "object",
+            "properties": {
+                "current_page": {
+                    "type": "integer"
+                },
+                "has_next": {
+                    "type": "boolean"
+                },
+                "has_previous": {
+                    "type": "boolean"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total_elements": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "pagination.PaginatedResponse-Question": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Question"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/pagination.Metadata"
                 }
             }
         }
