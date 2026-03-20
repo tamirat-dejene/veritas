@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS veritas_question_options (
         ON DELETE CASCADE
 );
 
--- 4. Exam Status Enum
+-- 4. Exam Status Enum and Invitation Method Enum
 DO $$ BEGIN
     CREATE TYPE exam_status AS ENUM (
         'Draft',
@@ -79,6 +79,11 @@ DO $$ BEGIN
         'Active',
         'Closed',
         'Archived'
+    );
+    CREATE TYPE invitation_method AS ENUM (
+        'Email',
+        'Link',
+        'Token'
     );
 EXCEPTION
     WHEN duplicate_object THEN null;
@@ -99,7 +104,7 @@ CREATE TABLE IF NOT EXISTS veritas_exams (
 
     max_participants        INT NULL,
 
-    invitation_method       VARCHAR(50) NOT NULL, -- Email, Link, Token
+    invitation_method       invitation_method NOT NULL, -- Email, Link, Token
 
     status                  exam_status NOT NULL DEFAULT 'Draft',
 
@@ -128,6 +133,9 @@ CREATE TABLE IF NOT EXISTS veritas_exams (
         FOREIGN KEY (template_source_id)
         REFERENCES veritas_exams(id)
         ON DELETE SET NULL
+    
+    CONSTRAINT chk_passing_score
+        CHECK (passing_score_percent >= 0 AND passing_score_percent <= 100)
 );
 
 -- 6. Exam Question Mapping

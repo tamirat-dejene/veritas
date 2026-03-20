@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 type examRepository struct {
@@ -67,6 +69,10 @@ func (r *examRepository) Create(ctx context.Context, e *domain.Exam) error {
 			scheduled_start, scheduled_end, settings, created_by, created_at, updated_at
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 	`
+	settingsJson, err := json.Marshal(e.Settings)
+	if err != nil {
+		return fmt.Errorf("failed to marshal exam settings: %w", err)
+	}
 	if e.ID == uuid.Nil {
 		e.ID = uuid.New()
 	}
@@ -78,10 +84,10 @@ func (r *examRepository) Create(ctx context.Context, e *domain.Exam) error {
 		e.UpdatedAt = now
 	}
 
-	_, err := r.db.Exec(ctx, insertExam,
+	_, err = r.db.Exec(ctx, insertExam,
 		e.ID, e.EnterpriseID, e.Title, e.Description, e.DurationMinutes, e.PassingScorePercent,
 		e.NegativeMarking, e.MaxParticipants, e.InvitationMethod, e.Status, e.TemplateSourceID,
-		e.ScheduledStart, e.ScheduledEnd, e.Settings, e.CreatedBy, e.CreatedAt, e.UpdatedAt,
+		e.ScheduledStart, e.ScheduledEnd, settingsJson, e.CreatedBy, e.CreatedAt, e.UpdatedAt,
 	)
 	if err != nil {
 		return err
@@ -158,19 +164,44 @@ func (r *examRepository) Update(ctx context.Context, e *domain.Exam) error {
 		    scheduled_start = $11, scheduled_end = $12, settings = $13, updated_at = NOW()
 		WHERE id = $1 AND enterprise_id = $2
 	`
-	_, err := r.db.Exec(ctx, updateExam,
+	settingsJson, err := json.Marshal(e.Settings)
+	if err != nil {
+		return fmt.Errorf("failed to marshal exam settings: %w", err)
+	}
+
+	_, err = r.db.Exec(ctx, updateExam,
 		e.ID, e.EnterpriseID, e.Title, e.Description, e.DurationMinutes, e.PassingScorePercent,
 		e.NegativeMarking, e.MaxParticipants, e.InvitationMethod, e.Status,
-		e.ScheduledStart, e.ScheduledEnd, e.Settings,
+		e.ScheduledStart, e.ScheduledEnd, settingsJson,
 	)
 	return err
 }
 
-func (r *examRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]*domain.Exam, error) {
-	query := fmt.Sprintf("SELECT %s FROM veritas_exams WHERE enterprise_id = $1 ORDER BY created_at DESC", examFields)
-	rows, err := r.db.Query(ctx, query, enterpriseID)
+func (r *examRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*domain.Exam], error) {
+	var total int64
+	countQuery := "SELECT count(*) FROM veritas_exams WHERE enterprise_id = $1 AND status != 'Archived'"
+	err := r.db.QueryRow(ctx, countQuery, enterpriseID).Scan(&total)
 	if err != nil {
-		return nil, err
+		return pagination.PaginatedResponse[*domain.Exam]{}, err
+	}
+
+	sortField := params.GetSort()
+	allowedSortFields := map[string]bool{
+		"created_at":            true,
+		"updated_at":            true,
+		"title":                 true,
+		"duration_minutes":      true,
+		"passing_score_percent": true,
+		"status":                true,
+	}
+	if !allowedSortFields[sortField] {
+		sortField = "created_at"
+	}
+
+	query := fmt.Sprintf("SELECT %s FROM veritas_exams WHERE enterprise_id = $1 AND status != 'Archived' ORDER BY %s %s LIMIT $2 OFFSET $3", examFields, sortField, params.GetSortDir())
+	rows, err := r.db.Query(ctx, query, enterpriseID, params.GetLimit(), params.GetOffset())
+	if err != nil {
+		return pagination.PaginatedResponse[*domain.Exam]{}, err
 	}
 	defer rows.Close()
 
@@ -178,14 +209,14 @@ func (r *examRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid
 	for rows.Next() {
 		e, err := scanExam(rows)
 		if err != nil {
-			return nil, err
+			return pagination.PaginatedResponse[*domain.Exam]{}, err
 		}
 		// Notice: To keep this lightweight, we aren't joining questions/rules on a bulk list request.
 		// If the client needs deep details, they should call GetByID.
 		exams = append(exams, e)
 	}
 
-	return exams, nil
+	return pagination.NewPaginatedResponse(exams, total, params), nil
 }
 
 func (r *examRepository) Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
@@ -205,18 +236,54 @@ func (r *examRepository) Delete(ctx context.Context, id uuid.UUID, enterpriseID 
 	return nil
 }
 
-func (r *examRepository) AddQuestion(ctx context.Context, examID uuid.UUID, eq *domain.ExamQuestion) error {
-	if eq.ID == uuid.Nil {
-		eq.ID = uuid.New()
-	}
-	eq.ExamID = examID
-
+func (r *examRepository) AddQuestions(ctx context.Context, examID uuid.UUID, eqs []*domain.ExamQuestion) error {
 	const insertEq = `
 		INSERT INTO veritas_exam_questions (id, exam_id, question_id, points_override, order_index)
 		VALUES ($1, $2, $3, $4, $5)
 	`
-	_, err := r.db.Exec(ctx, insertEq, eq.ID, eq.ExamID, eq.QuestionID, eq.PointsOverride, eq.OrderIndex)
-	return err
+	for _, eq := range eqs {
+		if eq.ID == uuid.Nil {
+			eq.ID = uuid.New()
+		}
+		eq.ExamID = examID
+		_, err := r.db.Exec(ctx, insertEq, eq.ID, eq.ExamID, eq.QuestionID, eq.PointsOverride, eq.OrderIndex)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *examRepository) GetExamQuestions(ctx context.Context, examID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*domain.ExamQuestion], error) {
+	var total int64
+	err := r.db.QueryRow(ctx, "SELECT count(*) FROM veritas_exam_questions WHERE exam_id = $1", examID).Scan(&total)
+	if err != nil {
+		return pagination.PaginatedResponse[*domain.ExamQuestion]{}, err
+	}
+
+	sortField := params.GetSort()
+	// Map allowed columns for sorting safely
+	if sortField != "points_override" {
+		sortField = "order_index"
+	}
+
+	query := fmt.Sprintf("SELECT id, exam_id, question_id, points_override, order_index FROM veritas_exam_questions WHERE exam_id = $1 ORDER BY %s %s NULLS LAST LIMIT $2 OFFSET $3", sortField, params.GetSortDir())
+	rows, err := r.db.Query(ctx, query, examID, params.GetLimit(), params.GetOffset())
+	if err != nil {
+		return pagination.PaginatedResponse[*domain.ExamQuestion]{}, err
+	}
+	defer rows.Close()
+
+	var eqs []*domain.ExamQuestion
+	for rows.Next() {
+		var eq domain.ExamQuestion
+		if err := rows.Scan(&eq.ID, &eq.ExamID, &eq.QuestionID, &eq.PointsOverride, &eq.OrderIndex); err != nil {
+			return pagination.PaginatedResponse[*domain.ExamQuestion]{}, err
+		}
+		eqs = append(eqs, &eq)
+	}
+
+	return pagination.NewPaginatedResponse(eqs, total, params), nil
 }
 
 func (r *examRepository) RemoveQuestion(ctx context.Context, examID uuid.UUID, questionID uuid.UUID) error {

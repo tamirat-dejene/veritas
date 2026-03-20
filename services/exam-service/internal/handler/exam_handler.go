@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/dto"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 type ExamHandler struct {
@@ -128,6 +130,7 @@ func (h *ExamHandler) UpdateExam(c *gin.Context) {
 		MaxParticipants:     req.MaxParticipants,
 		InvitationMethod:    req.InvitationMethod,
 		Settings:            req.Settings,
+		Status:              *req.Status,
 	}
 
 	if err := h.usecase.UpdateExam(c.Request.Context(), &e, userID); err != nil {
@@ -275,11 +278,15 @@ func (h *ExamHandler) CloneExam(c *gin.Context) {
 // ListExams lists enterprise exams.
 //
 //	@Summary		List exams
-//	@Description	List all exams for the caller enterprise.
+//	@Description	List exams with pagination, sorting and filtering support for the caller enterprise.
 //	@Tags			exam
 //	@Produce		json
 //	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
-//	@Success		200			{array}	domain.Exam
+//	@Param			page			query	int		false	"Page number (default: 1)"
+//	@Param			limit			query	int		false	"Number of items per page (default: 10, max: 1000)"
+//	@Param			sort			query	string	false	"Sort field (allowed: created_at, updated_at, title, duration_minutes, passing_score_percent, status) (default: created_at)"
+//	@Param			sort_dir		query	string	false	"Sort direction (asc or desc) (default: desc)"
+//	@Success		200			{object}	pagination.PaginatedResponse[domain.Exam]
 //	@Failure		401			{object}	dto.ErrorResponse
 //	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/exams [get]
@@ -290,14 +297,12 @@ func (h *ExamHandler) ListExams(c *gin.Context) {
 		return
 	}
 
-	exams, err := h.usecase.GetExams(c.Request.Context(), enterpriseID)
+	params := pagination.ParseGin(c)
+
+	exams, err := h.usecase.GetExams(c.Request.Context(), enterpriseID, params)
 	if err != nil {
 		writeError(c, http.StatusInternalServerError, "failed to fetch exams")
 		return
-	}
-
-	if exams == nil {
-		exams = make([]*domain.Exam, 0)
 	}
 
 	writeJSON(c, http.StatusOK, exams)
@@ -347,12 +352,16 @@ func (h *ExamHandler) GetExam(c *gin.Context) {
 // GetExamQuestions lists mapped questions for an exam.
 //
 //	@Summary		Get exam questions
-//	@Description	Get question mappings for one exam.
+//	@Description	Get question mappings for one exam with pagination.
 //	@Tags			exam
 //	@Produce		json
 //	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
 //	@Param			examId			path	string	true	"Exam ID (UUID)"
-//	@Success		200			{array}	domain.ExamQuestion
+//	@Param			page			query	int		false	"Page number (default: 1)"
+//	@Param			limit			query	int		false	"Number of items per page (default: 10, max: 1000)"
+//	@Param			sort			query	string	false	"Sort field (allowed: order_index, points_override) (default: order_index)"
+//	@Param			sort_dir		query	string	false	"Sort direction (asc or desc) (default: desc)"
+//	@Success		200			{object}	pagination.PaginatedResponse[domain.ExamQuestion]
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		401			{object}	dto.ErrorResponse
 //	@Failure		404			{object}	dto.ErrorResponse
@@ -372,7 +381,9 @@ func (h *ExamHandler) GetExamQuestions(c *gin.Context) {
 		return
 	}
 
-	questions, err := h.usecase.GetExamQuestions(c.Request.Context(), examID, enterpriseID)
+	params := pagination.ParseGin(c)
+
+	questions, err := h.usecase.GetExamQuestions(c.Request.Context(), examID, enterpriseID, params)
 	if err != nil {
 		if err == domain.ErrExamNotFound {
 			writeError(c, http.StatusNotFound, "exam not found")
@@ -380,10 +391,6 @@ func (h *ExamHandler) GetExamQuestions(c *gin.Context) {
 		}
 		writeError(c, http.StatusInternalServerError, "failed to fetch exam questions")
 		return
-	}
-
-	if questions == nil {
-		questions = make([]*domain.ExamQuestion, 0)
 	}
 
 	writeJSON(c, http.StatusOK, questions)
@@ -515,22 +522,22 @@ func (h *ExamHandler) DeleteExam(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// AddQuestionToExam maps a question into an exam.
+// AddQuestionsToExam maps multiple questions into an exam.
 //
-//	@Summary		Add question to exam
-//	@Description	Attach question to exam with optional override points and order index.
+//	@Summary		Add questions to exam
+//	@Description	Attach multiple questions to an exam with optional override points and order indices.
 //	@Tags			exam
 //	@Accept			json
 //	@Produce		json
 //	@Param			X-Enterprise-ID	header	string					true	"Enterprise ID (UUID)"
 //	@Param			examId			path	string					true	"Exam ID (UUID)"
-//	@Param			body			body	dto.AddExamQuestionRequest	true	"Exam question payload"
-//	@Success		201			{object}	domain.ExamQuestion
+//	@Param			body			body	dto.AddExamQuestionsBulkRequest	true	"Exam questions payload"
+//	@Success		201			{array}	    domain.ExamQuestion
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		401			{object}	dto.ErrorResponse
 //	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/exams/{examId}/questions [post]
-func (h *ExamHandler) AddQuestionToExam(c *gin.Context) {
+func (h *ExamHandler) AddQuestionsToExam(c *gin.Context) {
 	enterpriseID, ok := getEnterpriseID(c)
 	if !ok {
 		writeError(c, http.StatusUnauthorized, "missing enterprise ID")
@@ -544,25 +551,33 @@ func (h *ExamHandler) AddQuestionToExam(c *gin.Context) {
 		return
 	}
 
-	var req dto.AddExamQuestionRequest
+	var req dto.AddExamQuestionsBulkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	questionID, err := uuid.Parse(req.QuestionID)
-	if err != nil {
-		writeError(c, http.StatusBadRequest, "invalid question ID")
-		return
+	var inputs []domain.ExamQuestionInput
+	for _, qReq := range req.Questions {
+		qID, err := uuid.Parse(qReq.QuestionID)
+		if err != nil {
+			writeError(c, http.StatusBadRequest, fmt.Sprintf("invalid question ID: %s", qReq.QuestionID))
+			return
+		}
+		inputs = append(inputs, domain.ExamQuestionInput{
+			QuestionID:     qID,
+			PointsOverride: qReq.PointsOverride,
+			OrderIndex:     qReq.OrderIndex,
+		})
 	}
 
-	eq, err := h.usecase.AddQuestionToExam(c.Request.Context(), enterpriseID, examID, questionID, req.PointsOverride, req.OrderIndex)
+	eqs, err := h.usecase.AddQuestionsToExam(c.Request.Context(), enterpriseID, examID, inputs)
 	if err != nil {
 		writeError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	writeJSON(c, http.StatusCreated, eq)
+	writeJSON(c, http.StatusCreated, eqs)
 }
 
 // RemoveQuestionFromExam removes a mapped question from an exam.

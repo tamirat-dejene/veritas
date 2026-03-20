@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 type ExamStatus string
@@ -26,6 +27,12 @@ type ExamQuestion struct {
 	OrderIndex     *int      `db:"order_index" json:"orderIndex,omitempty"`
 
 	Question *Question `json:"question,omitempty"` // populated if joined
+}
+
+type ExamQuestionInput struct {
+	QuestionID     uuid.UUID
+	PointsOverride *int
+	OrderIndex     *int
 }
 
 type ExamRandomizationRule struct {
@@ -63,11 +70,12 @@ type Exam struct {
 type ExamRepository interface {
 	Create(ctx context.Context, exam *Exam) error
 	GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*Exam, error)
-	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]*Exam, error)
+	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*Exam], error)
 	Update(ctx context.Context, exam *Exam) error
 	Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 
-	AddQuestion(ctx context.Context, examID uuid.UUID, eq *ExamQuestion) error
+	AddQuestions(ctx context.Context, examID uuid.UUID, eqs []*ExamQuestion) error
+	GetExamQuestions(ctx context.Context, examID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*ExamQuestion], error)
 	RemoveQuestion(ctx context.Context, examID uuid.UUID, questionID uuid.UUID) error
 	UpdateQuestionMapping(ctx context.Context, examID uuid.UUID, eq *ExamQuestion) error
 
@@ -79,7 +87,7 @@ type ExamRepository interface {
 
 type ExamUsecase interface {
 	CreateExam(ctx context.Context, exam *Exam, userID uuid.UUID) (*Exam, error)
-	GetExams(ctx context.Context, enterpriseID uuid.UUID) ([]*Exam, error)
+	GetExams(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*Exam], error)
 	GetExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*Exam, error)
 	UpdateExam(ctx context.Context, exam *Exam, userID uuid.UUID) error
 	ScheduleExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID, startTime time.Time, endTime time.Time, userID uuid.UUID) error
@@ -88,8 +96,8 @@ type ExamUsecase interface {
 	CloseExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	DeleteExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 
-	AddQuestionToExam(ctx context.Context, enterpriseID, examID, questionID uuid.UUID, pointsOverride *int, orderIndex *int) (*ExamQuestion, error)
-	GetExamQuestions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID) ([]*ExamQuestion, error)
+	AddQuestionsToExam(ctx context.Context, enterpriseID, examID uuid.UUID, inputs []ExamQuestionInput) ([]*ExamQuestion, error)
+	GetExamQuestions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*ExamQuestion], error)
 	RemoveQuestionFromExam(ctx context.Context, enterpriseID, examID, questionID uuid.UUID) error
 	UpdateExamQuestion(ctx context.Context, enterpriseID, examID, questionID uuid.UUID, pointsOverride *int, orderIndex *int) error
 

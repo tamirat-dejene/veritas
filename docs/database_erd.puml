@@ -347,6 +347,7 @@ end note
 
 note bottom of exams
   exam_status: Draft, Scheduled, Active, Closed, Archived
+  invitation_method: Email, Link, Token
 end note
 
 note bottom of exam_sessions

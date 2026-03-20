@@ -28,6 +28,7 @@ type UpdateExamRequest struct {
 	MaxParticipants     *int                   `json:"maxParticipants,omitempty"`
 	InvitationMethod    string                 `json:"invitationMethod"`
 	Settings            map[string]interface{} `json:"settings,omitempty"`
+	Status              *domain.ExamStatus     `json:"status,omitempty"`
 }
 
 // ScheduleExamRequest is the request body for scheduling an exam.
@@ -46,6 +47,11 @@ type AddExamQuestionRequest struct {
 	QuestionID     string `json:"questionId" binding:"required"`
 	PointsOverride *int   `json:"pointsOverride,omitempty"`
 	OrderIndex     *int   `json:"orderIndex,omitempty"`
+}
+
+// AddExamQuestionsBulkRequest is the request body for adding multiple questions to an exam.
+type AddExamQuestionsBulkRequest struct {
+	Questions []AddExamQuestionRequest `json:"questions" binding:"required,min=1,dive"`
 }
 
 // UpdateExamQuestionRequest is the request body for updating exam-question mapping.

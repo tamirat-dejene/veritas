@@ -3,12 +3,14 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 type examUsecase struct {
@@ -46,12 +48,15 @@ func (uc *examUsecase) UpdateExam(ctx context.Context, exam *domain.Exam, userID
 			return err
 		}
 
+		log.Printf("Existing exam status: %s\n", existing.Status)
+
 		// Only draft exams can be fully updated
 		if existing.Status != domain.ExamDraft {
 			if existing.Status == domain.ExamActive || existing.Status == domain.ExamClosed || existing.Status == domain.ExamArchived {
 				return domain.ErrInvalidStatus
 			}
 		}
+		exam.Status = existing.Status // prevent status changes through this method
 
 		return uc.examRepo.WithTx(tx).Update(ctx, exam)
 	})
@@ -128,8 +133,8 @@ func (uc *examUsecase) CloneExam(ctx context.Context, sourceID uuid.UUID, enterp
 	return clone, nil
 }
 
-func (uc *examUsecase) GetExams(ctx context.Context, enterpriseID uuid.UUID) ([]*domain.Exam, error) {
-	return uc.examRepo.ListByEnterprise(ctx, enterpriseID)
+func (uc *examUsecase) GetExams(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*domain.Exam], error) {
+	return uc.examRepo.ListByEnterprise(ctx, enterpriseID, params)
 }
 
 func (uc *examUsecase) GetExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*domain.Exam, error) {
@@ -158,22 +163,28 @@ func (uc *examUsecase) PublishExam(ctx context.Context, id uuid.UUID, enterprise
 	})
 }
 
-func (uc *examUsecase) GetExamQuestions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID) ([]*domain.ExamQuestion, error) {
-	exam, err := uc.examRepo.GetByID(ctx, examID, enterpriseID)
+func (uc *examUsecase) GetExamQuestions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*domain.ExamQuestion], error) {
+	_, err := uc.examRepo.GetByID(ctx, examID, enterpriseID)
 	if err != nil {
-		return nil, err
+		return pagination.PaginatedResponse[*domain.ExamQuestion]{}, err
+	}
+
+	paginatedMappings, err := uc.examRepo.GetExamQuestions(ctx, examID, params)
+	if err != nil {
+		return pagination.PaginatedResponse[*domain.ExamQuestion]{}, err
 	}
 
 	var result []*domain.ExamQuestion
-	for _, eq := range exam.Questions {
+	for _, eq := range paginatedMappings.Data {
 		q, err := uc.questionRepo.GetByID(ctx, eq.QuestionID, enterpriseID)
 		if err == nil && q != nil {
-			eqCopy := eq
+			eqCopy := *eq
 			eqCopy.Question = q
 			result = append(result, &eqCopy)
 		}
 	}
-	return result, nil
+
+	return pagination.NewPaginatedResponse(result, paginatedMappings.Metadata.TotalElements, params), nil
 }
 
 func (uc *examUsecase) CloseExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
@@ -197,8 +208,8 @@ func (uc *examUsecase) DeleteExam(ctx context.Context, id uuid.UUID, enterpriseI
 	return uc.examRepo.Delete(ctx, id, enterpriseID)
 }
 
-func (uc *examUsecase) AddQuestionToExam(ctx context.Context, enterpriseID, examID, questionID uuid.UUID, pointsOverride *int, orderIndex *int) (*domain.ExamQuestion, error) {
-	var eq *domain.ExamQuestion
+func (uc *examUsecase) AddQuestionsToExam(ctx context.Context, enterpriseID, examID uuid.UUID, inputs []domain.ExamQuestionInput) ([]*domain.ExamQuestion, error) {
+	var eqs []*domain.ExamQuestion
 	err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		exam, err := uc.examRepo.WithTx(tx).GetByID(ctx, examID, enterpriseID)
 		if err != nil {
@@ -208,21 +219,24 @@ func (uc *examUsecase) AddQuestionToExam(ctx context.Context, enterpriseID, exam
 			return domain.ErrInvalidStatus
 		}
 
-		_, err = uc.questionRepo.WithTx(tx).GetByID(ctx, questionID, enterpriseID)
-		if err != nil {
-			return err
+		for _, input := range inputs {
+			_, err = uc.questionRepo.WithTx(tx).GetByID(ctx, input.QuestionID, enterpriseID)
+			if err != nil {
+				return fmt.Errorf("failed to validate question %s: %w", input.QuestionID, err)
+			}
+
+			eq := &domain.ExamQuestion{
+				ExamID:         examID,
+				QuestionID:     input.QuestionID,
+				PointsOverride: input.PointsOverride,
+				OrderIndex:     input.OrderIndex,
+			}
+			eqs = append(eqs, eq)
 		}
 
-		eq = &domain.ExamQuestion{
-			ExamID:         examID,
-			QuestionID:     questionID,
-			PointsOverride: pointsOverride,
-			OrderIndex:     orderIndex,
-		}
-
-		err = uc.examRepo.WithTx(tx).AddQuestion(ctx, examID, eq)
+		err = uc.examRepo.WithTx(tx).AddQuestions(ctx, examID, eqs)
 		if err != nil {
-			return fmt.Errorf("failed to add question to exam: %w", err)
+			return fmt.Errorf("failed to add questions to exam: %w", err)
 		}
 		return nil
 	})
@@ -231,7 +245,7 @@ func (uc *examUsecase) AddQuestionToExam(ctx context.Context, enterpriseID, exam
 		return nil, err
 	}
 
-	return eq, nil
+	return eqs, nil
 }
 
 func (uc *examUsecase) RemoveQuestionFromExam(ctx context.Context, enterpriseID, examID, questionID uuid.UUID) error {

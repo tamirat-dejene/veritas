@@ -43,7 +43,7 @@ func NewRouter(qh *handler.QuestionHandler, eh *handler.ExamHandler) *gin.Engine
 		exams.DELETE("/:examId", eh.DeleteExam)
 
 		// Exam Question Assembly
-		exams.POST("/:examId/questions", eh.AddQuestionToExam)
+		exams.POST("/:examId/questions", eh.AddQuestionsToExam)
 		exams.DELETE("/:examId/questions/:questionId", eh.RemoveQuestionFromExam)
 		exams.PATCH("/:examId/questions/:questionId", eh.UpdateExamQuestion)
 
