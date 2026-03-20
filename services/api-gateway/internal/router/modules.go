@@ -92,7 +92,7 @@ func (g *RouterGroup) RegisterExamRoutes(proxy http.Handler) {
 	// Exams Lifecycle
 	g.register("POST", "/exams", proxy, adminRole...)
 	g.register("GET", "/exams", proxy, adminRole...)
-	g.register("GET", "/exams/:examId", proxy, adminRole...)
+	g.register("GET", "/exams/:examId/questions", proxy, adminRole...)
 	g.register("PATCH", "/exams/:examId", proxy, adminRole...)
 	g.register("POST", "/exams/:examId/schedule", proxy, adminRole...)
 	g.register("POST", "/exams/:examId/clone", proxy, adminRole...)
