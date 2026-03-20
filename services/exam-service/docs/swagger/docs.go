@@ -19,7 +19,7 @@ const docTemplate = `{
     "paths": {
         "/exams": {
             "get": {
-                "description": "List all exams for the caller enterprise.",
+                "description": "List exams with pagination, sorting and filtering support for the caller enterprise.",
                 "produces": [
                     "application/json"
                 ],
@@ -34,16 +34,37 @@ const docTemplate = `{
                         "name": "X-Enterprise-ID",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 10, max: 1000)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort field (allowed: created_at, updated_at, title, duration_minutes, passing_score_percent, status) (default: created_at)",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort direction (asc or desc) (default: desc)",
+                        "name": "sort_dir",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/Exam"
-                            }
+                            "$ref": "#/definitions/pagination.PaginatedResponse-Exam"
                         }
                     },
                     "401": {
@@ -521,7 +542,7 @@ const docTemplate = `{
         },
         "/exams/{examId}/questions": {
             "get": {
-                "description": "Get question mappings for one exam.",
+                "description": "Get question mappings for one exam with pagination.",
                 "produces": [
                     "application/json"
                 ],
@@ -543,16 +564,37 @@ const docTemplate = `{
                         "name": "examId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 10, max: 1000)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort field (allowed: order_index, points_override) (default: order_index)",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort direction (asc or desc) (default: desc)",
+                        "name": "sort_dir",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/ExamQuestion"
-                            }
+                            "$ref": "#/definitions/pagination.PaginatedResponse-ExamQuestion"
                         }
                     },
                     "400": {
@@ -582,7 +624,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Attach question to exam with optional override points and order index.",
+                "description": "Attach multiple questions to an exam with optional override points and order indices.",
                 "consumes": [
                     "application/json"
                 ],
@@ -592,7 +634,7 @@ const docTemplate = `{
                 "tags": [
                     "exam"
                 ],
-                "summary": "Add question to exam",
+                "summary": "Add questions to exam",
                 "parameters": [
                     {
                         "type": "string",
@@ -609,12 +651,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Exam question payload",
+                        "description": "Exam questions payload",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/AddExamQuestionRequest"
+                            "$ref": "#/definitions/AddExamQuestionsBulkRequest"
                         }
                     }
                 ],
@@ -622,7 +664,10 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/ExamQuestion"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ExamQuestion"
+                            }
                         }
                     },
                     "400": {
@@ -1645,6 +1690,21 @@ const docTemplate = `{
                 }
             }
         },
+        "AddExamQuestionsBulkRequest": {
+            "type": "object",
+            "required": [
+                "questions"
+            ],
+            "properties": {
+                "questions": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/AddExamQuestionRequest"
+                    }
+                }
+            }
+        },
         "CloneExamRequest": {
             "type": "object",
             "required": [
@@ -1904,6 +1964,34 @@ const docTemplate = `{
                 },
                 "total_pages": {
                     "type": "integer"
+                }
+            }
+        },
+        "pagination.PaginatedResponse-Exam": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Exam"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/pagination.Metadata"
+                }
+            }
+        },
+        "pagination.PaginatedResponse-ExamQuestion": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ExamQuestion"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/pagination.Metadata"
                 }
             }
         },
