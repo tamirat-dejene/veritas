@@ -28,7 +28,6 @@ type UpdateExamRequest struct {
 	MaxParticipants     *int                   `json:"maxParticipants,omitempty"`
 	InvitationMethod    string                 `json:"invitationMethod"`
 	Settings            map[string]interface{} `json:"settings,omitempty"`
-	Status              *domain.ExamStatus     `json:"status,omitempty"`
 }
 
 // ScheduleExamRequest is the request body for scheduling an exam.

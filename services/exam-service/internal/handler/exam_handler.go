@@ -130,7 +130,6 @@ func (h *ExamHandler) UpdateExam(c *gin.Context) {
 		MaxParticipants:     req.MaxParticipants,
 		InvitationMethod:    req.InvitationMethod,
 		Settings:            req.Settings,
-		Status:              *req.Status,
 	}
 
 	if err := h.usecase.UpdateExam(c.Request.Context(), &e, userID); err != nil {
