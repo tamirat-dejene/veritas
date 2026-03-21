@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,10 +30,10 @@ func InjectUserHeaders() gin.HandlerFunc {
 			return
 		}
 
-		c.Request.Header.Set("X-User-ID", claims.UserID)
-		c.Request.Header.Set("X-User-Role", string(claims.Role))
+		c.Request.Header.Set("X-User-ID", sanitizeHeader(claims.UserID))
+		c.Request.Header.Set("X-User-Role", sanitizeHeader(string(claims.Role)))
 		if claims.EnterpriseID != "" {
-			c.Request.Header.Set("X-Enterprise-ID", claims.EnterpriseID)
+			c.Request.Header.Set("X-Enterprise-ID", sanitizeHeader(claims.EnterpriseID))
 		}
 
 		// Strip the Authorization header so it's not forwarded downstream.
@@ -41,6 +42,17 @@ func InjectUserHeaders() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+// sanitizeHeader removes CR and LF characters from a string to prevent
+// HTTP header injection attacks.
+func sanitizeHeader(s string) string {
+	return strings.Map(func(r rune) rune {
+		if r == '\r' || r == '\n' {
+			return -1 // drop the character
+		}
+		return r
+	}, s)
 }
 
 // RequireHTTPS is a lightweight middleware that rejects non-TLS requests.

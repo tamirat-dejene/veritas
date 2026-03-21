@@ -31,9 +31,18 @@ type Config struct {
 	CORSAllowedHeaders         string
 }
 
+const insecureDefaultSecret = "super-secret-key"
+
 func Load() *Config {
+	mode := getEnv("SYSTEM_MODE", "development")
+	jwtSecret := getEnv("JWT_SECRET", insecureDefaultSecret)
+
+	if mode != "development" && (jwtSecret == "" || jwtSecret == insecureDefaultSecret) {
+		panic("JWT_SECRET is not set or uses the insecure default — refusing to start in " + mode + " mode")
+	}
+
 	return &Config{
-		SystemMode:                 getEnv("SYSTEM_MODE", "development"),
+		SystemMode:                 mode,
 		Port:                       getEnv("GO_PORT", "8080"),
 		AuthServiceURL:             getEnv("AUTH_SERVICE_URL", "http://localhost:8081"),
 		EnterpriseServiceURL:       getEnv("ENTERPRISE_SERVICE_URL", "http://localhost:8082"),
@@ -44,7 +53,7 @@ func Load() *Config {
 		FaceVerificationServiceURL: getEnv("FACE_VERIFICATION_SERVICE_URL", "http://localhost:8087"),
 		GradingServiceURL:          getEnv("GRADING_SERVICE_URL", "http://localhost:8088"),
 		ReportingServiceURL:        getEnv("REPORTING_SERVICE_URL", "http://localhost:8089"),
-		JWTSecret:                  getEnv("JWT_SECRET", "super-secret-key"),
+		JWTSecret:                  jwtSecret,
 		RedisHost:                  getEnv("REDIS_HOST", "redis"),
 		RedisPort:                  getEnvInt("REDIS_PORT", 6379),
 		RedisPassword:              getEnv("REDIS_PASSWORD", ""),
