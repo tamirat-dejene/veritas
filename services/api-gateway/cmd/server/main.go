@@ -42,12 +42,12 @@ func main() {
 
 	// Test Redis connection
 	pingCtx, cancelPing := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancelPing()
 	if err := rdbClient.Ping(pingCtx); err != nil {
 		zap.L().Warn("Redis connection failed; rate limiting will fail open", zap.Error(err))
 	} else {
 		zap.L().Info("Redis connection established")
 	}
+	cancelPing()
 
 	rdb := rdbClient.GetClient().(*redis.Client)
 

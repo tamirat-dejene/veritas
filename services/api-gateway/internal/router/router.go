@@ -36,7 +36,7 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 		return items
 	}
 
-	rateLimitMiddleware := middleware.NewRateLimitMiddleware(rateLimiter)
+	rateLimitMiddleware := middleware.NewRateLimitMiddleware(rateLimiter, 10)
 	corsMiddleware := smw.CORS(
 		parseCSV(cfg.CORSAllowedOrigins),
 		parseCSV(cfg.CORSAllowedMethods),

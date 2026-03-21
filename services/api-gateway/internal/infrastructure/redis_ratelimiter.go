@@ -26,11 +26,15 @@ func NewRedisRateLimiter(rdb *redis.Client, limit int, window time.Duration) *Re
 	}
 }
 
-// Allow checks if a request is allowed for the given key
+// Allow checks if a request is allowed for the given key.
 func (r *RedisRateLimiter) Allow(ctx context.Context, key string) (*domain.RateLimitResult, error) {
-	// Use redis_rate to check the rate limit
-	// PerSecond creates a rate limiter that allows 'limit' requests per second
-	res, err := r.limiter.Allow(ctx, key, redis_rate.PerSecond(r.limit))
+	rate := redis_rate.Limit{
+		Rate:   r.limit,
+		Burst:  r.limit, // burst equals rate: no micro-burst above the window rate
+		Period: r.window,
+	}
+
+	res, err := r.limiter.Allow(ctx, key, rate)
 	if err != nil {
 		return nil, fmt.Errorf("rate limiter error: %w", err)
 	}

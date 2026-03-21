@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 	"time"
@@ -14,19 +13,22 @@ import (
 // RateLimitMiddleware wraps a domain.RateLimiter for HTTP middleware
 type RateLimitMiddleware struct {
 	limiter domain.RateLimiter
+	limit   int // total allowed requests per window — used for X-RateLimit-Limit header
 }
 
-// NewRateLimitMiddleware creates a new rate limit middleware
-func NewRateLimitMiddleware(limiter domain.RateLimiter) *RateLimitMiddleware {
+// NewRateLimitMiddleware creates a new rate limit middleware.
+// limit is the maximum number of requests allowed per window (used for response headers).
+func NewRateLimitMiddleware(limiter domain.RateLimiter, limit int) *RateLimitMiddleware {
 	return &RateLimitMiddleware{
 		limiter: limiter,
+		limit:   limit,
 	}
 }
 
 // Handler returns a Gin middleware handler
 func (m *RateLimitMiddleware) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx := context.Background()
+		ctx := c.Request.Context()
 		ip := c.ClientIP()
 
 		// Create a unique key for this IP
@@ -41,7 +43,7 @@ func (m *RateLimitMiddleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		// Set rate limit headers
+		c.Header("X-RateLimit-Limit", strconv.Itoa(m.limit))
 		c.Header("X-RateLimit-Remaining", strconv.Itoa(result.Remaining))
 		c.Header("X-RateLimit-Reset", strconv.FormatInt(time.Now().Add(result.ResetAfter).Unix(), 10))
 
