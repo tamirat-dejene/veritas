@@ -708,6 +708,14 @@ func (h *ExamHandler) AddRandomizationRule(c *gin.Context) {
 
 	rule, err := h.usecase.AddRandomizationRule(c.Request.Context(), enterpriseID, examID, req.Topic, req.Difficulty, req.QuestionCount)
 	if err != nil {
+		if err == domain.ErrExamNotFound {
+			writeError(c, http.StatusNotFound, "exam not found")
+			return
+		}
+		if err == domain.ErrInvalidStatus {
+			writeError(c, http.StatusConflict, "exam status must be draft or scheduled")
+			return
+		}
 		writeError(c, http.StatusInternalServerError, err.Error())
 		return
 	}

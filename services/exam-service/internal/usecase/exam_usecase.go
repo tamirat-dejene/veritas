@@ -290,7 +290,8 @@ func (uc *examUsecase) AddRandomizationRule(ctx context.Context, enterpriseID, e
 		if err != nil {
 			return err
 		}
-		if exam.Status != domain.ExamDraft {
+
+		if exam.Status != domain.ExamDraft && exam.Status != domain.ExamScheduled {
 			return domain.ErrInvalidStatus
 		}
 
