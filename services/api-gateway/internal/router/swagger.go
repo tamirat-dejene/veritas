@@ -2,6 +2,7 @@ package router
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -19,22 +20,41 @@ func (g *RouterGroup) RegisterSwaggerRoutes(serviceSwaggerProxies map[string]htt
 		}
 
 		basePath := "/swagger/" + serviceName
+		// Capture loop variables explicitly (safe in Go 1.22+ but good practice)
+		localBase := basePath
+		localProxy := serviceProxy
 
 		// /swagger/{service}
-		g.engine.GET(basePath, func(c *gin.Context) {
-			c.Redirect(http.StatusFound, basePath+"/index.html")
+		g.engine.GET(localBase, func(c *gin.Context) {
+			c.Redirect(http.StatusFound, localBase+"/index.html")
 		})
 
 		// /swagger/{service}/*filepath
-		g.engine.GET(basePath+"/*filepath", func(c *gin.Context) {
+		g.engine.GET(localBase+"/*filepath", func(c *gin.Context) {
 			filePath := strings.TrimPrefix(c.Param("filepath"), "/")
 			if filePath == "" {
 				filePath = "index.html"
 			}
 
-			// Rewrite to downstream swagger path.
-			c.Request.URL.Path = "/swagger/" + filePath
-			serviceProxy.ServeHTTP(c.Writer, c.Request)
+			req := c.Request.Clone(c.Request.Context())
+			req.URL = &url.URL{}
+			*req.URL = *c.Request.URL
+			req.URL.Path = "/swagger/" + filePath
+
+			localProxy.ServeHTTP(c.Writer, req)
 		})
 	}
+}
+
+// redactDatabaseURL strips the user:password@ portion from a Postgres DSN to prevent
+// credential exposure in the health endpoint.
+func redactDatabaseURL(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return "[invalid-url]"
+	}
+	if u.User != nil {
+		u.User = url.User(u.User.Username()) // keep username, drop password
+	}
+	return u.String()
 }

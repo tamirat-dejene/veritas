@@ -3,7 +3,6 @@ package router
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/middleware"
 )
@@ -131,23 +130,7 @@ func (g *RouterGroup) RegisterProctoringRoutes(proxy http.Handler) {
 
 // RegisterFaceVerificationRoutes attaches Face Verification Service proxy routes
 func (g *RouterGroup) RegisterFaceVerificationRoutes(proxy http.Handler) {
-	requirePremium := func(c *gin.Context) {
-		claimsVal, exists := c.Get(string(middleware.UserContextKey))
-		if !exists {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Premium subscription required"})
-			return
-		}
-
-		claims, ok := claimsVal.(*middleware.UserClaims)
-		if !ok || claims.Tier != "Premium" {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Premium subscription required"})
-			return
-		}
-
-		c.Next()
-	}
-
-	premiumCandidateBlock := append(g.authWithRoles(domain.RoleExamCandidate), requirePremium)
+	premiumCandidateBlock := append(g.authWithRoles(domain.RoleExamCandidate), middleware.RequireTier("Premium"))
 	g.register("POST", "/face/register", proxy, premiumCandidateBlock...)
 	g.register("POST", "/face/verify", proxy, premiumCandidateBlock...)
 }

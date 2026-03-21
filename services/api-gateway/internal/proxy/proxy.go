@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"sync"
 
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/domain"
 	"go.uber.org/zap"
@@ -17,8 +16,6 @@ type Proxy struct {
 	circuitBreaker domain.CircuitBreaker
 	serviceName    string
 	targetURL      string
-	mu             sync.RWMutex
-	lastError      error
 }
 
 // NewProxy creates a new Proxy with circuit breaker protection.
@@ -57,7 +54,6 @@ func NewProxy(target string, circuitBreaker domain.CircuitBreaker, serviceName s
 		targetURL:      target,
 	}
 
-	// Set custom error handler
 	reverseProxy.ErrorHandler = proxy.errorHandler
 
 	return proxy, nil
@@ -65,10 +61,8 @@ func NewProxy(target string, circuitBreaker domain.CircuitBreaker, serviceName s
 
 // ServeHTTP implements http.Handler with circuit breaker protection.
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// For now, let's just log it here at Debug level
 	zap.L().Debug("Proxying request", zap.String("service", p.serviceName), zap.String("path", r.URL.Path))
 
-	// Use a custom response writer to capture errors
 	rw := &responseWriter{
 		ResponseWriter: w,
 		statusCode:     http.StatusOK,
@@ -77,7 +71,6 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err := p.circuitBreaker.Execute(func() error {
 		p.reverseProxy.ServeHTTP(rw, r)
 
-		// Consider 5xx responses as failures for circuit breaker
 		if rw.statusCode >= 500 {
 			return fmt.Errorf("backend returned %d", rw.statusCode)
 		}
@@ -85,12 +78,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 
-	// If error is not nil, circuit breaker triggered OR backend returned 5xx
 	if err != nil {
-		p.mu.Lock()
-		p.lastError = err
-		p.mu.Unlock()
-
 		zap.L().Warn(
 			"Circuit breaker triggered or backend error",
 			zap.String("service", p.serviceName),
@@ -99,28 +87,23 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 
-		// Check if we already wrote a response during Execute
-		// This can happen if the backend returned 5xx
-		if rw, ok := w.(*responseWriter); ok && rw.wroteHeader {
-			// Response already sent, don't try to send 503
+		if rw.wroteHeader {
 			return
 		}
 
-		// Return 503 Service Unavailable (only if not already written)
-		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("Retry-After", "30")
-		w.WriteHeader(http.StatusServiceUnavailable)
-		fmt.Fprintf(w, `{"error":"Service temporarily unavailable","service":"%s","state":"%s"}`,
+		rw.Header().Set("Content-Type", "application/json")
+		rw.Header().Set("Retry-After", "30")
+		rw.WriteHeader(http.StatusServiceUnavailable)
+		fmt.Fprintf(rw, `{"error":"Service temporarily unavailable","service":"%s","state":"%s"}`,
 			p.serviceName, p.circuitBreaker.State())
 	}
 }
 
-// errorHandler handles errors from the reverse proxy.
+// errorHandler handles errors from the reverse proxy (connection failures etc.).
+// It receives `rw` (the wrapped responseWriter) as its `w` parameter because
+// ServeHTTP passes `rw` into reverseProxy.ServeHTTP, which in turn calls this handler.
+// Writing through `w` here correctly sets rw.wroteHeader, preventing double-writes.
 func (p *Proxy) errorHandler(w http.ResponseWriter, r *http.Request, err error) {
-	p.mu.Lock()
-	p.lastError = err
-	p.mu.Unlock()
-
 	zap.L().Error(
 		"Proxy error",
 		zap.String("service", p.serviceName),
@@ -128,8 +111,6 @@ func (p *Proxy) errorHandler(w http.ResponseWriter, r *http.Request, err error) 
 		zap.Error(err),
 	)
 
-	// This error will be caught by the circuit breaker
-	// Return 502 Bad Gateway
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusBadGateway)
 	fmt.Fprintf(w, `{"error":"Bad Gateway","service":"%s"}`, p.serviceName)

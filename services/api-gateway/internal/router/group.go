@@ -23,9 +23,11 @@ func NewRouterGroup(engine *gin.Engine, jwtSecret string) *RouterGroup {
 }
 
 // register handles attaching HTTP handlers wrapped as Gin routes
-// Because proxies are standard http.Handler, we wrap them to gin.HandlerFunc
+// Because proxies are standard http.Handler, we wrap them to gin.HandlerFunc.
 func (g *RouterGroup) register(method, path string, h http.Handler, mws ...gin.HandlerFunc) {
-	handlers := append(mws, gin.WrapH(h))
+	handlers := make([]gin.HandlerFunc, len(mws)+1)
+	copy(handlers, mws)
+	handlers[len(mws)] = gin.WrapH(h)
 	g.engine.Handle(method, path, handlers...)
 }
 
