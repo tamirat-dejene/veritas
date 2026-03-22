@@ -8,6 +8,7 @@ import (
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/dto"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 	"go.uber.org/zap"
 )
 
@@ -71,15 +72,19 @@ func (h *EnrollmentHandler) Enroll(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Enrolled successfully", "rawTokens": tokens})
 }
 
-// ListByExam lists all enrollments for an exam.
+// ListByExam lists enrollments for an exam with pagination.
 //
 //	@Summary		List enrollments by exam
-//	@Description	List exam enrollments for the caller enterprise.
+//	@Description	List exam enrollments for the caller enterprise with pagination.
 //	@Tags			enrollment
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
 //	@Param			examId			path	string	true	"Exam ID (UUID)"
-//	@Success		200				{object}	dto.EnrollmentListResponse
+//	@Param			page			query	int		false	"Page number (default 1)"
+//	@Param			limit			query	int		false	"Page size (default 10, max 1000)"
+//	@Param			sort			query	string	false	"Sort field: created_at|status|attempts_used"
+//	@Param			sort_dir		query	string	false	"Sort direction: asc|desc (default desc)"
+//	@Success		200				{object}	pagination.PaginatedResponse[domain.ExamEnrollment]
 //	@Failure		400				{object}	dto.ErrorResponse
 //	@Failure		401				{object}	dto.ErrorResponse
 //	@Failure		500				{object}	dto.ErrorResponse
@@ -98,13 +103,14 @@ func (h *EnrollmentHandler) ListByExam(c *gin.Context) {
 		return
 	}
 
-	list, err := h.uc.GetEnrollmentsForExam(c.Request.Context(), examID, entID)
+	params := pagination.ParseGin(c)
+	list, total, err := h.uc.GetEnrollmentsForExam(c.Request.Context(), examID, entID, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch enrollments"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": list})
+	c.JSON(http.StatusOK, pagination.NewPaginatedResponse(list, total, params))
 }
 
 // Get fetches enrollment details by enrollment ID.

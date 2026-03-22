@@ -8,6 +8,7 @@ import (
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
 	_ "github.com/tamirat-dejene/veritas/services/candidate-service/internal/dto"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 	"go.uber.org/zap"
 )
 
@@ -23,7 +24,7 @@ func NewMonitoringHandler(uc domain.MonitoringUseCase, logger *zap.Logger) *Moni
 	}
 }
 
-// ListSessions lists sessions for an exam with optional filters.
+// ListSessions lists sessions for an exam with optional filters and pagination.
 //
 //	@Summary		List exam sessions
 //	@Description	List sessions for an exam. Optional query filters: status and candidateId.
@@ -33,7 +34,11 @@ func NewMonitoringHandler(uc domain.MonitoringUseCase, logger *zap.Logger) *Moni
 //	@Param			examId			path	string	true	"Exam ID (UUID)"
 //	@Param			status			query	string	false	"Session status"
 //	@Param			candidateId		query	string	false	"Candidate ID (UUID)"
-//	@Success		200				{object}	dto.SessionListResponse
+//	@Param			page			query	int		false	"Page number (default 1)"
+//	@Param			limit			query	int		false	"Page size (default 10, max 1000)"
+//	@Param			sort			query	string	false	"Sort field: created_at|status|started_at"
+//	@Param			sort_dir		query	string	false	"Sort direction: asc|desc (default desc)"
+//	@Success		200				{object}	pagination.PaginatedResponse[domain.ExamSession]
 //	@Failure		400				{object}	dto.ErrorResponse
 //	@Failure		401				{object}	dto.ErrorResponse
 //	@Failure		500				{object}	dto.ErrorResponse
@@ -66,13 +71,14 @@ func (h *MonitoringHandler) ListSessions(c *gin.Context) {
 		}
 	}
 
-	list, err := h.uc.ListSessionsForExam(c.Request.Context(), examID, entID, status, candidateID)
+	params := pagination.ParseGin(c)
+	list, total, err := h.uc.ListSessionsForExam(c.Request.Context(), examID, entID, status, candidateID, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": list})
+	c.JSON(http.StatusOK, pagination.NewPaginatedResponse(list, total, params))
 }
 
 // GetSessionSummary returns a session summary for enterprise monitoring.
@@ -115,15 +121,19 @@ func (h *MonitoringHandler) GetSessionSummary(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": summary})
 }
 
-// GetSubmissions lists submissions for an exam.
+// GetSubmissions lists submissions for an exam with pagination.
 //
 //	@Summary		List exam submissions
-//	@Description	List all submissions for an exam under the caller enterprise.
+//	@Description	List all submissions for an exam under the caller enterprise with pagination.
 //	@Tags			monitoring
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
 //	@Param			examId			path	string	true	"Exam ID (UUID)"
-//	@Success		200				{object}	dto.SubmissionListResponse
+//	@Param			page			query	int		false	"Page number (default 1)"
+//	@Param			limit			query	int		false	"Page size (default 10, max 1000)"
+//	@Param			sort			query	string	false	"Sort field: created_at|submitted_at"
+//	@Param			sort_dir		query	string	false	"Sort direction: asc|desc (default desc)"
+//	@Success		200				{object}	pagination.PaginatedResponse[domain.ExamSubmission]
 //	@Failure		400				{object}	dto.ErrorResponse
 //	@Failure		401				{object}	dto.ErrorResponse
 //	@Failure		500				{object}	dto.ErrorResponse
@@ -142,13 +152,14 @@ func (h *MonitoringHandler) GetSubmissions(c *gin.Context) {
 		return
 	}
 
-	list, err := h.uc.GetSubmissions(c.Request.Context(), examID, entID)
+	params := pagination.ParseGin(c)
+	list, total, err := h.uc.GetSubmissions(c.Request.Context(), examID, entID, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": list})
+	c.JSON(http.StatusOK, pagination.NewPaginatedResponse(list, total, params))
 }
 
 // GetSubmissionDetail returns a single submission detail by submission ID.

@@ -9,6 +9,7 @@ import (
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/dto"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 	"go.uber.org/zap"
 )
 
@@ -143,14 +144,18 @@ func (h *CandidateHandler) BulkUpload(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Bulk upload successful", "count": count})
 }
 
-// List returns all candidates for the caller enterprise.
+// List returns a paginated list of candidates for the caller enterprise.
 //
 //	@Summary		List candidates
-//	@Description	List candidate profiles for the caller enterprise.
+//	@Description	List candidate profiles for the caller enterprise with pagination.
 //	@Tags			candidate
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
-//	@Success		200				{object}	dto.CandidateListResponse
+//	@Param			page			query	int		false	"Page number (default 1)"
+//	@Param			limit			query	int		false	"Page size (default 10, max 1000)"
+//	@Param			sort			query	string	false	"Sort field: created_at|first_name|last_name|external_id"
+//	@Param			sort_dir		query	string	false	"Sort direction: asc|desc (default desc)"
+//	@Success		200				{object}	pagination.PaginatedResponse[domain.CandidateProfile]
 //	@Failure		401				{object}	dto.ErrorResponse
 //	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/candidates [get]
@@ -161,13 +166,14 @@ func (h *CandidateHandler) List(c *gin.Context) {
 		return
 	}
 
-	list, err := h.uc.GetCandidates(c.Request.Context(), entID)
+	params := pagination.ParseGin(c)
+	list, total, err := h.uc.GetCandidates(c.Request.Context(), entID, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch candidates"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": list})
+	c.JSON(http.StatusOK, pagination.NewPaginatedResponse(list, total, params))
 }
 
 // Get retrieves a candidate by candidate ID.
