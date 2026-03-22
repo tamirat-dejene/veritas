@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 type ExamEnrollment struct {
@@ -26,7 +27,7 @@ type EnrollmentRepository interface {
 	Create(ctx context.Context, enrollment *ExamEnrollment) error
 	GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*ExamEnrollment, error)
 	GetByExamAndCandidate(ctx context.Context, examID uuid.UUID, candidateID uuid.UUID) (*ExamEnrollment, error)
-	ListByExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID) ([]*ExamEnrollment, error)
+	ListByExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) ([]*ExamEnrollment, int64, error)
 	Update(ctx context.Context, enrollment *ExamEnrollment) error
 	IncrementAttempt(ctx context.Context, id uuid.UUID) error
 	WithTx(tx pgx.Tx) EnrollmentRepository
@@ -34,7 +35,7 @@ type EnrollmentRepository interface {
 
 type EnrollmentUseCase interface {
 	EnrollCandidates(ctx context.Context, enterpriseID uuid.UUID, examID uuid.UUID, candidateIDs []uuid.UUID, method string, maxAttempts int, expiresAt time.Time) ([]string, error) // Returns raw tokens mapped implicitly or wrapped
-	GetEnrollmentsForExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID) ([]*ExamEnrollment, error)
+	GetEnrollmentsForExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) ([]*ExamEnrollment, int64, error)
 	GetEnrollment(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*ExamEnrollment, error)
 	RegenerateToken(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (string, error) // Returns raw new token
 	RevokeEnrollment(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error

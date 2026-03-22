@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 type SessionStatus string
@@ -74,7 +75,7 @@ type ExamSession struct {
 type SessionRepository interface {
 	CreateSession(ctx context.Context, session *ExamSession) error
 	GetSessionByID(ctx context.Context, id uuid.UUID) (*ExamSession, error)
-	ListSessionsByExam(ctx context.Context, examID uuid.UUID, status *SessionStatus) ([]*ExamSession, error)
+	ListSessionsByExam(ctx context.Context, examID uuid.UUID, status *SessionStatus, params pagination.Params) ([]*ExamSession, int64, error)
 	UpdateSessionStatus(ctx context.Context, id uuid.UUID, status SessionStatus, reason *string) error
 
 	SaveQuestionsSnapshot(ctx context.Context, sessionID uuid.UUID, questions []SessionQuestion) error
@@ -85,7 +86,7 @@ type SessionRepository interface {
 
 	CreateSubmission(ctx context.Context, submission *ExamSubmission) error
 	GetSubmissionBySession(ctx context.Context, sessionID uuid.UUID) (*ExamSubmission, error)
-	GetSubmissionsByExam(ctx context.Context, examID uuid.UUID) ([]*ExamSubmission, error)
+	GetSubmissionsByExam(ctx context.Context, examID uuid.UUID, params pagination.Params) ([]*ExamSubmission, int64, error)
 	WithTx(tx pgx.Tx) SessionRepository
 }
 
@@ -104,9 +105,9 @@ type SessionUseCase interface {
 }
 
 type MonitoringUseCase interface {
-	ListSessionsForExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, status *SessionStatus, candidateID *uuid.UUID) ([]*ExamSession, error)
+	ListSessionsForExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, status *SessionStatus, candidateID *uuid.UUID, params pagination.Params) ([]*ExamSession, int64, error)
 	GetSessionSummary(ctx context.Context, sessionID uuid.UUID, enterpriseID uuid.UUID) (*ExamSession, error)
-	GetSubmissions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID) ([]*ExamSubmission, error)
+	GetSubmissions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) ([]*ExamSubmission, int64, error)
 	GetSubmissionDetail(ctx context.Context, submissionID uuid.UUID, enterpriseID uuid.UUID) (*ExamSubmission, error)
 	CandidateGetResult(ctx context.Context, sessionID uuid.UUID, candidateID uuid.UUID) (*ExamSubmission, error) // Returns only if grading rules allow
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 type CandidateProfile struct {
@@ -25,7 +26,7 @@ type CandidateRepository interface {
 	CreateBulk(ctx context.Context, candidates []*CandidateProfile) error
 	GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*CandidateProfile, error)
 	GetByExternalID(ctx context.Context, externalID string, enterpriseID uuid.UUID) (*CandidateProfile, error)
-	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]*CandidateProfile, error)
+	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*CandidateProfile, int64, error)
 	Update(ctx context.Context, candidate *CandidateProfile) error
 	Deactivate(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	WithTx(tx pgx.Tx) CandidateRepository
@@ -34,7 +35,7 @@ type CandidateRepository interface {
 type CandidateUseCase interface {
 	CreateCandidate(ctx context.Context, candidate *CandidateProfile) (*CandidateProfile, error)
 	BulkUpload(ctx context.Context, enterpriseID uuid.UUID, csvData []byte) (int, error) // Returns number of created records
-	GetCandidates(ctx context.Context, enterpriseID uuid.UUID) ([]*CandidateProfile, error)
+	GetCandidates(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*CandidateProfile, int64, error)
 	GetCandidate(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*CandidateProfile, error)
 	UpdateCandidate(ctx context.Context, candidate *CandidateProfile) error
 	DeactivateCandidate(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
