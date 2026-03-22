@@ -25,8 +25,6 @@ func NewRouter(
 
 	engine.GET("/health", healthCheck)
 
-	// Role checks and enterprise_id mapping happen upstream (API Gateway) or via intercept middlewares.
-
 	candidates := engine.Group("/candidates")
 	{
 		candidates.POST("", ch.Create)
@@ -37,7 +35,6 @@ func NewRouter(
 		candidates.PATCH("/:candidateId/deactivate", ch.Deactivate)
 	}
 
-	// Enrollment rules usually hang off exams logically
 	exams := engine.Group("/exams")
 	{
 		exams.POST("/:examId/enrollments", eh.Enroll)

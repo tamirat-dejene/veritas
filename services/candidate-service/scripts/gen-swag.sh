@@ -18,11 +18,11 @@ $SWAG_BIN init -g cmd/server/main.go -o docs/swagger --parseDependency --parseIn
 
 # Swaggo emits package-qualified schema names. Normalize to clean model names.
 PREFIX_DOMAIN="github_com_tamirat-dejene_veritas_services_candidate-service_internal_domain."
-PREFIX_HTTP="internal_handler."
+PREFIX_DTO="github_com_tamirat-dejene_veritas_services_candidate-service_internal_dto."
 
 for f in docs/swagger/docs.go docs/swagger/swagger.json docs/swagger/swagger.yaml; do
   sed -i "s/${PREFIX_DOMAIN}//g" "$f"
-  sed -i "s/${PREFIX_HTTP}//g" "$f"
+  sed -i "s/${PREFIX_DTO}//g" "$f"
 done
 
 echo "Generated Swagger docs in docs/swagger"
