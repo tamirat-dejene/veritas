@@ -172,11 +172,11 @@ func (r *candidateRepository) ListByEnterprise(ctx context.Context, enterpriseID
 func (r *candidateRepository) Update(ctx context.Context, c *domain.CandidateProfile) error {
 	const updateQuery = `
 		UPDATE candidate_profiles
-		SET first_name = $3, last_name = $4, email = $5, face_reference_url = $6, is_active = $7
+		SET first_name = $3, last_name = $4, email = $5, face_reference_url = $6
 		WHERE id = $1 AND enterprise_id = $2
 	`
 	tag, err := r.db.Exec(ctx, updateQuery,
-		c.ID, c.EnterpriseID, c.FirstName, c.LastName, c.Email, c.FaceReferenceURL, c.IsActive,
+		c.ID, c.EnterpriseID, c.FirstName, c.LastName, c.Email, c.FaceReferenceURL,
 	)
 	if err != nil {
 		return err

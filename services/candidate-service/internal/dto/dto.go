@@ -29,7 +29,6 @@ type CandidateUpdateRequest struct {
 	LastName         string  `json:"lastName" binding:"required"`
 	Email            *string `json:"email"`
 	FaceReferenceURL *string `json:"faceReferenceUrl"`
-	IsActive         bool    `json:"isActive"`
 }
 
 type CandidateResponse struct {

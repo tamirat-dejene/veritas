@@ -264,7 +264,6 @@ func (h *CandidateHandler) Update(c *gin.Context) {
 		LastName:         req.LastName,
 		Email:            req.Email,
 		FaceReferenceURL: req.FaceReferenceURL,
-		IsActive:         req.IsActive,
 	}
 
 	if err := h.uc.UpdateCandidate(c.Request.Context(), candidate); err != nil {

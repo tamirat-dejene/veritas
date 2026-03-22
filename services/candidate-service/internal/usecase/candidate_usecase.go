@@ -104,7 +104,27 @@ func (uc *candidateUseCase) GetCandidate(ctx context.Context, id uuid.UUID, ente
 }
 
 func (uc *candidateUseCase) UpdateCandidate(ctx context.Context, candidate *domain.CandidateProfile) error {
-	return uc.repo.Update(ctx, candidate)
+	existing, err := uc.repo.GetByID(ctx, candidate.ID, candidate.EnterpriseID)
+	if err != nil {
+		uc.logger.Error("failed to fetch existing candidate for update", zap.Error(err), zap.String("candidateID", candidate.ID.String()))
+		return err
+	}
+	if existing == nil {
+		err := fmt.Errorf("candidate not found")
+		uc.logger.Warn("candidate not found for update", zap.String("candidateID", candidate.ID.String()))
+		return err
+	}
+
+	existing.FirstName = candidate.FirstName
+	existing.LastName = candidate.LastName
+	if candidate.Email != nil {
+		existing.Email = candidate.Email
+	}
+	if candidate.FaceReferenceURL != nil {
+		existing.FaceReferenceURL = candidate.FaceReferenceURL
+	}
+
+	return uc.repo.Update(ctx, existing)
 }
 
 func (uc *candidateUseCase) DeactivateCandidate(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
