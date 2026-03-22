@@ -192,13 +192,6 @@ definitions:
     - firstName
     - lastName
     type: object
-  CandidateListResponse:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/CandidateProfile'
-        type: array
-    type: object
   CandidateResponse:
     properties:
       data:
@@ -227,13 +220,6 @@ definitions:
       rawTokens:
         items:
           type: string
-        type: array
-    type: object
-  EnrollmentListResponse:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/ExamEnrollment'
         type: array
     type: object
   EnrollmentRequest:
@@ -297,13 +283,6 @@ definitions:
           $ref: '#/definitions/SessionAnswer'
         type: array
     type: object
-  SessionListResponse:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/ExamSession'
-        type: array
-    type: object
   SessionQuestionListResponse:
     properties:
       data:
@@ -322,13 +301,6 @@ definitions:
         type: string
     required:
     - token
-    type: object
-  SubmissionListResponse:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/ExamSubmission'
-        type: array
     type: object
   SubmissionResponse:
     properties:
@@ -353,6 +325,57 @@ definitions:
         type: string
     required:
     - reason
+    type: object
+  pagination.Metadata:
+    properties:
+      current_page:
+        type: integer
+      has_next:
+        type: boolean
+      has_previous:
+        type: boolean
+      page_size:
+        type: integer
+      total_elements:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  pagination.PaginatedResponse-CandidateProfile:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/CandidateProfile'
+        type: array
+      metadata:
+        $ref: '#/definitions/pagination.Metadata'
+    type: object
+  pagination.PaginatedResponse-ExamEnrollment:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/ExamEnrollment'
+        type: array
+      metadata:
+        $ref: '#/definitions/pagination.Metadata'
+    type: object
+  pagination.PaginatedResponse-ExamSession:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/ExamSession'
+        type: array
+      metadata:
+        $ref: '#/definitions/pagination.Metadata'
+    type: object
+  pagination.PaginatedResponse-ExamSubmission:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/ExamSubmission'
+        type: array
+      metadata:
+        $ref: '#/definitions/pagination.Metadata'
     type: object
 info:
   contact:
@@ -394,11 +417,27 @@ paths:
       - session
   /candidates:
     get:
-      description: List candidate profiles for the caller enterprise.
+      description: List candidate profiles for the caller enterprise with pagination.
       parameters:
       - description: Enterprise ID (fallback if middleware context is absent)
         in: header
         name: X-Enterprise-Id
+        type: string
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Page size (default 10, max 1000)
+        in: query
+        name: limit
+        type: integer
+      - description: 'Sort field: created_at|first_name|last_name|external_id'
+        in: query
+        name: sort
+        type: string
+      - description: 'Sort direction: asc|desc (default desc)'
+        in: query
+        name: sort_dir
         type: string
       produces:
       - application/json
@@ -406,7 +445,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/CandidateListResponse'
+            $ref: '#/definitions/pagination.PaginatedResponse-CandidateProfile'
         "401":
           description: Unauthorized
           schema:
@@ -794,7 +833,7 @@ paths:
       - enrollment
   /exams/{examId}/enrollments:
     get:
-      description: List exam enrollments for the caller enterprise.
+      description: List exam enrollments for the caller enterprise with pagination.
       parameters:
       - description: Enterprise ID (fallback if middleware context is absent)
         in: header
@@ -805,13 +844,29 @@ paths:
         name: examId
         required: true
         type: string
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Page size (default 10, max 1000)
+        in: query
+        name: limit
+        type: integer
+      - description: 'Sort field: created_at|status|attempts_used'
+        in: query
+        name: sort
+        type: string
+      - description: 'Sort direction: asc|desc (default desc)'
+        in: query
+        name: sort_dir
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/EnrollmentListResponse'
+            $ref: '#/definitions/pagination.PaginatedResponse-ExamEnrollment'
         "400":
           description: Bad Request
           schema:
@@ -892,13 +947,29 @@ paths:
         in: query
         name: candidateId
         type: string
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Page size (default 10, max 1000)
+        in: query
+        name: limit
+        type: integer
+      - description: 'Sort field: created_at|status|started_at'
+        in: query
+        name: sort
+        type: string
+      - description: 'Sort direction: asc|desc (default desc)'
+        in: query
+        name: sort_dir
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SessionListResponse'
+            $ref: '#/definitions/pagination.PaginatedResponse-ExamSession'
         "400":
           description: Bad Request
           schema:
@@ -916,7 +987,8 @@ paths:
       - monitoring
   /exams/{examId}/submissions:
     get:
-      description: List all submissions for an exam under the caller enterprise.
+      description: List all submissions for an exam under the caller enterprise with
+        pagination.
       parameters:
       - description: Enterprise ID (fallback if middleware context is absent)
         in: header
@@ -927,13 +999,29 @@ paths:
         name: examId
         required: true
         type: string
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Page size (default 10, max 1000)
+        in: query
+        name: limit
+        type: integer
+      - description: 'Sort field: created_at|submitted_at'
+        in: query
+        name: sort
+        type: string
+      - description: 'Sort direction: asc|desc (default desc)'
+        in: query
+        name: sort_dir
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SubmissionListResponse'
+            $ref: '#/definitions/pagination.PaginatedResponse-ExamSubmission'
         "400":
           description: Bad Request
           schema:

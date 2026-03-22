@@ -65,7 +65,7 @@ const docTemplate = `{
         },
         "/candidates": {
             "get": {
-                "description": "List candidate profiles for the caller enterprise.",
+                "description": "List candidate profiles for the caller enterprise with pagination.",
                 "produces": [
                     "application/json"
                 ],
@@ -79,13 +79,37 @@ const docTemplate = `{
                         "description": "Enterprise ID (fallback if middleware context is absent)",
                         "name": "X-Enterprise-Id",
                         "in": "header"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 10, max 1000)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort field: created_at|first_name|last_name|external_id",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort direction: asc|desc (default desc)",
+                        "name": "sort_dir",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CandidateListResponse"
+                            "$ref": "#/definitions/pagination.PaginatedResponse-CandidateProfile"
                         }
                     },
                     "401": {
@@ -670,7 +694,7 @@ const docTemplate = `{
         },
         "/exams/{examId}/enrollments": {
             "get": {
-                "description": "List exam enrollments for the caller enterprise.",
+                "description": "List exam enrollments for the caller enterprise with pagination.",
                 "produces": [
                     "application/json"
                 ],
@@ -691,13 +715,37 @@ const docTemplate = `{
                         "name": "examId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 10, max 1000)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort field: created_at|status|attempts_used",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort direction: asc|desc (default desc)",
+                        "name": "sort_dir",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/EnrollmentListResponse"
+                            "$ref": "#/definitions/pagination.PaginatedResponse-ExamEnrollment"
                         }
                     },
                     "400": {
@@ -819,13 +867,37 @@ const docTemplate = `{
                         "description": "Candidate ID (UUID)",
                         "name": "candidateId",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 10, max 1000)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort field: created_at|status|started_at",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort direction: asc|desc (default desc)",
+                        "name": "sort_dir",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SessionListResponse"
+                            "$ref": "#/definitions/pagination.PaginatedResponse-ExamSession"
                         }
                     },
                     "400": {
@@ -851,7 +923,7 @@ const docTemplate = `{
         },
         "/exams/{examId}/submissions": {
             "get": {
-                "description": "List all submissions for an exam under the caller enterprise.",
+                "description": "List all submissions for an exam under the caller enterprise with pagination.",
                 "produces": [
                     "application/json"
                 ],
@@ -872,13 +944,37 @@ const docTemplate = `{
                         "name": "examId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 10, max 1000)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort field: created_at|submitted_at",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort direction: asc|desc (default desc)",
+                        "name": "sort_dir",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SubmissionListResponse"
+                            "$ref": "#/definitions/pagination.PaginatedResponse-ExamSubmission"
                         }
                     },
                     "400": {
@@ -1879,17 +1975,6 @@ const docTemplate = `{
                 }
             }
         },
-        "CandidateListResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/CandidateProfile"
-                    }
-                }
-            }
-        },
         "CandidateResponse": {
             "type": "object",
             "properties": {
@@ -1932,17 +2017,6 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
-                }
-            }
-        },
-        "EnrollmentListResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/ExamEnrollment"
                     }
                 }
             }
@@ -2039,17 +2113,6 @@ const docTemplate = `{
                 }
             }
         },
-        "SessionListResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/ExamSession"
-                    }
-                }
-            }
-        },
         "SessionQuestionListResponse": {
             "type": "object",
             "properties": {
@@ -2077,17 +2140,6 @@ const docTemplate = `{
             "properties": {
                 "token": {
                     "type": "string"
-                }
-            }
-        },
-        "SubmissionListResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/ExamSubmission"
-                    }
                 }
             }
         },
@@ -2126,6 +2178,85 @@ const docTemplate = `{
             "properties": {
                 "reason": {
                     "type": "string"
+                }
+            }
+        },
+        "pagination.Metadata": {
+            "type": "object",
+            "properties": {
+                "current_page": {
+                    "type": "integer"
+                },
+                "has_next": {
+                    "type": "boolean"
+                },
+                "has_previous": {
+                    "type": "boolean"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total_elements": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "pagination.PaginatedResponse-CandidateProfile": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CandidateProfile"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/pagination.Metadata"
+                }
+            }
+        },
+        "pagination.PaginatedResponse-ExamEnrollment": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ExamEnrollment"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/pagination.Metadata"
+                }
+            }
+        },
+        "pagination.PaginatedResponse-ExamSession": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ExamSession"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/pagination.Metadata"
+                }
+            }
+        },
+        "pagination.PaginatedResponse-ExamSubmission": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ExamSubmission"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/pagination.Metadata"
                 }
             }
         }
