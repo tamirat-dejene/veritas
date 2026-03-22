@@ -112,14 +112,47 @@ func (g *RouterGroup) RegisterExamRoutes(proxy http.Handler) {
 
 // RegisterCandidateRoutes attaches Candidate Service proxy routes
 func (g *RouterGroup) RegisterCandidateRoutes(proxy http.Handler) {
-	g.register("POST", "/candidates/bulk", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
-
+	adminRole := g.authWithRoles(domain.RoleEnterpriseAdmin)
+	staffOrAdmin := g.authWithRoles(domain.RoleEnterpriseAdmin, domain.RoleEnterpriseStaff)
 	candidateRole := g.authWithRoles(domain.RoleExamCandidate)
+	adminOrAuto := g.authWithRoles(domain.RoleEnterpriseAdmin, domain.RoleEnterpriseAuto)
+
+	// Candidates
+	g.register("POST", "/candidates", proxy, adminOrAuto...)
+	g.register("POST", "/candidates/bulk", proxy, adminRole...)
+	g.register("GET", "/candidates", proxy, staffOrAdmin...)
+	g.register("GET", "/candidates/:candidateId", proxy, staffOrAdmin...)
+	g.register("PATCH", "/candidates/:candidateId", proxy, adminRole...)
+	g.register("PATCH", "/candidates/:candidateId/deactivate", proxy, adminRole...)
+
+	// Enrollments
+	g.register("POST", "/exams/:examId/enrollments", proxy, staffOrAdmin...)
+	g.register("GET", "/exams/:examId/enrollments", proxy, staffOrAdmin...)
+	g.register("GET", "/exams/:examId/sessions", proxy, adminRole...)
+	g.register("GET", "/exams/:examId/submissions", proxy, adminRole...)
+	g.register("GET", "/enrollments/:enrollmentId", proxy, staffOrAdmin...)
+	g.register("POST", "/enrollments/:enrollmentId/regenerate-token", proxy, adminRole...)
+	g.register("PATCH", "/enrollments/:enrollmentId/revoke", proxy, adminRole...)
+	g.register("POST", "/enrollments/:enrollmentId/reset-attempts", proxy, adminRole...)
+
+	// Access & Sessions
+	g.register("POST", "/access/validate", proxy) // Public
 	g.register("POST", "/sessions/start", proxy, candidateRole...)
+	g.register("GET", "/sessions/me/active", proxy, candidateRole...)
+	g.register("GET", "/sessions/:sessionId", proxy, g.authWithRoles(domain.RoleExamCandidate, domain.RoleEnterpriseAdmin)...)
+	g.register("GET", "/sessions/:sessionId/questions", proxy, candidateRole...)
 	g.register("PATCH", "/sessions/:sessionId/answers", proxy, candidateRole...)
+	g.register("GET", "/sessions/:sessionId/answers", proxy, candidateRole...)
 	g.register("POST", "/sessions/:sessionId/submit", proxy, candidateRole...)
-	g.register("POST", "/sessions/:sessionId/terminate", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
+	g.register("POST", "/sessions/:sessionId/terminate", proxy, adminRole...)
+	g.register("POST", "/sessions/:sessionId/expire", proxy, adminOrAuto...)
+	g.register("GET", "/sessions/:sessionId/summary", proxy, adminRole...)
+	g.register("GET", "/sessions/:sessionId/result", proxy, candidateRole...)
+
+	// Submissions
+	g.register("GET", "/submissions/:submissionId", proxy, adminRole...)
 }
+
 
 // RegisterProctoringRoutes attaches Proctoring Service proxy routes
 func (g *RouterGroup) RegisterProctoringRoutes(proxy http.Handler) {
