@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/dto"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 )
@@ -43,13 +44,13 @@ func getCandidateID(c *gin.Context) (uuid.UUID, error) {
 //	@Tags			session
 //	@Accept			json
 //	@Produce		json
-//	@Param			body	body		AccessValidateRequest	true	"Access token"
-//	@Success		200		{object}	AccessValidateResponse
-//	@Failure		400		{object}	ErrorResponse
-//	@Failure		401		{object}	ErrorResponse
+//	@Param			body	body		dto.AccessValidateRequest	true	"Access token"
+//	@Success		200		{object}	dto.AccessValidateResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		401		{object}	dto.ErrorResponse
 //	@Router			/access/validate [post]
 func (h *SessionHandler) ValidateAccess(c *gin.Context) {
-	var req AccessValidateRequest
+	var req dto.AccessValidateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -72,12 +73,12 @@ func (h *SessionHandler) ValidateAccess(c *gin.Context) {
 //	@Tags			session
 //	@Accept			json
 //	@Produce		json
-//	@Param			body	body		SessionStartRequest	true	"Session start payload"
-//	@Success		201		{object}	SessionResponse
-//	@Failure		400		{object}	ErrorResponse
+//	@Param			body	body		dto.SessionStartRequest	true	"Session start payload"
+//	@Success		201		{object}	dto.SessionResponse
+//	@Failure		400		{object}	dto.ErrorResponse
 //	@Router			/sessions/start [post]
 func (h *SessionHandler) StartSession(c *gin.Context) {
-	var req SessionStartRequest
+	var req dto.SessionStartRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -103,10 +104,10 @@ func (h *SessionHandler) StartSession(c *gin.Context) {
 //	@Tags			session
 //	@Produce		json
 //	@Param			X-Subject-Id	header	string	false	"Candidate ID (fallback if middleware context is absent)"
-//	@Success		200			{object}	SessionResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		404			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Success		200			{object}	dto.SessionResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/sessions/me/active [get]
 func (h *SessionHandler) ResumeActive(c *gin.Context) {
 	candidateID, err := getCandidateID(c)
@@ -137,10 +138,10 @@ func (h *SessionHandler) ResumeActive(c *gin.Context) {
 //	@Produce		json
 //	@Param			sessionId	path	string	true	"Session ID (UUID)"
 //	@Param			X-Subject-Id	header	string	false	"Candidate ID (fallback if middleware context is absent)"
-//	@Success		200			{object}	SessionResponse
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		404			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Success		200			{object}	dto.SessionResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/sessions/{sessionId} [get]
 func (h *SessionHandler) GetDetails(c *gin.Context) {
 	// Either candidate or Admin/Staff
@@ -173,10 +174,10 @@ func (h *SessionHandler) GetDetails(c *gin.Context) {
 //	@Produce		json
 //	@Param			sessionId	path	string	true	"Session ID (UUID)"
 //	@Param			X-Subject-Id	header	string	false	"Candidate ID (fallback if middleware context is absent)"
-//	@Success		200			{object}	SessionQuestionListResponse
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Success		200			{object}	dto.SessionQuestionListResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/sessions/{sessionId}/questions [get]
 func (h *SessionHandler) GetQuestions(c *gin.Context) {
 	sessionID, err := uuid.Parse(c.Param("sessionId"))
@@ -210,11 +211,11 @@ func (h *SessionHandler) GetQuestions(c *gin.Context) {
 //	@Produce		json
 //	@Param			sessionId	path	string				true	"Session ID (UUID)"
 //	@Param			X-Subject-Id	header	string				false	"Candidate ID (fallback if middleware context is absent)"
-//	@Param			body			body	SaveAnswerRequest	true	"Answer payload"
-//	@Success		200			{object}	MessageResponse
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Param			body			body	dto.SaveAnswerRequest	true	"Answer payload"
+//	@Success		200			{object}	dto.MessageResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/sessions/{sessionId}/answers [patch]
 func (h *SessionHandler) SaveAnswers(c *gin.Context) {
 	sessionID, err := uuid.Parse(c.Param("sessionId"))
@@ -230,7 +231,7 @@ func (h *SessionHandler) SaveAnswers(c *gin.Context) {
 		return
 	}
 
-	var req SaveAnswerRequest
+	var req dto.SaveAnswerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -253,10 +254,10 @@ func (h *SessionHandler) SaveAnswers(c *gin.Context) {
 //	@Produce		json
 //	@Param			sessionId	path	string	true	"Session ID (UUID)"
 //	@Param			X-Subject-Id	header	string	false	"Candidate ID (fallback if middleware context is absent)"
-//	@Success		200			{object}	SessionAnswerListResponse
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Success		200			{object}	dto.SessionAnswerListResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/sessions/{sessionId}/answers [get]
 func (h *SessionHandler) GetMyAnswers(c *gin.Context) {
 	sessionID, err := uuid.Parse(c.Param("sessionId"))
@@ -289,11 +290,11 @@ func (h *SessionHandler) GetMyAnswers(c *gin.Context) {
 //	@Produce		json
 //	@Param			sessionId	path	string			true	"Session ID (UUID)"
 //	@Param			X-Subject-Id	header	string			false	"Candidate ID (fallback if middleware context is absent)"
-//	@Param			body			body	SubmitRequest	false	"Submission metadata"
-//	@Success		201			{object}	SubmitResponse
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Param			body			body	dto.SubmitRequest	false	"Submission metadata"
+//	@Success		201			{object}	dto.SubmitResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/sessions/{sessionId}/submit [post]
 func (h *SessionHandler) Submit(c *gin.Context) {
 	sessionID, err := uuid.Parse(c.Param("sessionId"))
@@ -309,7 +310,7 @@ func (h *SessionHandler) Submit(c *gin.Context) {
 		return
 	}
 
-	var req SubmitRequest
+	var req dto.SubmitRequest
 	_ = c.ShouldBindJSON(&req)
 
 	sub, err := h.uc.SubmitExam(c.Request.Context(), sessionID, candidateID, req.AutoSubmitted)
@@ -331,11 +332,11 @@ func (h *SessionHandler) Submit(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header		string				true	"Enterprise ID"
 //	@Param			sessionId		path		string				true	"Session ID (UUID)"
-//	@Param			body				body		TerminateSessionRequest	true	"Termination reason"
-//	@Success		200				{object}	MessageResponse
-//	@Failure		400				{object}	ErrorResponse
-//	@Failure		401				{object}	ErrorResponse
-//	@Failure		500				{object}	ErrorResponse
+//	@Param			body				body		dto.TerminateSessionRequest	true	"Termination reason"
+//	@Success		200				{object}	dto.MessageResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/sessions/{sessionId}/terminate [post]
 func (h *SessionHandler) TerminateWait(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
@@ -351,7 +352,7 @@ func (h *SessionHandler) TerminateWait(c *gin.Context) {
 		return
 	}
 
-	var req TerminateSessionRequest
+	var req dto.TerminateSessionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -372,10 +373,10 @@ func (h *SessionHandler) TerminateWait(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header	string	true	"Enterprise ID"
 //	@Param			sessionId		path	string	true	"Session ID (UUID)"
-//	@Success		200				{object}	MessageResponse
-//	@Failure		400				{object}	ErrorResponse
-//	@Failure		401				{object}	ErrorResponse
-//	@Failure		500				{object}	ErrorResponse
+//	@Success		200				{object}	dto.MessageResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/sessions/{sessionId}/expire [post]
 func (h *SessionHandler) ForceExpire(c *gin.Context) {
 	entID, err := getEnterpriseID(c)

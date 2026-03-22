@@ -1,4 +1,4 @@
-package handler
+package dto
 
 import (
 	"encoding/json"

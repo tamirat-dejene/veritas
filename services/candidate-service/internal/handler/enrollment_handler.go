@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/dto"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 )
@@ -31,11 +32,11 @@ func NewEnrollmentHandler(uc domain.EnrollmentUseCase, logger *zap.Logger) *Enro
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header		string			false	"Enterprise ID (fallback if middleware context is absent)"
 //	@Param			examId			path		string			true	"Exam ID (UUID)"
-//	@Param			body				body		EnrollmentRequest	true	"Enrollment payload"
-//	@Success		201				{object}	EnrollmentCreateResponse
-//	@Failure		400				{object}	ErrorResponse
-//	@Failure		401				{object}	ErrorResponse
-//	@Failure		500				{object}	ErrorResponse
+//	@Param			body				body		dto.EnrollmentRequest	true	"Enrollment payload"
+//	@Success		201				{object}	dto.EnrollmentCreateResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/exams/{examId}/enrollments [post]
 func (h *EnrollmentHandler) Enroll(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
@@ -52,7 +53,7 @@ func (h *EnrollmentHandler) Enroll(c *gin.Context) {
 		return
 	}
 
-	var req EnrollmentRequest
+	var req dto.EnrollmentRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.WithContext(c.Request.Context(), h.logger).Warn("Invalid enrollment request", zap.Error(err), zap.String("ip", c.ClientIP()))
@@ -78,10 +79,10 @@ func (h *EnrollmentHandler) Enroll(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
 //	@Param			examId			path	string	true	"Exam ID (UUID)"
-//	@Success		200				{object}	EnrollmentListResponse
-//	@Failure		400				{object}	ErrorResponse
-//	@Failure		401				{object}	ErrorResponse
-//	@Failure		500				{object}	ErrorResponse
+//	@Success		200				{object}	dto.EnrollmentListResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/exams/{examId}/enrollments [get]
 func (h *EnrollmentHandler) ListByExam(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
@@ -114,11 +115,11 @@ func (h *EnrollmentHandler) ListByExam(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
 //	@Param			enrollmentId		path	string	true	"Enrollment ID (UUID)"
-//	@Success		200				{object}	EnrollmentResponse
-//	@Failure		400				{object}	ErrorResponse
-//	@Failure		401				{object}	ErrorResponse
-//	@Failure		404				{object}	ErrorResponse
-//	@Failure		500				{object}	ErrorResponse
+//	@Success		200				{object}	dto.EnrollmentResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		404				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/enrollments/{enrollmentId} [get]
 func (h *EnrollmentHandler) Get(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
@@ -155,11 +156,11 @@ func (h *EnrollmentHandler) Get(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
 //	@Param			enrollmentId		path	string	true	"Enrollment ID (UUID)"
-//	@Success		200				{object}	EnrollmentTokenResponse
-//	@Failure		400				{object}	ErrorResponse
-//	@Failure		401				{object}	ErrorResponse
-//	@Failure		404				{object}	ErrorResponse
-//	@Failure		500				{object}	ErrorResponse
+//	@Success		200				{object}	dto.EnrollmentTokenResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		404				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/enrollments/{enrollmentId}/regenerate-token [post]
 func (h *EnrollmentHandler) RegenerateToken(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
@@ -196,11 +197,11 @@ func (h *EnrollmentHandler) RegenerateToken(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
 //	@Param			enrollmentId		path	string	true	"Enrollment ID (UUID)"
-//	@Success		200				{object}	MessageResponse
-//	@Failure		400				{object}	ErrorResponse
-//	@Failure		401				{object}	ErrorResponse
-//	@Failure		404				{object}	ErrorResponse
-//	@Failure		500				{object}	ErrorResponse
+//	@Success		200				{object}	dto.MessageResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		404				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/enrollments/{enrollmentId}/revoke [patch]
 func (h *EnrollmentHandler) Revoke(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
@@ -236,11 +237,11 @@ func (h *EnrollmentHandler) Revoke(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
 //	@Param			enrollmentId		path	string	true	"Enrollment ID (UUID)"
-//	@Success		200				{object}	MessageResponse
-//	@Failure		400				{object}	ErrorResponse
-//	@Failure		401				{object}	ErrorResponse
-//	@Failure		404				{object}	ErrorResponse
-//	@Failure		500				{object}	ErrorResponse
+//	@Success		200				{object}	dto.MessageResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		404				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/enrollments/{enrollmentId}/reset-attempts [post]
 func (h *EnrollmentHandler) ResetAttempts(c *gin.Context) {
 	entID, err := getEnterpriseID(c)

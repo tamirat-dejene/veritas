@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
+	_ "github.com/tamirat-dejene/veritas/services/candidate-service/internal/dto"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 )
@@ -32,10 +33,10 @@ func NewMonitoringHandler(uc domain.MonitoringUseCase, logger *zap.Logger) *Moni
 //	@Param			examId			path	string	true	"Exam ID (UUID)"
 //	@Param			status			query	string	false	"Session status"
 //	@Param			candidateId		query	string	false	"Candidate ID (UUID)"
-//	@Success		200				{object}	SessionListResponse
-//	@Failure		400				{object}	ErrorResponse
-//	@Failure		401				{object}	ErrorResponse
-//	@Failure		500				{object}	ErrorResponse
+//	@Success		200				{object}	dto.SessionListResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/exams/{examId}/sessions [get]
 func (h *MonitoringHandler) ListSessions(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
@@ -82,11 +83,11 @@ func (h *MonitoringHandler) ListSessions(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
 //	@Param			sessionId		path	string	true	"Session ID (UUID)"
-//	@Success		200				{object}	SessionResponse
-//	@Failure		400				{object}	ErrorResponse
-//	@Failure		401				{object}	ErrorResponse
-//	@Failure		404				{object}	ErrorResponse
-//	@Failure		500				{object}	ErrorResponse
+//	@Success		200				{object}	dto.SessionResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		404				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/sessions/{sessionId}/summary [get]
 func (h *MonitoringHandler) GetSessionSummary(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
@@ -122,10 +123,10 @@ func (h *MonitoringHandler) GetSessionSummary(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
 //	@Param			examId			path	string	true	"Exam ID (UUID)"
-//	@Success		200				{object}	SubmissionListResponse
-//	@Failure		400				{object}	ErrorResponse
-//	@Failure		401				{object}	ErrorResponse
-//	@Failure		500				{object}	ErrorResponse
+//	@Success		200				{object}	dto.SubmissionListResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/exams/{examId}/submissions [get]
 func (h *MonitoringHandler) GetSubmissions(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
@@ -158,10 +159,10 @@ func (h *MonitoringHandler) GetSubmissions(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
 //	@Param			submissionId		path	string	true	"Submission ID (UUID)"
-//	@Success		200				{object}	SubmissionResponse
-//	@Failure		400				{object}	ErrorResponse
-//	@Failure		401				{object}	ErrorResponse
-//	@Failure		500				{object}	ErrorResponse
+//	@Success		200				{object}	dto.SubmissionResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/submissions/{submissionId} [get]
 func (h *MonitoringHandler) GetSubmissionDetail(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
@@ -193,11 +194,11 @@ func (h *MonitoringHandler) GetSubmissionDetail(c *gin.Context) {
 //	@Produce		json
 //	@Param			sessionId	path	string	true	"Session ID (UUID)"
 //	@Param			X-Subject-Id	header	string	false	"Candidate ID (fallback if middleware context is absent)"
-//	@Success		200			{object}	SubmissionResponse
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		403			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
+//	@Success		200			{object}	dto.SubmissionResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		403			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/sessions/{sessionId}/result [get]
 func (h *MonitoringHandler) CandidateGetResult(c *gin.Context) {
 	sessionID, err := uuid.Parse(c.Param("sessionId"))

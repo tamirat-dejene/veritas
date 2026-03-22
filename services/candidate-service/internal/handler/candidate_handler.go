@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/dto"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 )
@@ -45,12 +46,12 @@ func getEnterpriseID(c *gin.Context) (uuid.UUID, error) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header		string				false	"Enterprise ID (fallback if middleware context is absent)"
-//	@Param			body				body		CandidateCreateRequest	true	"Candidate payload"
-//	@Success		201				{object}	CandidateResponse
-//	@Failure		400				{object}	ErrorResponse
-//	@Failure		401				{object}	ErrorResponse
-//	@Failure		409				{object}	ErrorResponse
-//	@Failure		500				{object}	ErrorResponse
+//	@Param			body				body		dto.CandidateCreateRequest	true	"Candidate payload"
+//	@Success		201				{object}	dto.CandidateResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		409				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/candidates [post]
 func (h *CandidateHandler) Create(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
@@ -60,7 +61,7 @@ func (h *CandidateHandler) Create(c *gin.Context) {
 		return
 	}
 
-	var req CandidateCreateRequest
+	var req dto.CandidateCreateRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.WithContext(c.Request.Context(), h.logger).Warn("Invalid candidate creation request", zap.Error(err), zap.String("ip", c.ClientIP()))
@@ -102,11 +103,11 @@ func (h *CandidateHandler) Create(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header		string	false	"Enterprise ID (fallback if middleware context is absent)"
 //	@Param			file				formData	file	true	"CSV file"
-//	@Success		201				{object}	BulkUploadResponse
-//	@Failure		400				{object}	ErrorResponse
-//	@Failure		401				{object}	ErrorResponse
-//	@Failure		413				{object}	ErrorResponse
-//	@Failure		500				{object}	ErrorResponse
+//	@Success		201				{object}	dto.BulkUploadResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		413				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/candidates/bulk [post]
 func (h *CandidateHandler) BulkUpload(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
@@ -149,9 +150,9 @@ func (h *CandidateHandler) BulkUpload(c *gin.Context) {
 //	@Tags			candidate
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
-//	@Success		200				{object}	CandidateListResponse
-//	@Failure		401				{object}	ErrorResponse
-//	@Failure		500				{object}	ErrorResponse
+//	@Success		200				{object}	dto.CandidateListResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/candidates [get]
 func (h *CandidateHandler) List(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
@@ -177,11 +178,11 @@ func (h *CandidateHandler) List(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
 //	@Param			candidateId		path	string	true	"Candidate ID (UUID)"
-//	@Success		200				{object}	CandidateResponse
-//	@Failure		400				{object}	ErrorResponse
-//	@Failure		401				{object}	ErrorResponse
-//	@Failure		404				{object}	ErrorResponse
-//	@Failure		500				{object}	ErrorResponse
+//	@Success		200				{object}	dto.CandidateResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		404				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/candidates/{candidateId} [get]
 func (h *CandidateHandler) Get(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
@@ -219,12 +220,12 @@ func (h *CandidateHandler) Get(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header		string				false	"Enterprise ID (fallback if middleware context is absent)"
 //	@Param			candidateId		path		string				true	"Candidate ID (UUID)"
-//	@Param			body				body		CandidateUpdateRequest	true	"Updated candidate payload"
-//	@Success		200				{object}	MessageResponse
-//	@Failure		400				{object}	ErrorResponse
-//	@Failure		401				{object}	ErrorResponse
-//	@Failure		404				{object}	ErrorResponse
-//	@Failure		500				{object}	ErrorResponse
+//	@Param			body				body		dto.CandidateUpdateRequest	true	"Updated candidate payload"
+//	@Success		200				{object}	dto.MessageResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		404				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/candidates/{candidateId} [patch]
 func (h *CandidateHandler) Update(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
@@ -240,7 +241,7 @@ func (h *CandidateHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var req CandidateUpdateRequest
+	var req dto.CandidateUpdateRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -277,11 +278,14 @@ func (h *CandidateHandler) Update(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
 //	@Param			candidateId		path	string	true	"Candidate ID (UUID)"
-//	@Success		200				{object}	MessageResponse
-//	@Failure		400				{object}	ErrorResponse
-//	@Failure		401				{object}	ErrorResponse
-//	@Failure		404				{object}	ErrorResponse
-//	@Failure		500				{object}	ErrorResponse
+//	@Success		200				{object}	dto.MessageResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		403				{object}	dto.ErrorResponse
+//	@Failure		404				{object}	dto.ErrorResponse
+//	@Failure		409				{object}	dto.ErrorResponse
+//	@Failure		413				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/candidates/{candidateId}/deactivate [patch]
 func (h *CandidateHandler) Deactivate(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
