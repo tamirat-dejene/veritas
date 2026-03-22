@@ -9,7 +9,24 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
+
+// allowedCandidateSortFields restricts which columns can be used in ORDER BY
+// to prevent SQL injection from query params.
+var allowedCandidateSortFields = map[string]string{
+	"created_at":  "created_at",
+	"first_name":  "first_name",
+	"last_name":   "last_name",
+	"external_id": "external_id",
+}
+
+func safeCandidateSortField(s string) string {
+	if col, ok := allowedCandidateSortFields[s]; ok {
+		return col
+	}
+	return "created_at"
+}
 
 type candidateRepository struct {
 	db DBTX
@@ -122,11 +139,22 @@ func (r *candidateRepository) GetByExternalID(ctx context.Context, externalID st
 	return scanCandidate(r.db.QueryRow(ctx, query, externalID, enterpriseID))
 }
 
-func (r *candidateRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]*domain.CandidateProfile, error) {
-	query := fmt.Sprintf("SELECT %s FROM candidate_profiles WHERE enterprise_id = $1 ORDER BY created_at DESC", candidateFields)
-	rows, err := r.db.Query(ctx, query, enterpriseID)
+func (r *candidateRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*domain.CandidateProfile, int64, error) {
+	// Count query
+	var total int64
+	if err := r.db.QueryRow(ctx, "SELECT COUNT(*) FROM candidate_profiles WHERE enterprise_id = $1", enterpriseID).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	// Data query with pagination
+	sortCol := safeCandidateSortField(params.GetSort())
+	query := fmt.Sprintf(
+		"SELECT %s FROM candidate_profiles WHERE enterprise_id = $1 ORDER BY %s %s LIMIT $2 OFFSET $3",
+		candidateFields, sortCol, params.GetSortDir(),
+	)
+	rows, err := r.db.Query(ctx, query, enterpriseID, params.GetLimit(), params.GetOffset())
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -134,11 +162,11 @@ func (r *candidateRepository) ListByEnterprise(ctx context.Context, enterpriseID
 	for rows.Next() {
 		c, err := scanCandidate(rows)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		list = append(list, c)
 	}
-	return list, nil
+	return list, total, nil
 }
 
 func (r *candidateRepository) Update(ctx context.Context, c *domain.CandidateProfile) error {

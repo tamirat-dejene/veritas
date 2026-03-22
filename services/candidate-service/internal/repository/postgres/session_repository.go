@@ -9,7 +9,33 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
+
+var allowedSessionSortFields = map[string]string{
+	"created_at": "created_at",
+	"status":     "status",
+	"started_at": "started_at",
+}
+
+func safeSessionSortField(s string) string {
+	if col, ok := allowedSessionSortFields[s]; ok {
+		return col
+	}
+	return "created_at"
+}
+
+var allowedSubmissionSortFields = map[string]string{
+	"created_at":   "created_at",
+	"submitted_at": "submitted_at",
+}
+
+func safeSubmissionSortField(s string) string {
+	if col, ok := allowedSubmissionSortFields[s]; ok {
+		return col
+	}
+	return "created_at"
+}
 
 type sessionRepository struct {
 	db DBTX
@@ -74,22 +100,38 @@ func (r *sessionRepository) GetSessionByID(ctx context.Context, id uuid.UUID) (*
 	return scanSession(r.db.QueryRow(ctx, query, id))
 }
 
-func (r *sessionRepository) ListSessionsByExam(ctx context.Context, examID uuid.UUID, status *domain.SessionStatus) ([]*domain.ExamSession, error) {
-	query := fmt.Sprintf("SELECT %s FROM exam_sessions WHERE exam_id = $1", sessionFields)
-
-	var args []interface{}
-	args = append(args, examID)
+func (r *sessionRepository) ListSessionsByExam(ctx context.Context, examID uuid.UUID, status *domain.SessionStatus, params pagination.Params) ([]*domain.ExamSession, int64, error) {
+	// Build WHERE clause (reused for count and data)
+	where := "exam_id = $1"
+	countArgs := []interface{}{examID}
+	dataArgs := []interface{}{examID}
 
 	if status != nil {
-		query += " AND status = $2"
-		args = append(args, *status)
+		where += " AND status = $2"
+		countArgs = append(countArgs, *status)
+		dataArgs = append(dataArgs, *status)
 	}
 
-	query += " ORDER BY created_at DESC"
+	// Count query
+	var total int64
+	if err := r.db.QueryRow(ctx,
+		fmt.Sprintf("SELECT COUNT(*) FROM exam_sessions WHERE %s", where),
+		countArgs...,
+	).Scan(&total); err != nil {
+		return nil, 0, err
+	}
 
-	rows, err := r.db.Query(ctx, query, args...)
+	// Data query — append LIMIT and OFFSET as the next positional args
+	next := len(dataArgs) + 1
+	sortCol := safeSessionSortField(params.GetSort())
+	dataArgs = append(dataArgs, params.GetLimit(), params.GetOffset())
+	query := fmt.Sprintf(
+		"SELECT %s FROM exam_sessions WHERE %s ORDER BY %s %s LIMIT $%d OFFSET $%d",
+		sessionFields, where, sortCol, params.GetSortDir(), next, next+1,
+	)
+	rows, err := r.db.Query(ctx, query, dataArgs...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -97,11 +139,11 @@ func (r *sessionRepository) ListSessionsByExam(ctx context.Context, examID uuid.
 	for rows.Next() {
 		s, err := scanSession(rows)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		list = append(list, s)
 	}
-	return list, nil
+	return list, total, nil
 }
 
 func (r *sessionRepository) UpdateSessionStatus(ctx context.Context, id uuid.UUID, status domain.SessionStatus, reason *string) error {
@@ -255,17 +297,28 @@ func (r *sessionRepository) GetSubmissionBySession(ctx context.Context, sessionI
 	return &s, nil
 }
 
-func (r *sessionRepository) GetSubmissionsByExam(ctx context.Context, examID uuid.UUID) ([]*domain.ExamSubmission, error) {
-	query := `
-		SELECT es.id, es.session_id, es.submitted_at, es.auto_submitted, es.total_score, es.grading_status, es.created_at
+func (r *sessionRepository) GetSubmissionsByExam(ctx context.Context, examID uuid.UUID, params pagination.Params) ([]*domain.ExamSubmission, int64, error) {
+	const baseJoin = `
 		FROM exam_submissions es
 		JOIN exam_sessions s ON es.session_id = s.id
 		WHERE s.exam_id = $1
-		ORDER BY es.created_at DESC
 	`
-	rows, err := r.db.Query(ctx, query, examID)
+
+	// Count query
+	var total int64
+	if err := r.db.QueryRow(ctx, "SELECT COUNT(*) "+baseJoin, examID).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	// Data query with pagination
+	sortCol := safeSubmissionSortField(params.GetSort())
+	query := fmt.Sprintf(
+		`SELECT es.id, es.session_id, es.submitted_at, es.auto_submitted, es.total_score, es.grading_status, es.created_at %s ORDER BY es.%s %s LIMIT $2 OFFSET $3`,
+		baseJoin, sortCol, params.GetSortDir(),
+	)
+	rows, err := r.db.Query(ctx, query, examID, params.GetLimit(), params.GetOffset())
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -273,11 +326,11 @@ func (r *sessionRepository) GetSubmissionsByExam(ctx context.Context, examID uui
 	for rows.Next() {
 		var s domain.ExamSubmission
 		if err := rows.Scan(&s.ID, &s.SessionID, &s.SubmittedAt, &s.AutoSubmitted, &s.TotalScore, &s.GradingStatus, &s.CreatedAt); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		list = append(list, &s)
 	}
-	return list, nil
+	return list, total, nil
 }
 
 func (r *sessionRepository) WithTx(tx pgx.Tx) domain.SessionRepository {

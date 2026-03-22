@@ -9,7 +9,21 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
+
+var allowedEnrollmentSortFields = map[string]string{
+	"created_at":   "created_at",
+	"status":       "status",
+	"attempts_used": "attempts_used",
+}
+
+func safeEnrollmentSortField(s string) string {
+	if col, ok := allowedEnrollmentSortFields[s]; ok {
+		return col
+	}
+	return "created_at"
+}
 
 type enrollmentRepository struct {
 	db DBTX
@@ -73,11 +87,25 @@ func (r *enrollmentRepository) GetByExamAndCandidate(ctx context.Context, examID
 	return scanEnrollment(r.db.QueryRow(ctx, query, examID, candidateID))
 }
 
-func (r *enrollmentRepository) ListByExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID) ([]*domain.ExamEnrollment, error) {
-	query := fmt.Sprintf("SELECT %s FROM exam_enrollments WHERE exam_id = $1 AND enterprise_id = $2 ORDER BY created_at DESC", enrollmentFields)
-	rows, err := r.db.Query(ctx, query, examID, enterpriseID)
+func (r *enrollmentRepository) ListByExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) ([]*domain.ExamEnrollment, int64, error) {
+	// Count query
+	var total int64
+	if err := r.db.QueryRow(ctx,
+		"SELECT COUNT(*) FROM exam_enrollments WHERE exam_id = $1 AND enterprise_id = $2",
+		examID, enterpriseID,
+	).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	// Data query with pagination
+	sortCol := safeEnrollmentSortField(params.GetSort())
+	query := fmt.Sprintf(
+		"SELECT %s FROM exam_enrollments WHERE exam_id = $1 AND enterprise_id = $2 ORDER BY %s %s LIMIT $3 OFFSET $4",
+		enrollmentFields, sortCol, params.GetSortDir(),
+	)
+	rows, err := r.db.Query(ctx, query, examID, enterpriseID, params.GetLimit(), params.GetOffset())
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -85,11 +113,11 @@ func (r *enrollmentRepository) ListByExam(ctx context.Context, examID uuid.UUID,
 	for rows.Next() {
 		e, err := scanEnrollment(rows)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		list = append(list, e)
 	}
-	return list, nil
+	return list, total, nil
 }
 
 func (r *enrollmentRepository) Update(ctx context.Context, e *domain.ExamEnrollment) error {
