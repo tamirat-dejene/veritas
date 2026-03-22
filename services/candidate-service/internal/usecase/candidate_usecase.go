@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 	"go.uber.org/zap"
 )
 
@@ -91,8 +92,8 @@ func (uc *candidateUseCase) BulkUpload(ctx context.Context, enterpriseID uuid.UU
 	return len(candidates), nil
 }
 
-func (uc *candidateUseCase) GetCandidates(ctx context.Context, enterpriseID uuid.UUID) ([]*domain.CandidateProfile, error) {
-	return uc.repo.ListByEnterprise(ctx, enterpriseID)
+func (uc *candidateUseCase) GetCandidates(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*domain.CandidateProfile, int64, error) {
+	return uc.repo.ListByEnterprise(ctx, enterpriseID, params)
 }
 
 func (uc *candidateUseCase) GetCandidate(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*domain.CandidateProfile, error) {

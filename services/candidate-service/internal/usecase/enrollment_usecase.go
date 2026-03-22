@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 	"go.uber.org/zap"
 )
 
@@ -89,8 +90,8 @@ func (uc *enrollmentUseCase) EnrollCandidates(ctx context.Context, enterpriseID 
 	return rawTokens, nil
 }
 
-func (uc *enrollmentUseCase) GetEnrollmentsForExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID) ([]*domain.ExamEnrollment, error) {
-	return uc.repo.ListByExam(ctx, examID, enterpriseID)
+func (uc *enrollmentUseCase) GetEnrollmentsForExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) ([]*domain.ExamEnrollment, int64, error) {
+	return uc.repo.ListByExam(ctx, examID, enterpriseID, params)
 }
 
 func (uc *enrollmentUseCase) GetEnrollment(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*domain.ExamEnrollment, error) {
