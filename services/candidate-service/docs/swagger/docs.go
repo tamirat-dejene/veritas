@@ -191,7 +191,7 @@ const docTemplate = `{
         },
         "/candidates/bulk": {
             "post": {
-                "description": "Create many candidate profiles from a CSV file (max 5MB).",
+                "description": "Create many candidate profiles from a CSV file (max 5MB).\nThe CSV should have the following columns in order:\nexternal_id (required), first_name (required), last_name (required), email (optional), face_reference_url (optional).\nThe first row is expected to be a header and will be skipped.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -211,7 +211,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "file",
-                        "description": "CSV file",
+                        "description": "CSV file (max 5MB)",
                         "name": "file",
                         "in": "formData",
                         "required": true

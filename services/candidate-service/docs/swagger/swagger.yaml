@@ -638,13 +638,17 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: Create many candidate profiles from a CSV file (max 5MB).
+      description: |-
+        Create many candidate profiles from a CSV file (max 5MB).
+        The CSV should have the following columns in order:
+        external_id (required), first_name (required), last_name (required), email (optional), face_reference_url (optional).
+        The first row is expected to be a header and will be skipped.
       parameters:
       - description: Enterprise ID (fallback if middleware context is absent)
         in: header
         name: X-Enterprise-Id
         type: string
-      - description: CSV file
+      - description: CSV file (max 5MB)
         in: formData
         name: file
         required: true

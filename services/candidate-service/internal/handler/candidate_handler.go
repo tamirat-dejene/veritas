@@ -95,15 +95,18 @@ func (h *CandidateHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"data": created})
 }
 
-// BulkUpload creates candidates from a CSV file upload.
+// BulkUpload handles CSV upload for candidates.
 //
 //	@Summary		Bulk upload candidates
 //	@Description	Create many candidate profiles from a CSV file (max 5MB).
+//	@Description	The CSV should have the following columns in order:
+//	@Description	external_id (required), first_name (required), last_name (required), email (optional), face_reference_url (optional).
+//	@Description	The first row is expected to be a header and will be skipped.
 //	@Tags			candidate
 //	@Accept			multipart/form-data
 //	@Produce		json
 //	@Param			X-Enterprise-Id	header		string	false	"Enterprise ID (fallback if middleware context is absent)"
-//	@Param			file				formData	file	true	"CSV file"
+//	@Param			file				formData	file	true	"CSV file (max 5MB)"
 //	@Success		201				{object}	dto.BulkUploadResponse
 //	@Failure		400				{object}	dto.ErrorResponse
 //	@Failure		401				{object}	dto.ErrorResponse

@@ -66,11 +66,14 @@ func (uc *candidateUseCase) BulkUpload(ctx context.Context, enterpriseID uuid.UU
 			IsActive:     true,
 		}
 
-		if len(row) >= 4 {
+		if len(row) >= 4 && row[3] != "" {
 			email := row[3]
-			if email != "" {
-				c.Email = &email
-			}
+			c.Email = &email
+		}
+
+		if len(row) >= 5 && row[4] != "" {
+			faceRef := row[4]
+			c.FaceReferenceURL = &faceRef
 		}
 
 		candidates = append(candidates, c)
