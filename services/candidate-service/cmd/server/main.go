@@ -35,6 +35,7 @@ import (
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/config"
 	c_http "github.com/tamirat-dejene/veritas/services/candidate-service/internal/handler"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/infrastructure/client"
+	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/infrastructure/token"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/usecase"
@@ -76,9 +77,11 @@ func main() {
 	sessionRepo := postgres.NewSessionRepository(pool)
 
 	// 6. Initialize UseCases
+	tokenService := token.NewTokenService(cfg.EnrollmentTokenSecret)
+
 	candidateUC := usecase.NewCandidateUseCase(pool, candidateRepo, log)
-	enrollmentUC := usecase.NewEnrollmentUseCase(pool, enrollmentRepo, log)
-	sessionUC := usecase.NewSessionUseCase(pool, sessionRepo, enrollmentRepo, examClient, log)
+	enrollmentUC := usecase.NewEnrollmentUseCase(pool, enrollmentRepo, tokenService, log)
+	sessionUC := usecase.NewSessionUseCase(pool, sessionRepo, enrollmentRepo, examClient, tokenService, log)
 	monitoringUC := usecase.NewMonitoringUseCase(sessionRepo, log)
 
 	// 7. Initialize Handlers
