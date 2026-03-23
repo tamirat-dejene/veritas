@@ -72,6 +72,13 @@ type ExamSession struct {
 	Submission *ExamSubmission   `json:"submission,omitempty"`
 }
 
+type ValidateAccessTokenResponse struct {
+	EnrollmentID uuid.UUID `json:"enrollmentId"`
+	CandidateID  uuid.UUID `json:"candidateId"`
+	ExamID       uuid.UUID `json:"examId"`
+	EnterpriseID uuid.UUID `json:"enterpriseId"`
+}
+
 type SessionRepository interface {
 	CreateSession(ctx context.Context, session *ExamSession) error
 	GetSessionByID(ctx context.Context, id uuid.UUID) (*ExamSession, error)
@@ -92,7 +99,7 @@ type SessionRepository interface {
 
 // SessionUseCase covers Candidate Access Flow
 type SessionUseCase interface {
-	ValidateAccessToken(ctx context.Context, token string) (map[string]interface{}, error) // Returns exam basic metadata + validity
+	ValidateAccessToken(ctx context.Context, token string) (*ValidateAccessTokenResponse, error)
 	StartSession(ctx context.Context, token string, clientIP, userAgent string) (*ExamSession, error)
 	ResumeActiveSession(ctx context.Context, candidateID uuid.UUID) (*ExamSession, error)
 	GetSessionDetails(ctx context.Context, sessionID uuid.UUID, requestingUserID uuid.UUID, role string) (*ExamSession, error)
