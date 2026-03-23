@@ -2,9 +2,7 @@ package usecase
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -18,30 +16,25 @@ import (
 )
 
 type enrollmentUseCase struct {
-	pool   *pgxpool.Pool
-	repo   domain.EnrollmentRepository
-	logger *zap.Logger
+	pool         *pgxpool.Pool
+	repo         domain.EnrollmentRepository
+	tokenService domain.EnrollmentTokenService
+	logger       *zap.Logger
 }
 
-func NewEnrollmentUseCase(pool *pgxpool.Pool, repo domain.EnrollmentRepository, logger *zap.Logger) domain.EnrollmentUseCase {
+func NewEnrollmentUseCase(pool *pgxpool.Pool, repo domain.EnrollmentRepository, tokenService domain.EnrollmentTokenService, logger *zap.Logger) domain.EnrollmentUseCase {
 	return &enrollmentUseCase{
-		pool:   pool,
-		repo:   repo,
-		logger: logger,
+		pool:         pool,
+		repo:         repo,
+		tokenService: tokenService,
+		logger:       logger,
 	}
 }
 
-// Generate a secure token using crypto/rand with a configurable length.
-func generateSecureToken(length int) (string, error) {
-	bytes := make([]byte, length)
-	if _, err := rand.Read(bytes); err != nil {
-		return "", err
-	}
-	return base64.URLEncoding.EncodeToString(bytes), nil
-}
+// Hash a token with SHA-256 for revocation/matching purposes in DB
 
-// Hash a token with SHA-256
-func hashToken(token string) string {
+// HashToken hashes a token with SHA-256
+func HashToken(token string) string {
 	h := sha256.New()
 	h.Write([]byte(token))
 	return hex.EncodeToString(h.Sum(nil))
@@ -52,14 +45,24 @@ func (uc *enrollmentUseCase) EnrollCandidates(ctx context.Context, enterpriseID 
 
 	err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		for _, cid := range candidateIDs {
-			rawToken, err := generateSecureToken(16)
-			if err != nil {
-				return fmt.Errorf("generate secure token: %w", err)
+			enrollmentID := uuid.New()
+
+			claims := domain.EnrollmentClaims{
+				EnrollmentID: enrollmentID,
+				CandidateID:  cid,
+				ExamID:       examID,
+				EnterpriseID: enterpriseID,
 			}
 
-			hashedToken := hashToken(rawToken)
+			rawToken, err := uc.tokenService.GenerateToken(ctx, claims)
+			if err != nil {
+				return fmt.Errorf("generate enrollment token: %w", err)
+			}
+
+			hashedToken := HashToken(rawToken)
 
 			enrollment := &domain.ExamEnrollment{
+				ID:              enrollmentID,
 				EnterpriseID:    enterpriseID,
 				ExamID:          examID,
 				CandidateID:     cid,
@@ -104,13 +107,20 @@ func (uc *enrollmentUseCase) RegenerateToken(ctx context.Context, id uuid.UUID, 
 			return err
 		}
 
-		rt, err := generateSecureToken(16)
+		claims := domain.EnrollmentClaims{
+			EnrollmentID: e.ID,
+			CandidateID:  e.CandidateID,
+			ExamID:       e.ExamID,
+			EnterpriseID: e.EnterpriseID,
+		}
+
+		rt, err := uc.tokenService.GenerateToken(ctx, claims)
 		if err != nil {
 			return err
 		}
 		rawToken = rt
 
-		e.AccessTokenHash = hashToken(rawToken)
+		e.AccessTokenHash = HashToken(rawToken)
 
 		if err := uc.repo.WithTx(tx).Update(ctx, e); err != nil {
 			return err
