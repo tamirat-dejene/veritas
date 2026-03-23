@@ -14,7 +14,6 @@ import (
 
 var allowedEnrollmentSortFields = map[string]string{
 	"created_at":   "created_at",
-	"status":       "status",
 	"attempts_used": "attempts_used",
 }
 
@@ -34,16 +33,16 @@ func NewEnrollmentRepository(db DBTX) domain.EnrollmentRepository {
 }
 
 const enrollmentFields = `
-	id, enterprise_id, exam_id, candidate_id, invitation_method, access_token_hash,
-	token_expires_at, max_attempts, attempts_used, status, created_at
+	id, enterprise_id, exam_id, candidate_id, access_token_hash,
+	token_expires_at, max_attempts, attempts_used, created_at
 `
 
 func scanEnrollment(row pgx.Row) (*domain.ExamEnrollment, error) {
 	var e domain.ExamEnrollment
 	err := row.Scan(
-		&e.ID, &e.EnterpriseID, &e.ExamID, &e.CandidateID, &e.InvitationMethod,
+		&e.ID, &e.EnterpriseID, &e.ExamID, &e.CandidateID,
 		&e.AccessTokenHash, &e.TokenExpiresAt, &e.MaxAttempts, &e.AttemptsUsed,
-		&e.Status, &e.CreatedAt,
+		&e.CreatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -57,9 +56,9 @@ func scanEnrollment(row pgx.Row) (*domain.ExamEnrollment, error) {
 func (r *enrollmentRepository) Create(ctx context.Context, e *domain.ExamEnrollment) error {
 	const insertQuery = `
 		INSERT INTO exam_enrollments (
-			id, enterprise_id, exam_id, candidate_id, invitation_method, access_token_hash,
-			token_expires_at, max_attempts, attempts_used, status, created_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+			id, enterprise_id, exam_id, candidate_id, access_token_hash,
+			token_expires_at, max_attempts, attempts_used, created_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
 	if e.ID == uuid.Nil {
 		e.ID = uuid.New()
@@ -69,9 +68,9 @@ func (r *enrollmentRepository) Create(ctx context.Context, e *domain.ExamEnrollm
 	}
 
 	_, err := r.db.Exec(ctx, insertQuery,
-		e.ID, e.EnterpriseID, e.ExamID, e.CandidateID, e.InvitationMethod,
+		e.ID, e.EnterpriseID, e.ExamID, e.CandidateID,
 		e.AccessTokenHash, e.TokenExpiresAt, e.MaxAttempts, e.AttemptsUsed,
-		e.Status, e.CreatedAt,
+		e.CreatedAt,
 	)
 	// Optionally check duplicate enrollment violation
 	return err
@@ -123,12 +122,11 @@ func (r *enrollmentRepository) ListByExam(ctx context.Context, examID uuid.UUID,
 func (r *enrollmentRepository) Update(ctx context.Context, e *domain.ExamEnrollment) error {
 	const updateQuery = `
 		UPDATE exam_enrollments
-		SET access_token_hash = $3, token_expires_at = $4, max_attempts = $5,
-		    status = $6
+		SET access_token_hash = $3, token_expires_at = $4, max_attempts = $5
 		WHERE id = $1 AND enterprise_id = $2
 	`
 	tag, err := r.db.Exec(ctx, updateQuery,
-		e.ID, e.EnterpriseID, e.AccessTokenHash, e.TokenExpiresAt, e.MaxAttempts, e.Status,
+		e.ID, e.EnterpriseID, e.AccessTokenHash, e.TokenExpiresAt, e.MaxAttempts,
 	)
 	if err != nil {
 		return err
@@ -142,7 +140,7 @@ func (r *enrollmentRepository) Update(ctx context.Context, e *domain.ExamEnrollm
 func (r *enrollmentRepository) IncrementAttempt(ctx context.Context, id uuid.UUID) error {
 	const updateQuery = `
 		UPDATE exam_enrollments
-		SET attempts_used = attempts_used + 1, status = 'Attempted'
+		SET attempts_used = attempts_used + 1
 		WHERE id = $1
 	`
 	tag, err := r.db.Exec(ctx, updateQuery, id)

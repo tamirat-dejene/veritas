@@ -46,7 +46,6 @@ type BulkUploadResponse struct {
 
 type EnrollmentRequest struct {
 	CandidateIDs     []uuid.UUID `json:"candidateIds" binding:"required,min=1"`
-	InvitationMethod string      `json:"invitationMethod" binding:"required"`
 	MaxAttempts      int         `json:"maxAttempts" binding:"required,min=1"`
 	TokenExpiresAt   time.Time   `json:"tokenExpiresAt" binding:"required"`
 }

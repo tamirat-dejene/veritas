@@ -35,12 +35,8 @@ definitions:
         type: string
       id:
         type: string
-      invitationMethod:
-        type: string
       maxAttempts:
         type: integer
-      status:
-        type: string
       tokenExpiresAt:
         type: string
     type: object
@@ -205,8 +201,6 @@ definitions:
         type: string
       firstName:
         type: string
-      isActive:
-        type: boolean
       lastName:
         type: string
     required:
@@ -229,8 +223,6 @@ definitions:
           type: string
         minItems: 1
         type: array
-      invitationMethod:
-        type: string
       maxAttempts:
         minimum: 1
         type: integer
@@ -238,7 +230,6 @@ definitions:
         type: string
     required:
     - candidateIds
-    - invitationMethod
     - maxAttempts
     - tokenExpiresAt
     type: object
@@ -856,7 +847,7 @@ paths:
         in: query
         name: limit
         type: integer
-      - description: 'Sort field: created_at|status|attempts_used'
+      - description: 'Sort field: created_at|attempts_used'
         in: query
         name: sort
         type: string

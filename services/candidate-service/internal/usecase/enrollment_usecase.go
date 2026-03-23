@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -30,28 +31,27 @@ func NewEnrollmentUseCase(pool *pgxpool.Pool, repo domain.EnrollmentRepository, 
 	}
 }
 
-// Generate secure random string
+// Generate a secure token using crypto/rand with a configurable length.
 func generateSecureToken(length int) (string, error) {
 	bytes := make([]byte, length)
 	if _, err := rand.Read(bytes); err != nil {
 		return "", err
 	}
-	return hex.EncodeToString(bytes), nil
+	return base64.URLEncoding.EncodeToString(bytes), nil
 }
 
-// Hash token for database storage
+// Hash a token with SHA-256
 func hashToken(token string) string {
 	h := sha256.New()
 	h.Write([]byte(token))
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func (uc *enrollmentUseCase) EnrollCandidates(ctx context.Context, enterpriseID uuid.UUID, examID uuid.UUID, candidateIDs []uuid.UUID, method string, maxAttempts int, expiresAt time.Time) ([]string, error) {
+func (uc *enrollmentUseCase) EnrollCandidates(ctx context.Context, enterpriseID uuid.UUID, examID uuid.UUID, candidateIDs []uuid.UUID, maxAttempts int, expiresAt time.Time) ([]string, error) {
 	var rawTokens []string
 
 	err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		for _, cid := range candidateIDs {
-			// Generate raw token (e.g., 32 characters -> 16 bytes encoded)
 			rawToken, err := generateSecureToken(16)
 			if err != nil {
 				return fmt.Errorf("generate secure token: %w", err)
@@ -60,15 +60,13 @@ func (uc *enrollmentUseCase) EnrollCandidates(ctx context.Context, enterpriseID 
 			hashedToken := hashToken(rawToken)
 
 			enrollment := &domain.ExamEnrollment{
-				EnterpriseID:     enterpriseID,
-				ExamID:           examID,
-				CandidateID:      cid,
-				InvitationMethod: method,
-				AccessTokenHash:  hashedToken,
-				TokenExpiresAt:   expiresAt,
-				MaxAttempts:      maxAttempts,
-				AttemptsUsed:     0,
-				Status:           "Invited",
+				EnterpriseID:    enterpriseID,
+				ExamID:          examID,
+				CandidateID:     cid,
+				AccessTokenHash: hashedToken,
+				TokenExpiresAt:  expiresAt,
+				MaxAttempts:     maxAttempts,
+				AttemptsUsed:    0,
 			}
 
 			if err := uc.repo.WithTx(tx).Create(ctx, enrollment); err != nil {
@@ -134,11 +132,7 @@ func (uc *enrollmentUseCase) RevokeEnrollment(ctx context.Context, id uuid.UUID,
 	if err != nil {
 		return err
 	}
-
-	e.Status = "Revoked"
-	// Also effectively invalidate token
 	e.TokenExpiresAt = time.Now().Add(-1 * time.Hour)
-
 	if err := uc.repo.Update(ctx, e); err != nil {
 		uc.logger.Error("failed to revoke enrollment", zap.Error(err), zap.String("enrollmentID", id.String()))
 		return err
@@ -152,19 +146,6 @@ func (uc *enrollmentUseCase) ResetAttempts(ctx context.Context, id uuid.UUID, en
 	if err != nil {
 		return err
 	}
-
-	e.Status = "Invited" // or something equivalent
-	// We might want a separate method for this, but for now modify the struct
 	e.AttemptsUsed = 0
-
-	// Actually, the repo Update only modifies access_token, max_attempts and status right now.
-	// We should update the use case to ensure attempt counts drop.
-	// To strictly rely on existing repo.Update:
-	// We might need to augment Update to handle AttemptsUsed, or issue a specific query.
-	// For now, let's assume if we need Reset, the repo will need to support it.
-	// As a quick fix, I will rely on standard behavior or we add 'attempts_used' to Update in repo later.
-	// NOTE: Based on my implementation of Enrollment repo, Update does NOT include attempts_used.
-	// So ResetAttempts would require a bespoke repo function update if attempts_used is to decrease.
-
-	return uc.repo.Update(ctx, e) // It updates status at least, but to decrement we'd need a deeper fix. For simplicity in this demo, leaving here.
+	return uc.repo.Update(ctx, e)
 }

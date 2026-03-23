@@ -14,12 +14,10 @@ type ExamEnrollment struct {
 	EnterpriseID     uuid.UUID `db:"enterprise_id" json:"enterpriseId"`
 	ExamID           uuid.UUID `db:"exam_id" json:"examId"`
 	CandidateID      uuid.UUID `db:"candidate_id" json:"candidateId"`
-	InvitationMethod string    `db:"invitation_method" json:"invitationMethod"`
 	AccessTokenHash  string    `db:"access_token_hash" json:"-"` // Never send in JSON
 	TokenExpiresAt   time.Time `db:"token_expires_at" json:"tokenExpiresAt"`
 	MaxAttempts      int       `db:"max_attempts" json:"maxAttempts"`
 	AttemptsUsed     int       `db:"attempts_used" json:"attemptsUsed"`
-	Status           string    `db:"status" json:"status"`
 	CreatedAt        time.Time `db:"created_at" json:"createdAt"`
 }
 
@@ -34,7 +32,7 @@ type EnrollmentRepository interface {
 }
 
 type EnrollmentUseCase interface {
-	EnrollCandidates(ctx context.Context, enterpriseID uuid.UUID, examID uuid.UUID, candidateIDs []uuid.UUID, method string, maxAttempts int, expiresAt time.Time) ([]string, error) // Returns raw tokens mapped implicitly or wrapped
+	EnrollCandidates(ctx context.Context, enterpriseID uuid.UUID, examID uuid.UUID, candidateIDs []uuid.UUID, maxAttempts int, expiresAt time.Time) ([]string, error) // Returns raw tokens mapped implicitly or wrapped
 	GetEnrollmentsForExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) ([]*ExamEnrollment, int64, error)
 	GetEnrollment(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*ExamEnrollment, error)
 	RegenerateToken(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (string, error) // Returns raw new token

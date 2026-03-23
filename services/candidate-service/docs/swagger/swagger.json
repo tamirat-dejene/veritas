@@ -727,7 +727,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Sort field: created_at|status|attempts_used",
+                        "description": "Sort field: created_at|attempts_used",
                         "name": "sort",
                         "in": "query"
                     },
@@ -1737,14 +1737,8 @@
                 "id": {
                     "type": "string"
                 },
-                "invitationMethod": {
-                    "type": "string"
-                },
                 "maxAttempts": {
                     "type": "integer"
-                },
-                "status": {
-                    "type": "string"
                 },
                 "tokenExpiresAt": {
                     "type": "string"
@@ -1996,9 +1990,6 @@
                 "firstName": {
                     "type": "string"
                 },
-                "isActive": {
-                    "type": "boolean"
-                },
                 "lastName": {
                     "type": "string"
                 }
@@ -2022,7 +2013,6 @@
             "type": "object",
             "required": [
                 "candidateIds",
-                "invitationMethod",
                 "maxAttempts",
                 "tokenExpiresAt"
             ],
@@ -2033,9 +2023,6 @@
                     "items": {
                         "type": "string"
                     }
-                },
-                "invitationMethod": {
-                    "type": "string"
                 },
                 "maxAttempts": {
                     "type": "integer",

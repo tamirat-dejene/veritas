@@ -62,7 +62,7 @@ func (h *EnrollmentHandler) Enroll(c *gin.Context) {
 		return
 	}
 
-	tokens, err := h.uc.EnrollCandidates(c.Request.Context(), entID, examID, req.CandidateIDs, req.InvitationMethod, req.MaxAttempts, req.TokenExpiresAt)
+	tokens, err := h.uc.EnrollCandidates(c.Request.Context(), entID, examID, req.CandidateIDs, req.MaxAttempts, req.TokenExpiresAt)
 	if err != nil {
 		logger.WithContext(c.Request.Context(), h.logger).Error("Failed to enroll candidates", zap.Error(err), zap.String("examID", examID.String()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to enroll candidates"})
@@ -82,7 +82,7 @@ func (h *EnrollmentHandler) Enroll(c *gin.Context) {
 //	@Param			examId			path	string	true	"Exam ID (UUID)"
 //	@Param			page			query	int		false	"Page number (default 1)"
 //	@Param			limit			query	int		false	"Page size (default 10, max 1000)"
-//	@Param			sort			query	string	false	"Sort field: created_at|status|attempts_used"
+//	@Param			sort			query	string	false	"Sort field: created_at|attempts_used"
 //	@Param			sort_dir		query	string	false	"Sort direction: asc|desc (default desc)"
 //	@Success		200				{object}	pagination.PaginatedResponse[domain.ExamEnrollment]
 //	@Failure		400				{object}	dto.ErrorResponse
