@@ -13,7 +13,8 @@ type Config struct {
 	DBPort         string
 	DBName         string
 	DSN            string
-	ExamServiceURL string
+	ExamServiceURL        string
+	EnrollmentTokenSecret string
 }
 
 func Load() *Config {
@@ -24,7 +25,8 @@ func Load() *Config {
 		DBHost:         getEnv("PG_VERITAS_HOST", "localhost"),
 		DBPort:         getEnv("PG_VERITAS_PORT", "5432"),
 		DBName:         getEnv("PG_VERITAS_CORE_DB", "veritas_core"),
-		ExamServiceURL: getEnv("EXAM_SERVICE_URL", "http://localhost:8084"),
+		ExamServiceURL:        getEnv("EXAM_SERVICE_URL", "http://localhost:8084"),
+		EnrollmentTokenSecret: getEnv("ENROLLMENT_TOKEN_SECRET", "super-secret-enrollment-key"),
 	}
 
 	cfg.DSN = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
