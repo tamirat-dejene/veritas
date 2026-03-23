@@ -1469,10 +1469,6 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "invitationMethod": {
-                    "description": "Email, Link, Token",
-                    "type": "string"
-                },
                 "maxParticipants": {
                     "type": "integer"
                 },
@@ -1720,7 +1716,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "durationMinutes",
-                "invitationMethod",
                 "passingScorePercent",
                 "title"
             ],
@@ -1730,9 +1725,6 @@ const docTemplate = `{
                 },
                 "durationMinutes": {
                     "type": "integer"
-                },
-                "invitationMethod": {
-                    "type": "string"
                 },
                 "maxParticipants": {
                     "type": "integer"
@@ -1880,9 +1872,6 @@ const docTemplate = `{
                 },
                 "durationMinutes": {
                     "type": "integer"
-                },
-                "invitationMethod": {
-                    "type": "string"
                 },
                 "maxParticipants": {
                     "type": "integer"

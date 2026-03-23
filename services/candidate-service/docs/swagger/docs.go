@@ -730,7 +730,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Sort field: created_at|status|attempts_used",
+                        "description": "Sort field: created_at|attempts_used",
                         "name": "sort",
                         "in": "query"
                     },
@@ -1740,14 +1740,8 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "invitationMethod": {
-                    "type": "string"
-                },
                 "maxAttempts": {
                     "type": "integer"
-                },
-                "status": {
-                    "type": "string"
                 },
                 "tokenExpiresAt": {
                     "type": "string"
@@ -1999,9 +1993,6 @@ const docTemplate = `{
                 "firstName": {
                     "type": "string"
                 },
-                "isActive": {
-                    "type": "boolean"
-                },
                 "lastName": {
                     "type": "string"
                 }
@@ -2025,7 +2016,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "candidateIds",
-                "invitationMethod",
                 "maxAttempts",
                 "tokenExpiresAt"
             ],
@@ -2036,9 +2026,6 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
-                },
-                "invitationMethod": {
-                    "type": "string"
                 },
                 "maxAttempts": {
                     "type": "integer",
