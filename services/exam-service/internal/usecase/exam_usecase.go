@@ -97,7 +97,6 @@ func (uc *examUsecase) CloneExam(ctx context.Context, sourceID uuid.UUID, enterp
 			PassingScorePercent: source.PassingScorePercent,
 			NegativeMarking:     source.NegativeMarking,
 			MaxParticipants:     source.MaxParticipants,
-			InvitationMethod:    source.InvitationMethod,
 			Status:              domain.ExamDraft,
 			TemplateSourceID:    &source.ID,
 			Settings:            source.Settings,

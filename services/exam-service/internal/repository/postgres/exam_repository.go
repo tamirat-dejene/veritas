@@ -23,7 +23,7 @@ func NewExamRepository(db DBTX) domain.ExamRepository {
 
 const examFields = `
 	id, enterprise_id, title, description, duration_minutes, passing_score_percent,
-	negative_marking, max_participants, invitation_method, status, template_source_id,
+	negative_marking, max_participants, status, template_source_id,
 	scheduled_start, scheduled_end, settings, created_by, created_at, updated_at
 `
 
@@ -31,7 +31,7 @@ func scanExam(row pgx.Row) (*domain.Exam, error) {
 	var e domain.Exam
 	err := row.Scan(
 		&e.ID, &e.EnterpriseID, &e.Title, &e.Description, &e.DurationMinutes, &e.PassingScorePercent,
-		&e.NegativeMarking, &e.MaxParticipants, &e.InvitationMethod, &e.Status, &e.TemplateSourceID,
+		&e.NegativeMarking, &e.MaxParticipants, &e.Status, &e.TemplateSourceID,
 		&e.ScheduledStart, &e.ScheduledEnd, &e.Settings, &e.CreatedBy, &e.CreatedAt, &e.UpdatedAt,
 	)
 	if err != nil {
@@ -65,9 +65,9 @@ func (r *examRepository) Create(ctx context.Context, e *domain.Exam) error {
 	const insertExam = `
 		INSERT INTO veritas_exams (
 			id, enterprise_id, title, description, duration_minutes, passing_score_percent,
-			negative_marking, max_participants, invitation_method, status, template_source_id,
+			negative_marking, max_participants, status, template_source_id,
 			scheduled_start, scheduled_end, settings, created_by, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 	`
 	settingsJson, err := json.Marshal(e.Settings)
 	if err != nil {
@@ -86,7 +86,7 @@ func (r *examRepository) Create(ctx context.Context, e *domain.Exam) error {
 
 	_, err = r.db.Exec(ctx, insertExam,
 		e.ID, e.EnterpriseID, e.Title, e.Description, e.DurationMinutes, e.PassingScorePercent,
-		e.NegativeMarking, e.MaxParticipants, e.InvitationMethod, e.Status, e.TemplateSourceID,
+		e.NegativeMarking, e.MaxParticipants, e.Status, e.TemplateSourceID,
 		e.ScheduledStart, e.ScheduledEnd, settingsJson, e.CreatedBy, e.CreatedAt, e.UpdatedAt,
 	)
 	if err != nil {
@@ -160,8 +160,8 @@ func (r *examRepository) Update(ctx context.Context, e *domain.Exam) error {
 	const updateExam = `
 		UPDATE veritas_exams
 		SET title = $3, description = $4, duration_minutes = $5, passing_score_percent = $6,
-		    negative_marking = $7, max_participants = $8, invitation_method = $9, status = $10,
-		    scheduled_start = $11, scheduled_end = $12, settings = $13, updated_at = NOW()
+		    negative_marking = $7, max_participants = $8, status = $9,
+		    scheduled_start = $10, scheduled_end = $11, settings = $12, updated_at = NOW()
 		WHERE id = $1 AND enterprise_id = $2
 	`
 	settingsJson, err := json.Marshal(e.Settings)
@@ -171,7 +171,7 @@ func (r *examRepository) Update(ctx context.Context, e *domain.Exam) error {
 
 	_, err = r.db.Exec(ctx, updateExam,
 		e.ID, e.EnterpriseID, e.Title, e.Description, e.DurationMinutes, e.PassingScorePercent,
-		e.NegativeMarking, e.MaxParticipants, e.InvitationMethod, e.Status,
+		e.NegativeMarking, e.MaxParticipants, e.Status,
 		e.ScheduledStart, e.ScheduledEnd, settingsJson,
 	)
 	return err

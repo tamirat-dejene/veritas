@@ -24,9 +24,6 @@ definitions:
         type: string
       id:
         type: string
-      invitationMethod:
-        description: Email, Link, Token
-        type: string
       maxParticipants:
         type: integer
       negativeMarking:
@@ -197,8 +194,6 @@ definitions:
         type: string
       durationMinutes:
         type: integer
-      invitationMethod:
-        type: string
       maxParticipants:
         type: integer
       negativeMarking:
@@ -214,7 +209,6 @@ definitions:
         type: string
     required:
     - durationMinutes
-    - invitationMethod
     - passingScorePercent
     - title
     type: object
@@ -303,8 +297,6 @@ definitions:
         type: string
       durationMinutes:
         type: integer
-      invitationMethod:
-        type: string
       maxParticipants:
         type: integer
       negativeMarking:

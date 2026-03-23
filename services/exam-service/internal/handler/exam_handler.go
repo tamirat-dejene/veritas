@@ -62,7 +62,6 @@ func (h *ExamHandler) CreateExam(c *gin.Context) {
 		PassingScorePercent: req.PassingScorePercent,
 		NegativeMarking:     req.NegativeMarking,
 		MaxParticipants:     req.MaxParticipants,
-		InvitationMethod:    req.InvitationMethod,
 		TemplateSourceID:    req.TemplateSourceID,
 		Settings:            req.Settings,
 	}
@@ -128,7 +127,6 @@ func (h *ExamHandler) UpdateExam(c *gin.Context) {
 		PassingScorePercent: req.PassingScorePercent,
 		NegativeMarking:     req.NegativeMarking,
 		MaxParticipants:     req.MaxParticipants,
-		InvitationMethod:    req.InvitationMethod,
 		Settings:            req.Settings,
 	}
 

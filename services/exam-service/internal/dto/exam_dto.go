@@ -13,7 +13,6 @@ type CreateExamRequest struct {
 	PassingScorePercent float64                `json:"passingScorePercent" binding:"required"`
 	NegativeMarking     bool                   `json:"negativeMarking"`
 	MaxParticipants     *int                   `json:"maxParticipants,omitempty"`
-	InvitationMethod    string                 `json:"invitationMethod" binding:"required"`
 	TemplateSourceID    *uuid.UUID             `json:"templateSourceId,omitempty"`
 	Settings            map[string]interface{} `json:"settings,omitempty"`
 }
@@ -26,7 +25,6 @@ type UpdateExamRequest struct {
 	PassingScorePercent float64                `json:"passingScorePercent"`
 	NegativeMarking     bool                   `json:"negativeMarking"`
 	MaxParticipants     *int                   `json:"maxParticipants,omitempty"`
-	InvitationMethod    string                 `json:"invitationMethod"`
 	Settings            map[string]interface{} `json:"settings,omitempty"`
 }
 

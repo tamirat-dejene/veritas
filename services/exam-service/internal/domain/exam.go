@@ -52,7 +52,6 @@ type Exam struct {
 	PassingScorePercent float64                `db:"passing_score_percent" json:"passingScorePercent"`
 	NegativeMarking     bool                   `db:"negative_marking" json:"negativeMarking"`
 	MaxParticipants     *int                   `db:"max_participants" json:"maxParticipants,omitempty"`
-	InvitationMethod    string                 `db:"invitation_method" json:"invitationMethod"` // Email, Link, Token
 	Status              ExamStatus             `db:"status" json:"status"`
 	TemplateSourceID    *uuid.UUID             `db:"template_source_id" json:"templateSourceId,omitempty"`
 	ScheduledStart      *time.Time             `db:"scheduled_start" json:"scheduledStart,omitempty"`
