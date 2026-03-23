@@ -151,6 +151,17 @@ definitions:
     - SessionSubmitted
     - SessionTerminated
     - SessionExpired
+  ValidateAccessTokenResponse:
+    properties:
+      candidateId:
+        type: string
+      enrollmentId:
+        type: string
+      enterpriseId:
+        type: string
+      examId:
+        type: string
+    type: object
   AccessValidateRequest:
     properties:
       token:
@@ -161,8 +172,7 @@ definitions:
   AccessValidateResponse:
     properties:
       data:
-        additionalProperties: {}
-        type: object
+        $ref: '#/definitions/ValidateAccessTokenResponse'
     type: object
   BulkUploadResponse:
     properties:

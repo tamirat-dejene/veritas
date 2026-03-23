@@ -1913,6 +1913,23 @@ const docTemplate = `{
                 "SessionExpired"
             ]
         },
+        "ValidateAccessTokenResponse": {
+            "type": "object",
+            "properties": {
+                "candidateId": {
+                    "type": "string"
+                },
+                "enrollmentId": {
+                    "type": "string"
+                },
+                "enterpriseId": {
+                    "type": "string"
+                },
+                "examId": {
+                    "type": "string"
+                }
+            }
+        },
         "AccessValidateRequest": {
             "type": "object",
             "required": [
@@ -1928,8 +1945,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {
-                    "type": "object",
-                    "additionalProperties": {}
+                    "$ref": "#/definitions/ValidateAccessTokenResponse"
                 }
             }
         },
