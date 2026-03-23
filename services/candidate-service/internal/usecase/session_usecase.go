@@ -19,43 +19,49 @@ type sessionUseCase struct {
 	sessionRepo    domain.SessionRepository
 	enrollmentRepo domain.EnrollmentRepository
 	examClient     client.ExamServiceClient
+	tokenService   domain.EnrollmentTokenService
 	logger         *zap.Logger
 }
 
-func NewSessionUseCase(pool *pgxpool.Pool, sRepo domain.SessionRepository, eRepo domain.EnrollmentRepository, eClient client.ExamServiceClient, logger *zap.Logger) domain.SessionUseCase {
+func NewSessionUseCase(pool *pgxpool.Pool, sRepo domain.SessionRepository, eRepo domain.EnrollmentRepository, eClient client.ExamServiceClient, tokenService domain.EnrollmentTokenService, logger *zap.Logger) domain.SessionUseCase {
 	return &sessionUseCase{
 		pool:           pool,
 		sessionRepo:    sRepo,
 		enrollmentRepo: eRepo,
 		examClient:     eClient,
+		tokenService:   tokenService,
 		logger:         logger,
 	}
 }
 
-// Just an internal helper to hash the token the same way
-func hashAccessToken(token string) string {
-	return hashToken(token) // Assuming hashToken is exported or we can redefine it. Assuming accessible relative to package scope.
-}
+func (uc *sessionUseCase) ValidateAccessToken(ctx context.Context, token string) (*domain.ValidateAccessTokenResponse, error) {
+	claims, err := uc.tokenService.ParseToken(ctx, token)
+	if err != nil {
+		return nil, domain.ErrInvalidAccessToken
+	}
 
-func (uc *sessionUseCase) ValidateAccessToken(ctx context.Context, token string) (map[string]interface{}, error) {
-	// Not implemented perfectly here because we lack a reverse index on access_token_hash.
-	// In a real system, you might decode the candidate and exam id from the JWT if it's a JWT.
-	// For this design, we map token to enrollment via a DB query if we added `GetByTokenHash`.
-	// For compilation, returning empty mapping.
-	return map[string]interface{}{"valid": true}, nil
+	return &domain.ValidateAccessTokenResponse{
+		EnrollmentID: claims.EnrollmentID,
+		CandidateID:  claims.CandidateID,
+		ExamID:       claims.ExamID,
+		EnterpriseID: claims.EnterpriseID,
+	}, nil
 }
 
 func (uc *sessionUseCase) StartSession(ctx context.Context, token string, clientIP, userAgent string) (*domain.ExamSession, error) {
-	// 1. Fetch Enrollment based on Token Hash (Skipped exact find implementation for brevity)
-	// Example assumed logic:
-	var e *domain.ExamEnrollment // e, err = uc.enrollmentRepo.GetByTokenHash(hashAccessToken(token))
-	e = &domain.ExamEnrollment{
-		ID:           uuid.New(),
-		EnterpriseID: uuid.New(),
-		ExamID:       uuid.New(),
-		CandidateID:  uuid.New(),
-		MaxAttempts:  1,
-		AttemptsUsed: 0,
+	claims, err := uc.tokenService.ParseToken(ctx, token)
+	if err != nil {
+		return nil, domain.ErrInvalidAccessToken
+	}
+
+	e, err := uc.enrollmentRepo.GetByID(ctx, claims.EnrollmentID, claims.EnterpriseID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify that the token presented matches the one current in DB (allows revocation/rotation)
+	if e.AccessTokenHash != HashToken(token) {
+		return nil, domain.ErrInvalidAccessToken
 	}
 
 	if e.AttemptsUsed >= e.MaxAttempts {

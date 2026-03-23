@@ -73,7 +73,7 @@ type AccessValidateRequest struct {
 }
 
 type AccessValidateResponse struct {
-	Data map[string]any `json:"data"`
+	Data *domain.ValidateAccessTokenResponse `json:"data"`
 }
 
 type SessionStartRequest struct {
@@ -120,4 +120,8 @@ type SubmissionListResponse struct {
 type SubmitResponse struct {
 	Message string                 `json:"message"`
 	Data    *domain.ExamSubmission `json:"data"`
+}
+
+type ValidateAccessTokenResponse struct {
+	Data map[string]any `json:"data"`
 }
