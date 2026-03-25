@@ -10,15 +10,17 @@ import (
 
 // RouterGroup encapsulates routing logic and common middleware builders
 type RouterGroup struct {
-	engine    *gin.Engine
-	jwtSecret string
+	engine           *gin.Engine
+	jwtSecret        string
+	enrollmentSecret string
 }
 
 // NewRouterGroup creates a new router group
-func NewRouterGroup(engine *gin.Engine, jwtSecret string) *RouterGroup {
+func NewRouterGroup(engine *gin.Engine, jwtSecret, enrollmentSecret string) *RouterGroup {
 	return &RouterGroup{
-		engine:    engine,
-		jwtSecret: jwtSecret,
+		engine:           engine,
+		jwtSecret:        jwtSecret,
+		enrollmentSecret: enrollmentSecret,
 	}
 }
 
@@ -43,4 +45,25 @@ func (g *RouterGroup) defaultAuthChain() []gin.HandlerFunc {
 // authWithRoles wraps routes with auth and domain role checks
 func (g *RouterGroup) authWithRoles(roles ...domain.Role) []gin.HandlerFunc {
 	return append(g.defaultAuthChain(), middleware.RequireRole(roles...))
+}
+
+// candidateAuthChain builds the authentication chain specifically for ExamCandidates
+// using enrollment tokens.
+func (g *RouterGroup) candidateAuthChain() []gin.HandlerFunc {
+	return []gin.HandlerFunc{
+		middleware.EnrollmentAuth(g.enrollmentSecret),
+		middleware.TenantResolver(),
+		middleware.InjectUserHeaders(),
+		middleware.RequireRole(domain.RoleExamCandidate),
+	}
+}
+
+// candidateOrAdminChain allows both enrollment tokens and standard user tokens.
+func (g *RouterGroup) candidateOrAdminChain(adminRoles ...domain.Role) []gin.HandlerFunc {
+	return []gin.HandlerFunc{
+		middleware.TryEnrollmentOrUserAuth(g.enrollmentSecret, g.jwtSecret),
+		middleware.TenantResolver(),
+		middleware.InjectUserHeaders(),
+		middleware.RequireRole(append([]domain.Role{domain.RoleExamCandidate}, adminRoles...)...),
+	}
 }
