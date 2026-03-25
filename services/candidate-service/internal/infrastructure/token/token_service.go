@@ -22,11 +22,13 @@ func NewTokenService(secret string) domain.EnrollmentTokenService {
 
 func (s *jwtTokenService) GenerateToken(ctx context.Context, claims domain.EnrollmentClaims) (string, error) {
 	jwtClaims := jwt.MapClaims{
-		"eid": claims.EnrollmentID.String(),
-		"cid": claims.CandidateID.String(),
-		"xid": claims.ExamID.String(),
-		"ent": claims.EnterpriseID.String(),
-		"iat": time.Now().Unix(),
+		"eid":  claims.EnrollmentID.String(),
+		"cid":  claims.CandidateID.String(),
+		"xid":  claims.ExamID.String(),
+		"ent":  claims.EnterpriseID.String(),
+		"role": claims.Role,
+		"iat":  time.Now().Unix(),
+		"exp":  claims.ExpiresAt.Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwtClaims)
@@ -63,11 +65,19 @@ func (s *jwtTokenService) ParseToken(ctx context.Context, tokenString string) (*
 			return nil, fmt.Errorf("invalid enterprise id in token")
 		}
 
+		role, _ := claims["role"].(string)
+		var expAt time.Time
+		if exp, ok := claims["exp"].(float64); ok {
+			expAt = time.Unix(int64(exp), 0)
+		}
+
 		return &domain.EnrollmentClaims{
 			EnrollmentID: enrollmentID,
 			CandidateID:  candidateID,
 			ExamID:       examID,
 			EnterpriseID: enterpriseID,
+			Role:         role,
+			ExpiresAt:    expAt,
 		}, nil
 	}
 

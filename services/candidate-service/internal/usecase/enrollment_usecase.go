@@ -52,6 +52,8 @@ func (uc *enrollmentUseCase) EnrollCandidates(ctx context.Context, enterpriseID 
 				CandidateID:  cid,
 				ExamID:       examID,
 				EnterpriseID: enterpriseID,
+				Role:         domain.RoleExamCandidate,
+				ExpiresAt:    expiresAt,
 			}
 
 			rawToken, err := uc.tokenService.GenerateToken(ctx, claims)
@@ -112,6 +114,8 @@ func (uc *enrollmentUseCase) RegenerateToken(ctx context.Context, id uuid.UUID, 
 			CandidateID:  e.CandidateID,
 			ExamID:       e.ExamID,
 			EnterpriseID: e.EnterpriseID,
+			Role:         domain.RoleExamCandidate,
+			ExpiresAt:    e.TokenExpiresAt,
 		}
 
 		rt, err := uc.tokenService.GenerateToken(ctx, claims)
