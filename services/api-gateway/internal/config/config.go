@@ -20,6 +20,7 @@ type Config struct {
 	GradingServiceURL          string
 	ReportingServiceURL        string
 	JWTSecret                  string
+	EnrollmentTokenSecret      string
 	RedisHost                  string
 	RedisPort                  int
 	RedisPassword              string
@@ -36,9 +37,13 @@ const insecureDefaultSecret = "super-secret-key"
 func Load() *Config {
 	mode := getEnv("SYSTEM_MODE", "development")
 	jwtSecret := getEnv("JWT_SECRET", insecureDefaultSecret)
+	enrollmentSecret := getEnv("ENROLLMENT_TOKEN_SECRET", insecureDefaultSecret)
 
 	if mode != "development" && (jwtSecret == "" || jwtSecret == insecureDefaultSecret) {
 		panic("JWT_SECRET is not set or uses the insecure default — refusing to start in " + mode + " mode")
+	}
+	if mode != "development" && (enrollmentSecret == "" || enrollmentSecret == insecureDefaultSecret) {
+		panic("ENROLLMENT_TOKEN_SECRET is not set or uses the insecure default — refusing to start in " + mode + " mode")
 	}
 
 	return &Config{
@@ -54,6 +59,7 @@ func Load() *Config {
 		GradingServiceURL:          getEnv("GRADING_SERVICE_URL", "http://localhost:8088"),
 		ReportingServiceURL:        getEnv("REPORTING_SERVICE_URL", "http://localhost:8089"),
 		JWTSecret:                  jwtSecret,
+		EnrollmentTokenSecret:      enrollmentSecret,
 		RedisHost:                  getEnv("REDIS_HOST", "redis"),
 		RedisPort:                  getEnvInt("REDIS_PORT", 6379),
 		RedisPassword:              getEnv("REDIS_PASSWORD", ""),

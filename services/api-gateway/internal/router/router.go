@@ -50,7 +50,7 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 	engine.Use(rateLimitMiddleware.Handler())
 
 	// --- Set up Router Group ---
-	routerGroup := NewRouterGroup(engine, cfg.JWTSecret)
+	routerGroup := NewRouterGroup(engine, cfg.JWTSecret, cfg.EnrollmentTokenSecret)
 
 	// --- Circuit Breakers ---
 	cbSettings := infrastructure.DefaultCircuitBreakerSettings()
