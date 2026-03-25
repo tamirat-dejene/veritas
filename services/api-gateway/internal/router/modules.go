@@ -114,7 +114,7 @@ func (g *RouterGroup) RegisterExamRoutes(proxy http.Handler) {
 func (g *RouterGroup) RegisterCandidateRoutes(proxy http.Handler) {
 	adminRole := g.authWithRoles(domain.RoleEnterpriseAdmin)
 	staffOrAdmin := g.authWithRoles(domain.RoleEnterpriseAdmin, domain.RoleEnterpriseStaff)
-	candidateRole := g.authWithRoles(domain.RoleExamCandidate)
+	candidateRole := g.candidateAuthChain()
 	adminOrAuto := g.authWithRoles(domain.RoleEnterpriseAdmin, domain.RoleEnterpriseAuto)
 
 	// Candidates
@@ -139,7 +139,7 @@ func (g *RouterGroup) RegisterCandidateRoutes(proxy http.Handler) {
 	g.register("POST", "/access/validate", proxy) // Public
 	g.register("POST", "/sessions/start", proxy, candidateRole...)
 	g.register("GET", "/sessions/me/active", proxy, candidateRole...)
-	g.register("GET", "/sessions/:sessionId", proxy, g.authWithRoles(domain.RoleExamCandidate, domain.RoleEnterpriseAdmin)...)
+	g.register("GET", "/sessions/:sessionId", proxy, g.candidateOrAdminChain(domain.RoleEnterpriseAdmin)...)
 	g.register("GET", "/sessions/:sessionId/questions", proxy, candidateRole...)
 	g.register("PATCH", "/sessions/:sessionId/answers", proxy, candidateRole...)
 	g.register("GET", "/sessions/:sessionId/answers", proxy, candidateRole...)
@@ -156,14 +156,14 @@ func (g *RouterGroup) RegisterCandidateRoutes(proxy http.Handler) {
 
 // RegisterProctoringRoutes attaches Proctoring Service proxy routes
 func (g *RouterGroup) RegisterProctoringRoutes(proxy http.Handler) {
-	candidateRole := g.authWithRoles(domain.RoleExamCandidate)
+	candidateRole := g.candidateAuthChain()
 	g.register("POST", "/proctoring/events", proxy, candidateRole...)
 	g.register("GET", "/proctoring/sessions/:sessionId/events", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
 }
 
 // RegisterFaceVerificationRoutes attaches Face Verification Service proxy routes
 func (g *RouterGroup) RegisterFaceVerificationRoutes(proxy http.Handler) {
-	premiumCandidateBlock := append(g.authWithRoles(domain.RoleExamCandidate), middleware.RequireTier("Premium"))
+	premiumCandidateBlock := append(g.candidateAuthChain(), middleware.RequireTier("Premium"))
 	g.register("POST", "/face/register", proxy, premiumCandidateBlock...)
 	g.register("POST", "/face/verify", proxy, premiumCandidateBlock...)
 }
@@ -173,7 +173,7 @@ func (g *RouterGroup) RegisterGradingRoutes(proxy http.Handler) {
 	g.register("POST", "/grading/auto", proxy, g.authWithRoles(domain.RoleEnterpriseAuto)...)
 	g.register("POST", "/grading/manual", proxy, g.authWithRoles(domain.RoleEnterpriseStaff)...)
 	g.register("GET", "/results/:examId", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
-	g.register("GET", "/certificates/:certificateId", proxy, g.authWithRoles(domain.RoleExamCandidate)...)
+	g.register("GET", "/certificates/:certificateId", proxy, g.candidateAuthChain()...)
 }
 
 // RegisterReportingRoutes attaches Reporting Service proxy routes
