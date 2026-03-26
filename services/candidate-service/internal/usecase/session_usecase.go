@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/infrastructure/client"
+	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"go.uber.org/zap"
 )
 
@@ -60,16 +61,15 @@ func (uc *sessionUseCase) StartSession(ctx context.Context, token string, client
 	}
 
 	// Verify that the token presented matches the one current in DB (allows revocation/rotation)
-	if e.AccessTokenHash != HashToken(token) {
+	if e.AccessTokenHash != HashToken(token) ||
+		e.AttemptsUsed >= e.MaxAttempts ||
+		time.Now().After(e.TokenExpiresAt) {
 		return nil, domain.ErrInvalidAccessToken
 	}
 
-	if e.AttemptsUsed >= e.MaxAttempts {
-		return nil, domain.ErrMaxAttemptsReached
-	}
-
 	// 2. Fetch Exam Metadata & validate constraints
-	examMeta, err := uc.examClient.GetExamMetadata(ctx, e.ExamID, e.EnterpriseID)
+	examCtx := logger.SetEnterpriseID(ctx, e.EnterpriseID.String())
+	examMeta, err := uc.examClient.GetExamMetadata(examCtx, e.ExamID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch exam metadata: %v", err)
 	}
@@ -88,7 +88,7 @@ func (uc *sessionUseCase) StartSession(ctx context.Context, token string, client
 	}
 
 	// 4. Snapshot questions
-	questionsMeta, err := uc.examClient.GetExamQuestions(ctx, e.ExamID, e.EnterpriseID)
+	questionsMeta, err := uc.examClient.GetExamQuestions(examCtx, e.ExamID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch question snapshot: %v", err)
 	}

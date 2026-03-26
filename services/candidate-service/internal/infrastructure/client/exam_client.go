@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tamirat-dejene/veritas/shared/pkg/httpclient"
 )
 
 type ExamMetadata struct {
@@ -30,48 +30,38 @@ type QuestionSnapshot struct {
 }
 
 type ExamServiceClient interface {
-	GetExamMetadata(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID) (*ExamMetadata, error)
-	GetExamQuestions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID) ([]QuestionSnapshot, error)
+	GetExamMetadata(ctx context.Context, examID uuid.UUID) (*ExamMetadata, error)
+	GetExamQuestions(ctx context.Context, examID uuid.UUID) ([]QuestionSnapshot, error)
 }
 
 type examServiceClient struct {
-	baseURL    string
-	httpClient *http.Client
+	client httpclient.Client
 }
 
 func NewExamServiceClient(baseURL string) ExamServiceClient {
 	return &examServiceClient{
-		baseURL: baseURL,
-		httpClient: &http.Client{
+		client: httpclient.New(httpclient.Config{
+			BaseURL: baseURL,
 			Timeout: 10 * time.Second,
-		},
+		}),
 	}
 }
 
-func (c *examServiceClient) GetExamMetadata(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID) (*ExamMetadata, error) {
-	url := fmt.Sprintf("%s/api/v1/exams/%s", c.baseURL, examID)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+func (c *examServiceClient) GetExamMetadata(ctx context.Context, examID uuid.UUID) (*ExamMetadata, error) {
+	path := fmt.Sprintf("/api/v1/exams/%s", examID)
+	resp, err := c.client.Get(ctx, path)
 	if err != nil {
 		return nil, err
 	}
 
-	// Internal headers for service-to-service auth/tenancy mapping
-	req.Header.Set("X-Enterprise-Id", enterpriseID.String())
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
+	if err := resp.Error(); err != nil {
 		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("exam-service returned status: %d", resp.StatusCode)
 	}
 
 	var response struct {
 		Data ExamMetadata `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+	if err := resp.Decode(&response); err != nil {
 		return nil, err
 	}
 
@@ -86,29 +76,21 @@ type rawExamQuestion struct {
 	Question       json.RawMessage `json:"question"`
 }
 
-func (c *examServiceClient) GetExamQuestions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID) ([]QuestionSnapshot, error) {
-	url := fmt.Sprintf("%s/api/v1/exams/%s/questions", c.baseURL, examID)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+func (c *examServiceClient) GetExamQuestions(ctx context.Context, examID uuid.UUID) ([]QuestionSnapshot, error) {
+	path := fmt.Sprintf("/api/v1/exams/%s/questions", examID)
+	resp, err := c.client.Get(ctx, path)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("X-Enterprise-Id", enterpriseID.String())
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
+	if err := resp.Error(); err != nil {
 		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("exam-service returned status: %d", resp.StatusCode)
 	}
 
 	var response struct {
 		Data []rawExamQuestion `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+	if err := resp.Decode(&response); err != nil {
 		return nil, err
 	}
 
@@ -123,7 +105,7 @@ func (c *examServiceClient) GetExamQuestions(ctx context.Context, examID uuid.UU
 		}
 
 		snapshots = append(snapshots, QuestionSnapshot{
-			ID:             raw.QuestionID, // We use the actual QuestionID here to map candidate answers
+			ID:             raw.QuestionID,
 			Content:        raw.Question,
 			PointsOverride: raw.PointsOverride,
 			OrderIndex:     raw.OrderIndex,
