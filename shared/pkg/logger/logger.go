@@ -12,9 +12,10 @@ import (
 type contextKey string
 
 const (
-	RequestIDKey contextKey = "requestID"
-	UserIDKey    contextKey = "userID"
-	RoleKey      contextKey = "role"
+	RequestIDKey   contextKey = "requestID"
+	UserIDKey      contextKey = "userID"
+	RoleKey        contextKey = "role"
+	EnterpriseIDKey contextKey = "enterpriseID"
 )
 
 // NewLogger initializes a zap logger with configuration from environment variables.
@@ -66,6 +67,9 @@ func WithContext(ctx context.Context, log *zap.Logger) *zap.Logger {
 	if role, ok := ctx.Value(RoleKey).(string); ok && role != "" {
 		fields = append(fields, zap.String("role", role))
 	}
+	if eid, ok := ctx.Value(EnterpriseIDKey).(string); ok && eid != "" {
+		fields = append(fields, zap.String("enterprise_id", eid))
+	}
 
 	if len(fields) > 0 {
 		return log.With(fields...)
@@ -105,4 +109,24 @@ func parseLevel(level string) zapcore.Level {
 	default:
 		return zapcore.InfoLevel
 	}
+}
+
+// SetRequestID injects a request ID into the context.
+func SetRequestID(ctx context.Context, rid string) context.Context {
+	return context.WithValue(ctx, RequestIDKey, rid)
+}
+
+// SetUserID injects a user ID into the context.
+func SetUserID(ctx context.Context, uid string) context.Context {
+	return context.WithValue(ctx, UserIDKey, uid)
+}
+
+// SetRole injects a user role into the context.
+func SetRole(ctx context.Context, role string) context.Context {
+	return context.WithValue(ctx, RoleKey, role)
+}
+
+// SetEnterpriseID injects an enterprise ID into the context.
+func SetEnterpriseID(ctx context.Context, eid string) context.Context {
+	return context.WithValue(ctx, EnterpriseIDKey, eid)
 }
