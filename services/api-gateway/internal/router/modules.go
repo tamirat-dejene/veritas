@@ -163,7 +163,7 @@ func (g *RouterGroup) RegisterProctoringRoutes(proxy http.Handler) {
 
 // RegisterFaceVerificationRoutes attaches Face Verification Service proxy routes
 func (g *RouterGroup) RegisterFaceVerificationRoutes(proxy http.Handler) {
-	premiumCandidateBlock := append(g.candidateAuthChain(), middleware.RequireTier("Premium"))
+	premiumCandidateBlock := append(g.candidateAuthChain(), middleware.RequireTier(domain.TierEnterprise))
 	g.register("POST", "/face/register", proxy, premiumCandidateBlock...)
 	g.register("POST", "/face/verify", proxy, premiumCandidateBlock...)
 }

@@ -17,9 +17,9 @@ type userContextKey string
 const UserContextKey userContextKey = "user"
 
 type UserClaims struct {
+	EnterpriseID string      `json:"enterpriseId"`
 	UserID       string      `json:"sub"`
 	Role         domain.Role `json:"role"`
-	EnterpriseID string      `json:"enterpriseId"`
 	Tier         string      `json:"tier"`
 	jwt.RegisteredClaims
 }
@@ -79,7 +79,6 @@ func RequireRole(allowedRoles ...domain.Role) gin.HandlerFunc {
 			return
 		}
 
-		// Check if "All" is in allowedRoles, effectively disabling the check for authenticated users
 		if slices.Contains(allowedRoles, domain.RoleAll) {
 			c.Next()
 			return
@@ -91,6 +90,7 @@ func RequireRole(allowedRoles ...domain.Role) gin.HandlerFunc {
 		}
 
 		zap.L().Warn("Auth: Forbidden",
+			zap.String("enterpriseID", claims.EnterpriseID),
 			zap.String("userID", claims.UserID),
 			zap.String("userRole", string(claims.Role)),
 			zap.Any("allowedRoles", allowedRoles),
@@ -100,20 +100,18 @@ func RequireRole(allowedRoles ...domain.Role) gin.HandlerFunc {
 	}
 }
 
-// RequireTier ensures the authenticated user's subscription tier matches the required tier.
-// Must be used after JWTAuth, which populates the UserClaims in the context.
-func RequireTier(tier string) gin.HandlerFunc {
+func RequireTier(tier domain.Tier) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		claimsVal, exists := c.Get(string(UserContextKey))
 		if !exists {
-			zap.L().Warn("RequireTier: missing claims", zap.String("required_tier", tier), zap.String("ip", c.ClientIP()))
+			zap.L().Warn("RequireTier: missing claims", zap.String("required_tier", string(tier)), zap.String("ip", c.ClientIP()))
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": tier + " subscription required"})
 			return
 		}
 		claims, ok := claimsVal.(*UserClaims)
-		if !ok || claims.Tier != tier {
+		if !ok || claims.Tier != string(tier) {
 			zap.L().Warn("RequireTier: insufficient tier",
-				zap.String("required_tier", tier),
+				zap.String("required_tier", string(tier)),
 				zap.String("user_tier", func() string {
 					if ok {
 						return claims.Tier
