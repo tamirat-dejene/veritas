@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/domain"
+	sdomain "github.com/tamirat-dejene/veritas/shared/domain"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
@@ -27,9 +28,9 @@ func NewExamUsecase(pool *pgxpool.Pool, examRepo domain.ExamRepository, question
 	}
 }
 
-func (uc *examUsecase) CreateExam(ctx context.Context, exam *domain.Exam, userID uuid.UUID) (*domain.Exam, error) {
+func (uc *examUsecase) CreateExam(ctx context.Context, exam *sdomain.Exam, userID uuid.UUID) (*sdomain.Exam, error) {
 	exam.CreatedBy = userID
-	exam.Status = domain.ExamDraft
+	exam.Status = sdomain.ExamDraft
 
 	err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		return uc.examRepo.WithTx(tx).Create(ctx, exam)
@@ -41,7 +42,7 @@ func (uc *examUsecase) CreateExam(ctx context.Context, exam *domain.Exam, userID
 	return exam, nil
 }
 
-func (uc *examUsecase) UpdateExam(ctx context.Context, exam *domain.Exam, userID uuid.UUID) error {
+func (uc *examUsecase) UpdateExam(ctx context.Context, exam *sdomain.Exam, userID uuid.UUID) error {
 	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		existing, err := uc.examRepo.WithTx(tx).GetByID(ctx, exam.ID, exam.EnterpriseID)
 		if err != nil {
@@ -51,8 +52,8 @@ func (uc *examUsecase) UpdateExam(ctx context.Context, exam *domain.Exam, userID
 		log.Printf("Existing exam status: %s\n", existing.Status)
 
 		// Only draft exams can be fully updated
-		if existing.Status != domain.ExamDraft {
-			if existing.Status == domain.ExamActive || existing.Status == domain.ExamClosed || existing.Status == domain.ExamArchived {
+		if existing.Status != sdomain.ExamDraft {
+			if existing.Status == sdomain.ExamActive || existing.Status == sdomain.ExamClosed || existing.Status == sdomain.ExamArchived {
 				return domain.ErrInvalidStatus
 			}
 		}
@@ -69,11 +70,11 @@ func (uc *examUsecase) ScheduleExam(ctx context.Context, id uuid.UUID, enterpris
 			return err
 		}
 
-		if exam.Status != domain.ExamDraft && exam.Status != domain.ExamScheduled {
+		if exam.Status != sdomain.ExamDraft && exam.Status != sdomain.ExamScheduled {
 			return domain.ErrInvalidStatus
 		}
 
-		exam.Status = domain.ExamScheduled
+		exam.Status = sdomain.ExamScheduled
 		exam.ScheduledStart = &startTime
 		exam.ScheduledEnd = &endTime
 
@@ -81,15 +82,15 @@ func (uc *examUsecase) ScheduleExam(ctx context.Context, id uuid.UUID, enterpris
 	})
 }
 
-func (uc *examUsecase) CloneExam(ctx context.Context, sourceID uuid.UUID, enterpriseID uuid.UUID, cloneTitle string, userID uuid.UUID) (*domain.Exam, error) {
-	var clone *domain.Exam
+func (uc *examUsecase) CloneExam(ctx context.Context, sourceID uuid.UUID, enterpriseID uuid.UUID, cloneTitle string, userID uuid.UUID) (*sdomain.Exam, error) {
+	var clone *sdomain.Exam
 	err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		source, err := uc.examRepo.WithTx(tx).GetByID(ctx, sourceID, enterpriseID)
 		if err != nil {
 			return err
 		}
 
-		clone = &domain.Exam{
+		clone = &sdomain.Exam{
 			EnterpriseID:        enterpriseID,
 			Title:               cloneTitle,
 			Description:         source.Description,
@@ -97,7 +98,7 @@ func (uc *examUsecase) CloneExam(ctx context.Context, sourceID uuid.UUID, enterp
 			PassingScorePercent: source.PassingScorePercent,
 			NegativeMarking:     source.NegativeMarking,
 			MaxParticipants:     source.MaxParticipants,
-			Status:              domain.ExamDraft,
+			Status:              sdomain.ExamDraft,
 			TemplateSourceID:    &source.ID,
 			Settings:            source.Settings,
 			CreatedBy:           userID,
@@ -132,11 +133,11 @@ func (uc *examUsecase) CloneExam(ctx context.Context, sourceID uuid.UUID, enterp
 	return clone, nil
 }
 
-func (uc *examUsecase) GetExams(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*domain.Exam], error) {
+func (uc *examUsecase) GetExams(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*sdomain.Exam], error) {
 	return uc.examRepo.ListByEnterprise(ctx, enterpriseID, params)
 }
 
-func (uc *examUsecase) GetExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*domain.Exam, error) {
+func (uc *examUsecase) GetExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*sdomain.Exam, error) {
 	return uc.examRepo.GetByID(ctx, id, enterpriseID)
 }
 
@@ -147,7 +148,7 @@ func (uc *examUsecase) PublishExam(ctx context.Context, id uuid.UUID, enterprise
 			return err
 		}
 
-		if exam.Status != domain.ExamDraft && exam.Status != domain.ExamScheduled {
+		if exam.Status != sdomain.ExamDraft && exam.Status != sdomain.ExamScheduled {
 			return domain.ErrInvalidStatus
 		}
 
@@ -156,24 +157,24 @@ func (uc *examUsecase) PublishExam(ctx context.Context, id uuid.UUID, enterprise
 			return fmt.Errorf("exam must have at least one question or randomization rule to be published")
 		}
 
-		exam.Status = domain.ExamActive
+		exam.Status = sdomain.ExamActive
 
 		return uc.examRepo.WithTx(tx).Update(ctx, exam)
 	})
 }
 
-func (uc *examUsecase) GetExamQuestions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*domain.ExamQuestion], error) {
+func (uc *examUsecase) GetExamQuestions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*sdomain.ExamQuestion], error) {
 	_, err := uc.examRepo.GetByID(ctx, examID, enterpriseID)
 	if err != nil {
-		return pagination.PaginatedResponse[*domain.ExamQuestion]{}, err
+		return pagination.PaginatedResponse[*sdomain.ExamQuestion]{}, err
 	}
 
 	paginatedMappings, err := uc.examRepo.GetExamQuestions(ctx, examID, params)
 	if err != nil {
-		return pagination.PaginatedResponse[*domain.ExamQuestion]{}, err
+		return pagination.PaginatedResponse[*sdomain.ExamQuestion]{}, err
 	}
 
-	var result []*domain.ExamQuestion
+	var result []*sdomain.ExamQuestion
 	for _, eq := range paginatedMappings.Data {
 		q, err := uc.questionRepo.GetByID(ctx, eq.QuestionID, enterpriseID)
 		if err == nil && q != nil {
@@ -193,11 +194,11 @@ func (uc *examUsecase) CloseExam(ctx context.Context, id uuid.UUID, enterpriseID
 			return err
 		}
 
-		if exam.Status != domain.ExamActive {
+		if exam.Status != sdomain.ExamActive {
 			return domain.ErrInvalidStatus
 		}
 
-		exam.Status = domain.ExamClosed
+		exam.Status = sdomain.ExamClosed
 
 		return uc.examRepo.WithTx(tx).Update(ctx, exam)
 	})
@@ -207,14 +208,14 @@ func (uc *examUsecase) DeleteExam(ctx context.Context, id uuid.UUID, enterpriseI
 	return uc.examRepo.Delete(ctx, id, enterpriseID)
 }
 
-func (uc *examUsecase) AddQuestionsToExam(ctx context.Context, enterpriseID, examID uuid.UUID, inputs []domain.ExamQuestionInput) ([]*domain.ExamQuestion, error) {
-	var eqs []*domain.ExamQuestion
+func (uc *examUsecase) AddQuestionsToExam(ctx context.Context, enterpriseID, examID uuid.UUID, inputs []sdomain.ExamQuestionInput) ([]*sdomain.ExamQuestion, error) {
+	var eqs []*sdomain.ExamQuestion
 	err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		exam, err := uc.examRepo.WithTx(tx).GetByID(ctx, examID, enterpriseID)
 		if err != nil {
 			return err
 		}
-		if exam.Status != domain.ExamDraft {
+		if exam.Status != sdomain.ExamDraft {
 			return domain.ErrInvalidStatus
 		}
 
@@ -224,7 +225,7 @@ func (uc *examUsecase) AddQuestionsToExam(ctx context.Context, enterpriseID, exa
 				return fmt.Errorf("failed to validate question %s: %w", input.QuestionID, err)
 			}
 
-			eq := &domain.ExamQuestion{
+			eq := &sdomain.ExamQuestion{
 				ExamID:         examID,
 				QuestionID:     input.QuestionID,
 				PointsOverride: input.PointsOverride,
@@ -253,7 +254,7 @@ func (uc *examUsecase) RemoveQuestionFromExam(ctx context.Context, enterpriseID,
 		if err != nil {
 			return err
 		}
-		if exam.Status != domain.ExamDraft {
+		if exam.Status != sdomain.ExamDraft {
 			return domain.ErrInvalidStatus
 		}
 
@@ -267,11 +268,11 @@ func (uc *examUsecase) UpdateExamQuestion(ctx context.Context, enterpriseID, exa
 		if err != nil {
 			return err
 		}
-		if exam.Status != domain.ExamDraft {
+		if exam.Status != sdomain.ExamDraft {
 			return domain.ErrInvalidStatus
 		}
 
-		eq := &domain.ExamQuestion{
+		eq := &sdomain.ExamQuestion{
 			ExamID:         examID,
 			QuestionID:     questionID,
 			PointsOverride: pointsOverride,
@@ -282,19 +283,19 @@ func (uc *examUsecase) UpdateExamQuestion(ctx context.Context, enterpriseID, exa
 	})
 }
 
-func (uc *examUsecase) AddRandomizationRule(ctx context.Context, enterpriseID, examID uuid.UUID, topic *string, difficulty *domain.DifficultyLevel, questionCount int) (*domain.ExamRandomizationRule, error) {
-	var rule *domain.ExamRandomizationRule
+func (uc *examUsecase) AddRandomizationRule(ctx context.Context, enterpriseID, examID uuid.UUID, topic *string, difficulty *sdomain.DifficultyLevel, questionCount int) (*sdomain.ExamRandomizationRule, error) {
+	var rule *sdomain.ExamRandomizationRule
 	err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		exam, err := uc.examRepo.WithTx(tx).GetByID(ctx, examID, enterpriseID)
 		if err != nil {
 			return err
 		}
 
-		if exam.Status != domain.ExamDraft && exam.Status != domain.ExamScheduled {
+		if exam.Status != sdomain.ExamDraft && exam.Status != sdomain.ExamScheduled {
 			return domain.ErrInvalidStatus
 		}
 
-		rule = &domain.ExamRandomizationRule{
+		rule = &sdomain.ExamRandomizationRule{
 			ExamID:        examID,
 			Topic:         topic,
 			Difficulty:    difficulty,
@@ -314,17 +315,17 @@ func (uc *examUsecase) AddRandomizationRule(ctx context.Context, enterpriseID, e
 	return rule, nil
 }
 
-func (uc *examUsecase) UpdateRandomizationRule(ctx context.Context, enterpriseID, examID, ruleID uuid.UUID, topic *string, difficulty *domain.DifficultyLevel, questionCount int) error {
+func (uc *examUsecase) UpdateRandomizationRule(ctx context.Context, enterpriseID, examID, ruleID uuid.UUID, topic *string, difficulty *sdomain.DifficultyLevel, questionCount int) error {
 	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		exam, err := uc.examRepo.WithTx(tx).GetByID(ctx, examID, enterpriseID)
 		if err != nil {
 			return err
 		}
-		if exam.Status != domain.ExamDraft {
+		if exam.Status != sdomain.ExamDraft {
 			return domain.ErrInvalidStatus
 		}
 
-		rule := &domain.ExamRandomizationRule{
+		rule := &sdomain.ExamRandomizationRule{
 			ID:            ruleID,
 			ExamID:        examID,
 			Topic:         topic,
@@ -342,7 +343,7 @@ func (uc *examUsecase) DeleteRandomizationRule(ctx context.Context, enterpriseID
 		if err != nil {
 			return err
 		}
-		if exam.Status != domain.ExamDraft {
+		if exam.Status != sdomain.ExamDraft {
 			return domain.ErrInvalidStatus
 		}
 

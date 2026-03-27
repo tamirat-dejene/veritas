@@ -2,7 +2,7 @@ package dto
 
 import (
 	"github.com/google/uuid"
-	"github.com/tamirat-dejene/veritas/services/exam-service/internal/domain"
+	sdomain "github.com/tamirat-dejene/veritas/shared/domain"
 )
 
 // CreateExamRequest defines the payload for creating a new exam.
@@ -59,7 +59,7 @@ type UpdateExamQuestionRequest struct {
 
 // ExamRuleRequest is the request body for exam randomization rules.
 type ExamRuleRequest struct {
-	Topic         *string                 `json:"topic,omitempty"`
-	Difficulty    *domain.DifficultyLevel `json:"difficulty,omitempty"`
-	QuestionCount int                     `json:"questionCount" binding:"required"`
+	Topic         *string                  `json:"topic,omitempty"`
+	Difficulty    *sdomain.DifficultyLevel `json:"difficulty,omitempty"`
+	QuestionCount int                      `json:"questionCount" binding:"required"`
 }
