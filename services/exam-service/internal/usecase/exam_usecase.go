@@ -163,7 +163,7 @@ func (uc *examUsecase) PublishExam(ctx context.Context, id uuid.UUID, enterprise
 	})
 }
 
-func (uc *examUsecase) GetExamQuestions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*sdomain.ExamQuestion], error) {
+func (uc *examUsecase) GetExamQuestions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params, withCorrectAnswer bool) (pagination.PaginatedResponse[*sdomain.ExamQuestion], error) {
 	_, err := uc.examRepo.GetByID(ctx, examID, enterpriseID)
 	if err != nil {
 		return pagination.PaginatedResponse[*sdomain.ExamQuestion]{}, err
@@ -176,7 +176,7 @@ func (uc *examUsecase) GetExamQuestions(ctx context.Context, examID uuid.UUID, e
 
 	var result []*sdomain.ExamQuestion
 	for _, eq := range paginatedMappings.Data {
-		q, err := uc.questionRepo.GetByID(ctx, eq.QuestionID, enterpriseID)
+		q, err := uc.questionRepo.GetByID(ctx, eq.QuestionID, enterpriseID, withCorrectAnswer)
 		if err == nil && q != nil {
 			eqCopy := *eq
 			eqCopy.Question = q
@@ -220,7 +220,7 @@ func (uc *examUsecase) AddQuestionsToExam(ctx context.Context, enterpriseID, exa
 		}
 
 		for _, input := range inputs {
-			_, err = uc.questionRepo.WithTx(tx).GetByID(ctx, input.QuestionID, enterpriseID)
+			_, err = uc.questionRepo.WithTx(tx).GetByID(ctx, input.QuestionID, enterpriseID, false)
 			if err != nil {
 				return fmt.Errorf("failed to validate question %s: %w", input.QuestionID, err)
 			}

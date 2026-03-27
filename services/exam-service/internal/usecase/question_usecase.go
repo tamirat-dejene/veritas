@@ -41,12 +41,12 @@ func (uc *questionUsecase) CreateQuestion(ctx context.Context, q *sdomain.Questi
 	return q, nil
 }
 
-func (uc *questionUsecase) GetQuestions(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*sdomain.Question], error) {
-	return uc.repo.ListByEnterprise(ctx, enterpriseID, params)
+func (uc *questionUsecase) GetQuestions(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params, withCorrectAnswer bool) (pagination.PaginatedResponse[*sdomain.Question], error) {
+	return uc.repo.ListByEnterprise(ctx, enterpriseID, params, withCorrectAnswer)
 }
 
-func (uc *questionUsecase) GetQuestion(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*sdomain.Question, error) {
-	return uc.repo.GetByID(ctx, id, enterpriseID)
+func (uc *questionUsecase) GetQuestion(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID, withCorrectAnswer bool) (*sdomain.Question, error) {
+	return uc.repo.GetByID(ctx, id, enterpriseID, withCorrectAnswer)
 }
 
 func (uc *questionUsecase) UpdateQuestion(ctx context.Context, q *sdomain.Question, userID uuid.UUID) error {
@@ -56,7 +56,7 @@ func (uc *questionUsecase) UpdateQuestion(ctx context.Context, q *sdomain.Questi
 
 	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		// Fetch existing to ensure it exists
-		_, err := uc.repo.WithTx(tx).GetByID(ctx, q.ID, q.EnterpriseID)
+		_, err := uc.repo.WithTx(tx).GetByID(ctx, q.ID, q.EnterpriseID, false)
 		if err != nil {
 			return err
 		}
