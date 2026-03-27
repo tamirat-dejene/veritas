@@ -81,7 +81,11 @@ func EnrollmentAuth(secret string) gin.HandlerFunc {
 		// candidate-service handlers call getCandidateID which reads "subject_id"
 		// from the Gin context or falls back to the X-Subject-Id request header.
 		c.Set("subject_id", ec.CandidateID)
+		c.Set("enrollment_id", ec.EnrollmentID)
+		c.Set("exam_id", ec.ExamID)
 		c.Request.Header.Set("X-Subject-Id", sanitizeHeader(ec.CandidateID))
+		c.Request.Header.Set("X-Enrollment-Id", sanitizeHeader(ec.EnrollmentID))
+		c.Request.Header.Set("X-Exam-Id", sanitizeHeader(ec.ExamID))
 
 		c.Next()
 	}

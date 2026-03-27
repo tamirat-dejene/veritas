@@ -74,7 +74,11 @@ func tryParseEnrollmentToken(c *gin.Context, tokenString, secret string) bool {
 		EnterpriseID: ec.EnterpriseID,
 	})
 	c.Set("subject_id", ec.CandidateID)
+	c.Set("enrollment_id", ec.EnrollmentID)
+	c.Set("exam_id", ec.ExamID)
 	c.Request.Header.Set("X-Subject-Id", sanitizeHeader(ec.CandidateID))
+	c.Request.Header.Set("X-Enrollment-Id", sanitizeHeader(ec.EnrollmentID))
+	c.Request.Header.Set("X-Exam-Id", sanitizeHeader(ec.ExamID))
 	return true
 }
 
