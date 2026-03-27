@@ -68,16 +68,8 @@ type EnrollmentTokenResponse struct {
 	RawToken string `json:"rawToken"`
 }
 
-type AccessValidateRequest struct {
-	Token string `json:"token" binding:"required"`
-}
-
 type AccessValidateResponse struct {
 	Data *domain.ValidateAccessTokenResponse `json:"data"`
-}
-
-type SessionStartRequest struct {
-	Token string `json:"token" binding:"required"`
 }
 
 type SaveAnswerRequest struct {

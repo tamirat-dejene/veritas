@@ -25,20 +25,6 @@ func NewCandidateHandler(uc domain.CandidateUseCase, logger *zap.Logger) *Candid
 	}
 }
 
-// Ensure middleware sets "x-enterprise-id" into context. Usually API gateway does this.
-func getEnterpriseID(c *gin.Context) (uuid.UUID, error) {
-	val, exists := c.Get("enterprise_id")
-	if !exists {
-		// Fallback to header if running directly without exact middleware mapping
-		headerVal := c.GetHeader("X-Enterprise-Id")
-		if headerVal != "" {
-			return uuid.Parse(headerVal)
-		}
-		return uuid.Nil, domain.ErrUnauthorizedAccess
-	}
-	return uuid.Parse(val.(string))
-}
-
 // Create registers a single candidate profile for the current enterprise.
 //
 //	@Summary		Create candidate
