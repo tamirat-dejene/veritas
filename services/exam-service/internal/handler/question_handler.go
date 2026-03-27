@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/dto"
+	sdomain "github.com/tamirat-dejene/veritas/shared/domain"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
@@ -28,7 +29,7 @@ func NewQuestionHandler(uc domain.QuestionUsecase) *QuestionHandler {
 //	@Param			X-Enterprise-ID	header	string				true	"Enterprise ID (UUID)"
 //	@Param			X-User-ID	header	string				true	"Actor user ID (UUID)"
 //	@Param			body			body	dto.CreateQuestionRequest	true	"Question payload"
-//	@Success		201			{object}	domain.Question
+//	@Success		201			{object}	sdomain.Question
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		401			{object}	dto.ErrorResponse
 //	@Failure		500			{object}	dto.ErrorResponse
@@ -52,15 +53,15 @@ func (h *QuestionHandler) CreateQuestion(c *gin.Context) {
 		return
 	}
 
-	options := make([]domain.QuestionOption, len(req.Options))
+	options := make([]sdomain.QuestionOption, len(req.Options))
 	for i, o := range req.Options {
-		options[i] = domain.QuestionOption{
+		options[i] = sdomain.QuestionOption{
 			Content:   o.Content,
 			IsCorrect: o.IsCorrect,
 		}
 	}
 
-	q := domain.Question{
+	q := sdomain.Question{
 		EnterpriseID:   enterpriseID,
 		Type:           req.Type,
 		Topic:          req.Topic,
@@ -95,7 +96,7 @@ func (h *QuestionHandler) CreateQuestion(c *gin.Context) {
 //	@Param			limit			query	int		false	"Number of items per page (default: 10, max: 1000)"
 //	@Param			sort			query	string	false	"Sort field (allowed: created_at, updated_at, title, difficulty, type, points) (default: created_at)"
 //	@Param			sort_dir		query	string	false	"Sort direction (asc or desc) (default: desc)"
-//	@Success		200			{object}	pagination.PaginatedResponse[domain.Question]
+//	@Success		200			{object}	pagination.PaginatedResponse[sdomain.Question]
 //	@Failure		401			{object}	dto.ErrorResponse
 //	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/questions [get]
@@ -125,7 +126,7 @@ func (h *QuestionHandler) ListQuestions(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
 //	@Param			questionId		path	string	true	"Question ID (UUID)"
-//	@Success		200			{object}	domain.Question
+//	@Success		200			{object}	sdomain.Question
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		401			{object}	dto.ErrorResponse
 //	@Failure		404			{object}	dto.ErrorResponse
@@ -200,15 +201,15 @@ func (h *QuestionHandler) UpdateQuestion(c *gin.Context) {
 		return
 	}
 
-	options := make([]domain.QuestionOption, len(req.Options))
+	options := make([]sdomain.QuestionOption, len(req.Options))
 	for i, o := range req.Options {
-		options[i] = domain.QuestionOption{
+		options[i] = sdomain.QuestionOption{
 			Content:   o.Content,
 			IsCorrect: o.IsCorrect,
 		}
 	}
 
-	q := domain.Question{
+	q := sdomain.Question{
 		ID:             questionID,
 		EnterpriseID:   enterpriseID,
 		Type:           req.Type,

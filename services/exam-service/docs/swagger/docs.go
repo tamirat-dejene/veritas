@@ -19,7 +19,7 @@ const docTemplate = `{
     "paths": {
         "/exams": {
             "get": {
-                "description": "List exams with pagination, sorting and filtering support for the caller enterprise.",
+                "description": "List exams with  sorting and filtering support for the caller enterprise.",
                 "produces": [
                     "application/json"
                 ],
@@ -64,7 +64,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pagination.PaginatedResponse-Exam"
+                            "$ref": "#/definitions/PaginatedResponse-Exam"
                         }
                     },
                     "401": {
@@ -542,7 +542,7 @@ const docTemplate = `{
         },
         "/exams/{examId}/questions": {
             "get": {
-                "description": "Get question mappings for one exam with pagination.",
+                "description": "Get question mappings for one exam with ",
                 "produces": [
                     "application/json"
                 ],
@@ -594,7 +594,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pagination.PaginatedResponse-ExamQuestion"
+                            "$ref": "#/definitions/PaginatedResponse-ExamQuestion"
                         }
                     },
                     "400": {
@@ -1117,7 +1117,7 @@ const docTemplate = `{
         },
         "/questions": {
             "get": {
-                "description": "List questions with pagination, sorting and filtering support for the caller enterprise.",
+                "description": "List questions with  sorting and filtering support for the caller enterprise.",
                 "produces": [
                     "application/json"
                 ],
@@ -1162,7 +1162,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pagination.PaginatedResponse-Question"
+                            "$ref": "#/definitions/PaginatedResponse-Question"
                         }
                     },
                     "401": {
@@ -1435,240 +1435,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "DifficultyLevel": {
-            "type": "string",
-            "enum": [
-                "Easy",
-                "Medium",
-                "Hard"
-            ],
-            "x-enum-varnames": [
-                "DifficultyEasy",
-                "DifficultyMedium",
-                "DifficultyHard"
-            ]
-        },
-        "Exam": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "createdBy": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "durationMinutes": {
-                    "type": "integer"
-                },
-                "enterpriseId": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "maxParticipants": {
-                    "type": "integer"
-                },
-                "negativeMarking": {
-                    "type": "boolean"
-                },
-                "passingScorePercent": {
-                    "type": "number"
-                },
-                "questions": {
-                    "description": "Relational data",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/ExamQuestion"
-                    }
-                },
-                "randomizationRules": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/ExamRandomizationRule"
-                    }
-                },
-                "scheduledEnd": {
-                    "type": "string"
-                },
-                "scheduledStart": {
-                    "type": "string"
-                },
-                "settings": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "status": {
-                    "$ref": "#/definitions/ExamStatus"
-                },
-                "templateSourceId": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "ExamQuestion": {
-            "type": "object",
-            "properties": {
-                "examId": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "orderIndex": {
-                    "type": "integer"
-                },
-                "pointsOverride": {
-                    "type": "integer"
-                },
-                "question": {
-                    "description": "populated if joined",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/Question"
-                        }
-                    ]
-                },
-                "questionId": {
-                    "type": "string"
-                }
-            }
-        },
-        "ExamRandomizationRule": {
-            "type": "object",
-            "properties": {
-                "difficulty": {
-                    "$ref": "#/definitions/DifficultyLevel"
-                },
-                "examId": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "questionCount": {
-                    "type": "integer"
-                },
-                "topic": {
-                    "type": "string"
-                }
-            }
-        },
-        "ExamStatus": {
-            "type": "string",
-            "enum": [
-                "Draft",
-                "Scheduled",
-                "Active",
-                "Closed",
-                "Archived"
-            ],
-            "x-enum-varnames": [
-                "ExamDraft",
-                "ExamScheduled",
-                "ExamActive",
-                "ExamClosed",
-                "ExamArchived"
-            ]
-        },
-        "Question": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "createdBy": {
-                    "type": "string"
-                },
-                "difficulty": {
-                    "$ref": "#/definitions/DifficultyLevel"
-                },
-                "enterpriseId": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "isActive": {
-                    "type": "boolean"
-                },
-                "mediaUrl": {
-                    "type": "string"
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "negativePoints": {
-                    "type": "number"
-                },
-                "options": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/QuestionOption"
-                    }
-                },
-                "points": {
-                    "type": "integer"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "topic": {
-                    "type": "string"
-                },
-                "type": {
-                    "$ref": "#/definitions/QuestionType"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "QuestionOption": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "isCorrect": {
-                    "type": "boolean"
-                },
-                "questionId": {
-                    "type": "string"
-                }
-            }
-        },
-        "QuestionType": {
-            "type": "string",
-            "enum": [
-                "MCQ",
-                "TrueFalse",
-                "ShortAnswer",
-                "Essay"
-            ],
-            "x-enum-varnames": [
-                "QuestionTypeMCQ",
-                "QuestionTypeTrueFalse",
-                "QuestionTypeShortAnswer",
-                "QuestionTypeEssay"
-            ]
-        },
         "AddExamQuestionRequest": {
             "type": "object",
             "required": [
@@ -1772,7 +1538,7 @@ const docTemplate = `{
                 },
                 "metadata": {
                     "type": "object",
-                    "additionalProperties": true
+                    "additionalProperties": {}
                 },
                 "negativePoints": {
                     "type": "number"
@@ -1908,7 +1674,7 @@ const docTemplate = `{
                 },
                 "metadata": {
                     "type": "object",
-                    "additionalProperties": true
+                    "additionalProperties": {}
                 },
                 "negativePoints": {
                     "type": "number"
@@ -1933,7 +1699,7 @@ const docTemplate = `{
                 }
             }
         },
-        "pagination.Metadata": {
+        "Metadata": {
             "type": "object",
             "properties": {
                 "current_page": {
@@ -1956,7 +1722,7 @@ const docTemplate = `{
                 }
             }
         },
-        "pagination.PaginatedResponse-Exam": {
+        "PaginatedResponse-Exam": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1966,11 +1732,11 @@ const docTemplate = `{
                     }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/pagination.Metadata"
+                    "$ref": "#/definitions/Metadata"
                 }
             }
         },
-        "pagination.PaginatedResponse-ExamQuestion": {
+        "PaginatedResponse-ExamQuestion": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1980,11 +1746,11 @@ const docTemplate = `{
                     }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/pagination.Metadata"
+                    "$ref": "#/definitions/Metadata"
                 }
             }
         },
-        "pagination.PaginatedResponse-Question": {
+        "PaginatedResponse-Question": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1994,9 +1760,237 @@ const docTemplate = `{
                     }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/pagination.Metadata"
+                    "$ref": "#/definitions/Metadata"
                 }
             }
+        },
+        "DifficultyLevel": {
+            "type": "string",
+            "enum": [
+                "Easy",
+                "Medium",
+                "Hard"
+            ],
+            "x-enum-varnames": [
+                "DifficultyEasy",
+                "DifficultyMedium",
+                "DifficultyHard"
+            ]
+        },
+        "Exam": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdBy": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "durationMinutes": {
+                    "type": "integer"
+                },
+                "enterpriseId": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "maxParticipants": {
+                    "type": "integer"
+                },
+                "negativeMarking": {
+                    "type": "boolean"
+                },
+                "passingScorePercent": {
+                    "type": "number"
+                },
+                "questions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ExamQuestion"
+                    }
+                },
+                "randomizationRules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ExamRandomizationRule"
+                    }
+                },
+                "scheduledEnd": {
+                    "type": "string"
+                },
+                "scheduledStart": {
+                    "type": "string"
+                },
+                "settings": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "status": {
+                    "$ref": "#/definitions/ExamStatus"
+                },
+                "templateSourceId": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "ExamQuestion": {
+            "type": "object",
+            "properties": {
+                "examId": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "orderIndex": {
+                    "type": "integer"
+                },
+                "pointsOverride": {
+                    "type": "integer"
+                },
+                "question": {
+                    "$ref": "#/definitions/Question"
+                },
+                "questionId": {
+                    "type": "string"
+                }
+            }
+        },
+        "ExamRandomizationRule": {
+            "type": "object",
+            "properties": {
+                "difficulty": {
+                    "$ref": "#/definitions/DifficultyLevel"
+                },
+                "examId": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "questionCount": {
+                    "type": "integer"
+                },
+                "topic": {
+                    "type": "string"
+                }
+            }
+        },
+        "ExamStatus": {
+            "type": "string",
+            "enum": [
+                "Draft",
+                "Scheduled",
+                "Active",
+                "Closed",
+                "Archived"
+            ],
+            "x-enum-varnames": [
+                "ExamDraft",
+                "ExamScheduled",
+                "ExamActive",
+                "ExamClosed",
+                "ExamArchived"
+            ]
+        },
+        "Question": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdBy": {
+                    "type": "string"
+                },
+                "difficulty": {
+                    "$ref": "#/definitions/DifficultyLevel"
+                },
+                "enterpriseId": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "mediaUrl": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "negativePoints": {
+                    "type": "number"
+                },
+                "options": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/QuestionOption"
+                    }
+                },
+                "points": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "topic": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/QuestionType"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "QuestionOption": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isCorrect": {
+                    "type": "boolean"
+                },
+                "questionId": {
+                    "type": "string"
+                }
+            }
+        },
+        "QuestionType": {
+            "type": "string",
+            "enum": [
+                "MCQ",
+                "TrueFalse",
+                "ShortAnswer",
+                "Essay"
+            ],
+            "x-enum-varnames": [
+                "QuestionTypeMCQ",
+                "QuestionTypeTrueFalse",
+                "QuestionTypeShortAnswer",
+                "QuestionTypeEssay"
+            ]
         }
     },
     "tags": [

@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/dto"
+	sdomain "github.com/tamirat-dejene/veritas/shared/domain"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
@@ -30,7 +31,7 @@ func NewExamHandler(uc domain.ExamUsecase) *ExamHandler {
 //	@Param			X-Enterprise-ID	header	string		true	"Enterprise ID (UUID)"
 //	@Param			X-User-ID	header	string		true	"Actor user ID (UUID)"
 //	@Param			body			body	dto.CreateExamRequest	true	"Exam payload"
-//	@Success		201			{object}	domain.Exam
+//	@Success		201			{object}	sdomain.Exam
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		401			{object}	dto.ErrorResponse
 //	@Failure		500			{object}	dto.ErrorResponse
@@ -54,7 +55,7 @@ func (h *ExamHandler) CreateExam(c *gin.Context) {
 		return
 	}
 
-	e := domain.Exam{
+	e := sdomain.Exam{
 		EnterpriseID:        enterpriseID,
 		Title:               req.Title,
 		Description:         req.Description,
@@ -118,7 +119,7 @@ func (h *ExamHandler) UpdateExam(c *gin.Context) {
 		return
 	}
 
-	e := domain.Exam{
+	e := sdomain.Exam{
 		ID:                  examID,
 		EnterpriseID:        enterpriseID,
 		Title:               req.Title,
@@ -227,7 +228,7 @@ func (h *ExamHandler) ScheduleExam(c *gin.Context) {
 //	@Param			X-User-ID	header	string			true	"Actor user ID (UUID)"
 //	@Param			examId			path	string			true	"Source Exam ID (UUID)"
 //	@Param			body			body	dto.CloneExamRequest	true	"Clone payload"
-//	@Success		201			{object}	domain.Exam
+//	@Success		201			{object}	sdomain.Exam
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		401			{object}	dto.ErrorResponse
 //	@Failure		404			{object}	dto.ErrorResponse
@@ -283,7 +284,7 @@ func (h *ExamHandler) CloneExam(c *gin.Context) {
 //	@Param			limit			query	int		false	"Number of items per page (default: 10, max: 1000)"
 //	@Param			sort			query	string	false	"Sort field (allowed: created_at, updated_at, title, duration_minutes, passing_score_percent, status) (default: created_at)"
 //	@Param			sort_dir		query	string	false	"Sort direction (asc or desc) (default: desc)"
-//	@Success		200			{object}	pagination.PaginatedResponse[domain.Exam]
+//	@Success		200			{object}	pagination.PaginatedResponse[sdomain.Exam]
 //	@Failure		401			{object}	dto.ErrorResponse
 //	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/exams [get]
@@ -313,7 +314,7 @@ func (h *ExamHandler) ListExams(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
 //	@Param			examId			path	string	true	"Exam ID (UUID)"
-//	@Success		200			{object}	domain.Exam
+//	@Success		200			{object}	sdomain.Exam
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		401			{object}	dto.ErrorResponse
 //	@Failure		404			{object}	dto.ErrorResponse
@@ -358,7 +359,7 @@ func (h *ExamHandler) GetExam(c *gin.Context) {
 //	@Param			limit			query	int		false	"Number of items per page (default: 10, max: 1000)"
 //	@Param			sort			query	string	false	"Sort field (allowed: order_index, points_override) (default: order_index)"
 //	@Param			sort_dir		query	string	false	"Sort direction (asc or desc) (default: desc)"
-//	@Success		200			{object}	pagination.PaginatedResponse[domain.ExamQuestion]
+//	@Success		200			{object}	pagination.PaginatedResponse[sdomain.ExamQuestion]
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		401			{object}	dto.ErrorResponse
 //	@Failure		404			{object}	dto.ErrorResponse
@@ -529,7 +530,7 @@ func (h *ExamHandler) DeleteExam(c *gin.Context) {
 //	@Param			X-Enterprise-ID	header	string					true	"Enterprise ID (UUID)"
 //	@Param			examId			path	string					true	"Exam ID (UUID)"
 //	@Param			body			body	dto.AddExamQuestionsBulkRequest	true	"Exam questions payload"
-//	@Success		201			{array}	    domain.ExamQuestion
+//	@Success		201			{array}	    sdomain.ExamQuestion
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		401			{object}	dto.ErrorResponse
 //	@Failure		500			{object}	dto.ErrorResponse
@@ -554,14 +555,14 @@ func (h *ExamHandler) AddQuestionsToExam(c *gin.Context) {
 		return
 	}
 
-	var inputs []domain.ExamQuestionInput
+	var inputs []sdomain.ExamQuestionInput
 	for _, qReq := range req.Questions {
 		qID, err := uuid.Parse(qReq.QuestionID)
 		if err != nil {
 			writeError(c, http.StatusBadRequest, fmt.Sprintf("invalid question ID: %s", qReq.QuestionID))
 			return
 		}
-		inputs = append(inputs, domain.ExamQuestionInput{
+		inputs = append(inputs, sdomain.ExamQuestionInput{
 			QuestionID:     qID,
 			PointsOverride: qReq.PointsOverride,
 			OrderIndex:     qReq.OrderIndex,
@@ -679,7 +680,7 @@ func (h *ExamHandler) UpdateExamQuestion(c *gin.Context) {
 //	@Param			X-Enterprise-ID	header	string			true	"Enterprise ID (UUID)"
 //	@Param			examId			path	string			true	"Exam ID (UUID)"
 //	@Param			body			body	dto.ExamRuleRequest	true	"Rule payload"
-//	@Success		201			{object}	domain.ExamRandomizationRule
+//	@Success		201			{object}	sdomain.ExamRandomizationRule
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		401			{object}	dto.ErrorResponse
 //	@Failure		500			{object}	dto.ErrorResponse

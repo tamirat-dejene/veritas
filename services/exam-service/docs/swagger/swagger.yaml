@@ -1,165 +1,5 @@
 basePath: /api/v1
 definitions:
-  DifficultyLevel:
-    enum:
-    - Easy
-    - Medium
-    - Hard
-    type: string
-    x-enum-varnames:
-    - DifficultyEasy
-    - DifficultyMedium
-    - DifficultyHard
-  Exam:
-    properties:
-      createdAt:
-        type: string
-      createdBy:
-        type: string
-      description:
-        type: string
-      durationMinutes:
-        type: integer
-      enterpriseId:
-        type: string
-      id:
-        type: string
-      maxParticipants:
-        type: integer
-      negativeMarking:
-        type: boolean
-      passingScorePercent:
-        type: number
-      questions:
-        description: Relational data
-        items:
-          $ref: '#/definitions/ExamQuestion'
-        type: array
-      randomizationRules:
-        items:
-          $ref: '#/definitions/ExamRandomizationRule'
-        type: array
-      scheduledEnd:
-        type: string
-      scheduledStart:
-        type: string
-      settings:
-        additionalProperties: true
-        type: object
-      status:
-        $ref: '#/definitions/ExamStatus'
-      templateSourceId:
-        type: string
-      title:
-        type: string
-      updatedAt:
-        type: string
-    type: object
-  ExamQuestion:
-    properties:
-      examId:
-        type: string
-      id:
-        type: string
-      orderIndex:
-        type: integer
-      pointsOverride:
-        type: integer
-      question:
-        allOf:
-        - $ref: '#/definitions/Question'
-        description: populated if joined
-      questionId:
-        type: string
-    type: object
-  ExamRandomizationRule:
-    properties:
-      difficulty:
-        $ref: '#/definitions/DifficultyLevel'
-      examId:
-        type: string
-      id:
-        type: string
-      questionCount:
-        type: integer
-      topic:
-        type: string
-    type: object
-  ExamStatus:
-    enum:
-    - Draft
-    - Scheduled
-    - Active
-    - Closed
-    - Archived
-    type: string
-    x-enum-varnames:
-    - ExamDraft
-    - ExamScheduled
-    - ExamActive
-    - ExamClosed
-    - ExamArchived
-  Question:
-    properties:
-      content:
-        type: string
-      createdAt:
-        type: string
-      createdBy:
-        type: string
-      difficulty:
-        $ref: '#/definitions/DifficultyLevel'
-      enterpriseId:
-        type: string
-      id:
-        type: string
-      isActive:
-        type: boolean
-      mediaUrl:
-        type: string
-      metadata:
-        additionalProperties: true
-        type: object
-      negativePoints:
-        type: number
-      options:
-        items:
-          $ref: '#/definitions/QuestionOption'
-        type: array
-      points:
-        type: integer
-      title:
-        type: string
-      topic:
-        type: string
-      type:
-        $ref: '#/definitions/QuestionType'
-      updatedAt:
-        type: string
-    type: object
-  QuestionOption:
-    properties:
-      content:
-        type: string
-      id:
-        type: string
-      isCorrect:
-        type: boolean
-      questionId:
-        type: string
-    type: object
-  QuestionType:
-    enum:
-    - MCQ
-    - TrueFalse
-    - ShortAnswer
-    - Essay
-    type: string
-    x-enum-varnames:
-    - QuestionTypeMCQ
-    - QuestionTypeTrueFalse
-    - QuestionTypeShortAnswer
-    - QuestionTypeEssay
   AddExamQuestionRequest:
     properties:
       orderIndex:
@@ -223,7 +63,7 @@ definitions:
       mediaUrl:
         type: string
       metadata:
-        additionalProperties: true
+        additionalProperties: {}
         type: object
       negativePoints:
         type: number
@@ -320,7 +160,7 @@ definitions:
       mediaUrl:
         type: string
       metadata:
-        additionalProperties: true
+        additionalProperties: {}
         type: object
       negativePoints:
         type: number
@@ -337,7 +177,7 @@ definitions:
       type:
         $ref: '#/definitions/QuestionType'
     type: object
-  pagination.Metadata:
+  Metadata:
     properties:
       current_page:
         type: integer
@@ -352,33 +192,190 @@ definitions:
       total_pages:
         type: integer
     type: object
-  pagination.PaginatedResponse-Exam:
+  PaginatedResponse-Exam:
     properties:
       data:
         items:
           $ref: '#/definitions/Exam'
         type: array
       metadata:
-        $ref: '#/definitions/pagination.Metadata'
+        $ref: '#/definitions/Metadata'
     type: object
-  pagination.PaginatedResponse-ExamQuestion:
+  PaginatedResponse-ExamQuestion:
     properties:
       data:
         items:
           $ref: '#/definitions/ExamQuestion'
         type: array
       metadata:
-        $ref: '#/definitions/pagination.Metadata'
+        $ref: '#/definitions/Metadata'
     type: object
-  pagination.PaginatedResponse-Question:
+  PaginatedResponse-Question:
     properties:
       data:
         items:
           $ref: '#/definitions/Question'
         type: array
       metadata:
-        $ref: '#/definitions/pagination.Metadata'
+        $ref: '#/definitions/Metadata'
     type: object
+  DifficultyLevel:
+    enum:
+    - Easy
+    - Medium
+    - Hard
+    type: string
+    x-enum-varnames:
+    - DifficultyEasy
+    - DifficultyMedium
+    - DifficultyHard
+  Exam:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: string
+      description:
+        type: string
+      durationMinutes:
+        type: integer
+      enterpriseId:
+        type: string
+      id:
+        type: string
+      maxParticipants:
+        type: integer
+      negativeMarking:
+        type: boolean
+      passingScorePercent:
+        type: number
+      questions:
+        items:
+          $ref: '#/definitions/ExamQuestion'
+        type: array
+      randomizationRules:
+        items:
+          $ref: '#/definitions/ExamRandomizationRule'
+        type: array
+      scheduledEnd:
+        type: string
+      scheduledStart:
+        type: string
+      settings:
+        additionalProperties: true
+        type: object
+      status:
+        $ref: '#/definitions/ExamStatus'
+      templateSourceId:
+        type: string
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  ExamQuestion:
+    properties:
+      examId:
+        type: string
+      id:
+        type: string
+      orderIndex:
+        type: integer
+      pointsOverride:
+        type: integer
+      question:
+        $ref: '#/definitions/Question'
+      questionId:
+        type: string
+    type: object
+  ExamRandomizationRule:
+    properties:
+      difficulty:
+        $ref: '#/definitions/DifficultyLevel'
+      examId:
+        type: string
+      id:
+        type: string
+      questionCount:
+        type: integer
+      topic:
+        type: string
+    type: object
+  ExamStatus:
+    enum:
+    - Draft
+    - Scheduled
+    - Active
+    - Closed
+    - Archived
+    type: string
+    x-enum-varnames:
+    - ExamDraft
+    - ExamScheduled
+    - ExamActive
+    - ExamClosed
+    - ExamArchived
+  Question:
+    properties:
+      content:
+        type: string
+      createdAt:
+        type: string
+      createdBy:
+        type: string
+      difficulty:
+        $ref: '#/definitions/DifficultyLevel'
+      enterpriseId:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      mediaUrl:
+        type: string
+      metadata:
+        additionalProperties: true
+        type: object
+      negativePoints:
+        type: number
+      options:
+        items:
+          $ref: '#/definitions/QuestionOption'
+        type: array
+      points:
+        type: integer
+      title:
+        type: string
+      topic:
+        type: string
+      type:
+        $ref: '#/definitions/QuestionType'
+      updatedAt:
+        type: string
+    type: object
+  QuestionOption:
+    properties:
+      content:
+        type: string
+      id:
+        type: string
+      isCorrect:
+        type: boolean
+      questionId:
+        type: string
+    type: object
+  QuestionType:
+    enum:
+    - MCQ
+    - TrueFalse
+    - ShortAnswer
+    - Essay
+    type: string
+    x-enum-varnames:
+    - QuestionTypeMCQ
+    - QuestionTypeTrueFalse
+    - QuestionTypeShortAnswer
+    - QuestionTypeEssay
 info:
   contact:
     name: Veritas Platform Team
@@ -389,7 +386,7 @@ info:
 paths:
   /exams:
     get:
-      description: List exams with pagination, sorting and filtering support for the
+      description: List exams with  sorting and filtering support for the
         caller enterprise.
       parameters:
       - description: Enterprise ID (UUID)
@@ -420,7 +417,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pagination.PaginatedResponse-Exam'
+            $ref: '#/definitions/PaginatedResponse-Exam'
         "401":
           description: Unauthorized
           schema:
@@ -741,7 +738,7 @@ paths:
       - exam
   /exams/{examId}/questions:
     get:
-      description: Get question mappings for one exam with pagination.
+      description: Get question mappings for one exam with 
       parameters:
       - description: Enterprise ID (UUID)
         in: header
@@ -776,7 +773,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pagination.PaginatedResponse-ExamQuestion'
+            $ref: '#/definitions/PaginatedResponse-ExamQuestion'
         "400":
           description: Bad Request
           schema:
@@ -1129,7 +1126,7 @@ paths:
       - system
   /questions:
     get:
-      description: List questions with pagination, sorting and filtering support for
+      description: List questions with  sorting and filtering support for
         the caller enterprise.
       parameters:
       - description: Enterprise ID (UUID)
@@ -1160,7 +1157,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pagination.PaginatedResponse-Question'
+            $ref: '#/definitions/PaginatedResponse-Question'
         "401":
           description: Unauthorized
           schema:
