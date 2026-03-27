@@ -35,35 +35,27 @@ func NewSessionUseCase(pool *pgxpool.Pool, sRepo domain.SessionRepository, eRepo
 	}
 }
 
-func (uc *sessionUseCase) ValidateAccessToken(ctx context.Context, token string) (*domain.ValidateAccessTokenResponse, error) {
-	claims, err := uc.tokenService.ParseToken(ctx, token)
-	if err != nil {
-		return nil, domain.ErrInvalidAccessToken
-	}
-
-	return &domain.ValidateAccessTokenResponse{
-		EnrollmentID: claims.EnrollmentID,
-		CandidateID:  claims.CandidateID,
-		ExamID:       claims.ExamID,
-		EnterpriseID: claims.EnterpriseID,
-	}, nil
-}
-
-func (uc *sessionUseCase) StartSession(ctx context.Context, token string, clientIP, userAgent string) (*domain.ExamSession, error) {
-	claims, err := uc.tokenService.ParseToken(ctx, token)
-	if err != nil {
-		return nil, domain.ErrInvalidAccessToken
-	}
-
-	e, err := uc.enrollmentRepo.GetByID(ctx, claims.EnrollmentID, claims.EnterpriseID)
+func (uc *sessionUseCase) ValidateAccessToken(ctx context.Context, enrollmentID, enterpriseID uuid.UUID) (*domain.ValidateAccessTokenResponse, error) {
+	e, err := uc.enrollmentRepo.GetByID(ctx, enrollmentID, enterpriseID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Verify that the token presented matches the one current in DB (allows revocation/rotation)
-	if e.AccessTokenHash != HashToken(token) ||
-		e.AttemptsUsed >= e.MaxAttempts ||
-		time.Now().After(e.TokenExpiresAt) {
+	return &domain.ValidateAccessTokenResponse{
+		EnrollmentID: e.ID,
+		CandidateID:  e.CandidateID,
+		ExamID:       e.ExamID,
+		EnterpriseID: e.EnterpriseID,
+	}, nil
+}
+
+func (uc *sessionUseCase) StartSession(ctx context.Context, enrollmentID, enterpriseID uuid.UUID, clientIP, userAgent string) (*domain.ExamSession, error) {
+	e, err := uc.enrollmentRepo.GetByID(ctx, enrollmentID, enterpriseID)
+	if err != nil {
+		return nil, err
+	}
+
+	if e.AttemptsUsed >= e.MaxAttempts || (e.TokenExpiresAt != time.Time{} && time.Now().After(e.TokenExpiresAt)) {
 		return nil, domain.ErrInvalidAccessToken
 	}
 

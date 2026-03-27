@@ -99,8 +99,8 @@ type SessionRepository interface {
 
 // SessionUseCase covers Candidate Access Flow
 type SessionUseCase interface {
-	ValidateAccessToken(ctx context.Context, token string) (*ValidateAccessTokenResponse, error)
-	StartSession(ctx context.Context, token string, clientIP, userAgent string) (*ExamSession, error)
+	ValidateAccessToken(ctx context.Context, enrollmentID, enterpriseID uuid.UUID) (*ValidateAccessTokenResponse, error)
+	StartSession(ctx context.Context, enrollmentID, enterpriseID uuid.UUID, clientIP, userAgent string) (*ExamSession, error)
 	ResumeActiveSession(ctx context.Context, candidateID uuid.UUID) (*ExamSession, error)
 	GetSessionDetails(ctx context.Context, sessionID uuid.UUID, requestingUserID uuid.UUID, role string) (*ExamSession, error)
 	GetSessionQuestionsSnapshot(ctx context.Context, sessionID uuid.UUID, candidateID uuid.UUID) ([]SessionQuestion, error)
