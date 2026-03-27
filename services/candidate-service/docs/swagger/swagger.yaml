@@ -162,13 +162,6 @@ definitions:
       examId:
         type: string
     type: object
-  AccessValidateRequest:
-    properties:
-      token:
-        type: string
-    required:
-    - token
-    type: object
   AccessValidateResponse:
     properties:
       data:
@@ -296,13 +289,6 @@ definitions:
       data:
         $ref: '#/definitions/ExamSession'
     type: object
-  SessionStartRequest:
-    properties:
-      token:
-        type: string
-    required:
-    - token
-    type: object
   SubmissionResponse:
     properties:
       data:
@@ -392,12 +378,16 @@ paths:
       - application/json
       description: Validate exam access token before session start.
       parameters:
-      - description: Access token
-        in: body
-        name: body
+      - description: Enrollment ID
+        in: header
+        name: X-Enrollment-Id
         required: true
-        schema:
-          $ref: '#/definitions/AccessValidateRequest'
+        type: string
+      - description: Enterprise ID
+        in: header
+        name: X-Enterprise-Id
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -1062,14 +1052,15 @@ paths:
     get:
       description: Get session details for a candidate/admin context.
       parameters:
+      - description: Candidate ID
+        in: header
+        name: X-Subject-Id
+        required: true
+        type: string
       - description: Session ID (UUID)
         in: path
         name: sessionId
         required: true
-        type: string
-      - description: Candidate ID (fallback if middleware context is absent)
-        in: header
-        name: X-Subject-Id
         type: string
       produces:
       - application/json
@@ -1097,14 +1088,15 @@ paths:
     get:
       description: Return answers saved by the authenticated candidate for a session.
       parameters:
+      - description: Candidate ID
+        in: header
+        name: X-Subject-Id
+        required: true
+        type: string
       - description: Session ID (UUID)
         in: path
         name: sessionId
         required: true
-        type: string
-      - description: Candidate ID (fallback if middleware context is absent)
-        in: header
-        name: X-Subject-Id
         type: string
       produces:
       - application/json
@@ -1133,14 +1125,15 @@ paths:
       - application/json
       description: Save or update one question answer in a session.
       parameters:
+      - description: Candidate ID
+        in: header
+        name: X-Subject-Id
+        required: true
+        type: string
       - description: Session ID (UUID)
         in: path
         name: sessionId
         required: true
-        type: string
-      - description: Candidate ID (fallback if middleware context is absent)
-        in: header
-        name: X-Subject-Id
         type: string
       - description: Answer payload
         in: body
@@ -1210,14 +1203,15 @@ paths:
     get:
       description: Get question snapshots for a candidate session.
       parameters:
+      - description: Candidate ID
+        in: header
+        name: X-Subject-Id
+        required: true
+        type: string
       - description: Session ID (UUID)
         in: path
         name: sessionId
         required: true
-        type: string
-      - description: Candidate ID (fallback if middleware context is absent)
-        in: header
-        name: X-Subject-Id
         type: string
       produces:
       - application/json
@@ -1245,14 +1239,15 @@ paths:
     get:
       description: Return candidate result if release policy allows it.
       parameters:
+      - description: Candidate ID
+        in: header
+        name: X-Subject-Id
+        required: true
+        type: string
       - description: Session ID (UUID)
         in: path
         name: sessionId
         required: true
-        type: string
-      - description: Candidate ID (fallback if middleware context is absent)
-        in: header
-        name: X-Subject-Id
         type: string
       produces:
       - application/json
@@ -1286,14 +1281,15 @@ paths:
       - application/json
       description: Submit candidate exam session and create a submission record.
       parameters:
+      - description: Candidate ID
+        in: header
+        name: X-Subject-Id
+        required: true
+        type: string
       - description: Session ID (UUID)
         in: path
         name: sessionId
         required: true
-        type: string
-      - description: Candidate ID (fallback if middleware context is absent)
-        in: header
-        name: X-Subject-Id
         type: string
       - description: Submission metadata
         in: body
@@ -1409,9 +1405,10 @@ paths:
     get:
       description: Return the active session for the authenticated candidate.
       parameters:
-      - description: Candidate ID (fallback if middleware context is absent)
+      - description: Candidate ID
         in: header
         name: X-Subject-Id
+        required: true
         type: string
       produces:
       - application/json
@@ -1441,12 +1438,16 @@ paths:
       - application/json
       description: Create and initialize a candidate exam session.
       parameters:
-      - description: Session start payload
-        in: body
-        name: body
+      - description: Enrollment ID
+        in: header
+        name: X-Enrollment-Id
         required: true
-        schema:
-          $ref: '#/definitions/SessionStartRequest'
+        type: string
+      - description: Enterprise ID
+        in: header
+        name: X-Enterprise-Id
+        required: true
+        type: string
       produces:
       - application/json
       responses:

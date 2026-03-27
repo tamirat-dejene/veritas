@@ -32,13 +32,18 @@ const docTemplate = `{
                 "summary": "Validate access token",
                 "parameters": [
                     {
-                        "description": "Access token",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/AccessValidateRequest"
-                        }
+                        "type": "string",
+                        "description": "Enrollment ID",
+                        "name": "X-Enrollment-Id",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Enterprise ID",
+                        "name": "X-Enterprise-Id",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1035,9 +1040,10 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Candidate ID (fallback if middleware context is absent)",
+                        "description": "Candidate ID",
                         "name": "X-Subject-Id",
-                        "in": "header"
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1083,13 +1089,18 @@ const docTemplate = `{
                 "summary": "Start session",
                 "parameters": [
                     {
-                        "description": "Session start payload",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/SessionStartRequest"
-                        }
+                        "type": "string",
+                        "description": "Enrollment ID",
+                        "name": "X-Enrollment-Id",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Enterprise ID",
+                        "name": "X-Enterprise-Id",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1121,16 +1132,17 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Session ID (UUID)",
-                        "name": "sessionId",
-                        "in": "path",
+                        "description": "Candidate ID",
+                        "name": "X-Subject-Id",
+                        "in": "header",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Candidate ID (fallback if middleware context is absent)",
-                        "name": "X-Subject-Id",
-                        "in": "header"
+                        "description": "Session ID (UUID)",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1174,16 +1186,17 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Session ID (UUID)",
-                        "name": "sessionId",
-                        "in": "path",
+                        "description": "Candidate ID",
+                        "name": "X-Subject-Id",
+                        "in": "header",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Candidate ID (fallback if middleware context is absent)",
-                        "name": "X-Subject-Id",
-                        "in": "header"
+                        "description": "Session ID (UUID)",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1228,16 +1241,17 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Session ID (UUID)",
-                        "name": "sessionId",
-                        "in": "path",
+                        "description": "Candidate ID",
+                        "name": "X-Subject-Id",
+                        "in": "header",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Candidate ID (fallback if middleware context is absent)",
-                        "name": "X-Subject-Id",
-                        "in": "header"
+                        "description": "Session ID (UUID)",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
                     },
                     {
                         "description": "Answer payload",
@@ -1344,16 +1358,17 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Session ID (UUID)",
-                        "name": "sessionId",
-                        "in": "path",
+                        "description": "Candidate ID",
+                        "name": "X-Subject-Id",
+                        "in": "header",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Candidate ID (fallback if middleware context is absent)",
-                        "name": "X-Subject-Id",
-                        "in": "header"
+                        "description": "Session ID (UUID)",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1397,16 +1412,17 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Session ID (UUID)",
-                        "name": "sessionId",
-                        "in": "path",
+                        "description": "Candidate ID",
+                        "name": "X-Subject-Id",
+                        "in": "header",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Candidate ID (fallback if middleware context is absent)",
-                        "name": "X-Subject-Id",
-                        "in": "header"
+                        "description": "Session ID (UUID)",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1459,16 +1475,17 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Session ID (UUID)",
-                        "name": "sessionId",
-                        "in": "path",
+                        "description": "Candidate ID",
+                        "name": "X-Subject-Id",
+                        "in": "header",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Candidate ID (fallback if middleware context is absent)",
-                        "name": "X-Subject-Id",
-                        "in": "header"
+                        "description": "Session ID (UUID)",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
                     },
                     {
                         "description": "Submission metadata",
@@ -1930,17 +1947,6 @@ const docTemplate = `{
                 }
             }
         },
-        "AccessValidateRequest": {
-            "type": "object",
-            "required": [
-                "token"
-            ],
-            "properties": {
-                "token": {
-                    "type": "string"
-                }
-            }
-        },
         "AccessValidateResponse": {
             "type": "object",
             "properties": {
@@ -2132,17 +2138,6 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/ExamSession"
-                }
-            }
-        },
-        "SessionStartRequest": {
-            "type": "object",
-            "required": [
-                "token"
-            ],
-            "properties": {
-                "token": {
-                    "type": "string"
                 }
             }
         },
