@@ -203,8 +203,8 @@ func (h *MonitoringHandler) GetSubmissionDetail(c *gin.Context) {
 //	@Description	Return candidate result if release policy allows it.
 //	@Tags			monitoring
 //	@Produce		json
-//	@Param			sessionId	path	string	true	"Session ID (UUID)"
-//	@Param			X-Subject-Id	header	string	false	"Candidate ID (fallback if middleware context is absent)"
+//	@Param			X-Subject-Id	header	string	true	"Candidate ID"
+//	@Param			sessionId		path	string	true	"Session ID (UUID)"
 //	@Success		200			{object}	dto.SubmissionResponse
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		401			{object}	dto.ErrorResponse

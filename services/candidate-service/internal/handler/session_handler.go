@@ -23,19 +23,6 @@ func NewSessionHandler(uc domain.SessionUseCase, logger *zap.Logger) *SessionHan
 	}
 }
 
-// Ensure candidate ID inside token payload
-func getCandidateID(c *gin.Context) (uuid.UUID, error) {
-	val, exists := c.Get("subject_id")
-	if !exists {
-		// fallback
-		headerVal := c.GetHeader("X-Subject-Id")
-		if headerVal != "" {
-			return uuid.Parse(headerVal)
-		}
-		return uuid.Nil, domain.ErrUnauthorizedAccess
-	}
-	return uuid.Parse(val.(string))
-}
 
 // ValidateAccess validates a one-time access token and returns mapped metadata.
 //
@@ -44,19 +31,25 @@ func getCandidateID(c *gin.Context) (uuid.UUID, error) {
 //	@Tags			session
 //	@Accept			json
 //	@Produce		json
-//	@Param			body	body		dto.AccessValidateRequest	true	"Access token"
-//	@Success		200		{object}	dto.AccessValidateResponse
-//	@Failure		400		{object}	dto.ErrorResponse
-//	@Failure		401		{object}	dto.ErrorResponse
+//	@Param			X-Enrollment-Id	header		string						true	"Enrollment ID"
+//	@Param			X-Enterprise-Id	header		string						true	"Enterprise ID"
+//	@Success		200				{object}	dto.AccessValidateResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
 //	@Router			/access/validate [post]
 func (h *SessionHandler) ValidateAccess(c *gin.Context) {
-	var req dto.AccessValidateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	eid, err := getEnrollmentID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enrollment ID mapping missing"})
+		return
+	}
+	entID, err := getEnterpriseID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
 		return
 	}
 
-	res, err := h.uc.ValidateAccessToken(c.Request.Context(), req.Token)
+	res, err := h.uc.ValidateAccessToken(c.Request.Context(), eid, entID)
 	if err != nil {
 		logger.WithContext(c.Request.Context(), h.logger).Warn("Token validation failed", zap.Error(err), zap.String("ip", c.ClientIP()))
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token mapping"})
@@ -73,21 +66,27 @@ func (h *SessionHandler) ValidateAccess(c *gin.Context) {
 //	@Tags			session
 //	@Accept			json
 //	@Produce		json
-//	@Param			body	body		dto.SessionStartRequest	true	"Session start payload"
-//	@Success		201		{object}	dto.SessionResponse
-//	@Failure		400		{object}	dto.ErrorResponse
+//	@Param			X-Enrollment-Id	header		string					true	"Enrollment ID"
+//	@Param			X-Enterprise-Id	header		string					true	"Enterprise ID"
+//	@Success		201				{object}	dto.SessionResponse
+//	@Failure		400				{object}	dto.ErrorResponse
 //	@Router			/sessions/start [post]
 func (h *SessionHandler) StartSession(c *gin.Context) {
-	var req dto.SessionStartRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	eid, err := getEnrollmentID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enrollment ID mapping missing"})
+		return
+	}
+	entID, err := getEnterpriseID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
 		return
 	}
 
 	clientIP := c.ClientIP()
 	userAgent := c.Request.UserAgent()
 
-	session, err := h.uc.StartSession(c.Request.Context(), req.Token, clientIP, userAgent)
+	session, err := h.uc.StartSession(c.Request.Context(), eid, entID, clientIP, userAgent)
 	if err != nil {
 		logger.WithContext(c.Request.Context(), h.logger).Warn("Failed to start session", zap.Error(err), zap.String("ip", clientIP))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -103,11 +102,11 @@ func (h *SessionHandler) StartSession(c *gin.Context) {
 //	@Description	Return the active session for the authenticated candidate.
 //	@Tags			session
 //	@Produce		json
-//	@Param			X-Subject-Id	header	string	false	"Candidate ID (fallback if middleware context is absent)"
-//	@Success		200			{object}	dto.SessionResponse
-//	@Failure		401			{object}	dto.ErrorResponse
-//	@Failure		404			{object}	dto.ErrorResponse
-//	@Failure		500			{object}	dto.ErrorResponse
+//	@Param			X-Subject-Id	header	string	true	"Candidate ID"
+//	@Success		200				{object}	dto.SessionResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		404				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
 //	@Router			/sessions/me/active [get]
 func (h *SessionHandler) ResumeActive(c *gin.Context) {
 	candidateID, err := getCandidateID(c)
@@ -136,8 +135,8 @@ func (h *SessionHandler) ResumeActive(c *gin.Context) {
 //	@Description	Get session details for a candidate/admin context.
 //	@Tags			session
 //	@Produce		json
-//	@Param			sessionId	path	string	true	"Session ID (UUID)"
-//	@Param			X-Subject-Id	header	string	false	"Candidate ID (fallback if middleware context is absent)"
+//	@Param			X-Subject-Id	header	string	true	"Candidate ID"
+//	@Param			sessionId		path	string	true	"Session ID (UUID)"
 //	@Success		200			{object}	dto.SessionResponse
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		404			{object}	dto.ErrorResponse
@@ -172,8 +171,8 @@ func (h *SessionHandler) GetDetails(c *gin.Context) {
 //	@Description	Get question snapshots for a candidate session.
 //	@Tags			session
 //	@Produce		json
-//	@Param			sessionId	path	string	true	"Session ID (UUID)"
-//	@Param			X-Subject-Id	header	string	false	"Candidate ID (fallback if middleware context is absent)"
+//	@Param			X-Subject-Id	header	string	true	"Candidate ID"
+//	@Param			sessionId		path	string	true	"Session ID (UUID)"
 //	@Success		200			{object}	dto.SessionQuestionListResponse
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		401			{object}	dto.ErrorResponse
@@ -209,8 +208,8 @@ func (h *SessionHandler) GetQuestions(c *gin.Context) {
 //	@Tags			session
 //	@Accept			json
 //	@Produce		json
-//	@Param			sessionId	path	string				true	"Session ID (UUID)"
-//	@Param			X-Subject-Id	header	string				false	"Candidate ID (fallback if middleware context is absent)"
+//	@Param			X-Subject-Id	header	string					true	"Candidate ID"
+//	@Param			sessionId		path	string					true	"Session ID (UUID)"
 //	@Param			body			body	dto.SaveAnswerRequest	true	"Answer payload"
 //	@Success		200			{object}	dto.MessageResponse
 //	@Failure		400			{object}	dto.ErrorResponse
@@ -252,8 +251,8 @@ func (h *SessionHandler) SaveAnswers(c *gin.Context) {
 //	@Description	Return answers saved by the authenticated candidate for a session.
 //	@Tags			session
 //	@Produce		json
-//	@Param			sessionId	path	string	true	"Session ID (UUID)"
-//	@Param			X-Subject-Id	header	string	false	"Candidate ID (fallback if middleware context is absent)"
+//	@Param			X-Subject-Id	header	string	true	"Candidate ID"
+//	@Param			sessionId		path	string	true	"Session ID (UUID)"
 //	@Success		200			{object}	dto.SessionAnswerListResponse
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		401			{object}	dto.ErrorResponse
@@ -288,8 +287,8 @@ func (h *SessionHandler) GetMyAnswers(c *gin.Context) {
 //	@Tags			session
 //	@Accept			json
 //	@Produce		json
-//	@Param			sessionId	path	string			true	"Session ID (UUID)"
-//	@Param			X-Subject-Id	header	string			false	"Candidate ID (fallback if middleware context is absent)"
+//	@Param			X-Subject-Id	header	string			true	"Candidate ID"
+//	@Param			sessionId		path	string			true	"Session ID (UUID)"
 //	@Param			body			body	dto.SubmitRequest	false	"Submission metadata"
 //	@Success		201			{object}	dto.SubmitResponse
 //	@Failure		400			{object}	dto.ErrorResponse
