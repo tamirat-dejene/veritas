@@ -67,7 +67,7 @@
         },
         "/candidates": {
             "get": {
-                "description": "List candidate profiles for the caller enterprise with pagination.",
+                "description": "List candidate profiles for the caller enterprise with ",
                 "produces": [
                     "application/json"
                 ],
@@ -111,7 +111,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pagination.PaginatedResponse-CandidateProfile"
+                            "$ref": "#/definitions/PaginatedResponse-CandidateProfile"
                         }
                     },
                     "401": {
@@ -696,7 +696,7 @@
         },
         "/exams/{examId}/enrollments": {
             "get": {
-                "description": "List exam enrollments for the caller enterprise with pagination.",
+                "description": "List exam enrollments for the caller enterprise with ",
                 "produces": [
                     "application/json"
                 ],
@@ -747,7 +747,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pagination.PaginatedResponse-ExamEnrollment"
+                            "$ref": "#/definitions/PaginatedResponse-ExamEnrollment"
                         }
                     },
                     "400": {
@@ -899,7 +899,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pagination.PaginatedResponse-ExamSession"
+                            "$ref": "#/definitions/PaginatedResponse-ExamSession"
                         }
                     },
                     "400": {
@@ -925,7 +925,7 @@
         },
         "/exams/{examId}/submissions": {
             "get": {
-                "description": "List all submissions for an exam under the caller enterprise with pagination.",
+                "description": "List all submissions for an exam under the caller enterprise with ",
                 "produces": [
                     "application/json"
                 ],
@@ -976,7 +976,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pagination.PaginatedResponse-ExamSubmission"
+                            "$ref": "#/definitions/PaginatedResponse-ExamSubmission"
                         }
                     },
                     "400": {
@@ -2176,7 +2176,7 @@
                 }
             }
         },
-        "pagination.Metadata": {
+        "Metadata": {
             "type": "object",
             "properties": {
                 "current_page": {
@@ -2199,7 +2199,7 @@
                 }
             }
         },
-        "pagination.PaginatedResponse-CandidateProfile": {
+        "PaginatedResponse-CandidateProfile": {
             "type": "object",
             "properties": {
                 "data": {
@@ -2209,11 +2209,11 @@
                     }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/pagination.Metadata"
+                    "$ref": "#/definitions/Metadata"
                 }
             }
         },
-        "pagination.PaginatedResponse-ExamEnrollment": {
+        "PaginatedResponse-ExamEnrollment": {
             "type": "object",
             "properties": {
                 "data": {
@@ -2223,11 +2223,11 @@
                     }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/pagination.Metadata"
+                    "$ref": "#/definitions/Metadata"
                 }
             }
         },
-        "pagination.PaginatedResponse-ExamSession": {
+        "PaginatedResponse-ExamSession": {
             "type": "object",
             "properties": {
                 "data": {
@@ -2237,11 +2237,11 @@
                     }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/pagination.Metadata"
+                    "$ref": "#/definitions/Metadata"
                 }
             }
         },
-        "pagination.PaginatedResponse-ExamSubmission": {
+        "PaginatedResponse-ExamSubmission": {
             "type": "object",
             "properties": {
                 "data": {
@@ -2251,7 +2251,7 @@
                     }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/pagination.Metadata"
+                    "$ref": "#/definitions/Metadata"
                 }
             }
         }

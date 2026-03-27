@@ -70,7 +70,7 @@ const docTemplate = `{
         },
         "/candidates": {
             "get": {
-                "description": "List candidate profiles for the caller enterprise with pagination.",
+                "description": "List candidate profiles for the caller enterprise with ",
                 "produces": [
                     "application/json"
                 ],
@@ -114,7 +114,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pagination.PaginatedResponse-CandidateProfile"
+                            "$ref": "#/definitions/PaginatedResponse-CandidateProfile"
                         }
                     },
                     "401": {
@@ -699,7 +699,7 @@ const docTemplate = `{
         },
         "/exams/{examId}/enrollments": {
             "get": {
-                "description": "List exam enrollments for the caller enterprise with pagination.",
+                "description": "List exam enrollments for the caller enterprise with ",
                 "produces": [
                     "application/json"
                 ],
@@ -750,7 +750,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pagination.PaginatedResponse-ExamEnrollment"
+                            "$ref": "#/definitions/PaginatedResponse-ExamEnrollment"
                         }
                     },
                     "400": {
@@ -902,7 +902,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pagination.PaginatedResponse-ExamSession"
+                            "$ref": "#/definitions/PaginatedResponse-ExamSession"
                         }
                     },
                     "400": {
@@ -928,7 +928,7 @@ const docTemplate = `{
         },
         "/exams/{examId}/submissions": {
             "get": {
-                "description": "List all submissions for an exam under the caller enterprise with pagination.",
+                "description": "List all submissions for an exam under the caller enterprise with ",
                 "produces": [
                     "application/json"
                 ],
@@ -979,7 +979,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pagination.PaginatedResponse-ExamSubmission"
+                            "$ref": "#/definitions/PaginatedResponse-ExamSubmission"
                         }
                     },
                     "400": {
@@ -2179,7 +2179,7 @@ const docTemplate = `{
                 }
             }
         },
-        "pagination.Metadata": {
+        "Metadata": {
             "type": "object",
             "properties": {
                 "current_page": {
@@ -2202,7 +2202,7 @@ const docTemplate = `{
                 }
             }
         },
-        "pagination.PaginatedResponse-CandidateProfile": {
+        "PaginatedResponse-CandidateProfile": {
             "type": "object",
             "properties": {
                 "data": {
@@ -2212,11 +2212,11 @@ const docTemplate = `{
                     }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/pagination.Metadata"
+                    "$ref": "#/definitions/Metadata"
                 }
             }
         },
-        "pagination.PaginatedResponse-ExamEnrollment": {
+        "PaginatedResponse-ExamEnrollment": {
             "type": "object",
             "properties": {
                 "data": {
@@ -2226,11 +2226,11 @@ const docTemplate = `{
                     }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/pagination.Metadata"
+                    "$ref": "#/definitions/Metadata"
                 }
             }
         },
-        "pagination.PaginatedResponse-ExamSession": {
+        "PaginatedResponse-ExamSession": {
             "type": "object",
             "properties": {
                 "data": {
@@ -2240,11 +2240,11 @@ const docTemplate = `{
                     }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/pagination.Metadata"
+                    "$ref": "#/definitions/Metadata"
                 }
             }
         },
-        "pagination.PaginatedResponse-ExamSubmission": {
+        "PaginatedResponse-ExamSubmission": {
             "type": "object",
             "properties": {
                 "data": {
@@ -2254,7 +2254,7 @@ const docTemplate = `{
                     }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/pagination.Metadata"
+                    "$ref": "#/definitions/Metadata"
                 }
             }
         }

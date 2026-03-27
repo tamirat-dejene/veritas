@@ -313,7 +313,7 @@ definitions:
     required:
     - reason
     type: object
-  pagination.Metadata:
+  Metadata:
     properties:
       current_page:
         type: integer
@@ -328,41 +328,41 @@ definitions:
       total_pages:
         type: integer
     type: object
-  pagination.PaginatedResponse-CandidateProfile:
+  PaginatedResponse-CandidateProfile:
     properties:
       data:
         items:
           $ref: '#/definitions/CandidateProfile'
         type: array
       metadata:
-        $ref: '#/definitions/pagination.Metadata'
+        $ref: '#/definitions/Metadata'
     type: object
-  pagination.PaginatedResponse-ExamEnrollment:
+  PaginatedResponse-ExamEnrollment:
     properties:
       data:
         items:
           $ref: '#/definitions/ExamEnrollment'
         type: array
       metadata:
-        $ref: '#/definitions/pagination.Metadata'
+        $ref: '#/definitions/Metadata'
     type: object
-  pagination.PaginatedResponse-ExamSession:
+  PaginatedResponse-ExamSession:
     properties:
       data:
         items:
           $ref: '#/definitions/ExamSession'
         type: array
       metadata:
-        $ref: '#/definitions/pagination.Metadata'
+        $ref: '#/definitions/Metadata'
     type: object
-  pagination.PaginatedResponse-ExamSubmission:
+  PaginatedResponse-ExamSubmission:
     properties:
       data:
         items:
           $ref: '#/definitions/ExamSubmission'
         type: array
       metadata:
-        $ref: '#/definitions/pagination.Metadata'
+        $ref: '#/definitions/Metadata'
     type: object
 info:
   contact:
@@ -408,7 +408,7 @@ paths:
       - session
   /candidates:
     get:
-      description: List candidate profiles for the caller enterprise with pagination.
+      description: List candidate profiles for the caller enterprise with 
       parameters:
       - description: Enterprise ID (fallback if middleware context is absent)
         in: header
@@ -436,7 +436,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pagination.PaginatedResponse-CandidateProfile'
+            $ref: '#/definitions/PaginatedResponse-CandidateProfile'
         "401":
           description: Unauthorized
           schema:
@@ -828,7 +828,7 @@ paths:
       - enrollment
   /exams/{examId}/enrollments:
     get:
-      description: List exam enrollments for the caller enterprise with pagination.
+      description: List exam enrollments for the caller enterprise with 
       parameters:
       - description: Enterprise ID (fallback if middleware context is absent)
         in: header
@@ -861,7 +861,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pagination.PaginatedResponse-ExamEnrollment'
+            $ref: '#/definitions/PaginatedResponse-ExamEnrollment'
         "400":
           description: Bad Request
           schema:
@@ -964,7 +964,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pagination.PaginatedResponse-ExamSession'
+            $ref: '#/definitions/PaginatedResponse-ExamSession'
         "400":
           description: Bad Request
           schema:
@@ -983,7 +983,7 @@ paths:
   /exams/{examId}/submissions:
     get:
       description: List all submissions for an exam under the caller enterprise with
-        pagination.
+        
       parameters:
       - description: Enterprise ID (fallback if middleware context is absent)
         in: header
@@ -1016,7 +1016,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pagination.PaginatedResponse-ExamSubmission'
+            $ref: '#/definitions/PaginatedResponse-ExamSubmission'
         "400":
           description: Bad Request
           schema:

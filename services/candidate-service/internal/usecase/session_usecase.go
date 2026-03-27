@@ -111,19 +111,34 @@ func (uc *sessionUseCase) StartSession(ctx context.Context, enrollmentID, enterp
 		}
 
 		var snapshots []domain.SessionQuestion
-		for _, qm := range questionsMeta {
-			oReq := 0
-			if qm.OrderIndex != nil {
-				oReq = *qm.OrderIndex
+		for _, eq := range questionsMeta {
+			oIdx := 0
+			if eq.OrderIndex != nil {
+				oIdx = *eq.OrderIndex
+			}
+
+			// We need to snapshot the question content
+			qSnapshot, err := json.Marshal(eq.Question)
+			if err != nil {
+				return fmt.Errorf("failed to marshal question snapshot for %s: %w", eq.QuestionID, err)
+			}
+
+			points := 0
+			negativePoints := 0.0
+			if eq.PointsOverride != nil {
+				points = *eq.PointsOverride
+			} else if eq.Question != nil {
+				points = eq.Question.Points
+				negativePoints = eq.Question.NegativePoints
 			}
 
 			snapshots = append(snapshots, domain.SessionQuestion{
 				SessionID:        sessionID,
-				QuestionID:       qm.ID,
-				QuestionSnapshot: qm.Content,
-				OrderIndex:       oReq,
-				Points:           qm.Points,
-				NegativePoints:   qm.NegativePoints,
+				QuestionID:       eq.QuestionID,
+				QuestionSnapshot: qSnapshot,
+				OrderIndex:       oIdx,
+				Points:           points,
+				NegativePoints:   negativePoints,
 			})
 		}
 
