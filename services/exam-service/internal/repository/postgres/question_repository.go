@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -105,14 +106,22 @@ func (r *questionRepository) Create(ctx context.Context, q *sdomain.Question) er
 	return nil
 }
 
-func (r *questionRepository) GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*sdomain.Question, error) {
-	query := fmt.Sprintf("SELECT %s FROM veritas_questions WHERE id = $1 AND enterprise_id = $2 LIMIT 1", questionFields)
+func (r *questionRepository) GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID, withCorrectAnswer bool) (*sdomain.Question, error) {
+	fields := questionFields
+	if !withCorrectAnswer {
+		fields = strings.Replace(fields, "metadata", "null AS metadata", 1)
+	}
+	query := fmt.Sprintf("SELECT %s FROM veritas_questions WHERE id = $1 AND enterprise_id = $2 LIMIT 1", fields)
 	q, err := scanQuestion(r.db.QueryRow(ctx, query, id, enterpriseID))
 	if err != nil {
 		return nil, err
 	}
 
-	optionsQuery := "SELECT id, question_id, content, is_correct FROM veritas_question_options WHERE question_id = $1"
+	optionsFields := "id, question_id, content, is_correct"
+	if !withCorrectAnswer {
+		optionsFields = "id, question_id, content, false AS is_correct"
+	}
+	optionsQuery := fmt.Sprintf("SELECT %s FROM veritas_question_options WHERE question_id = $1", optionsFields)
 	rows, err := r.db.Query(ctx, optionsQuery, id)
 	if err != nil {
 		return nil, err
@@ -129,7 +138,7 @@ func (r *questionRepository) GetByID(ctx context.Context, id uuid.UUID, enterpri
 	return q, nil
 }
 
-func (r *questionRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*sdomain.Question], error) {
+func (r *questionRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params, withCorrectAnswer bool) (pagination.PaginatedResponse[*sdomain.Question], error) {
 	var total int64
 	countQuery := "SELECT count(*) FROM veritas_questions WHERE enterprise_id = $1 AND is_active = true"
 	err := r.db.QueryRow(ctx, countQuery, enterpriseID).Scan(&total)
@@ -151,7 +160,12 @@ func (r *questionRepository) ListByEnterprise(ctx context.Context, enterpriseID 
 		sortField = "created_at"
 	}
 
-	query := fmt.Sprintf("SELECT %s FROM veritas_questions WHERE enterprise_id = $1 AND is_active = true ORDER BY %s %s LIMIT $2 OFFSET $3", questionFields, sortField, params.GetSortDir())
+	fields := questionFields
+	if !withCorrectAnswer {
+		fields = strings.Replace(fields, "metadata", "null AS metadata", 1)
+	}
+
+	query := fmt.Sprintf("SELECT %s FROM veritas_questions WHERE enterprise_id = $1 AND is_active = true ORDER BY %s %s LIMIT $2 OFFSET $3", fields, sortField, params.GetSortDir())
 	rows, err := r.db.Query(ctx, query, enterpriseID, params.GetLimit(), params.GetOffset())
 	if err != nil {
 		return pagination.PaginatedResponse[*sdomain.Question]{}, err
@@ -177,7 +191,11 @@ func (r *questionRepository) ListByEnterprise(ctx context.Context, enterpriseID 
 	}
 
 	// Fetch all options
-	optionsQuery := "SELECT id, question_id, content, is_correct FROM veritas_question_options WHERE question_id = ANY($1)"
+	optionsFields := "id, question_id, content, is_correct"
+	if !withCorrectAnswer {
+		optionsFields = "id, question_id, content, false AS is_correct"
+	}
+	optionsQuery := fmt.Sprintf("SELECT %s FROM veritas_question_options WHERE question_id = ANY($1)", optionsFields)
 	optRows, err := r.db.Query(ctx, optionsQuery, questionIDs)
 	if err != nil {
 		return pagination.NewPaginatedResponse(questions, total, params), nil // returning without options is better than failing completely
