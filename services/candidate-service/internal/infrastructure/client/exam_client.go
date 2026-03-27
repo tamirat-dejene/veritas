@@ -38,11 +38,11 @@ type examServiceClient struct {
 	client httpclient.Client
 }
 
-func NewExamServiceClient(baseURL string) ExamServiceClient {
+func NewExamServiceClient(baseURL string, timeout time.Duration) ExamServiceClient {
 	return &examServiceClient{
 		client: httpclient.New(httpclient.Config{
 			BaseURL: baseURL,
-			Timeout: 10 * time.Second,
+			Timeout: timeout,
 		}),
 	}
 }

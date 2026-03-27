@@ -69,7 +69,7 @@ func main() {
 	log.Info("connected to postgres (via pgxpool)")
 
 	// 4. Initialize Infrastructure Clients (HTTP Client for Exam Service)
-	examClient := client.NewExamServiceClient(cfg.ExamServiceURL)
+	examClient := client.NewExamServiceClient(cfg.ExamServiceURL, 10*time.Second)
 
 	// 5. Initialize Repositories (passing pool as DBTX)
 	candidateRepo := postgres.NewCandidateRepository(pool)
