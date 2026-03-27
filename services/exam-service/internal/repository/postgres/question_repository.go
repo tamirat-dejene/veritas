@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/domain"
+	sdomain "github.com/tamirat-dejene/veritas/shared/domain"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
@@ -26,8 +27,8 @@ const questionFields = `
 	points, negative_points, metadata, is_active, created_by, created_at, updated_at
 `
 
-func scanQuestion(row pgx.Row) (*domain.Question, error) {
-	var q domain.Question
+func scanQuestion(row pgx.Row) (*sdomain.Question, error) {
+	var q sdomain.Question
 	err := row.Scan(
 		&q.ID, &q.EnterpriseID, &q.Type, &q.Topic, &q.Difficulty, &q.Title, &q.Content, &q.MediaURL,
 		&q.Points, &q.NegativePoints, &q.Metadata, &q.IsActive, &q.CreatedBy, &q.CreatedAt, &q.UpdatedAt,
@@ -41,8 +42,8 @@ func scanQuestion(row pgx.Row) (*domain.Question, error) {
 	return &q, nil
 }
 
-func scanQuestionOption(row pgx.Row) (*domain.QuestionOption, error) {
-	var o domain.QuestionOption
+func scanQuestionOption(row pgx.Row) (*sdomain.QuestionOption, error) {
+	var o sdomain.QuestionOption
 	err := row.Scan(&o.ID, &o.QuestionID, &o.Content, &o.IsCorrect)
 	if err != nil {
 		return nil, err
@@ -50,7 +51,7 @@ func scanQuestionOption(row pgx.Row) (*domain.QuestionOption, error) {
 	return &o, nil
 }
 
-func (r *questionRepository) Create(ctx context.Context, q *domain.Question) error {
+func (r *questionRepository) Create(ctx context.Context, q *sdomain.Question) error {
 	const insertQuestion = `
 		INSERT INTO veritas_questions (
 			id, enterprise_id, type, topic, difficulty, title, content, media_url,
@@ -104,7 +105,7 @@ func (r *questionRepository) Create(ctx context.Context, q *domain.Question) err
 	return nil
 }
 
-func (r *questionRepository) GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*domain.Question, error) {
+func (r *questionRepository) GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*sdomain.Question, error) {
 	query := fmt.Sprintf("SELECT %s FROM veritas_questions WHERE id = $1 AND enterprise_id = $2 LIMIT 1", questionFields)
 	q, err := scanQuestion(r.db.QueryRow(ctx, query, id, enterpriseID))
 	if err != nil {
@@ -128,12 +129,12 @@ func (r *questionRepository) GetByID(ctx context.Context, id uuid.UUID, enterpri
 	return q, nil
 }
 
-func (r *questionRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*domain.Question], error) {
+func (r *questionRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*sdomain.Question], error) {
 	var total int64
 	countQuery := "SELECT count(*) FROM veritas_questions WHERE enterprise_id = $1 AND is_active = true"
 	err := r.db.QueryRow(ctx, countQuery, enterpriseID).Scan(&total)
 	if err != nil {
-		return pagination.PaginatedResponse[*domain.Question]{}, err
+		return pagination.PaginatedResponse[*sdomain.Question]{}, err
 	}
 
 	sortField := params.GetSort()
@@ -153,18 +154,18 @@ func (r *questionRepository) ListByEnterprise(ctx context.Context, enterpriseID 
 	query := fmt.Sprintf("SELECT %s FROM veritas_questions WHERE enterprise_id = $1 AND is_active = true ORDER BY %s %s LIMIT $2 OFFSET $3", questionFields, sortField, params.GetSortDir())
 	rows, err := r.db.Query(ctx, query, enterpriseID, params.GetLimit(), params.GetOffset())
 	if err != nil {
-		return pagination.PaginatedResponse[*domain.Question]{}, err
+		return pagination.PaginatedResponse[*sdomain.Question]{}, err
 	}
 	defer rows.Close()
 
-	var questions []*domain.Question
+	var questions []*sdomain.Question
 	var questionIDs []uuid.UUID
-	qMap := make(map[uuid.UUID]*domain.Question)
+	qMap := make(map[uuid.UUID]*sdomain.Question)
 
 	for rows.Next() {
 		q, err := scanQuestion(rows)
 		if err != nil {
-			return pagination.PaginatedResponse[*domain.Question]{}, err
+			return pagination.PaginatedResponse[*sdomain.Question]{}, err
 		}
 		questions = append(questions, q)
 		questionIDs = append(questionIDs, q.ID)
@@ -195,7 +196,7 @@ func (r *questionRepository) ListByEnterprise(ctx context.Context, enterpriseID 
 	return pagination.NewPaginatedResponse(questions, total, params), nil
 }
 
-func (r *questionRepository) Update(ctx context.Context, q *domain.Question) error {
+func (r *questionRepository) Update(ctx context.Context, q *sdomain.Question) error {
 	const updateQuestion = `
 		UPDATE veritas_questions
 		SET type = $3, topic = $4, difficulty = $5, title = $6, content = $7, media_url = $8,

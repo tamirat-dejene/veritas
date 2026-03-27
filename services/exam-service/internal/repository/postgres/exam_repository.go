@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/domain"
+	sdomain "github.com/tamirat-dejene/veritas/shared/domain"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
@@ -27,8 +28,8 @@ const examFields = `
 	scheduled_start, scheduled_end, settings, created_by, created_at, updated_at
 `
 
-func scanExam(row pgx.Row) (*domain.Exam, error) {
-	var e domain.Exam
+func scanExam(row pgx.Row) (*sdomain.Exam, error) {
+	var e sdomain.Exam
 	err := row.Scan(
 		&e.ID, &e.EnterpriseID, &e.Title, &e.Description, &e.DurationMinutes, &e.PassingScorePercent,
 		&e.NegativeMarking, &e.MaxParticipants, &e.Status, &e.TemplateSourceID,
@@ -43,8 +44,8 @@ func scanExam(row pgx.Row) (*domain.Exam, error) {
 	return &e, nil
 }
 
-func scanExamQuestion(row pgx.Row) (*domain.ExamQuestion, error) {
-	var eq domain.ExamQuestion
+func scanExamQuestion(row pgx.Row) (*sdomain.ExamQuestion, error) {
+	var eq sdomain.ExamQuestion
 	err := row.Scan(&eq.ID, &eq.ExamID, &eq.QuestionID, &eq.PointsOverride, &eq.OrderIndex)
 	if err != nil {
 		return nil, err
@@ -52,8 +53,8 @@ func scanExamQuestion(row pgx.Row) (*domain.ExamQuestion, error) {
 	return &eq, nil
 }
 
-func scanExamRandomizationRule(row pgx.Row) (*domain.ExamRandomizationRule, error) {
-	var r domain.ExamRandomizationRule
+func scanExamRandomizationRule(row pgx.Row) (*sdomain.ExamRandomizationRule, error) {
+	var r sdomain.ExamRandomizationRule
 	err := row.Scan(&r.ID, &r.ExamID, &r.Topic, &r.Difficulty, &r.QuestionCount)
 	if err != nil {
 		return nil, err
@@ -61,7 +62,7 @@ func scanExamRandomizationRule(row pgx.Row) (*domain.ExamRandomizationRule, erro
 	return &r, nil
 }
 
-func (r *examRepository) Create(ctx context.Context, e *domain.Exam) error {
+func (r *examRepository) Create(ctx context.Context, e *sdomain.Exam) error {
 	const insertExam = `
 		INSERT INTO veritas_exams (
 			id, enterprise_id, title, description, duration_minutes, passing_score_percent,
@@ -122,7 +123,7 @@ func (r *examRepository) Create(ctx context.Context, e *domain.Exam) error {
 	return nil
 }
 
-func (r *examRepository) GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*domain.Exam, error) {
+func (r *examRepository) GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*sdomain.Exam, error) {
 	query := fmt.Sprintf("SELECT %s FROM veritas_exams WHERE id = $1 AND enterprise_id = $2 LIMIT 1", examFields)
 	e, err := scanExam(r.db.QueryRow(ctx, query, id, enterpriseID))
 	if err != nil {
@@ -156,7 +157,7 @@ func (r *examRepository) GetByID(ctx context.Context, id uuid.UUID, enterpriseID
 	return e, nil
 }
 
-func (r *examRepository) Update(ctx context.Context, e *domain.Exam) error {
+func (r *examRepository) Update(ctx context.Context, e *sdomain.Exam) error {
 	const updateExam = `
 		UPDATE veritas_exams
 		SET title = $3, description = $4, duration_minutes = $5, passing_score_percent = $6,
@@ -177,12 +178,12 @@ func (r *examRepository) Update(ctx context.Context, e *domain.Exam) error {
 	return err
 }
 
-func (r *examRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*domain.Exam], error) {
+func (r *examRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*sdomain.Exam], error) {
 	var total int64
 	countQuery := "SELECT count(*) FROM veritas_exams WHERE enterprise_id = $1 AND status != 'Archived'"
 	err := r.db.QueryRow(ctx, countQuery, enterpriseID).Scan(&total)
 	if err != nil {
-		return pagination.PaginatedResponse[*domain.Exam]{}, err
+		return pagination.PaginatedResponse[*sdomain.Exam]{}, err
 	}
 
 	sortField := params.GetSort()
@@ -201,15 +202,15 @@ func (r *examRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid
 	query := fmt.Sprintf("SELECT %s FROM veritas_exams WHERE enterprise_id = $1 AND status != 'Archived' ORDER BY %s %s LIMIT $2 OFFSET $3", examFields, sortField, params.GetSortDir())
 	rows, err := r.db.Query(ctx, query, enterpriseID, params.GetLimit(), params.GetOffset())
 	if err != nil {
-		return pagination.PaginatedResponse[*domain.Exam]{}, err
+		return pagination.PaginatedResponse[*sdomain.Exam]{}, err
 	}
 	defer rows.Close()
 
-	var exams []*domain.Exam
+	var exams []*sdomain.Exam
 	for rows.Next() {
 		e, err := scanExam(rows)
 		if err != nil {
-			return pagination.PaginatedResponse[*domain.Exam]{}, err
+			return pagination.PaginatedResponse[*sdomain.Exam]{}, err
 		}
 		// Notice: To keep this lightweight, we aren't joining questions/rules on a bulk list request.
 		// If the client needs deep details, they should call GetByID.
@@ -220,13 +221,13 @@ func (r *examRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid
 }
 
 func (r *examRepository) Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
-	// Let's do a soft delete via status 'Archived' (domain.ExamArchived)
+	// Let's do a soft delete via status 'Archived' (sdomain.ExamArchived)
 	const archiveExam = `
 		UPDATE veritas_exams
 		SET status = $3, updated_at = NOW()
 		WHERE id = $1 AND enterprise_id = $2
 	`
-	tag, err := r.db.Exec(ctx, archiveExam, id, enterpriseID, domain.ExamArchived)
+	tag, err := r.db.Exec(ctx, archiveExam, id, enterpriseID, sdomain.ExamArchived)
 	if err != nil {
 		return err
 	}
@@ -236,7 +237,7 @@ func (r *examRepository) Delete(ctx context.Context, id uuid.UUID, enterpriseID 
 	return nil
 }
 
-func (r *examRepository) AddQuestions(ctx context.Context, examID uuid.UUID, eqs []*domain.ExamQuestion) error {
+func (r *examRepository) AddQuestions(ctx context.Context, examID uuid.UUID, eqs []*sdomain.ExamQuestion) error {
 	const insertEq = `
 		INSERT INTO veritas_exam_questions (id, exam_id, question_id, points_override, order_index)
 		VALUES ($1, $2, $3, $4, $5)
@@ -254,11 +255,11 @@ func (r *examRepository) AddQuestions(ctx context.Context, examID uuid.UUID, eqs
 	return nil
 }
 
-func (r *examRepository) GetExamQuestions(ctx context.Context, examID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*domain.ExamQuestion], error) {
+func (r *examRepository) GetExamQuestions(ctx context.Context, examID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*sdomain.ExamQuestion], error) {
 	var total int64
 	err := r.db.QueryRow(ctx, "SELECT count(*) FROM veritas_exam_questions WHERE exam_id = $1", examID).Scan(&total)
 	if err != nil {
-		return pagination.PaginatedResponse[*domain.ExamQuestion]{}, err
+		return pagination.PaginatedResponse[*sdomain.ExamQuestion]{}, err
 	}
 
 	sortField := params.GetSort()
@@ -270,15 +271,15 @@ func (r *examRepository) GetExamQuestions(ctx context.Context, examID uuid.UUID,
 	query := fmt.Sprintf("SELECT id, exam_id, question_id, points_override, order_index FROM veritas_exam_questions WHERE exam_id = $1 ORDER BY %s %s NULLS LAST LIMIT $2 OFFSET $3", sortField, params.GetSortDir())
 	rows, err := r.db.Query(ctx, query, examID, params.GetLimit(), params.GetOffset())
 	if err != nil {
-		return pagination.PaginatedResponse[*domain.ExamQuestion]{}, err
+		return pagination.PaginatedResponse[*sdomain.ExamQuestion]{}, err
 	}
 	defer rows.Close()
 
-	var eqs []*domain.ExamQuestion
+	var eqs []*sdomain.ExamQuestion
 	for rows.Next() {
-		var eq domain.ExamQuestion
+		var eq sdomain.ExamQuestion
 		if err := rows.Scan(&eq.ID, &eq.ExamID, &eq.QuestionID, &eq.PointsOverride, &eq.OrderIndex); err != nil {
-			return pagination.PaginatedResponse[*domain.ExamQuestion]{}, err
+			return pagination.PaginatedResponse[*sdomain.ExamQuestion]{}, err
 		}
 		eqs = append(eqs, &eq)
 	}
@@ -298,7 +299,7 @@ func (r *examRepository) RemoveQuestion(ctx context.Context, examID uuid.UUID, q
 	return nil
 }
 
-func (r *examRepository) UpdateQuestionMapping(ctx context.Context, examID uuid.UUID, eq *domain.ExamQuestion) error {
+func (r *examRepository) UpdateQuestionMapping(ctx context.Context, examID uuid.UUID, eq *sdomain.ExamQuestion) error {
 	const updateEq = `
 		UPDATE veritas_exam_questions
 		SET points_override = $3, order_index = $4
@@ -314,7 +315,7 @@ func (r *examRepository) UpdateQuestionMapping(ctx context.Context, examID uuid.
 	return nil
 }
 
-func (r *examRepository) AddRandomizationRule(ctx context.Context, examID uuid.UUID, rule *domain.ExamRandomizationRule) error {
+func (r *examRepository) AddRandomizationRule(ctx context.Context, examID uuid.UUID, rule *sdomain.ExamRandomizationRule) error {
 	if rule.ID == uuid.Nil {
 		rule.ID = uuid.New()
 	}
@@ -328,7 +329,7 @@ func (r *examRepository) AddRandomizationRule(ctx context.Context, examID uuid.U
 	return err
 }
 
-func (r *examRepository) UpdateRandomizationRule(ctx context.Context, examID uuid.UUID, rule *domain.ExamRandomizationRule) error {
+func (r *examRepository) UpdateRandomizationRule(ctx context.Context, examID uuid.UUID, rule *sdomain.ExamRandomizationRule) error {
 	const updateRule = `
 		UPDATE veritas_exam_randomization_rules
 		SET topic = $3, difficulty = $4, question_count = $5
