@@ -69,7 +69,7 @@ func (h *EnrollmentHandler) Enroll(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Enrolled successfully", "rawTokens": tokens})
+	c.JSON(http.StatusCreated, gin.H{"message": "Enrolled successfully", "enrollmentTokens": tokens})
 }
 
 // ListByExam lists enrollments for an exam with pagination.

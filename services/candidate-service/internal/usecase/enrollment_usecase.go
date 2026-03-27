@@ -40,8 +40,8 @@ func HashToken(token string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func (uc *enrollmentUseCase) EnrollCandidates(ctx context.Context, enterpriseID uuid.UUID, examID uuid.UUID, candidateIDs []uuid.UUID, maxAttempts int, expiresAt time.Time) ([]string, error) {
-	var rawTokens []string
+func (uc *enrollmentUseCase) EnrollCandidates(ctx context.Context, enterpriseID uuid.UUID, examID uuid.UUID, candidateIDs []uuid.UUID, maxAttempts int, expiresAt time.Time) (map[uuid.UUID]string, error) {
+	var enrollmentMap = make(map[uuid.UUID]string, len(candidateIDs))
 
 	err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		for _, cid := range candidateIDs {
@@ -79,7 +79,7 @@ func (uc *enrollmentUseCase) EnrollCandidates(ctx context.Context, enterpriseID 
 			}
 
 			// Store raw token exactly once to hand back to the inviter
-			rawTokens = append(rawTokens, rawToken)
+			enrollmentMap[cid] = rawToken
 		}
 		return nil
 	})
@@ -90,7 +90,7 @@ func (uc *enrollmentUseCase) EnrollCandidates(ctx context.Context, enterpriseID 
 	}
 
 	uc.logger.Info("candidates enrolled", zap.Int("count", len(candidateIDs)), zap.String("examID", examID.String()))
-	return rawTokens, nil
+	return enrollmentMap, nil
 }
 
 func (uc *enrollmentUseCase) GetEnrollmentsForExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) ([]*domain.ExamEnrollment, int64, error) {

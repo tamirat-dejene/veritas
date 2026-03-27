@@ -32,7 +32,7 @@ type EnrollmentRepository interface {
 }
 
 type EnrollmentUseCase interface {
-	EnrollCandidates(ctx context.Context, enterpriseID uuid.UUID, examID uuid.UUID, candidateIDs []uuid.UUID, maxAttempts int, expiresAt time.Time) ([]string, error) // Returns raw tokens mapped implicitly or wrapped
+	EnrollCandidates(ctx context.Context, enterpriseID uuid.UUID, examID uuid.UUID, candidateIDs []uuid.UUID, maxAttempts int, expiresAt time.Time) (map[uuid.UUID]string, error) // Returns raw tokens mapped implicitly or wrapped
 	GetEnrollmentsForExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) ([]*ExamEnrollment, int64, error)
 	GetEnrollment(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*ExamEnrollment, error)
 	RegenerateToken(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (string, error) // Returns raw new token
