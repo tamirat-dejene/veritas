@@ -359,6 +359,7 @@ func (h *ExamHandler) GetExam(c *gin.Context) {
 //	@Param			limit			query	int		false	"Number of items per page (default: 10, max: 1000)"
 //	@Param			sort			query	string	false	"Sort field (allowed: order_index, points_override) (default: order_index)"
 //	@Param			sort_dir		query	string	false	"Sort direction (asc or desc) (default: desc)"
+//	@Param			with_correct_answer	query	bool	false	"Include answers and metadata (default: false)"
 //	@Success		200			{object}	pagination.PaginatedResponse[sdomain.ExamQuestion]
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		401			{object}	dto.ErrorResponse
@@ -380,8 +381,9 @@ func (h *ExamHandler) GetExamQuestions(c *gin.Context) {
 	}
 
 	params := pagination.ParseGin(c)
+	withCorrectAnswer := c.Query("with_correct_answer") == "true"
 
-	questions, err := h.usecase.GetExamQuestions(c.Request.Context(), examID, enterpriseID, params)
+	questions, err := h.usecase.GetExamQuestions(c.Request.Context(), examID, enterpriseID, params, withCorrectAnswer)
 	if err != nil {
 		if err == domain.ErrExamNotFound {
 			writeError(c, http.StatusNotFound, "exam not found")

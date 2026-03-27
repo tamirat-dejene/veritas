@@ -96,6 +96,7 @@ func (h *QuestionHandler) CreateQuestion(c *gin.Context) {
 //	@Param			limit			query	int		false	"Number of items per page (default: 10, max: 1000)"
 //	@Param			sort			query	string	false	"Sort field (allowed: created_at, updated_at, title, difficulty, type, points) (default: created_at)"
 //	@Param			sort_dir		query	string	false	"Sort direction (asc or desc) (default: desc)"
+//	@Param			with_correct_answer	query	bool	false	"Include answers and metadata (default: false)"
 //	@Success		200			{object}	pagination.PaginatedResponse[sdomain.Question]
 //	@Failure		401			{object}	dto.ErrorResponse
 //	@Failure		500			{object}	dto.ErrorResponse
@@ -108,8 +109,9 @@ func (h *QuestionHandler) ListQuestions(c *gin.Context) {
 	}
 
 	params := pagination.ParseGin(c)
+	withCorrectAnswer := c.Query("with_correct_answer") == "true"
 
-	questions, err := h.usecase.GetQuestions(c.Request.Context(), enterpriseID, params)
+	questions, err := h.usecase.GetQuestions(c.Request.Context(), enterpriseID, params, withCorrectAnswer)
 	if err != nil {
 		writeError(c, http.StatusInternalServerError, "failed to fetch questions")
 		return
@@ -126,6 +128,7 @@ func (h *QuestionHandler) ListQuestions(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
 //	@Param			questionId		path	string	true	"Question ID (UUID)"
+//	@Param			with_correct_answer	query	bool	false	"Include answers and metadata (default: false)"
 //	@Success		200			{object}	sdomain.Question
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		401			{object}	dto.ErrorResponse
@@ -146,7 +149,9 @@ func (h *QuestionHandler) GetQuestion(c *gin.Context) {
 		return
 	}
 
-	q, err := h.usecase.GetQuestion(c.Request.Context(), questionID, enterpriseID)
+	withCorrectAnswer := c.Query("with_correct_answer") == "true"
+
+	q, err := h.usecase.GetQuestion(c.Request.Context(), questionID, enterpriseID, withCorrectAnswer)
 	if err != nil {
 		if err == domain.ErrQuestionNotFound {
 			writeError(c, http.StatusNotFound, "question not found")
