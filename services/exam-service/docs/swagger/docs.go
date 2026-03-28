@@ -588,6 +588,12 @@ const docTemplate = `{
                         "description": "Sort direction (asc or desc) (default: desc)",
                         "name": "sort_dir",
                         "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Include answers and metadata (default: false)",
+                        "name": "with_correct_answer",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1156,6 +1162,12 @@ const docTemplate = `{
                         "description": "Sort direction (asc or desc) (default: desc)",
                         "name": "sort_dir",
                         "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Include answers and metadata (default: false)",
+                        "name": "with_correct_answer",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1268,6 +1280,12 @@ const docTemplate = `{
                         "name": "questionId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Include answers and metadata (default: false)",
+                        "name": "with_correct_answer",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1827,7 +1845,7 @@ const docTemplate = `{
                 },
                 "settings": {
                     "type": "object",
-                    "additionalProperties": true
+                    "additionalProperties": {}
                 },
                 "status": {
                     "$ref": "#/definitions/ExamStatus"
@@ -1932,7 +1950,7 @@ const docTemplate = `{
                 },
                 "metadata": {
                     "type": "object",
-                    "additionalProperties": true
+                    "additionalProperties": {}
                 },
                 "negativePoints": {
                     "type": "number"

@@ -262,7 +262,7 @@ definitions:
       scheduledStart:
         type: string
       settings:
-        additionalProperties: true
+        additionalProperties: {}
         type: object
       status:
         $ref: '#/definitions/ExamStatus'
@@ -334,7 +334,7 @@ definitions:
       mediaUrl:
         type: string
       metadata:
-        additionalProperties: true
+        additionalProperties: {}
         type: object
       negativePoints:
         type: number
@@ -767,6 +767,10 @@ paths:
         in: query
         name: sort_dir
         type: string
+      - description: 'Include answers and metadata (default: false)'
+        in: query
+        name: with_correct_answer
+        type: boolean
       produces:
       - application/json
       responses:
@@ -1151,6 +1155,10 @@ paths:
         in: query
         name: sort_dir
         type: string
+      - description: 'Include answers and metadata (default: false)'
+        in: query
+        name: with_correct_answer
+        type: boolean
       produces:
       - application/json
       responses:
@@ -1263,6 +1271,10 @@ paths:
         name: questionId
         required: true
         type: string
+      - description: 'Include answers and metadata (default: false)'
+        in: query
+        name: with_correct_answer
+        type: boolean
       produces:
       - application/json
       responses:
