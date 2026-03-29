@@ -258,17 +258,15 @@ definitions:
       message:
         type: string
     type: object
-  SaveAnswerRequest:
+  SaveAnswerRequestSwag:
     properties:
       answerData:
-        items:
-          type: integer
-        type: array
-      questionId:
+        $ref: '#/definitions/SwaggerAnswerData'
+      sessionQuestionId:
         type: string
     required:
     - answerData
-    - questionId
+    - sessionQuestionId
     type: object
   SessionAnswerListResponse:
     properties:
@@ -304,6 +302,20 @@ definitions:
       data:
         $ref: '#/definitions/ExamSubmission'
       message:
+        type: string
+    type: object
+  SwaggerAnswerData:
+    properties:
+      selectedOptionIds:
+        description: For MCQ and True/False Answer
+        example:
+        - 123e4567-e89b-12d3-a456-426614174000
+        items:
+          type: string
+        type: array
+      text:
+        description: For Text or Essay Answer
+        example: This is an essay answer.
         type: string
     type: object
   TerminateSessionRequest:
@@ -1123,7 +1135,9 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Save or update one question answer in a session.
+      description: Save or update one question answer in a session. One of the two
+        fields in the answer data must be non null. Both fields being non null or
+        null is not allowed.
       parameters:
       - description: Candidate ID
         in: header
@@ -1140,7 +1154,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SaveAnswerRequest'
+          $ref: '#/definitions/SaveAnswerRequestSwag'
       produces:
       - application/json
       responses:

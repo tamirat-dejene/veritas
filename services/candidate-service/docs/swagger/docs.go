@@ -1227,7 +1227,7 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "Save or update one question answer in a session.",
+                "description": "Save or update one question answer in a session. One of the two fields in the answer data must be non null. Both fields being non null or null is not allowed.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1259,7 +1259,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SaveAnswerRequest"
+                            "$ref": "#/definitions/SaveAnswerRequestSwag"
                         }
                     }
                 ],
@@ -2093,20 +2093,17 @@ const docTemplate = `{
                 }
             }
         },
-        "SaveAnswerRequest": {
+        "SaveAnswerRequestSwag": {
             "type": "object",
             "required": [
                 "answerData",
-                "questionId"
+                "sessionQuestionId"
             ],
             "properties": {
                 "answerData": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                    "$ref": "#/definitions/SwaggerAnswerData"
                 },
-                "questionId": {
+                "sessionQuestionId": {
                     "type": "string"
                 }
             }
@@ -2165,6 +2162,26 @@ const docTemplate = `{
                 },
                 "message": {
                     "type": "string"
+                }
+            }
+        },
+        "SwaggerAnswerData": {
+            "type": "object",
+            "properties": {
+                "selectedOptionIds": {
+                    "description": "For MCQ and True/False Answer",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "123e4567-e89b-12d3-a456-426614174000"
+                    ]
+                },
+                "text": {
+                    "description": "For Text or Essay Answer",
+                    "type": "string",
+                    "example": "This is an essay answer."
                 }
             }
         },
