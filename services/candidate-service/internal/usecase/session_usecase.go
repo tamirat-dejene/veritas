@@ -61,8 +61,8 @@ func (uc *sessionUseCase) StartSession(ctx context.Context, enrollmentID, enterp
 		return nil, domain.ErrMaxAttemptsReached
 	}
 
-	if e.TokenExpiresAt != time.Time{} && time.Now().After(e.TokenExpiresAt) {
-		return nil, domain.ErrInvalidAccessToken
+	if (e.TokenExpiresAt != time.Time{} && time.Now().After(e.TokenExpiresAt)) {
+		return nil, domain.ErrSessionExpired
 	}
 
 	session, err := uc.sessionRepo.GetSessionByEnrollment(ctx, e.ID)
