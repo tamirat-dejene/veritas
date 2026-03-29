@@ -52,7 +52,7 @@ func NewSessionRepository(db DBTX) domain.SessionRepository {
 const sessionFields = `
 	id, enterprise_id, exam_id, candidate_id, enrollment_id, status,
 	started_at, expires_at, submitted_at, terminated_at, termination_reason,
-	client_ip, user_agent, face_registered_url, cheating_score, created_at
+	client_ip::text, user_agent, face_registered_url, cheating_score, created_at
 `
 
 func scanSession(row pgx.Row) (*domain.ExamSession, error) {
@@ -95,19 +95,31 @@ func (r *sessionRepository) CreateSession(ctx context.Context, s *domain.ExamSes
 	return err
 }
 
-func (r *sessionRepository) GetSessionByID(ctx context.Context, id uuid.UUID) (*domain.ExamSession, error) {
-	query := fmt.Sprintf("SELECT %s FROM exam_sessions WHERE id = $1 LIMIT 1", sessionFields)
-	return scanSession(r.db.QueryRow(ctx, query, id))
+func (r *sessionRepository) GetSessionByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*domain.ExamSession, error) {
+	where := "id = $1"
+	args := []interface{}{id}
+	if enterpriseID != uuid.Nil {
+		where += " AND enterprise_id = $2"
+		args = append(args, enterpriseID)
+	}
+	query := fmt.Sprintf("SELECT %s FROM exam_sessions WHERE %s LIMIT 1", sessionFields, where)
+	return scanSession(r.db.QueryRow(ctx, query, args...))
 }
 
-func (r *sessionRepository) ListSessionsByExam(ctx context.Context, examID uuid.UUID, status *domain.SessionStatus, params pagination.Params) ([]*domain.ExamSession, int64, error) {
+func (r *sessionRepository) GetSessionByEnrollment(ctx context.Context, enrollmentID uuid.UUID) (*domain.ExamSession, error) {
+	// enrollmentID is already globally unique across enterprises in our initial schema assumptions, but let's keep it consistent
+	query := fmt.Sprintf("SELECT %s FROM exam_sessions WHERE enrollment_id = $1 LIMIT 1", sessionFields)
+	return scanSession(r.db.QueryRow(ctx, query, enrollmentID))
+}
+
+func (r *sessionRepository) ListSessionsByExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, status *domain.SessionStatus, params pagination.Params) ([]*domain.ExamSession, int64, error) {
 	// Build WHERE clause (reused for count and data)
-	where := "exam_id = $1"
-	countArgs := []interface{}{examID}
-	dataArgs := []interface{}{examID}
+	where := "exam_id = $1 AND enterprise_id = $2"
+	countArgs := []interface{}{examID, enterpriseID}
+	dataArgs := []interface{}{examID, enterpriseID}
 
 	if status != nil {
-		where += " AND status = $2"
+		where += " AND status = $3"
 		countArgs = append(countArgs, *status)
 		dataArgs = append(dataArgs, *status)
 	}
@@ -149,9 +161,9 @@ func (r *sessionRepository) ListSessionsByExam(ctx context.Context, examID uuid.
 func (r *sessionRepository) UpdateSessionStatus(ctx context.Context, id uuid.UUID, status domain.SessionStatus, reason *string) error {
 	const updateQuery = `
 		UPDATE exam_sessions
-		SET status = $2, termination_reason = COALESCE($3, termination_reason), 
-		    terminated_at = CASE WHEN $2 = 'Terminated' THEN NOW() ELSE terminated_at END,
-		    submitted_at = CASE WHEN $2 = 'Submitted' THEN NOW() ELSE submitted_at END
+		SET status = $2::session_status, termination_reason = COALESCE($3, termination_reason), 
+		    terminated_at = CASE WHEN $2::session_status = 'Terminated' THEN NOW() ELSE terminated_at END,
+		    submitted_at = CASE WHEN $2::session_status = 'Submitted' THEN NOW() ELSE submitted_at END
 		WHERE id = $1
 	`
 	tag, err := r.db.Exec(ctx, updateQuery, id, status, reason)
@@ -207,6 +219,24 @@ func (r *sessionRepository) GetSessionQuestions(ctx context.Context, sessionID u
 		list = append(list, q)
 	}
 	return list, nil
+}
+
+func (r *sessionRepository) GetSessionQuestion(ctx context.Context, sessionID uuid.UUID, sessionQuestionID uuid.UUID) (*domain.SessionQuestion, error) {
+	query := `
+		SELECT id, session_id, question_id, question_snapshot, order_index, points, negative_points
+		FROM session_questions WHERE session_id = $1 AND id = $2 LIMIT 1
+	`
+	var q domain.SessionQuestion
+	err := r.db.QueryRow(ctx, query, sessionID, sessionQuestionID).Scan(
+		&q.ID, &q.SessionID, &q.QuestionID, &q.QuestionSnapshot, &q.OrderIndex, &q.Points, &q.NegativePoints,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrQuestionNotFound
+		}
+		return nil, err
+	}
+	return &q, nil
 }
 
 // ---------------------------------------------------------
@@ -279,13 +309,23 @@ func (r *sessionRepository) CreateSubmission(ctx context.Context, sub *domain.Ex
 	return nil
 }
 
-func (r *sessionRepository) GetSubmissionBySession(ctx context.Context, sessionID uuid.UUID) (*domain.ExamSubmission, error) {
-	query := `
-		SELECT id, session_id, submitted_at, auto_submitted, total_score, grading_status, created_at
-		FROM exam_submissions WHERE session_id = $1 LIMIT 1
-	`
+func (r *sessionRepository) GetSubmissionBySession(ctx context.Context, sessionID uuid.UUID, enterpriseID uuid.UUID) (*domain.ExamSubmission, error) {
+	where := "es.session_id = $1"
+	args := []interface{}{sessionID}
+	if enterpriseID != uuid.Nil {
+		where += " AND s.enterprise_id = $2"
+		args = append(args, enterpriseID)
+	}
+
+	query := fmt.Sprintf(`
+		SELECT es.id, es.session_id, es.submitted_at, es.auto_submitted, es.total_score, es.grading_status, es.created_at
+		FROM exam_submissions es
+		JOIN exam_sessions s ON es.session_id = s.id
+		WHERE %s LIMIT 1
+	`, where)
+
 	var s domain.ExamSubmission
-	err := r.db.QueryRow(ctx, query, sessionID).Scan(
+	err := r.db.QueryRow(ctx, query, args...).Scan(
 		&s.ID, &s.SessionID, &s.SubmittedAt, &s.AutoSubmitted, &s.TotalScore, &s.GradingStatus, &s.CreatedAt,
 	)
 	if err != nil {
@@ -297,26 +337,54 @@ func (r *sessionRepository) GetSubmissionBySession(ctx context.Context, sessionI
 	return &s, nil
 }
 
-func (r *sessionRepository) GetSubmissionsByExam(ctx context.Context, examID uuid.UUID, params pagination.Params) ([]*domain.ExamSubmission, int64, error) {
+func (r *sessionRepository) GetSubmissionByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*domain.ExamSubmission, error) {
+	where := "es.id = $1"
+	args := []interface{}{id}
+	if enterpriseID != uuid.Nil {
+		where += " AND s.enterprise_id = $2"
+		args = append(args, enterpriseID)
+	}
+
+	query := fmt.Sprintf(`
+		SELECT es.id, es.session_id, es.submitted_at, es.auto_submitted, es.total_score, es.grading_status, es.created_at
+		FROM exam_submissions es
+		JOIN exam_sessions s ON es.session_id = s.id
+		WHERE %s LIMIT 1
+	`, where)
+
+	var s domain.ExamSubmission
+	err := r.db.QueryRow(ctx, query, args...).Scan(
+		&s.ID, &s.SessionID, &s.SubmittedAt, &s.AutoSubmitted, &s.TotalScore, &s.GradingStatus, &s.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrSubmissionNotFound
+		}
+		return nil, err
+	}
+	return &s, nil
+}
+
+func (r *sessionRepository) GetSubmissionsByExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) ([]*domain.ExamSubmission, int64, error) {
 	const baseJoin = `
 		FROM exam_submissions es
 		JOIN exam_sessions s ON es.session_id = s.id
-		WHERE s.exam_id = $1
+		WHERE s.exam_id = $1 AND s.enterprise_id = $2
 	`
 
 	// Count query
 	var total int64
-	if err := r.db.QueryRow(ctx, "SELECT COUNT(*) "+baseJoin, examID).Scan(&total); err != nil {
+	if err := r.db.QueryRow(ctx, "SELECT COUNT(*) "+baseJoin, examID, enterpriseID).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
 	// Data query with pagination
 	sortCol := safeSubmissionSortField(params.GetSort())
 	query := fmt.Sprintf(
-		`SELECT es.id, es.session_id, es.submitted_at, es.auto_submitted, es.total_score, es.grading_status, es.created_at %s ORDER BY es.%s %s LIMIT $2 OFFSET $3`,
+		`SELECT es.id, es.session_id, es.submitted_at, es.auto_submitted, es.total_score, es.grading_status, es.created_at %s ORDER BY es.%s %s LIMIT $3 OFFSET $4`,
 		baseJoin, sortCol, params.GetSortDir(),
 	)
-	rows, err := r.db.Query(ctx, query, examID, params.GetLimit(), params.GetOffset())
+	rows, err := r.db.Query(ctx, query, examID, enterpriseID, params.GetLimit(), params.GetOffset())
 	if err != nil {
 		return nil, 0, err
 	}

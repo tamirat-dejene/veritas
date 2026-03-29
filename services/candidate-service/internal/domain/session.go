@@ -38,6 +38,14 @@ type SessionAnswer struct {
 	SavedAt           time.Time       `db:"saved_at" json:"savedAt"`
 }
 
+type MCQAnswer struct {
+	SelectedOptionIDs []uuid.UUID `json:"selectedOptionIds"`
+}
+
+type TextAnswer struct {
+	Text string `json:"text"`
+}
+
 type ExamSubmission struct {
 	ID            uuid.UUID `db:"id" json:"id"`
 	SessionID     uuid.UUID `db:"session_id" json:"sessionId"`
@@ -81,19 +89,22 @@ type ValidateAccessTokenResponse struct {
 
 type SessionRepository interface {
 	CreateSession(ctx context.Context, session *ExamSession) error
-	GetSessionByID(ctx context.Context, id uuid.UUID) (*ExamSession, error)
-	ListSessionsByExam(ctx context.Context, examID uuid.UUID, status *SessionStatus, params pagination.Params) ([]*ExamSession, int64, error)
+	GetSessionByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*ExamSession, error)
+	ListSessionsByExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, status *SessionStatus, params pagination.Params) ([]*ExamSession, int64, error)
 	UpdateSessionStatus(ctx context.Context, id uuid.UUID, status SessionStatus, reason *string) error
 
 	SaveQuestionsSnapshot(ctx context.Context, sessionID uuid.UUID, questions []SessionQuestion) error
 	GetSessionQuestions(ctx context.Context, sessionID uuid.UUID) ([]SessionQuestion, error)
+	GetSessionQuestion(ctx context.Context, sessionID uuid.UUID, sessionQuestionID uuid.UUID) (*SessionQuestion, error)
 
 	UpsertAnswer(ctx context.Context, answer *SessionAnswer) error
 	GetSessionAnswers(ctx context.Context, sessionID uuid.UUID) ([]SessionAnswer, error)
 
 	CreateSubmission(ctx context.Context, submission *ExamSubmission) error
-	GetSubmissionBySession(ctx context.Context, sessionID uuid.UUID) (*ExamSubmission, error)
-	GetSubmissionsByExam(ctx context.Context, examID uuid.UUID, params pagination.Params) ([]*ExamSubmission, int64, error)
+	GetSubmissionBySession(ctx context.Context, sessionID uuid.UUID, enterpriseID uuid.UUID) (*ExamSubmission, error)
+	GetSubmissionsByExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) ([]*ExamSubmission, int64, error)
+	GetSubmissionByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*ExamSubmission, error)
+	GetSessionByEnrollment(ctx context.Context, enrollmentID uuid.UUID) (*ExamSession, error)
 	WithTx(tx pgx.Tx) SessionRepository
 }
 
@@ -104,7 +115,7 @@ type SessionUseCase interface {
 	ResumeActiveSession(ctx context.Context, candidateID uuid.UUID) (*ExamSession, error)
 	GetSessionDetails(ctx context.Context, sessionID uuid.UUID, requestingUserID uuid.UUID, role string) (*ExamSession, error)
 	GetSessionQuestionsSnapshot(ctx context.Context, sessionID uuid.UUID, candidateID uuid.UUID) ([]SessionQuestion, error)
-	SaveAnswers(ctx context.Context, sessionID uuid.UUID, candidateID uuid.UUID, questionID uuid.UUID, answerData json.RawMessage) error
+	SaveAnswers(ctx context.Context, sessionID uuid.UUID, candidateID uuid.UUID, sessionQuestionID uuid.UUID, answerData json.RawMessage) error
 	GetMyAnswers(ctx context.Context, sessionID uuid.UUID, candidateID uuid.UUID) ([]SessionAnswer, error)
 	SubmitExam(ctx context.Context, sessionID uuid.UUID, candidateID uuid.UUID, autoSubmitted bool) (*ExamSubmission, error)
 	TerminateSession(ctx context.Context, sessionID uuid.UUID, enterpriseID uuid.UUID, reason string) error
