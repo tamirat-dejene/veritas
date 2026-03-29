@@ -64,8 +64,7 @@ func (h *EnrollmentHandler) Enroll(c *gin.Context) {
 
 	tokens, err := h.uc.EnrollCandidates(c.Request.Context(), entID, examID, req.CandidateIDs, req.MaxAttempts, req.TokenExpiresAt)
 	if err != nil {
-		logger.WithContext(c.Request.Context(), h.logger).Error("Failed to enroll candidates", zap.Error(err), zap.String("examID", examID.String()))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to enroll candidates"})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -106,7 +105,7 @@ func (h *EnrollmentHandler) ListByExam(c *gin.Context) {
 	params := pagination.ParseGin(c)
 	list, total, err := h.uc.GetEnrollmentsForExam(c.Request.Context(), examID, entID, params)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch enrollments"})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -143,11 +142,7 @@ func (h *EnrollmentHandler) Get(c *gin.Context) {
 
 	enr, err := h.uc.GetEnrollment(c.Request.Context(), id, entID)
 	if err != nil {
-		if err == domain.ErrEnrollmentNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Enrollment not found"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch enrollment"})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -184,11 +179,7 @@ func (h *EnrollmentHandler) RegenerateToken(c *gin.Context) {
 
 	newToken, err := h.uc.RegenerateToken(c.Request.Context(), id, entID)
 	if err != nil {
-		if err == domain.ErrEnrollmentNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Enrollment not found"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to regenerate token"})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -224,11 +215,7 @@ func (h *EnrollmentHandler) Revoke(c *gin.Context) {
 	}
 
 	if err := h.uc.RevokeEnrollment(c.Request.Context(), id, entID); err != nil {
-		if err == domain.ErrEnrollmentNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Enrollment not found"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to revoke enrollment"})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -264,11 +251,7 @@ func (h *EnrollmentHandler) ResetAttempts(c *gin.Context) {
 	}
 
 	if err := h.uc.ResetAttempts(c.Request.Context(), id, entID); err != nil {
-		if err == domain.ErrEnrollmentNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Enrollment not found"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reset attempts"})
+		HandleError(c, h.logger, err)
 		return
 	}
 

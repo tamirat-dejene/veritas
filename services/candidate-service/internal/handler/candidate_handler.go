@@ -68,13 +68,7 @@ func (h *CandidateHandler) Create(c *gin.Context) {
 
 	created, err := h.uc.CreateCandidate(c.Request.Context(), candidate)
 	if err != nil {
-		if err == domain.ErrDuplicateExternalID {
-			logger.WithContext(c.Request.Context(), h.logger).Warn("Candidate creation conflict: duplicate external ID", zap.String("externalID", candidate.ExternalID), zap.String("enterpriseID", entID.String()))
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
-			return
-		}
-		logger.WithContext(c.Request.Context(), h.logger).Error("Failed to create candidate", zap.Error(err), zap.String("enterpriseID", entID.String()))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create candidate"})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -126,7 +120,7 @@ func (h *CandidateHandler) BulkUpload(c *gin.Context) {
 
 	count, err := h.uc.BulkUpload(c.Request.Context(), entID, csvData)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -158,7 +152,7 @@ func (h *CandidateHandler) List(c *gin.Context) {
 	params := pagination.ParseGin(c)
 	list, total, err := h.uc.GetCandidates(c.Request.Context(), entID, params)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch candidates"})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -195,11 +189,7 @@ func (h *CandidateHandler) Get(c *gin.Context) {
 
 	candidate, err := h.uc.GetCandidate(c.Request.Context(), id, entID)
 	if err != nil {
-		if err == domain.ErrCandidateNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Candidate not found"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch candidate"})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -253,11 +243,7 @@ func (h *CandidateHandler) Update(c *gin.Context) {
 	}
 
 	if err := h.uc.UpdateCandidate(c.Request.Context(), candidate); err != nil {
-		if err == domain.ErrCandidateNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Candidate not found"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update candidate"})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -296,11 +282,7 @@ func (h *CandidateHandler) Deactivate(c *gin.Context) {
 	}
 
 	if err := h.uc.DeactivateCandidate(c.Request.Context(), id, entID); err != nil {
-		if err == domain.ErrCandidateNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Candidate not found"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to deactivate candidate"})
+		HandleError(c, h.logger, err)
 		return
 	}
 

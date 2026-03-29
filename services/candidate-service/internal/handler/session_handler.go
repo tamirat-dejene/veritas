@@ -23,7 +23,6 @@ func NewSessionHandler(uc domain.SessionUseCase, logger *zap.Logger) *SessionHan
 	}
 }
 
-
 // ValidateAccess validates a one-time access token and returns mapped metadata.
 //
 //	@Summary		Validate access token
@@ -88,8 +87,7 @@ func (h *SessionHandler) StartSession(c *gin.Context) {
 
 	session, err := h.uc.StartSession(c.Request.Context(), eid, entID, clientIP, userAgent)
 	if err != nil {
-		logger.WithContext(c.Request.Context(), h.logger).Warn("Failed to start session", zap.Error(err), zap.String("ip", clientIP))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -118,11 +116,7 @@ func (h *SessionHandler) ResumeActive(c *gin.Context) {
 
 	session, err := h.uc.ResumeActiveSession(c.Request.Context(), candidateID)
 	if err != nil {
-		if err == domain.ErrSessionNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "No active session found"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to resume session"})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -154,11 +148,7 @@ func (h *SessionHandler) GetDetails(c *gin.Context) {
 
 	session, err := h.uc.GetSessionDetails(c.Request.Context(), sessionID, subID, "role_placeholder")
 	if err != nil {
-		if err == domain.ErrSessionNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -194,7 +184,7 @@ func (h *SessionHandler) GetQuestions(c *gin.Context) {
 
 	questions, err := h.uc.GetSessionQuestionsSnapshot(c.Request.Context(), sessionID, candidateID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch questions"})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -204,13 +194,13 @@ func (h *SessionHandler) GetQuestions(c *gin.Context) {
 // SaveAnswers upserts one answer for a session question.
 //
 //	@Summary		Save session answer
-//	@Description	Save or update one question answer in a session.
+//	@Description	Save or update one question answer in a session. One of the two fields in the answer data must be non null. Both fields being non null or null is not allowed.
 //	@Tags			session
 //	@Accept			json
 //	@Produce		json
 //	@Param			X-Subject-Id	header	string					true	"Candidate ID"
 //	@Param			sessionId		path	string					true	"Session ID (UUID)"
-//	@Param			body			body	dto.SaveAnswerRequest	true	"Answer payload"
+//	@Param			body			body	dto.SaveAnswerRequestSwag	true	"Answer payload"
 //	@Success		200			{object}	dto.MessageResponse
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		401			{object}	dto.ErrorResponse
@@ -236,9 +226,9 @@ func (h *SessionHandler) SaveAnswers(c *gin.Context) {
 		return
 	}
 
-	err = h.uc.SaveAnswers(c.Request.Context(), sessionID, candidateID, req.QuestionID, req.AnswerData)
+	err = h.uc.SaveAnswers(c.Request.Context(), sessionID, candidateID, req.SessionQuestionID, req.AnswerData)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -273,7 +263,7 @@ func (h *SessionHandler) GetMyAnswers(c *gin.Context) {
 
 	ans, err := h.uc.GetMyAnswers(c.Request.Context(), sessionID, candidateID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -310,12 +300,15 @@ func (h *SessionHandler) Submit(c *gin.Context) {
 	}
 
 	var req dto.SubmitRequest
-	_ = c.ShouldBindJSON(&req)
+	err = c.ShouldBindJSON(&req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
 	sub, err := h.uc.SubmitExam(c.Request.Context(), sessionID, candidateID, req.AutoSubmitted)
 	if err != nil {
-		logger.WithContext(c.Request.Context(), h.logger).Error("Exam submission failed", zap.Error(err), zap.String("sessionID", sessionID.String()))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -358,7 +351,7 @@ func (h *SessionHandler) TerminateWait(c *gin.Context) {
 	}
 
 	if err := h.uc.TerminateSession(c.Request.Context(), sessionID, entID, req.Reason); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		HandleError(c, h.logger, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Session terminated"})
@@ -392,7 +385,7 @@ func (h *SessionHandler) ForceExpire(c *gin.Context) {
 	}
 
 	if err := h.uc.ForceExpireSession(c.Request.Context(), sessionID, entID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		HandleError(c, h.logger, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Session expired"})

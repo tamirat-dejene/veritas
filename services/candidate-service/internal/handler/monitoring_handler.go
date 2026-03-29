@@ -74,7 +74,7 @@ func (h *MonitoringHandler) ListSessions(c *gin.Context) {
 	params := pagination.ParseGin(c)
 	list, total, err := h.uc.ListSessionsForExam(c.Request.Context(), examID, entID, status, candidateID, params)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -110,11 +110,7 @@ func (h *MonitoringHandler) GetSessionSummary(c *gin.Context) {
 
 	summary, err := h.uc.GetSessionSummary(c.Request.Context(), sessionID, entID)
 	if err != nil {
-		if err == domain.ErrSessionNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -155,7 +151,7 @@ func (h *MonitoringHandler) GetSubmissions(c *gin.Context) {
 	params := pagination.ParseGin(c)
 	list, total, err := h.uc.GetSubmissions(c.Request.Context(), examID, entID, params)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -190,7 +186,7 @@ func (h *MonitoringHandler) GetSubmissionDetail(c *gin.Context) {
 
 	sub, err := h.uc.GetSubmissionDetail(c.Request.Context(), subID, entID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		HandleError(c, h.logger, err)
 		return
 	}
 
@@ -226,11 +222,7 @@ func (h *MonitoringHandler) CandidateGetResult(c *gin.Context) {
 
 	res, err := h.uc.CandidateGetResult(c.Request.Context(), sessionID, candidateID)
 	if err != nil {
-		if err == domain.ErrUnauthorizedAccess {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Results not yet released"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		HandleError(c, h.logger, err)
 		return
 	}
 
