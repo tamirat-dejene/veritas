@@ -45,9 +45,9 @@ type BulkUploadResponse struct {
 }
 
 type EnrollmentRequest struct {
-	CandidateIDs     []uuid.UUID `json:"candidateIds" binding:"required,min=1"`
-	MaxAttempts      int         `json:"maxAttempts" binding:"required,min=1"`
-	TokenExpiresAt   time.Time   `json:"tokenExpiresAt" binding:"required"`
+	CandidateIDs   []uuid.UUID `json:"candidateIds" binding:"required,min=1"`
+	MaxAttempts    int         `json:"maxAttempts" binding:"required,min=1"`
+	TokenExpiresAt time.Time   `json:"tokenExpiresAt" binding:"required"`
 }
 
 type EnrollmentCreateResponse struct {
@@ -73,8 +73,21 @@ type AccessValidateResponse struct {
 }
 
 type SaveAnswerRequest struct {
-	QuestionID uuid.UUID       `json:"questionId" binding:"required"`
-	AnswerData json.RawMessage `json:"answerData" binding:"required"`
+	SessionQuestionID uuid.UUID       `json:"sessionQuestionId" binding:"required"`
+	AnswerData        json.RawMessage `json:"answerData" binding:"required"`
+}
+
+// SwaggerAnswerData defines the expected polymorphic payload for answered questions.
+// One of the specific fields must be populated based on the Question Type.
+type SwaggerAnswerData struct {
+	SelectedOptionIDs []string `json:"selectedOptionIds,omitempty" example:"123e4567-e89b-12d3-a456-426614174000"` // For MCQ and True/False Answer
+	Text              string   `json:"text,omitempty" example:"This is an essay answer."`                          // For Text or Essay Answer
+}
+
+// SaveAnswerRequestSwag is only used for Swagger documentation to provide struct assertion.
+type SaveAnswerRequestSwag struct {
+	SessionQuestionID uuid.UUID         `json:"sessionQuestionId" binding:"required"`
+	AnswerData        SwaggerAnswerData `json:"answerData" binding:"required"`
 }
 
 type SubmitRequest struct {
