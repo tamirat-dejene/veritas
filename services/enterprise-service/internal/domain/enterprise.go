@@ -4,23 +4,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 // EnterpriseFilter holds query parameters for listing enterprises.
 type EnterpriseFilter struct {
+	pagination.Params
 	Status             *EnterpriseStatus
 	SubscriptionStatus *SubscriptionStatus
 	Search             string // searches display_name and slug
-	Page               int
-	Limit              int
-}
-
-// PaginatedResult is a generic paginated response wrapper.
-type PaginatedResult[T any] struct {
-	Items []T `json:"items"`
-	Total int `json:"total"`
-	Page  int `json:"page"`
-	Limit int `json:"limit"`
 }
 
 // UpdateBrandingRequest carries the allowed branding fields.

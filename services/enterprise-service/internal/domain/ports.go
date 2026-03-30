@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 // ─── Repository Interfaces ───────────────────────────────────────────────────
@@ -17,7 +18,7 @@ type UserRepository interface {
 	Update(ctx context.Context, user *User) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	// Extended
-	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, page, limit int) ([]*User, int, error)
+	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*User, int, error)
 	FindByEnterpriseAndID(ctx context.Context, enterpriseID, userID uuid.UUID) (*User, error)
 	CountByEnterprise(ctx context.Context, enterpriseID uuid.UUID) (int, error)
 	UpdateLoginSuccess(ctx context.Context, userID uuid.UUID, ip, userAgent string) error
@@ -40,7 +41,7 @@ type EnterpriseRepository interface {
 
 type AuditRepository interface {
 	Create(ctx context.Context, log *AuditLog) error
-	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, page, limit int) ([]*AuditLog, int, error)
+	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*AuditLog, int, error)
 	WithTx(tx pgx.Tx) AuditRepository
 }
 
@@ -80,12 +81,12 @@ type EnterpriseUsecase interface {
 	GetEnterpriseStatus(ctx context.Context, id uuid.UUID) (*EnterpriseStatusResponse, error)
 	ValidateCustomDomain(ctx context.Context, id uuid.UUID, adminID uuid.UUID) (*DomainValidationResult, error)
 	GetEnterpriseSummary(ctx context.Context, id uuid.UUID) (*EnterpriseSummary, error)
-	GetAuditLogs(ctx context.Context, id uuid.UUID, page, limit int) ([]*AuditLog, int, error)
+	GetAuditLogs(ctx context.Context, id uuid.UUID, params pagination.Params) ([]*AuditLog, int, error)
 }
 
 type UserUsecase interface {
 	CreateEnterpriseUser(ctx context.Context, enterpriseID uuid.UUID, req CreateUserRequest, adminID uuid.UUID) (*User, error)
-	ListEnterpriseUsers(ctx context.Context, enterpriseID uuid.UUID, page, limit int) ([]*User, int, error)
+	ListEnterpriseUsers(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*User, int, error)
 	GetEnterpriseUser(ctx context.Context, enterpriseID, userID uuid.UUID) (*User, error)
 	UpdateEnterpriseUser(ctx context.Context, enterpriseID, userID uuid.UUID, req UpdateUserRequest, adminID uuid.UUID) error
 	DeactivateEnterpriseUser(ctx context.Context, enterpriseID, userID, adminID uuid.UUID) error
