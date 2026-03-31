@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 type auditRepository struct {
@@ -44,15 +45,21 @@ func (r *auditRepository) Create(ctx context.Context, log *domain.AuditLog) erro
 	return err
 }
 
+var allowedAuditSortFields = map[string]bool{
+	"event":      true,
+	"actor_role": true,
+	"created_at": true,
+}
+
 // ListByEnterprise returns paginated audit logs for an enterprise, newest first.
-func (r *auditRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, page, limit int) ([]*domain.AuditLog, int, error) {
-	if limit <= 0 {
-		limit = 20
+func (r *auditRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*domain.AuditLog, int, error) {
+	limit := params.GetLimit()
+	offset := params.GetOffset()
+	sort := params.GetSort()
+	if !allowedAuditSortFields[sort] {
+		sort = "created_at"
 	}
-	if page <= 0 {
-		page = 1
-	}
-	offset := (page - 1) * limit
+	sortDir := params.GetSortDir()
 
 	var total int
 	if err := r.db.QueryRow(ctx,
@@ -64,8 +71,8 @@ func (r *auditRepository) ListByEnterprise(ctx context.Context, enterpriseID uui
 
 	const fields = "id, enterprise_id, actor_id, actor_role, event, metadata, created_at"
 	dataQ := fmt.Sprintf(
-		"SELECT %s FROM veritas_enterprise_audit_logs WHERE enterprise_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3",
-		fields,
+		"SELECT %s FROM veritas_enterprise_audit_logs WHERE enterprise_id = $1 ORDER BY %s %s LIMIT $2 OFFSET $3",
+		fields, sort, sortDir,
 	)
 	rows, err := r.db.Query(ctx, dataQ, enterpriseID, limit, offset)
 	if err != nil {

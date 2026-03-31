@@ -162,6 +162,13 @@ func (r *enterpriseRepository) List(ctx context.Context, filter map[string]any) 
 	return enterprises, rows.Err()
 }
 
+var allowedEnterpriseSortFields = map[string]bool{
+	"display_name": true,
+	"slug":         true,
+	"status":       true,
+	"created_at":   true,
+}
+
 // ListPaginated implements filtered, paginated enterprise listing.
 func (r *enterpriseRepository) ListPaginated(ctx context.Context, f domain.EnterpriseFilter) ([]*domain.Enterprise, int, error) {
 	var (
@@ -198,19 +205,19 @@ func (r *enterpriseRepository) ListPaginated(ctx context.Context, f domain.Enter
 		return nil, 0, err
 	}
 
-	if f.Limit <= 0 {
-		f.Limit = 20
+	limit := f.GetLimit()
+	offset := f.GetOffset()
+	sort := f.GetSort()
+	if !allowedEnterpriseSortFields[sort] {
+		sort = "created_at"
 	}
-	if f.Page <= 0 {
-		f.Page = 1
-	}
-	offset := (f.Page - 1) * f.Limit
+	sortDir := f.GetSortDir()
 
 	dataQuery := fmt.Sprintf(
-		"SELECT %s FROM veritas_enterprise %s ORDER BY created_at DESC LIMIT $%d OFFSET $%d",
-		enterpriseFields, where, argIdx, argIdx+1,
+		"SELECT %s FROM veritas_enterprise %s ORDER BY %s %s LIMIT $%d OFFSET $%d",
+		enterpriseFields, where, sort, sortDir, argIdx, argIdx+1,
 	)
-	args = append(args, f.Limit, offset)
+	args = append(args, limit, offset)
 
 	rows, err := r.db.Query(ctx, dataQuery, args...)
 	if err != nil {

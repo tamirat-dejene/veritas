@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 type userRepository struct {
@@ -114,15 +115,23 @@ func (r *userRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+var allowedUserSortFields = map[string]bool{
+	"email":      true,
+	"first_name": true,
+	"last_name":  true,
+	"role":       true,
+	"created_at": true,
+}
+
 // ListByEnterprise returns paginated users for an enterprise.
-func (r *userRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, page, limit int) ([]*domain.User, int, error) {
-	if limit <= 0 {
-		limit = 20
+func (r *userRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*domain.User, int, error) {
+	limit := params.GetLimit()
+	offset := params.GetOffset()
+	sort := params.GetSort()
+	if !allowedUserSortFields[sort] {
+		sort = "created_at"
 	}
-	if page <= 0 {
-		page = 1
-	}
-	offset := (page - 1) * limit
+	sortDir := params.GetSortDir()
 
 	var total int
 	countQ := "SELECT COUNT(*) FROM veritas_users WHERE enterprise_id = $1 AND is_deleted = false"
@@ -131,8 +140,8 @@ func (r *userRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid
 	}
 
 	dataQ := fmt.Sprintf(
-		"SELECT %s FROM veritas_users WHERE enterprise_id = $1 AND is_deleted = false ORDER BY created_at DESC LIMIT $2 OFFSET $3",
-		userFields,
+		"SELECT %s FROM veritas_users WHERE enterprise_id = $1 AND is_deleted = false ORDER BY %s %s LIMIT $2 OFFSET $3",
+		userFields, sort, sortDir,
 	)
 	rows, err := r.db.Query(ctx, dataQ, enterpriseID, limit, offset)
 	if err != nil {
