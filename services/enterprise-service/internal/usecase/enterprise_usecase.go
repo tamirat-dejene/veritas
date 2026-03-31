@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -467,10 +468,10 @@ func (uc *enterpriseUsecase) GetEnterpriseSummary(ctx context.Context, id uuid.U
 	}, nil
 }
 
-func (uc *enterpriseUsecase) GetAuditLogs(ctx context.Context, id uuid.UUID, page, limit int) ([]*domain.AuditLog, int, error) {
+func (uc *enterpriseUsecase) GetAuditLogs(ctx context.Context, id uuid.UUID, params pagination.Params) ([]*domain.AuditLog, int, error) {
 	// Confirm enterprise exists first
 	if _, err := uc.enterpriseRepo.FindByID(ctx, id); err != nil {
 		return nil, 0, err
 	}
-	return uc.auditRepo.ListByEnterprise(ctx, id, page, limit)
+	return uc.auditRepo.ListByEnterprise(ctx, id, params)
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 // userUsecase implements domain.UserUsecase.
@@ -108,11 +109,11 @@ func (uc *userUsecase) CreateEnterpriseUser(ctx context.Context, enterpriseID uu
 	return user, nil
 }
 
-func (uc *userUsecase) ListEnterpriseUsers(ctx context.Context, enterpriseID uuid.UUID, page, limit int) ([]*domain.User, int, error) {
+func (uc *userUsecase) ListEnterpriseUsers(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*domain.User, int, error) {
 	if _, err := uc.enterpriseRepo.FindByID(ctx, enterpriseID); err != nil {
 		return nil, 0, err
 	}
-	return uc.userRepo.ListByEnterprise(ctx, enterpriseID, page, limit)
+	return uc.userRepo.ListByEnterprise(ctx, enterpriseID, params)
 }
 
 func (uc *userUsecase) GetEnterpriseUser(ctx context.Context, enterpriseID, userID uuid.UUID) (*domain.User, error) {
