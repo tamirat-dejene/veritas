@@ -317,32 +317,6 @@ definitions:
       updatedAt:
         type: string
     type: object
-  AuditLogListResponse:
-    properties:
-      items:
-        items:
-          $ref: '#/definitions/AuditLog'
-        type: array
-      limit:
-        type: integer
-      page:
-        type: integer
-      total:
-        type: integer
-    type: object
-  EnterpriseListResponse:
-    properties:
-      items:
-        items:
-          $ref: '#/definitions/Enterprise'
-        type: array
-      limit:
-        type: integer
-      page:
-        type: integer
-      total:
-        type: integer
-    type: object
   EnterpriseRegisterRequest:
     properties:
       contactEmail:
@@ -389,18 +363,47 @@ definitions:
       subscription_status:
         $ref: '#/definitions/SubscriptionStatus'
     type: object
-  UserListResponse:
+  Metadata:
     properties:
-      items:
+      current_page:
+        type: integer
+      has_next:
+        type: boolean
+      has_previous:
+        type: boolean
+      page_size:
+        type: integer
+      total_elements:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  PaginatedResponse-AuditLog:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/AuditLog'
+        type: array
+      metadata:
+        $ref: '#/definitions/Metadata'
+    type: object
+  PaginatedResponse-Enterprise:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/Enterprise'
+        type: array
+      metadata:
+        $ref: '#/definitions/Metadata'
+    type: object
+  PaginatedResponse-User:
+    properties:
+      data:
         items:
           $ref: '#/definitions/User'
         type: array
-      limit:
-        type: integer
-      page:
-        type: integer
-      total:
-        type: integer
+      metadata:
+        $ref: '#/definitions/Metadata'
     type: object
 info:
   contact:
@@ -434,13 +437,21 @@ paths:
         in: query
         name: limit
         type: integer
+      - description: Sort field (display_name, slug, status, created_at)
+        in: query
+        name: sort
+        type: string
+      - description: Sort direction (asc, desc)
+        in: query
+        name: sort_dir
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/EnterpriseListResponse'
+            $ref: '#/definitions/PaginatedResponse-Enterprise'
         "500":
           description: Internal Server Error
           schema:
@@ -622,13 +633,21 @@ paths:
         in: query
         name: limit
         type: integer
+      - description: Sort field (event, actor_role, created_at)
+        in: query
+        name: sort
+        type: string
+      - description: Sort direction (asc, desc)
+        in: query
+        name: sort_dir
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/AuditLogListResponse'
+            $ref: '#/definitions/PaginatedResponse-AuditLog'
         "400":
           description: Bad Request
           schema:
@@ -1195,13 +1214,21 @@ paths:
         in: query
         name: limit
         type: integer
+      - description: Sort field (email, first_name, last_name, role, created_at)
+        in: query
+        name: sort
+        type: string
+      - description: Sort direction (asc, desc)
+        in: query
+        name: sort_dir
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/UserListResponse'
+            $ref: '#/definitions/PaginatedResponse-User'
         "400":
           description: Bad Request
           schema:

@@ -57,13 +57,25 @@ const docTemplate = `{
                         "description": "Page size",
                         "name": "limit",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort field (display_name, slug, status, created_at)",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort direction (asc, desc)",
+                        "name": "sort_dir",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/EnterpriseListResponse"
+                            "$ref": "#/definitions/PaginatedResponse-Enterprise"
                         }
                     },
                     "500": {
@@ -429,13 +441,25 @@ const docTemplate = `{
                         "description": "Page size",
                         "name": "limit",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort field (event, actor_role, created_at)",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort direction (asc, desc)",
+                        "name": "sort_dir",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AuditLogListResponse"
+                            "$ref": "#/definitions/PaginatedResponse-AuditLog"
                         }
                     },
                     "400": {
@@ -1295,13 +1319,25 @@ const docTemplate = `{
                         "description": "Page size",
                         "name": "limit",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort field (email, first_name, last_name, role, created_at)",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort direction (asc, desc)",
+                        "name": "sort_dir",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/UserListResponse"
+                            "$ref": "#/definitions/PaginatedResponse-User"
                         }
                     },
                     "400": {
@@ -2182,46 +2218,6 @@ const docTemplate = `{
                 }
             }
         },
-        "AuditLogListResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/AuditLog"
-                    }
-                },
-                "limit": {
-                    "type": "integer"
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "EnterpriseListResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/Enterprise"
-                    }
-                },
-                "limit": {
-                    "type": "integer"
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
         "EnterpriseRegisterRequest": {
             "type": "object",
             "required": [
@@ -2290,23 +2286,68 @@ const docTemplate = `{
                 }
             }
         },
-        "UserListResponse": {
+        "Metadata": {
             "type": "object",
             "properties": {
-                "items": {
+                "current_page": {
+                    "type": "integer"
+                },
+                "has_next": {
+                    "type": "boolean"
+                },
+                "has_previous": {
+                    "type": "boolean"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total_elements": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "PaginatedResponse-AuditLog": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AuditLog"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/Metadata"
+                }
+            }
+        },
+        "PaginatedResponse-Enterprise": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Enterprise"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/Metadata"
+                }
+            }
+        },
+        "PaginatedResponse-User": {
+            "type": "object",
+            "properties": {
+                "data": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/User"
                     }
                 },
-                "limit": {
-                    "type": "integer"
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
+                "metadata": {
+                    "$ref": "#/definitions/Metadata"
                 }
             }
         }
