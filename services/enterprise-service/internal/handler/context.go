@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -30,19 +29,6 @@ func GetCallerEnterpriseID(c *gin.Context) (uuid.UUID, bool) {
 	}
 	id, err := uuid.Parse(raw)
 	return id, err == nil
-}
-
-// ParsePagination reads ?page and ?limit from the query string with sensible defaults.
-func ParsePagination(c *gin.Context) (page, limit int) {
-	page, _ = strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ = strconv.Atoi(c.DefaultQuery("limit", "20"))
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 || limit > 100 {
-		limit = 20
-	}
-	return
 }
 
 // ParseEnterpriseID parses :enterpriseId from the URL path.

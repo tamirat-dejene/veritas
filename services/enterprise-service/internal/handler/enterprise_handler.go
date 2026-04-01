@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 	"go.uber.org/zap"
 )
 
@@ -220,9 +221,11 @@ func (h *EnterpriseHandler) Delete(c *gin.Context) {
 //	@Param			status				query	string	false	"Enterprise status"
 //	@Param			subscription_status	query	string	false	"Subscription status"
 //	@Param			search				query	string	false	"Search by slug or display name"
-//	@Param			page				query	int	false	"Page number"
-//	@Param			limit				query	int	false	"Page size"
-//	@Success		200				{object}	EnterpriseListResponse
+//	@Param			page				query	int		false	"Page number"
+//	@Param			limit				query	int		false	"Page size"
+//	@Param			sort				query	string	false	"Sort field (display_name, slug, status, created_at)"
+//	@Param			sort_dir			query	string	false	"Sort direction (asc, desc)"
+//	@Success		200				{object}	pagination.PaginatedResponse[domain.Enterprise]
 //	@Failure		500				{object}	ErrorResponse
 //	@Router			/enterprises [get]
 func (h *EnterpriseHandler) List(c *gin.Context) {
@@ -236,19 +239,14 @@ func (h *EnterpriseHandler) List(c *gin.Context) {
 		filter.SubscriptionStatus = &ss
 	}
 	filter.Search = c.Query("search")
-	filter.Page, filter.Limit = ParsePagination(c)
+	filter.Params = pagination.ParseGin(c)
 
 	items, total, err := h.usecase.ListEnterprises(c.Request.Context(), filter)
 	if err != nil {
 		writeError(c, http.StatusInternalServerError, "failed to list enterprises")
 		return
 	}
-	writeJSON(c, http.StatusOK, domain.PaginatedResult[*domain.Enterprise]{
-		Items: items,
-		Total: total,
-		Page:  filter.Page,
-		Limit: filter.Limit,
-	})
+	writeJSON(c, http.StatusOK, pagination.NewPaginatedResponse(items, int64(total), filter.Params))
 }
 
 // GetBySlug returns one enterprise by slug.
@@ -566,9 +564,11 @@ func (h *EnterpriseHandler) GetSummary(c *gin.Context) {
 //	@Tags			enterprise
 //	@Produce		json
 //	@Param			enterpriseId	path	string	true	"Enterprise ID (UUID)"
-//	@Param			page			query	int	false	"Page number"
-//	@Param			limit			query	int	false	"Page size"
-//	@Success		200			{object}	AuditLogListResponse
+//	@Param			page			query	int		false	"Page number"
+//	@Param			limit			query	int		false	"Page size"
+//	@Param			sort			query	string	false	"Sort field (event, actor_role, created_at)"
+//	@Param			sort_dir		query	string	false	"Sort direction (asc, desc)"
+//	@Success		200			{object}	pagination.PaginatedResponse[domain.AuditLog]
 //	@Failure		400			{object}	ErrorResponse
 //	@Failure		403			{object}	ErrorResponse
 //	@Failure		404			{object}	ErrorResponse
@@ -581,18 +581,13 @@ func (h *EnterpriseHandler) GetAuditLogs(c *gin.Context) {
 		writeError(c, http.StatusBadRequest, "invalid enterprise ID")
 		return
 	}
-	page, limit := ParsePagination(c)
-	logs, total, err := h.usecase.GetAuditLogs(c.Request.Context(), id, page, limit)
+	params := pagination.ParseGin(c)
+	logs, total, err := h.usecase.GetAuditLogs(c.Request.Context(), id, params)
 	if err != nil {
 		h.handleEnterpriseError(c, err)
 		return
 	}
-	writeJSON(c, http.StatusOK, domain.PaginatedResult[*domain.AuditLog]{
-		Items: logs,
-		Total: total,
-		Page:  page,
-		Limit: limit,
-	})
+	writeJSON(c, http.StatusOK, pagination.NewPaginatedResponse(logs, int64(total), params))
 }
 
 // ─── Error helper ─────────────────────────────────────────────────────────────

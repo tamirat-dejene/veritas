@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 	"go.uber.org/zap"
 )
 
@@ -62,9 +63,11 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 //	@Tags			user
 //	@Produce		json
 //	@Param			enterpriseId	path	string	true	"Enterprise ID (UUID)"
-//	@Param			page			query	int	false	"Page number"
-//	@Param			limit			query	int	false	"Page size"
-//	@Success		200			{object}	UserListResponse
+//	@Param			page			query	int		false	"Page number"
+//	@Param			limit			query	int		false	"Page size"
+//	@Param			sort			query	string	false	"Sort field (email, first_name, last_name, role, created_at)"
+//	@Param			sort_dir		query	string	false	"Sort direction (asc, desc)"
+//	@Success		200			{object}	pagination.PaginatedResponse[domain.User]
 //	@Failure		400			{object}	ErrorResponse
 //	@Failure		404			{object}	ErrorResponse
 //	@Failure		500			{object}	ErrorResponse
@@ -75,18 +78,13 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 		writeError(c, http.StatusBadRequest, "invalid enterprise ID")
 		return
 	}
-	page, limit := ParsePagination(c)
-	users, total, err := h.usecase.ListEnterpriseUsers(c.Request.Context(), id, page, limit)
+	params := pagination.ParseGin(c)
+	users, total, err := h.usecase.ListEnterpriseUsers(c.Request.Context(), id, params)
 	if err != nil {
 		h.handleErr(c, err)
 		return
 	}
-	writeJSON(c, http.StatusOK, domain.PaginatedResult[*domain.User]{
-		Items: users,
-		Total: total,
-		Page:  page,
-		Limit: limit,
-	})
+	writeJSON(c, http.StatusOK, pagination.NewPaginatedResponse(users, int64(total), params))
 }
 
 // GetUser gets one enterprise user by ID.
