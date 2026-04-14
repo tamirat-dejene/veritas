@@ -31,7 +31,7 @@ type LoginOutput struct {
 // LoginUseCase orchestrates user authentication with security auditing.
 type LoginUseCase struct {
 	pool             *pgxpool.Pool
-	userRepo         domain.UserRepository
+	enterpriseServiceClient  domain.EnterpriseServiceClient
 	refreshTokenRepo domain.RefreshTokenRepository
 	jwtService       domain.TokenService
 	refreshService   domain.TokenService
@@ -44,7 +44,7 @@ type LoginUseCase struct {
 // NewLoginUseCase creates a new LoginUseCase.
 func NewLoginUseCase(
 	pool *pgxpool.Pool,
-	userRepo domain.UserRepository,
+	enterpriseServiceClient domain.EnterpriseServiceClient,
 	refreshTokenRepo domain.RefreshTokenRepository,
 	jwtService domain.TokenService,
 	refreshService domain.TokenService,
@@ -55,7 +55,7 @@ func NewLoginUseCase(
 ) *LoginUseCase {
 	return &LoginUseCase{
 		pool:             pool,
-		userRepo:         userRepo,
+		enterpriseServiceClient:  enterpriseServiceClient,
 		refreshTokenRepo: refreshTokenRepo,
 		jwtService:       jwtService,
 		refreshService:   refreshService,
@@ -70,7 +70,7 @@ func NewLoginUseCase(
 func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOutput, error) {
 	// 1. Find user by email.
 	l := logger.WithContext(ctx, uc.log)
-	user, err := uc.userRepo.FindByEmail(ctx, input.Email)
+	user, err := uc.enterpriseServiceClient.FindByEmail(ctx, input.Email)
 	if err != nil {
 		if err == domain.ErrUserNotFound {
 			l.Warn("login attempt for unknown email", zap.String("email", input.Email))
@@ -114,7 +114,7 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 		}
 
 		user.FailedLoginAttempts += 1
-		if errUpdate := uc.userRepo.UpdateLoginFailure(ctx, user.ID, lockUntil, user.FailedLoginAttempts); errUpdate != nil {
+		if errUpdate := uc.enterpriseServiceClient.UpdateLoginFailure(ctx, user.ID, lockUntil, user.FailedLoginAttempts); errUpdate != nil {
 			l.Error("failed to update login failure stats", zap.Error(errUpdate))
 		}
 
@@ -142,7 +142,7 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 		}
 
 		// 9. Update Login Audit Stats.
-		if err := uc.userRepo.WithTx(tx).UpdateLoginSuccess(ctx, user.ID, input.IP, input.UserAgent); err != nil {
+		if err := uc.enterpriseServiceClient.UpdateLoginSuccess(ctx, user.ID, input.IP, input.UserAgent); err != nil {
 			return fmt.Errorf("update login success stats: %w", err)
 		}
 		return nil

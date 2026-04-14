@@ -8,13 +8,12 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// UserRepository is the port for user persistence operations.
-type UserRepository interface {
+// EnterpriseServiceClient is the interface for inter-service communication with the enterprise service.
+type EnterpriseServiceClient interface {
 	FindByEmail(ctx context.Context, email string) (*User, error)
 	FindByID(ctx context.Context, id uuid.UUID) (*User, error)
 	UpdateLoginSuccess(ctx context.Context, userID uuid.UUID, ip, userAgent string) error
 	UpdateLoginFailure(ctx context.Context, userID uuid.UUID, lockUntil *time.Time, failedLoginAttempts int) error
-	WithTx(tx pgx.Tx) UserRepository
 }
 
 // RefreshTokenRepository is the port for refresh token persistence operations.

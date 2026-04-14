@@ -29,7 +29,7 @@ type RefreshOutput struct {
 // RefreshUseCase implements token rotation: revoke old token, issue new pair.
 type RefreshUseCase struct {
 	pool             *pgxpool.Pool
-	userRepo         domain.UserRepository
+	enterpriseServiceClient  domain.EnterpriseServiceClient
 	refreshTokenRepo domain.RefreshTokenRepository
 	jwtService       domain.TokenService
 	refreshService   domain.TokenService
@@ -41,7 +41,7 @@ type RefreshUseCase struct {
 // NewRefreshUseCase creates a new RefreshUseCase.
 func NewRefreshUseCase(
 	pool *pgxpool.Pool,
-	userRepo domain.UserRepository,
+	enterpriseServiceClient domain.EnterpriseServiceClient,
 	refreshTokenRepo domain.RefreshTokenRepository,
 	jwtService domain.TokenService,
 	refreshService domain.TokenService,
@@ -51,7 +51,7 @@ func NewRefreshUseCase(
 ) *RefreshUseCase {
 	return &RefreshUseCase{
 		pool:             pool,
-		userRepo:         userRepo,
+		enterpriseServiceClient:  enterpriseServiceClient,
 		refreshTokenRepo: refreshTokenRepo,
 		jwtService:       jwtService,
 		refreshService:   refreshService,
@@ -99,7 +99,7 @@ func (uc *RefreshUseCase) Execute(ctx context.Context, input RefreshInput) (*Ref
 		}
 
 		// 5. Load associated user by ID.
-		user, err := findUserByID(ctx, uc.userRepo.WithTx(tx), rt.UserID)
+		user, err := uc.enterpriseServiceClient.FindByID(ctx, rt.UserID)
 		if err != nil {
 			if err == domain.ErrUserNotFound {
 				return domain.ErrInvalidCredentials
