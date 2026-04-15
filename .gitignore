@@ -3,7 +3,7 @@ veritas_presentation/tex_out
 
 # Env files
 .env
-**/.env
+.env.production
 
 # Temporary
 tmp
