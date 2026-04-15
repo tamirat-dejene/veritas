@@ -1,0 +1,206 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - backend
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - backend
+
+  kafka:
+    image: apache/kafka:4.2.0
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 10s
+      retries: 8
+      start_period: 20s
+    networks:
+      - backend
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: infra/docker/prod/api-gateway.Dockerfile
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env.production
+    ports:
+      - "8080:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - backend
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: infra/docker/prod/auth-service.Dockerfile
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - backend
+
+  enterprise-service:
+    build:
+      context: .
+      dockerfile: infra/docker/prod/enterprise-service.Dockerfile
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+
+  exam-service:
+    build:
+      context: .
+      dockerfile: infra/docker/prod/exam-service.Dockerfile
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+
+  candidate-service:
+    build:
+      context: .
+      dockerfile: infra/docker/prod/candidate-service.Dockerfile
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      exam-service:
+        condition: service_started
+    networks:
+      - backend
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: infra/docker/prod/payment-service.Dockerfile
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+
+  proctoring-service:
+    build:
+      context: ./services/proctoring-service
+      dockerfile: ../../infra/docker/prod/proctoring-service.Dockerfile
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env.production
+    networks:
+      - backend
+
+  grading-service:
+    build:
+      context: ./services/grading-service
+      dockerfile: ../../infra/docker/prod/grading-service.Dockerfile
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env.production
+    networks:
+      - backend
+
+  reporting-service:
+    build:
+      context: ./services/reporting-service
+      dockerfile: ../../infra/docker/prod/reporting-service.Dockerfile
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env.production
+    networks:
+      - backend
+
+  face-verification-service:
+    build:
+      context: ./services/face-verification-service
+      dockerfile: ../../infra/docker/prod/face-verification-service.Dockerfile
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env.production
+    networks:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:
+
+networks:
+  backend:
+    driver: bridge
