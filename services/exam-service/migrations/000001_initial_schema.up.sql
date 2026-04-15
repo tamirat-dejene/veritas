@@ -132,7 +132,7 @@ CREATE TABLE IF NOT EXISTS veritas_exams (
     CONSTRAINT fk_exam_template
         FOREIGN KEY (template_source_id)
         REFERENCES veritas_exams(id)
-        ON DELETE SET NULL
+        ON DELETE SET NULL,
     
     CONSTRAINT chk_passing_score
         CHECK (passing_score_percent >= 0 AND passing_score_percent <= 100)
