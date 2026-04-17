@@ -213,6 +213,49 @@ func (uc *userUsecase) ResetUserPassword(ctx context.Context, enterpriseID, user
 	return tempPassword, nil
 }
 
+func (uc *userUsecase) ChangePassword(ctx context.Context, userID uuid.UUID, req domain.ChangePasswordRequest) error {
+	u, err := uc.userRepo.FindByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	// Verify current password
+	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(req.CurrentPassword)); err != nil {
+		return domain.ErrInvalidCredentials
+	}
+
+	// Hash new password
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash new password: %w", err)
+	}
+
+	now := time.Now()
+	u.PasswordHash = string(hash)
+	u.PasswordChangedAt = now
+	u.MustChangePassword = false
+	u.UpdatedAt = now
+
+	enterpriseID := uuid.Nil
+	if u.EnterpriseID != nil {
+		enterpriseID = *u.EnterpriseID
+	}
+
+	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		if err := uc.userRepo.WithTx(tx).Update(ctx, u); err != nil {
+			return err
+		}
+
+		uc.emitUser(ctx, tx, enterpriseID, userID, string(u.Role), domain.EventUserPasswordChanged,
+			map[string]interface{}{"user_id": userID.String()})
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (uc *userUsecase) RecordLoginSuccess(ctx context.Context, userID uuid.UUID, ip, userAgent string) error {
 	return uc.userRepo.UpdateLoginSuccess(ctx, userID, ip, userAgent)
 }
