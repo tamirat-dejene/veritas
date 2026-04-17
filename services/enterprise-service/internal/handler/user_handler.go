@@ -226,6 +226,50 @@ func (h *UserHandler) ResetPassword(c *gin.Context) {
 	writeJSON(c, http.StatusOK, gin.H{"temporary_password": tempPwd})
 }
 
+// ChangePassword allows a user to change their own password.
+//
+//	@Summary		Change user password
+//	@Description	Self-service password change for authenticated users.
+//	@Tags			user
+//	@Accept			json
+//	@Produce		json
+//	@Param			enterpriseId	path	string						true	"Enterprise ID (UUID)"
+//	@Param			userId			path	string						true	"User ID (UUID)"
+//	@Param			X-User-ID	header	string						true	"Actor user ID (UUID)"
+//	@Param			body			body	domain.ChangePasswordRequest	true	"Change password payload"
+//	@Success		204			{string}	string						"No Content"
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/enterprises/{enterpriseId}/users/{userId}/change-password [post]
+func (h *UserHandler) ChangePassword(c *gin.Context) {
+	userID, ok := ParseUserID(c)
+	if !ok {
+		writeError(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+
+	callerID, ok := GetCallerID(c)
+	if !ok || callerID != userID {
+		writeError(c, http.StatusUnauthorized, "unauthorized to change password for another user")
+		return
+	}
+
+	var req domain.ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := h.usecase.ChangePassword(c.Request.Context(), userID, req); err != nil {
+		h.handleErr(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
 func (h *UserHandler) handleErr(c *gin.Context, err error) {
 	switch err {
 	case domain.ErrUserNotFound:
@@ -236,6 +280,8 @@ func (h *UserHandler) handleErr(c *gin.Context, err error) {
 		writeError(c, http.StatusConflict, "email already exists")
 	case domain.ErrInvalidRole:
 		writeError(c, http.StatusBadRequest, "role not allowed for enterprise users")
+	case domain.ErrInvalidCredentials:
+		writeError(c, http.StatusUnauthorized, "invalid credentials")
 	default:
 		zap.L().Error("Unhandled user error", zap.Error(err))
 		writeError(c, http.StatusInternalServerError, "internal server error")

@@ -75,6 +75,7 @@ func NewRouter(
 		enterprises.PATCH("/:enterpriseId/users/:userId", uh.UpdateUser)
 		enterprises.PATCH("/:enterpriseId/users/:userId/deactivate", uh.DeactivateUser)
 		enterprises.POST("/:enterpriseId/users/:userId/reset-password", uh.ResetPassword)
+		enterprises.POST("/:enterpriseId/users/:userId/change-password", uh.ChangePassword)
 	}
 
 	// ── Internal Auth Lookups (Service-to-Service) ────────────────────────
