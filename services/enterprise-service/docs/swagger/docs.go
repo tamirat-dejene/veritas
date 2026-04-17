@@ -1557,6 +1557,85 @@ const docTemplate = `{
                 }
             }
         },
+        "/enterprises/{enterpriseId}/users/{userId}/change-password": {
+            "post": {
+                "description": "Self-service password change for authenticated users.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Change user password",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Enterprise ID (UUID)",
+                        "name": "enterpriseId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID (UUID)",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Actor user ID (UUID)",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Change password payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ChangePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/enterprises/{enterpriseId}/users/{userId}/deactivate": {
             "patch": {
                 "description": "Deactivate user account without permanent deletion.",
@@ -1792,6 +1871,7 @@ const docTemplate = `{
                 "user.updated",
                 "user.deactivated",
                 "user.password_reset",
+                "user.password_changed",
                 "enterprise.domain_validated"
             ],
             "x-enum-varnames": [
@@ -1813,6 +1893,7 @@ const docTemplate = `{
                 "EventUserUpdated",
                 "EventUserDeactivated",
                 "EventUserPasswordReset",
+                "EventUserPasswordChanged",
                 "EventDomainValidated"
             ]
         },
@@ -1840,6 +1921,22 @@ const docTemplate = `{
                 "metadata": {
                     "type": "object",
                     "additionalProperties": {}
+                }
+            }
+        },
+        "ChangePasswordRequest": {
+            "type": "object",
+            "required": [
+                "current_password",
+                "new_password"
+            ],
+            "properties": {
+                "current_password": {
+                    "type": "string"
+                },
+                "new_password": {
+                    "type": "string",
+                    "minLength": 8
                 }
             }
         },

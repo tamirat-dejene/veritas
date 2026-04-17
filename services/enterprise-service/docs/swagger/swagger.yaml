@@ -20,6 +20,7 @@ definitions:
     - user.updated
     - user.deactivated
     - user.password_reset
+    - user.password_changed
     - enterprise.domain_validated
     type: string
     x-enum-varnames:
@@ -41,6 +42,7 @@ definitions:
     - EventUserUpdated
     - EventUserDeactivated
     - EventUserPasswordReset
+    - EventUserPasswordChanged
     - EventDomainValidated
   AuditLog:
     properties:
@@ -59,6 +61,17 @@ definitions:
       metadata:
         additionalProperties: {}
         type: object
+    type: object
+  ChangePasswordRequest:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        minLength: 8
+        type: string
+    required:
+    - current_password
+    - new_password
     type: object
   CreateUserRequest:
     properties:
@@ -1373,6 +1386,59 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
       summary: Update enterprise user
+      tags:
+      - user
+  /enterprises/{enterpriseId}/users/{userId}/change-password:
+    post:
+      consumes:
+      - application/json
+      description: Self-service password change for authenticated users.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: User ID (UUID)
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Change password payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Change user password
       tags:
       - user
   /enterprises/{enterpriseId}/users/{userId}/deactivate:
