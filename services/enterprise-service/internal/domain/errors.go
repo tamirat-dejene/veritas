@@ -19,4 +19,5 @@ var (
 	ErrRetentionActive      = errors.New("retention period has not yet expired")
 	ErrInvalidRole          = errors.New("role not allowed for enterprise users")
 	ErrCustomDomainInUse    = errors.New("custom domain already in use")
+	ErrInvalidCredentials   = errors.New("current password is incorrect")
 )

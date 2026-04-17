@@ -28,6 +28,7 @@ const (
 	EventUserUpdated           AuditEvent = "user.updated"
 	EventUserDeactivated       AuditEvent = "user.deactivated"
 	EventUserPasswordReset     AuditEvent = "user.password_reset"
+	EventUserPasswordChanged   AuditEvent = "user.password_changed"
 	EventDomainValidated       AuditEvent = "enterprise.domain_validated"
 )
 

@@ -28,3 +28,9 @@ type DomainValidationResult struct {
 	Valid          bool   `json:"valid"`
 	Details        string `json:"details"`
 }
+
+// ChangePasswordRequest is the payload for a user changing their own password.
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"current_password" binding:"required"`
+	NewPassword     string `json:"new_password"     binding:"required,min=8"`
+}

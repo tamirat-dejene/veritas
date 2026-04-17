@@ -91,6 +91,7 @@ type UserUsecase interface {
 	UpdateEnterpriseUser(ctx context.Context, enterpriseID, userID uuid.UUID, req UpdateUserRequest, adminID uuid.UUID) error
 	DeactivateEnterpriseUser(ctx context.Context, enterpriseID, userID, adminID uuid.UUID) error
 	ResetUserPassword(ctx context.Context, enterpriseID, userID, adminID uuid.UUID) (string, error)
+	ChangePassword(ctx context.Context, userID uuid.UUID, req ChangePasswordRequest) error
 	RecordLoginSuccess(ctx context.Context, userID uuid.UUID, ip, userAgent string) error
 	RecordLoginFailure(ctx context.Context, userID uuid.UUID, lockUntil *time.Time, failedLoginAttempts int) error
 	GetByEmail(ctx context.Context, email string) (*User, error)
