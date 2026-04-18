@@ -31,10 +31,12 @@ import (
 
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/config"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/handler"
+	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/infrastructure/messaging"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/usecase"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
+	"github.com/tamirat-dejene/veritas/shared/pkg/messaging/kafka"
 	"go.uber.org/zap"
 
 	"github.com/jackc/pgx/v5"
@@ -76,8 +78,18 @@ func main() {
 	enterpriseRepo := postgres.NewEnterpriseRepository(pool)
 	auditRepo := postgres.NewAuditRepository(pool)
 
+	// Messaging: Kafka
+	kafkaProducer, err := kafka.NewProducer(kafka.Config{
+		Brokers: cfg.KafkaBrokers,
+	})
+	if err != nil {
+		log.Fatal("failed to initialize kafka producer", zap.Error(err))
+	}
+	defer kafkaProducer.Close()
+	eventPublisher := messaging.NewKafkaPublisher(kafkaProducer)
+
 	// 5. Initialize Usecases
-	enterpriseUC := usecase.NewEnterpriseUsecase(pool, userRepo, enterpriseRepo, auditRepo)
+	enterpriseUC := usecase.NewEnterpriseUsecase(pool, userRepo, enterpriseRepo, auditRepo, eventPublisher)
 	userUC := usecase.NewUserUsecase(pool, userRepo, enterpriseRepo, auditRepo)
 
 	// 6. Initialize Handlers
