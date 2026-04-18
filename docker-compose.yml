@@ -178,7 +178,7 @@ services:
     ports:
       - "8086:8000"
     volumes:
-      - ./.env.dev:/app/.env
+      - ./.env.dev:/app/.env.dev
       - ./services/proctoring-service:/app
       - ./shared:/app/shared:ro
     env_file:
@@ -193,7 +193,7 @@ services:
     ports:
       - "8087:8000"
     volumes:
-      - ./.env.dev:/app/.env
+      - ./.env.dev:/app/.env.dev
       - ./services/grading-service:/app
       - ./shared:/app/shared:ro
     env_file:
@@ -208,7 +208,7 @@ services:
     ports:
       - "8088:8000"
     volumes:
-      - ./.env.dev:/app/.env
+      - ./.env.dev:/app/.env.dev
       - ./services/reporting-service:/app
       - ./shared:/app/shared:ro
     env_file:
@@ -223,7 +223,7 @@ services:
     ports:
       - "8089:8000"
     volumes:
-      - ./.env.dev:/app/.env
+      - ./.env.dev:/app/.env.dev
       - ./services/face-verification-service:/app
       - ./shared:/app/shared:ro
     env_file:
