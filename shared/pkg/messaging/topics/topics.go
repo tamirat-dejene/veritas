@@ -7,4 +7,7 @@ const (
 	AuthUserLogin = "auth.user.login"
 )
 
-//...
+// Enterprise-Service topics
+const (
+	EnterpriseCreated = "enterprise.enterprise.created"
+)
