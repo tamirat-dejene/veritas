@@ -36,10 +36,10 @@ else
   exit 1
 fi
 
-if [[ -f .env ]]; then
+if [[ -f .env.dev ]]; then
   set -a
   # shellcheck disable=SC1091
-  source .env
+  source .env.dev
   set +a
 elif [[ -f .env.example ]]; then
   set -a

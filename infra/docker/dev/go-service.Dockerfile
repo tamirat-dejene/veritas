@@ -13,4 +13,4 @@ ENV SERVICE_NAME=${SERVICE_NAME}
 ENV GOPROXY="direct"
 
 # Command uses air to watch the /app directory (which we will bind mount)
-CMD air --build.cmd "cd services/${SERVICE_NAME} && go build -v -o /tmp/main ./cmd/server" --build.entrypoint "/tmp/main" --build.exclude_dir "templates,assets" --build.include_ext "go,tpl,tmpl,html,env" --build.include_file ".env" --build.stop_on_error "false"
+CMD air --build.cmd "cd services/${SERVICE_NAME} && go build -v -o /tmp/main ./cmd/server" --build.entrypoint "/tmp/main" --build.exclude_dir "templates,assets" --build.include_ext "go,tpl,tmpl,html,env.dev" --build.include_file ".env.dev" --build.stop_on_error "false"

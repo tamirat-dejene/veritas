@@ -2,7 +2,7 @@ docs/report/tex_out
 veritas_presentation/tex_out
 
 # Env files
-.env
+.env.dev
 .env.production
 
 # Temporary
