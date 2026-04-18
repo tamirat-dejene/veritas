@@ -92,9 +92,9 @@ func (r *enterpriseRepository) FindByID(ctx context.Context, id uuid.UUID) (*dom
 	return scanEnterprise(row)
 }
 
-func (r *enterpriseRepository) FindBySlug(ctx context.Context, slug string) (*domain.Enterprise, error) {
-	query := fmt.Sprintf("SELECT %s FROM veritas_enterprise WHERE slug = $1 LIMIT 1", enterpriseFields)
-	row := r.db.QueryRow(ctx, query, slug)
+func (r *enterpriseRepository) FindBySlug(ctx context.Context, slug string, adminID uuid.UUID) (*domain.Enterprise, error) {
+	query := fmt.Sprintf("SELECT %s FROM veritas_enterprise WHERE slug = $1 AND owner_account_id = $2 LIMIT 1", enterpriseFields)
+	row := r.db.QueryRow(ctx, query, slug, adminID)
 	return scanEnterprise(row)
 }
 

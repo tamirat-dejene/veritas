@@ -22,6 +22,7 @@ type enterpriseUsecase struct {
 	userRepo       domain.UserRepository
 	enterpriseRepo domain.EnterpriseRepository
 	auditRepo      domain.AuditRepository
+	eventPublisher domain.EventPublisher
 }
 
 func NewEnterpriseUsecase(
@@ -29,12 +30,14 @@ func NewEnterpriseUsecase(
 	userRepo domain.UserRepository,
 	enterpriseRepo domain.EnterpriseRepository,
 	auditRepo domain.AuditRepository,
+	eventPublisher domain.EventPublisher,
 ) domain.EnterpriseUsecase {
 	return &enterpriseUsecase{
 		pool:           pool,
 		userRepo:       userRepo,
 		enterpriseRepo: enterpriseRepo,
 		auditRepo:      auditRepo,
+		eventPublisher: eventPublisher,
 	}
 }
 
@@ -60,34 +63,27 @@ func (uc *enterpriseUsecase) emit(ctx context.Context, tx pgx.Tx, enterpriseID, 
 }
 
 func (uc *enterpriseUsecase) RegisterEnterprise(ctx context.Context, e *domain.Enterprise, owner *domain.User) (*domain.Enterprise, error) {
-	zap.L().Info("Registering new enterprise", zap.String("slug", e.Slug), zap.String("owner_email", owner.Email))
-
 	// 1. Check if slug exists
-	existing, err := uc.enterpriseRepo.FindBySlug(ctx, e.Slug)
+	existing, err := uc.enterpriseRepo.FindBySlug(ctx, e.Slug, uuid.Nil)
 	if err != nil && err != domain.ErrEnterpriseNotFound {
-		zap.L().Error("Failed to check if slug exists", zap.Error(err), zap.String("slug", e.Slug))
 		return nil, err
 	}
 	if existing != nil {
-		zap.L().Warn("Enterprise slug already exists", zap.String("slug", e.Slug))
 		return nil, domain.ErrSlugAlreadyExists
 	}
 
 	// 2. Check if owner email exists
 	existingUser, err := uc.userRepo.FindByEmail(ctx, owner.Email)
 	if err != nil && err != domain.ErrUserNotFound {
-		zap.L().Error("Failed to check if owner email exists", zap.Error(err), zap.String("email", owner.Email))
 		return nil, err
 	}
 	if existingUser != nil {
-		zap.L().Warn("Owner email already exists", zap.String("email", owner.Email))
 		return nil, domain.ErrEmailAlreadyExists
 	}
 
 	// 3. Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(owner.PasswordHash), bcrypt.DefaultCost)
 	if err != nil {
-		zap.L().Error("Failed to hash password", zap.Error(err))
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 
@@ -108,20 +104,17 @@ func (uc *enterpriseUsecase) RegisterEnterprise(ctx context.Context, e *domain.E
 
 		// 4. Create Owner User
 		if err := txUserRepo.Create(ctx, newUser); err != nil {
-			zap.L().Error("Failed to create owner user", zap.Error(err), zap.String("email", newUser.Email))
 			return fmt.Errorf("failed to create owner user: %w", err)
 		}
 
 		// 5. Create Enterprise
 		if err := txEnterpriseRepo.Create(ctx, newEnterprise); err != nil {
-			zap.L().Error("Failed to create enterprise", zap.Error(err), zap.String("slug", newEnterprise.Slug))
 			return fmt.Errorf("failed to create enterprise: %w", err)
 		}
 
 		// 6. Update Owner's EnterpriseID
 		newUser.EnterpriseID = &newEnterprise.ID
 		if err := txUserRepo.Update(ctx, newUser); err != nil {
-			zap.L().Error("Failed to update owner with enterprise ID", zap.Error(err))
 			return fmt.Errorf("failed to update owner with enterprise ID: %w", err)
 		}
 
@@ -136,13 +129,16 @@ func (uc *enterpriseUsecase) RegisterEnterprise(ctx context.Context, e *domain.E
 			Metadata:     map[string]any{"slug": newEnterprise.Slug},
 		}
 		if err := txAuditRepo.Create(ctx, auditLog); err != nil {
-			zap.L().Error("Failed to create audit log", zap.Error(err))
 			return fmt.Errorf("failed to create audit log: %w", err)
 		}
 		return nil
 	}); err != nil {
-		zap.L().Error("RegisterEnterprise transaction failed", zap.Error(err))
 		return nil, err
+	}
+
+	// 8. Publish Enterprise Created Event
+	if err := uc.eventPublisher.PublishEnterpriseCreated(ctx, newEnterprise.ID, newEnterprise.LegalName, owner.Email); err != nil {
+		zap.L().Error("failed to publish enterprise.created event", zap.Error(err))
 	}
 
 	return newEnterprise, nil
@@ -236,8 +232,8 @@ func (uc *enterpriseUsecase) ListEnterprises(ctx context.Context, filter domain.
 	return uc.enterpriseRepo.ListPaginated(ctx, filter)
 }
 
-func (uc *enterpriseUsecase) GetEnterpriseBySlug(ctx context.Context, slug string) (*domain.Enterprise, error) {
-	return uc.enterpriseRepo.FindBySlug(ctx, slug)
+func (uc *enterpriseUsecase) GetEnterpriseBySlug(ctx context.Context, slug string, adminID uuid.UUID) (*domain.Enterprise, error) {
+	return uc.enterpriseRepo.FindBySlug(ctx, slug, adminID)
 }
 
 func (uc *enterpriseUsecase) GetMyEnterprise(ctx context.Context, enterpriseID uuid.UUID) (*domain.Enterprise, error) {

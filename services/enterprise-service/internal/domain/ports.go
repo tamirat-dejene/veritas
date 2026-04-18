@@ -29,7 +29,7 @@ type UserRepository interface {
 type EnterpriseRepository interface {
 	Create(ctx context.Context, enterprise *Enterprise) error
 	FindByID(ctx context.Context, id uuid.UUID) (*Enterprise, error)
-	FindBySlug(ctx context.Context, slug string) (*Enterprise, error)
+	FindBySlug(ctx context.Context, slug string, adminID uuid.UUID) (*Enterprise, error)
 	Update(ctx context.Context, enterprise *Enterprise) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	List(ctx context.Context, filter map[string]interface{}) ([]*Enterprise, error)
@@ -58,7 +58,7 @@ type EnterpriseUsecase interface {
 
 	// Discovery & Listing
 	ListEnterprises(ctx context.Context, filter EnterpriseFilter) ([]*Enterprise, int, error)
-	GetEnterpriseBySlug(ctx context.Context, slug string) (*Enterprise, error)
+	GetEnterpriseBySlug(ctx context.Context, slug string, adminID uuid.UUID) (*Enterprise, error)
 	GetMyEnterprise(ctx context.Context, enterpriseID uuid.UUID) (*Enterprise, error)
 
 	// Branding & Settings
@@ -96,4 +96,8 @@ type UserUsecase interface {
 	RecordLoginFailure(ctx context.Context, userID uuid.UUID, lockUntil *time.Time, failedLoginAttempts int) error
 	GetByEmail(ctx context.Context, email string) (*User, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*User, error)
+}
+
+type EventPublisher interface {
+	PublishEnterpriseCreated(ctx context.Context, enterpriseID uuid.UUID, legalName string, ownerEmail string) error
 }
