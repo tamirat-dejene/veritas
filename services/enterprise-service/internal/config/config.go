@@ -3,26 +3,29 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 type Config struct {
-	Port   string
-	DBUser string
-	DBPass string
-	DBHost string
-	DBPort string
-	DBName string
-	DSN    string
+	Port         string
+	DBUser       string
+	DBPass       string
+	DBHost       string
+	DBPort       string
+	DBName       string
+	DSN          string
+	KafkaBrokers []string
 }
 
 func Load() *Config {
 	cfg := &Config{
-		Port:   getEnv("GO_PORT", "8080"),
-		DBUser: getEnv("PG_VERITAS_USER", "postgres"),
-		DBPass: getEnv("PG_VERITAS_PASSWORD", "postgres"),
-		DBHost: getEnv("PG_VERITAS_HOST", "localhost"),
-		DBPort: getEnv("PG_VERITAS_PORT", "5432"),
-		DBName: getEnv("PG_VERITAS_CORE_DB", "veritas_core"),
+		Port:         getEnv("GO_PORT", "8080"),
+		DBUser:       getEnv("PG_VERITAS_USER", "postgres"),
+		DBPass:       getEnv("PG_VERITAS_PASSWORD", "postgres"),
+		DBHost:       getEnv("PG_VERITAS_HOST", "localhost"),
+		DBPort:       getEnv("PG_VERITAS_PORT", "5432"),
+		DBName:       getEnv("PG_VERITAS_CORE_DB", "veritas_core"),
+		KafkaBrokers: getEnvList("KAFKA_BROKERS", ","),
 	}
 
 	cfg.DSN = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
@@ -36,4 +39,12 @@ func getEnv(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+func getEnvList(key, delimiter string) []string {
+	value := os.Getenv(key)
+	if value == "" {
+		return nil
+	}
+	return strings.Split(value, delimiter)
 }
