@@ -54,15 +54,8 @@ func (h *EnterpriseHandler) Register(c *gin.Context) {
 
 	created, err := h.usecase.RegisterEnterprise(c.Request.Context(), enterprise, owner)
 	if err != nil {
-		switch err {
-		case domain.ErrSlugAlreadyExists:
-			writeError(c, http.StatusConflict, "enterprise slug already exists")
-		case domain.ErrEmailAlreadyExists:
-			writeError(c, http.StatusConflict, "owner email already exists")
-		default:
-			zap.L().Error("Enterprise registration failed", zap.Error(err), zap.String("slug", req.Slug), zap.String("email", req.OwnerEmail))
-			writeError(c, http.StatusInternalServerError, "failed to register enterprise")
-		}
+		zap.L().Error("failed to register enterprise", zap.Error(err))
+		h.handleEnterpriseError(c, err)
 		return
 	}
 	writeJSON(c, http.StatusCreated, created)
@@ -88,11 +81,8 @@ func (h *EnterpriseHandler) Get(c *gin.Context) {
 	}
 	enterprise, err := h.usecase.GetEnterprise(c.Request.Context(), id)
 	if err != nil {
-		if err == domain.ErrEnterpriseNotFound {
-			writeError(c, http.StatusNotFound, "enterprise not found")
-		} else {
-			writeError(c, http.StatusInternalServerError, "failed to get enterprise")
-		}
+		zap.L().Error("failed to get enterprise", zap.Error(err))
+		h.handleEnterpriseError(c, err)
 		return
 	}
 	writeJSON(c, http.StatusOK, enterprise)
@@ -125,11 +115,8 @@ func (h *EnterpriseHandler) Update(c *gin.Context) {
 	e.ID = id
 	callerID, _ := GetCallerID(c)
 	if err := h.usecase.UpdateEnterprise(c.Request.Context(), &e, callerID); err != nil {
-		if err == domain.ErrEnterpriseNotFound {
-			writeError(c, http.StatusNotFound, "enterprise not found")
-		} else {
-			writeError(c, http.StatusInternalServerError, "failed to update enterprise")
-		}
+		zap.L().Error("failed to update enterprise", zap.Error(err))
+		h.handleEnterpriseError(c, err)
 		return
 	}
 	c.Status(http.StatusNoContent)
@@ -154,7 +141,8 @@ func (h *EnterpriseHandler) Approve(c *gin.Context) {
 	}
 	callerID, _ := GetCallerID(c)
 	if err := h.usecase.ApproveEnterprise(c.Request.Context(), id, callerID); err != nil {
-		writeError(c, http.StatusInternalServerError, "failed to approve enterprise")
+		zap.L().Error("failed to approve enterprise", zap.Error(err))
+		h.handleEnterpriseError(c, err)
 		return
 	}
 	c.Status(http.StatusNoContent)
@@ -179,7 +167,8 @@ func (h *EnterpriseHandler) Suspend(c *gin.Context) {
 	}
 	callerID, _ := GetCallerID(c)
 	if err := h.usecase.SuspendEnterprise(c.Request.Context(), id, callerID); err != nil {
-		writeError(c, http.StatusInternalServerError, "failed to suspend enterprise")
+		zap.L().Error("failed to suspend enterprise", zap.Error(err))
+		h.handleEnterpriseError(c, err)
 		return
 	}
 	c.Status(http.StatusNoContent)
@@ -204,7 +193,8 @@ func (h *EnterpriseHandler) Delete(c *gin.Context) {
 	}
 	callerID, _ := GetCallerID(c)
 	if err := h.usecase.DeleteEnterprise(c.Request.Context(), id, callerID); err != nil {
-		writeError(c, http.StatusInternalServerError, "failed to delete enterprise")
+		zap.L().Error("failed to delete enterprise", zap.Error(err))
+		h.handleEnterpriseError(c, err)
 		return
 	}
 	c.Status(http.StatusNoContent)
@@ -243,7 +233,8 @@ func (h *EnterpriseHandler) List(c *gin.Context) {
 
 	items, total, err := h.usecase.ListEnterprises(c.Request.Context(), filter)
 	if err != nil {
-		writeError(c, http.StatusInternalServerError, "failed to list enterprises")
+		zap.L().Error("failed to list enterprises", zap.Error(err))
+		h.handleEnterpriseError(c, err)
 		return
 	}
 	writeJSON(c, http.StatusOK, pagination.NewPaginatedResponse(items, int64(total), filter.Params))
@@ -262,13 +253,17 @@ func (h *EnterpriseHandler) List(c *gin.Context) {
 //	@Router			/enterprises/slug/{slug} [get]
 func (h *EnterpriseHandler) GetBySlug(c *gin.Context) {
 	slug := c.Param("slug")
-	enterprise, err := h.usecase.GetEnterpriseBySlug(c.Request.Context(), slug)
+	adminID, ok := GetCallerID(c)
+
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthenticated")
+		return
+	}
+
+	enterprise, err := h.usecase.GetEnterpriseBySlug(c.Request.Context(), slug, adminID)
 	if err != nil {
-		if err == domain.ErrEnterpriseNotFound {
-			writeError(c, http.StatusNotFound, "enterprise not found")
-		} else {
-			writeError(c, http.StatusInternalServerError, "failed to get enterprise by slug")
-		}
+		zap.L().Error("failed to get enterprise by slug", zap.Error(err))
+		h.handleEnterpriseError(c, err)
 		return
 	}
 	writeJSON(c, http.StatusOK, enterprise)
@@ -294,11 +289,8 @@ func (h *EnterpriseHandler) GetMe(c *gin.Context) {
 	}
 	enterprise, err := h.usecase.GetMyEnterprise(c.Request.Context(), enterpriseID)
 	if err != nil {
-		if err == domain.ErrEnterpriseNotFound {
-			writeError(c, http.StatusNotFound, "enterprise not found")
-		} else {
-			writeError(c, http.StatusInternalServerError, "failed to get enterprise")
-		}
+		zap.L().Error("failed to get enterprise", zap.Error(err))
+		h.handleEnterpriseError(c, err)
 		return
 	}
 	writeJSON(c, http.StatusOK, enterprise)
@@ -336,6 +328,7 @@ func (h *EnterpriseHandler) UpdateBranding(c *gin.Context) {
 	}
 	callerID, _ := GetCallerID(c)
 	if err := h.usecase.UpdateBranding(c.Request.Context(), id, req, callerID); err != nil {
+		zap.L().Error("failed to update branding", zap.Error(err))
 		h.handleEnterpriseError(c, err)
 		return
 	}
@@ -372,6 +365,7 @@ func (h *EnterpriseHandler) UpdateSettings(c *gin.Context) {
 	}
 	callerID, _ := GetCallerID(c)
 	if err := h.usecase.UpdateSettings(c.Request.Context(), id, patch, callerID); err != nil {
+		zap.L().Error("failed to update settings", zap.Error(err))
 		h.handleEnterpriseError(c, err)
 		return
 	}
@@ -402,6 +396,7 @@ func (h *EnterpriseHandler) Reactivate(c *gin.Context) {
 	}
 	callerID, _ := GetCallerID(c)
 	if err := h.usecase.ReactivateEnterprise(c.Request.Context(), id, callerID); err != nil {
+		zap.L().Error("failed to reactivate enterprise", zap.Error(err))
 		h.handleEnterpriseError(c, err)
 		return
 	}
@@ -430,6 +425,7 @@ func (h *EnterpriseHandler) Restore(c *gin.Context) {
 	}
 	callerID, _ := GetCallerID(c)
 	if err := h.usecase.RestoreEnterprise(c.Request.Context(), id, callerID); err != nil {
+		zap.L().Error("failed to restore enterprise", zap.Error(err))
 		h.handleEnterpriseError(c, err)
 		return
 	}
@@ -458,6 +454,7 @@ func (h *EnterpriseHandler) HardDelete(c *gin.Context) {
 	}
 	callerID, _ := GetCallerID(c)
 	if err := h.usecase.HardDeleteEnterprise(c.Request.Context(), id, callerID); err != nil {
+		zap.L().Error("failed to hard delete enterprise", zap.Error(err))
 		h.handleEnterpriseError(c, err)
 		return
 	}
@@ -488,6 +485,7 @@ func (h *EnterpriseHandler) GetStatus(c *gin.Context) {
 	}
 	resp, err := h.usecase.GetEnterpriseStatus(c.Request.Context(), id)
 	if err != nil {
+		zap.L().Error("failed to get enterprise status", zap.Error(err))
 		h.handleEnterpriseError(c, err)
 		return
 	}
@@ -519,11 +517,8 @@ func (h *EnterpriseHandler) ValidateDomain(c *gin.Context) {
 	callerID, _ := GetCallerID(c)
 	result, err := h.usecase.ValidateCustomDomain(c.Request.Context(), id, callerID)
 	if err != nil {
-		if err == domain.ErrDomainValidation {
-			writeError(c, http.StatusUnprocessableEntity, "no custom domain configured for this enterprise")
-		} else {
-			h.handleEnterpriseError(c, err)
-		}
+		zap.L().Error("failed to validate custom domain", zap.Error(err))
+		h.handleEnterpriseError(c, err)
 		return
 	}
 	writeJSON(c, http.StatusOK, result)
@@ -551,6 +546,7 @@ func (h *EnterpriseHandler) GetSummary(c *gin.Context) {
 	}
 	summary, err := h.usecase.GetEnterpriseSummary(c.Request.Context(), id)
 	if err != nil {
+		zap.L().Error("failed to get enterprise summary", zap.Error(err))
 		h.handleEnterpriseError(c, err)
 		return
 	}
@@ -584,6 +580,7 @@ func (h *EnterpriseHandler) GetAuditLogs(c *gin.Context) {
 	params := pagination.ParseGin(c)
 	logs, total, err := h.usecase.GetAuditLogs(c.Request.Context(), id, params)
 	if err != nil {
+		zap.L().Error("failed to get audit logs", zap.Error(err))
 		h.handleEnterpriseError(c, err)
 		return
 	}
@@ -604,6 +601,12 @@ func (h *EnterpriseHandler) handleEnterpriseError(c *gin.Context, err error) {
 		writeError(c, http.StatusForbidden, "forbidden")
 	case domain.ErrDomainValidation:
 		writeError(c, http.StatusUnprocessableEntity, "domain validation error")
+	case domain.ErrSlugAlreadyExists:
+		writeError(c, http.StatusConflict, "enterprise slug already exists")
+	case domain.ErrEmailAlreadyExists:
+		writeError(c, http.StatusConflict, "owner email already exists")
+	case domain.ErrUserNotFound:
+		writeError(c, http.StatusNotFound, "user not found")
 	default:
 		zap.L().Error("Unhandled enterprise error", zap.Error(err))
 		writeError(c, http.StatusInternalServerError, "internal server error")
