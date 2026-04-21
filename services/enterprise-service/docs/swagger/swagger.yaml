@@ -142,9 +142,9 @@ definitions:
         type: string
       legalName:
         type: string
-      logoURL:
+      logoUrl:
         type: string
-      ownerAccountID:
+      ownerAccountId:
         type: string
       primaryColor:
         type: string
@@ -159,7 +159,7 @@ definitions:
         type: string
       status:
         $ref: '#/definitions/EnterpriseStatus'
-      subscriptionPlanID:
+      subscriptionPlanId:
         type: string
       subscriptionStatus:
         $ref: '#/definitions/SubscriptionStatus'
@@ -293,7 +293,7 @@ definitions:
         type: boolean
       emailVerifiedAt:
         type: string
-      enterpriseID:
+      enterpriseId:
         type: string
       failedLoginAttempts:
         type: integer
@@ -309,7 +309,7 @@ definitions:
         type: boolean
       lastLoginAt:
         type: string
-      lastLoginIP:
+      lastLoginIp:
         type: string
       lastName:
         type: string

@@ -2043,10 +2043,10 @@ const docTemplate = `{
                 "legalName": {
                     "type": "string"
                 },
-                "logoURL": {
+                "logoUrl": {
                     "type": "string"
                 },
-                "ownerAccountID": {
+                "ownerAccountId": {
                     "type": "string"
                 },
                 "primaryColor": {
@@ -2068,7 +2068,7 @@ const docTemplate = `{
                 "status": {
                     "$ref": "#/definitions/EnterpriseStatus"
                 },
-                "subscriptionPlanID": {
+                "subscriptionPlanId": {
                     "type": "string"
                 },
                 "subscriptionStatus": {
@@ -2259,7 +2259,7 @@ const docTemplate = `{
                 "emailVerifiedAt": {
                     "type": "string"
                 },
-                "enterpriseID": {
+                "enterpriseId": {
                     "type": "string"
                 },
                 "failedLoginAttempts": {
@@ -2283,7 +2283,7 @@ const docTemplate = `{
                 "lastLoginAt": {
                     "type": "string"
                 },
-                "lastLoginIP": {
+                "lastLoginIp": {
                     "type": "string"
                 },
                 "lastName": {

@@ -2040,10 +2040,10 @@
                 "legalName": {
                     "type": "string"
                 },
-                "logoURL": {
+                "logoUrl": {
                     "type": "string"
                 },
-                "ownerAccountID": {
+                "ownerAccountId": {
                     "type": "string"
                 },
                 "primaryColor": {
@@ -2065,7 +2065,7 @@
                 "status": {
                     "$ref": "#/definitions/EnterpriseStatus"
                 },
-                "subscriptionPlanID": {
+                "subscriptionPlanId": {
                     "type": "string"
                 },
                 "subscriptionStatus": {
@@ -2256,7 +2256,7 @@
                 "emailVerifiedAt": {
                     "type": "string"
                 },
-                "enterpriseID": {
+                "enterpriseId": {
                     "type": "string"
                 },
                 "failedLoginAttempts": {
@@ -2280,7 +2280,7 @@
                 "lastLoginAt": {
                     "type": "string"
                 },
-                "lastLoginIP": {
+                "lastLoginIp": {
                     "type": "string"
                 },
                 "lastName": {
