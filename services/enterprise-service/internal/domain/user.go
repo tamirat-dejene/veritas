@@ -17,57 +17,57 @@ const (
 )
 
 type User struct {
-	ID           uuid.UUID `db:"id"`
-	Email        string    `db:"email"`
-	PasswordHash string    `db:"password_hash"`
+	ID           uuid.UUID `db:"id" json:"id"`
+	Email        string    `db:"email" json:"email"`
+	PasswordHash string    `db:"password_hash" json:"passwordHash"`
 
-	Honorific *string `db:"honorific"`
-	FirstName *string `db:"first_name"`
-	LastName  *string `db:"last_name"`
-	Phone     *string `db:"phone"`
+	Honorific *string `db:"honorific" json:"honorific,omitempty"`
+	FirstName *string `db:"first_name" json:"firstName,omitempty"`
+	LastName  *string `db:"last_name" json:"lastName,omitempty"`
+	Phone     *string `db:"phone" json:"phone,omitempty"`
 
-	Role         Role       `db:"role"`
-	EnterpriseID *uuid.UUID `db:"enterprise_id"`
+	Role         Role       `db:"role" json:"role"`
+	EnterpriseID *uuid.UUID `db:"enterprise_id" json:"enterpriseId,omitempty"`
 
-	IsActive  bool `db:"is_active"`
-	IsDeleted bool `db:"is_deleted"`
+	IsActive  bool `db:"is_active" json:"isActive"`
+	IsDeleted bool `db:"is_deleted" json:"isDeleted"`
 
-	EmailVerified   bool       `db:"email_verified"`
-	EmailVerifiedAt *time.Time `db:"email_verified_at"`
+	EmailVerified   bool       `db:"email_verified" json:"emailVerified"`
+	EmailVerifiedAt *time.Time `db:"email_verified_at" json:"emailVerifiedAt,omitempty"`
 
-	FailedLoginAttempts int        `db:"failed_login_attempts"`
-	LockedUntil         *time.Time `db:"locked_until"`
+	FailedLoginAttempts int        `db:"failed_login_attempts" json:"failedLoginAttempts"`
+	LockedUntil         *time.Time `db:"locked_until" json:"lockedUntil,omitempty"`
 
-	PasswordChangedAt  time.Time `db:"password_changed_at"`
-	MustChangePassword bool      `db:"must_change_password"`
+	PasswordChangedAt  time.Time `db:"password_changed_at" json:"passwordChangedAt"`
+	MustChangePassword bool      `db:"must_change_password" json:"mustChangePassword"`
 
-	LastLoginAt   *time.Time `db:"last_login_at"`
-	LastLoginIP   *string    `db:"last_login_ip"`
-	LastUserAgent *string    `db:"last_user_agent"`
+	LastLoginAt   *time.Time `db:"last_login_at" json:"lastLoginAt,omitempty"`
+	LastLoginIP   *string    `db:"last_login_ip" json:"lastLoginIp,omitempty"`
+	LastUserAgent *string    `db:"last_user_agent" json:"lastUserAgent,omitempty"`
 
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 }
 
 // NewUser provides a standard way to initialize a User with default values.
 func NewUser(id uuid.UUID, email, passwordHash string, role Role) *User {
 	now := time.Now().UTC()
 	return &User{
-		ID:                 id,
-		Email:              email,
-		PasswordHash:       passwordHash,
+		ID:           id,
+		Email:        email,
+		PasswordHash: passwordHash,
 
-		Role:               role,
+		Role: role,
 
-		IsActive:           true,
-		IsDeleted:          false,
+		IsActive:  true,
+		IsDeleted: false,
 
-		EmailVerified:      false,
+		EmailVerified: false,
 
 		PasswordChangedAt:  now,
 		MustChangePassword: true,
 
-		CreatedAt:          now,
-		UpdatedAt:          now,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 }

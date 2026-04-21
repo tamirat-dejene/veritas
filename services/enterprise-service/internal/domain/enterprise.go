@@ -75,44 +75,44 @@ const (
 )
 
 type Enterprise struct {
-	ID   uuid.UUID `db:"id"`
-	Slug string    `db:"slug"`
+	ID   uuid.UUID `db:"id" json:"id"`
+	Slug string    `db:"slug" json:"slug"`
 
-	DisplayName  string `db:"display_name"`
-	LegalName    string `db:"legal_name"`
-	ContactEmail string `db:"contact_email"`
+	DisplayName  string `db:"display_name" json:"displayName"`
+	LegalName    string `db:"legal_name" json:"legalName"`
+	ContactEmail string `db:"contact_email" json:"contactEmail"`
 
-	OwnerAccountID uuid.UUID `db:"owner_account_id"`
+	OwnerAccountID uuid.UUID `db:"owner_account_id" json:"ownerAccountId"`
 
-	Status      EnterpriseStatus `db:"status"`
-	ApprovedAt  *time.Time       `db:"approved_at"`
-	SuspendedAt *time.Time       `db:"suspended_at"`
-	DeletedAt   *time.Time       `db:"deleted_at"`
+	Status      EnterpriseStatus `db:"status" json:"status"`
+	ApprovedAt  *time.Time       `db:"approved_at" json:"approvedAt"`
+	SuspendedAt *time.Time       `db:"suspended_at" json:"suspendedAt"`
+	DeletedAt   *time.Time       `db:"deleted_at" json:"deletedAt"`
 
-	SubscriptionPlanID *uuid.UUID          `db:"subscription_plan_id"`
-	SubscriptionStatus *SubscriptionStatus `db:"subscription_status"`
-	CurrentPeriodStart *time.Time          `db:"current_period_start"`
-	CurrentPeriodEnd   *time.Time          `db:"current_period_end"`
+	SubscriptionPlanID *uuid.UUID          `db:"subscription_plan_id" json:"subscriptionPlanId,omitempty"`
+	SubscriptionStatus *SubscriptionStatus `db:"subscription_status" json:"subscriptionStatus,omitempty"`
+	CurrentPeriodStart *time.Time          `db:"current_period_start" json:"currentPeriodStart,omitempty"`
+	CurrentPeriodEnd   *time.Time          `db:"current_period_end" json:"currentPeriodEnd,omitempty"`
 
-	LogoURL        *string `db:"logo_url"`
-	PrimaryColor   *string `db:"primary_color"`
-	SecondaryColor *string `db:"secondary_color"`
-	CustomDomain   *string `db:"custom_domain"`
+	LogoURL        *string `db:"logo_url" json:"logoUrl,omitempty"`
+	PrimaryColor   *string `db:"primary_color" json:"primaryColor,omitempty"`
+	SecondaryColor *string `db:"secondary_color" json:"secondaryColor,omitempty"`
+	CustomDomain   *string `db:"custom_domain" json:"customDomain,omitempty"`
 
-	ContactPhone *string `db:"contact_phone"`
-	AddressLine1 *string `db:"address_line1"`
-	AddressLine2 *string `db:"address_line2"`
-	City         *string `db:"city"`
-	Country      *string `db:"country"`
+	ContactPhone *string `db:"contact_phone" json:"contactPhone,omitempty"`
+	AddressLine1 *string `db:"address_line1" json:"addressLine1,omitempty"`
+	AddressLine2 *string `db:"address_line2" json:"addressLine2,omitempty"`
+	City         *string `db:"city" json:"city,omitempty"`
+	Country      *string `db:"country" json:"country,omitempty"`
 
-	Settings map[string]any `db:"settings"`
+	Settings map[string]any `db:"settings" json:"settings"`
 
-	RetentionUntil *time.Time `db:"retention_until"`
+	RetentionUntil *time.Time `db:"retention_until" json:"retentionUntil,omitempty"`
 
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
-	CreatedBy uuid.UUID `db:"created_by"`
-	UpdatedBy uuid.UUID `db:"updated_by"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+	CreatedBy uuid.UUID `db:"created_by" json:"createdBy"`
+	UpdatedBy uuid.UUID `db:"updated_by" json:"updatedBy"`
 }
 
 // NewEnterprise provides a standard way to initialize an Enterprise.
