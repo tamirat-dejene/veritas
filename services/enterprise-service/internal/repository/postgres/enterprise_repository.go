@@ -27,8 +27,7 @@ func (r *enterpriseRepository) WithTx(tx pgx.Tx) domain.EnterpriseRepository {
 
 const enterpriseFields = `
 	id, slug, display_name, legal_name, contact_email, owner_account_id, status, approved_at,
-	suspended_at, deleted_at, retention_until, subscription_plan_id, subscription_status,
-	current_period_start, current_period_end, logo_url, primary_color, secondary_color,
+	suspended_at, deleted_at, retention_until, logo_url, primary_color, secondary_color,
 	custom_domain, contact_phone, address_line1, address_line2, city, country, settings,
 	created_at, updated_at, created_by, updated_by
 `
@@ -37,8 +36,7 @@ func scanEnterprise(row pgx.Row) (*domain.Enterprise, error) {
 	var m enterpriseModel
 	err := row.Scan(
 		&m.ID, &m.Slug, &m.DisplayName, &m.LegalName, &m.ContactEmail, &m.OwnerAccountID, &m.Status, &m.ApprovedAt,
-		&m.SuspendedAt, &m.DeletedAt, &m.RetentionUntil, &m.SubscriptionPlanID, &m.SubscriptionStatus,
-		&m.CurrentPeriodStart, &m.CurrentPeriodEnd, &m.LogoURL, &m.PrimaryColor, &m.SecondaryColor,
+		&m.SuspendedAt, &m.DeletedAt, &m.RetentionUntil, &m.LogoURL, &m.PrimaryColor, &m.SecondaryColor,
 		&m.CustomDomain, &m.ContactPhone, &m.AddressLine1, &m.AddressLine2, &m.City, &m.Country, &m.Settings,
 		&m.CreatedAt, &m.UpdatedAt, &m.CreatedBy, &m.UpdatedBy,
 	)
@@ -103,11 +101,9 @@ func (r *enterpriseRepository) Update(ctx context.Context, e *domain.Enterprise)
 		UPDATE veritas_enterprise
 		SET slug = $2, display_name = $3, legal_name = $4, contact_email = $5, status = $6,
 		    approved_at = $7, suspended_at = $8, deleted_at = $9, retention_until = $10,
-		    subscription_plan_id = $11, subscription_status = $12,
-		    current_period_start = $13, current_period_end = $14,
-		    logo_url = $15, primary_color = $16, secondary_color = $17, custom_domain = $18,
-		    contact_phone = $19, address_line1 = $20, address_line2 = $21, city = $22,
-		    country = $23, settings = $24, updated_at = NOW(), updated_by = $25
+		    logo_url = $11, primary_color = $12, secondary_color = $13, custom_domain = $14,
+		    contact_phone = $15, address_line1 = $16, address_line2 = $17, city = $18,
+		    country = $19, settings = $20, updated_at = NOW(), updated_by = $21
 		WHERE id = $1
 	`
 
@@ -118,7 +114,6 @@ func (r *enterpriseRepository) Update(ctx context.Context, e *domain.Enterprise)
 	_, err = r.db.Exec(ctx, query,
 		e.ID, e.Slug, e.DisplayName, e.LegalName, e.ContactEmail, e.Status,
 		e.ApprovedAt, e.SuspendedAt, e.DeletedAt, e.RetentionUntil,
-		e.SubscriptionPlanID, e.SubscriptionStatus, e.CurrentPeriodStart, e.CurrentPeriodEnd,
 		e.LogoURL, e.PrimaryColor, e.SecondaryColor, e.CustomDomain,
 		e.ContactPhone, e.AddressLine1, e.AddressLine2, e.City,
 		e.Country, string(settingsJson), e.UpdatedBy,
@@ -180,11 +175,6 @@ func (r *enterpriseRepository) ListPaginated(ctx context.Context, f domain.Enter
 	if f.Status != nil {
 		whereClauses = append(whereClauses, fmt.Sprintf("status = $%d", argIdx))
 		args = append(args, *f.Status)
-		argIdx++
-	}
-	if f.SubscriptionStatus != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("subscription_status = $%d", argIdx))
-		args = append(args, *f.SubscriptionStatus)
 		argIdx++
 	}
 	if f.Search != "" {

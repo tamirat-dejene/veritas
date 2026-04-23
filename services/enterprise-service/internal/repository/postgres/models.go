@@ -86,37 +86,34 @@ func (m *userModel) toDomain() *domain.User {
 	return u
 }
 
-// enterpriseModel represents the database schema for enterprises.
+// enterpriseModel represents the database schema for veritas_enterprise.
+// Subscription fields have been removed — they are owned by payment-service.
 type enterpriseModel struct {
-	ID                 uuid.UUID
-	Slug               string
-	DisplayName        string
-	LegalName          string
-	ContactEmail       string
-	OwnerAccountID     uuid.UUID
-	Status             string
-	ApprovedAt         pgtype.Timestamptz
-	SuspendedAt        pgtype.Timestamptz
-	DeletedAt          pgtype.Timestamptz
-	SubscriptionPlanID pgtype.UUID
-	SubscriptionStatus pgtype.Text
-	CurrentPeriodStart pgtype.Timestamptz
-	CurrentPeriodEnd   pgtype.Timestamptz
-	LogoURL            pgtype.Text
-	PrimaryColor       pgtype.Text
-	SecondaryColor     pgtype.Text
-	CustomDomain       pgtype.Text
-	ContactPhone       pgtype.Text
-	AddressLine1       pgtype.Text
-	AddressLine2       pgtype.Text
-	City               pgtype.Text
-	Country            pgtype.Text
-	Settings           json.RawMessage
-	RetentionUntil     pgtype.Timestamptz
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
-	CreatedBy          uuid.UUID
-	UpdatedBy          uuid.UUID
+	ID             uuid.UUID
+	Slug           string
+	DisplayName    string
+	LegalName      string
+	ContactEmail   string
+	OwnerAccountID uuid.UUID
+	Status         string
+	ApprovedAt     pgtype.Timestamptz
+	SuspendedAt    pgtype.Timestamptz
+	DeletedAt      pgtype.Timestamptz
+	RetentionUntil pgtype.Timestamptz
+	LogoURL        pgtype.Text
+	PrimaryColor   pgtype.Text
+	SecondaryColor pgtype.Text
+	CustomDomain   pgtype.Text
+	ContactPhone   pgtype.Text
+	AddressLine1   pgtype.Text
+	AddressLine2   pgtype.Text
+	City           pgtype.Text
+	Country        pgtype.Text
+	Settings       json.RawMessage
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	CreatedBy      uuid.UUID
+	UpdatedBy      uuid.UUID
 }
 
 func (m *enterpriseModel) toDomain() *domain.Enterprise {
@@ -143,19 +140,8 @@ func (m *enterpriseModel) toDomain() *domain.Enterprise {
 	if m.DeletedAt.Valid {
 		e.DeletedAt = &m.DeletedAt.Time
 	}
-	if m.SubscriptionPlanID.Valid {
-		id := uuid.UUID(m.SubscriptionPlanID.Bytes)
-		e.SubscriptionPlanID = &id
-	}
-	if m.SubscriptionStatus.Valid {
-		s := domain.SubscriptionStatus(m.SubscriptionStatus.String)
-		e.SubscriptionStatus = &s
-	}
-	if m.CurrentPeriodStart.Valid {
-		e.CurrentPeriodStart = &m.CurrentPeriodStart.Time
-	}
-	if m.CurrentPeriodEnd.Valid {
-		e.CurrentPeriodEnd = &m.CurrentPeriodEnd.Time
+	if m.RetentionUntil.Valid {
+		e.RetentionUntil = &m.RetentionUntil.Time
 	}
 	if m.LogoURL.Valid {
 		e.LogoURL = &m.LogoURL.String
@@ -183,9 +169,6 @@ func (m *enterpriseModel) toDomain() *domain.Enterprise {
 	}
 	if m.Country.Valid {
 		e.Country = &m.Country.String
-	}
-	if m.RetentionUntil.Valid {
-		e.RetentionUntil = &m.RetentionUntil.Time
 	}
 
 	if len(m.Settings) > 0 {

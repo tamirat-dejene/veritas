@@ -23,6 +23,7 @@ type enterpriseUsecase struct {
 	enterpriseRepo domain.EnterpriseRepository
 	auditRepo      domain.AuditRepository
 	eventPublisher domain.EventPublisher
+	paymentClient  domain.PaymentClient
 }
 
 func NewEnterpriseUsecase(
@@ -31,6 +32,7 @@ func NewEnterpriseUsecase(
 	enterpriseRepo domain.EnterpriseRepository,
 	auditRepo domain.AuditRepository,
 	eventPublisher domain.EventPublisher,
+	paymentClient domain.PaymentClient,
 ) domain.EnterpriseUsecase {
 	return &enterpriseUsecase{
 		pool:           pool,
@@ -38,6 +40,7 @@ func NewEnterpriseUsecase(
 		enterpriseRepo: enterpriseRepo,
 		auditRepo:      auditRepo,
 		eventPublisher: eventPublisher,
+		paymentClient:  paymentClient,
 	}
 }
 
@@ -87,7 +90,6 @@ func (uc *enterpriseUsecase) RegisterEnterprise(ctx context.Context, e *domain.E
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	// Use constructors for consistent initialization
 	newUser := domain.NewUser(uuid.New(), owner.Email, string(hashedPassword), domain.RoleEnterpriseAdmin)
 	newUser.MustChangePassword = false
 
@@ -102,23 +104,16 @@ func (uc *enterpriseUsecase) RegisterEnterprise(ctx context.Context, e *domain.E
 		txUserRepo := uc.userRepo.WithTx(tx)
 		txAuditRepo := uc.auditRepo.WithTx(tx)
 
-		// 4. Create Owner User
 		if err := txUserRepo.Create(ctx, newUser); err != nil {
 			return fmt.Errorf("failed to create owner user: %w", err)
 		}
-
-		// 5. Create Enterprise
 		if err := txEnterpriseRepo.Create(ctx, newEnterprise); err != nil {
 			return fmt.Errorf("failed to create enterprise: %w", err)
 		}
-
-		// 6. Update Owner's EnterpriseID
 		newUser.EnterpriseID = &newEnterprise.ID
 		if err := txUserRepo.Update(ctx, newUser); err != nil {
 			return fmt.Errorf("failed to update owner with enterprise ID: %w", err)
 		}
-
-		// 7. Audit Log
 		auditLog := &domain.AuditLog{
 			ID:           uuid.New(),
 			EnterpriseID: newEnterprise.ID,
@@ -136,7 +131,6 @@ func (uc *enterpriseUsecase) RegisterEnterprise(ctx context.Context, e *domain.E
 		return nil, err
 	}
 
-	// 8. Publish Enterprise Created Event
 	if err := uc.eventPublisher.PublishEnterpriseCreated(ctx, newEnterprise.ID, newEnterprise.LegalName, owner.Email); err != nil {
 		zap.L().Error("failed to publish enterprise.created event", zap.Error(err))
 	}
@@ -149,13 +143,11 @@ func (uc *enterpriseUsecase) ApproveEnterprise(ctx context.Context, id uuid.UUID
 	if err != nil {
 		return err
 	}
-
 	now := time.Now()
 	e.Status = domain.StatusActive
 	e.ApprovedAt = &now
 	e.UpdatedAt = now
 	e.UpdatedBy = adminID
-
 	return uc.enterpriseRepo.Update(ctx, e)
 }
 
@@ -164,27 +156,22 @@ func (uc *enterpriseUsecase) SuspendEnterprise(ctx context.Context, id uuid.UUID
 	if err != nil {
 		return err
 	}
-
 	now := time.Now()
 	e.Status = domain.StatusSuspended
 	e.SuspendedAt = &now
 	e.UpdatedAt = now
 	e.UpdatedBy = adminID
-
 	return uc.enterpriseRepo.Update(ctx, e)
 }
 
 func (uc *enterpriseUsecase) DeleteEnterprise(ctx context.Context, id uuid.UUID, adminID uuid.UUID) error {
-	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		if err := uc.enterpriseRepo.WithTx(tx).Delete(ctx, id); err != nil {
 			return err
 		}
 		uc.emit(ctx, tx, id, adminID, string(domain.RoleSystemAdmin), domain.EventEnterpriseDeleted, nil)
 		return nil
-	}); err != nil {
-		return err
-	}
-	return nil
+	})
 }
 
 func (uc *enterpriseUsecase) GetEnterprise(ctx context.Context, id uuid.UUID) (*domain.Enterprise, error) {
@@ -196,8 +183,6 @@ func (uc *enterpriseUsecase) UpdateEnterprise(ctx context.Context, e *domain.Ent
 	if err != nil {
 		return err
 	}
-
-	// Update only allowed fields
 	existing.DisplayName = e.DisplayName
 	existing.LegalName = e.LegalName
 	existing.ContactEmail = e.ContactEmail
@@ -214,16 +199,13 @@ func (uc *enterpriseUsecase) UpdateEnterprise(ctx context.Context, e *domain.Ent
 	existing.UpdatedAt = time.Now()
 	existing.UpdatedBy = adminID
 
-	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		if err := uc.enterpriseRepo.WithTx(tx).Update(ctx, existing); err != nil {
 			return err
 		}
 		uc.emit(ctx, tx, existing.ID, adminID, string(domain.RoleEnterpriseAdmin), domain.EventEnterpriseUpdated, nil)
 		return nil
-	}); err != nil {
-		return err
-	}
-	return nil
+	})
 }
 
 // ─── Discovery & Listing ─────────────────────────────────────────────────────
@@ -247,9 +229,7 @@ func (uc *enterpriseUsecase) UpdateBranding(ctx context.Context, id uuid.UUID, r
 	if err != nil {
 		return err
 	}
-
 	log.Printf("Updating branding for enterprise: %v", e)
-
 	if req.LogoURL != nil {
 		e.LogoURL = req.LogoURL
 	}
@@ -261,17 +241,13 @@ func (uc *enterpriseUsecase) UpdateBranding(ctx context.Context, id uuid.UUID, r
 	}
 	e.UpdatedAt = time.Now()
 	e.UpdatedBy = adminID
-
-	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		if err := uc.enterpriseRepo.WithTx(tx).Update(ctx, e); err != nil {
 			return err
 		}
 		uc.emit(ctx, tx, id, adminID, string(domain.RoleEnterpriseAdmin), domain.EventBrandingUpdated, nil)
 		return nil
-	}); err != nil {
-		return err
-	}
-	return nil
+	})
 }
 
 func (uc *enterpriseUsecase) UpdateSettings(ctx context.Context, id uuid.UUID, patch map[string]interface{}, adminID uuid.UUID) error {
@@ -279,7 +255,6 @@ func (uc *enterpriseUsecase) UpdateSettings(ctx context.Context, id uuid.UUID, p
 	if err != nil {
 		return err
 	}
-	// JSON merge patch: overlay patch onto existing settings
 	if e.Settings == nil {
 		e.Settings = map[string]interface{}{}
 	}
@@ -288,16 +263,13 @@ func (uc *enterpriseUsecase) UpdateSettings(ctx context.Context, id uuid.UUID, p
 	}
 	e.UpdatedAt = time.Now()
 	e.UpdatedBy = adminID
-	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		if err := uc.enterpriseRepo.WithTx(tx).Update(ctx, e); err != nil {
 			return err
 		}
 		uc.emit(ctx, tx, id, adminID, string(domain.RoleEnterpriseAdmin), domain.EventSettingsUpdated, nil)
 		return nil
-	}); err != nil {
-		return err
-	}
-	return nil
+	})
 }
 
 // ─── Lifecycle & Governance ──────────────────────────────────────────────────
@@ -315,16 +287,13 @@ func (uc *enterpriseUsecase) ReactivateEnterprise(ctx context.Context, id uuid.U
 	e.SuspendedAt = nil
 	e.UpdatedAt = now
 	e.UpdatedBy = adminID
-	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		if err := uc.enterpriseRepo.WithTx(tx).Update(ctx, e); err != nil {
 			return err
 		}
 		uc.emit(ctx, tx, id, adminID, string(domain.RoleSystemAdmin), domain.EventEnterpriseReactivated, nil)
 		return nil
-	}); err != nil {
-		return err
-	}
-	return nil
+	})
 }
 
 func (uc *enterpriseUsecase) RestoreEnterprise(ctx context.Context, id uuid.UUID, adminID uuid.UUID) error {
@@ -344,16 +313,13 @@ func (uc *enterpriseUsecase) RestoreEnterprise(ctx context.Context, id uuid.UUID
 	e.RetentionUntil = nil
 	e.UpdatedAt = now
 	e.UpdatedBy = adminID
-	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		if err := uc.enterpriseRepo.WithTx(tx).Update(ctx, e); err != nil {
 			return err
 		}
 		uc.emit(ctx, tx, id, adminID, string(domain.RoleSystemAdmin), domain.EventEnterpriseRestored, nil)
 		return nil
-	}); err != nil {
-		return err
-	}
-	return nil
+	})
 }
 
 func (uc *enterpriseUsecase) HardDeleteEnterprise(ctx context.Context, id uuid.UUID, adminID uuid.UUID) error {
@@ -364,39 +330,44 @@ func (uc *enterpriseUsecase) HardDeleteEnterprise(ctx context.Context, id uuid.U
 	if e.Status != domain.StatusDeleted {
 		return domain.ErrInvalidStatus
 	}
-	// Only allow if retention period has expired
 	if e.RetentionUntil != nil && time.Now().Before(*e.RetentionUntil) {
 		return domain.ErrRetentionActive
 	}
-	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		uc.emit(ctx, tx, id, adminID, string(domain.RoleSystemAdmin), domain.EventEnterpriseHardDeleted, nil)
-		if err := uc.enterpriseRepo.WithTx(tx).HardDelete(ctx, id); err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
-		return err
-	}
-	return nil
+		return uc.enterpriseRepo.WithTx(tx).HardDelete(ctx, id)
+	})
 }
 
 // ─── Status, Domain, Audit ───────────────────────────────────────────────────
 
+// GetEnterpriseStatus fetches the enterprise's lifecycle status and enriches
+// it with live subscription data from the payment-service.
 func (uc *enterpriseUsecase) GetEnterpriseStatus(ctx context.Context, id uuid.UUID) (*domain.EnterpriseStatusResponse, error) {
 	e, err := uc.enterpriseRepo.FindByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	return &domain.EnterpriseStatusResponse{
-		EnterpriseID:       e.ID,
-		Status:             e.Status,
-		SubscriptionStatus: e.SubscriptionStatus,
-		ApprovedAt:         e.ApprovedAt,
-		SuspendedAt:        e.SuspendedAt,
-		DeletedAt:          e.DeletedAt,
-		RetentionUntil:     e.RetentionUntil,
-		CurrentPeriodEnd:   e.CurrentPeriodEnd,
-	}, nil
+
+	resp := &domain.EnterpriseStatusResponse{
+		EnterpriseID:   e.ID,
+		Status:         e.Status,
+		ApprovedAt:     e.ApprovedAt,
+		SuspendedAt:    e.SuspendedAt,
+		DeletedAt:      e.DeletedAt,
+		RetentionUntil: e.RetentionUntil,
+	}
+
+	// Enrich with live subscription data — non-fatal if payment-service is unavailable.
+	sub, err := uc.paymentClient.GetActiveSubscription(ctx, id)
+	if err != nil {
+		zap.L().Warn("GetEnterpriseStatus: failed to fetch subscription from payment-service",
+			zap.String("enterprise_id", id.String()), zap.Error(err))
+	} else {
+		resp.Subscription = sub
+	}
+
+	return resp, nil
 }
 
 func (uc *enterpriseUsecase) ValidateCustomDomain(ctx context.Context, id uuid.UUID, adminID uuid.UUID) (*domain.DomainValidationResult, error) {
@@ -408,11 +379,8 @@ func (uc *enterpriseUsecase) ValidateCustomDomain(ctx context.Context, id uuid.U
 		return nil, domain.ErrDomainValidation
 	}
 
-	result := &domain.DomainValidationResult{
-		Domain: *e.CustomDomain,
-	}
+	result := &domain.DomainValidationResult{Domain: *e.CustomDomain}
 
-	// Check TXT record
 	txtRecords, _ := net.LookupTXT(*e.CustomDomain)
 	expected := fmt.Sprintf("veritas-verify=%s", e.ID.String())
 	for _, txt := range txtRecords {
@@ -422,7 +390,6 @@ func (uc *enterpriseUsecase) ValidateCustomDomain(ctx context.Context, id uuid.U
 		}
 	}
 
-	// Check CNAME
 	cname, _ := net.LookupCNAME(*e.CustomDomain)
 	if strings.Contains(cname, "veritas") {
 		result.CNAMEFound = true
@@ -443,6 +410,8 @@ func (uc *enterpriseUsecase) ValidateCustomDomain(ctx context.Context, id uuid.U
 	return result, nil
 }
 
+// GetEnterpriseSummary returns an overview of the enterprise enriched with
+// live subscription data from the payment-service.
 func (uc *enterpriseUsecase) GetEnterpriseSummary(ctx context.Context, id uuid.UUID) (*domain.EnterpriseSummary, error) {
 	e, err := uc.enterpriseRepo.FindByID(ctx, id)
 	if err != nil {
@@ -452,22 +421,52 @@ func (uc *enterpriseUsecase) GetEnterpriseSummary(ctx context.Context, id uuid.U
 	if err != nil {
 		return nil, err
 	}
-	return &domain.EnterpriseSummary{
+
+	summary := &domain.EnterpriseSummary{
 		EnterpriseID:       e.ID,
 		DisplayName:        e.DisplayName,
 		Status:             e.Status,
-		SubscriptionStatus: e.SubscriptionStatus,
-		SubscriptionExpiry: e.CurrentPeriodEnd,
 		UserCount:          userCount,
-		ActiveExamCount:    -1, // requires exam-service client
-		ActiveSessionCount: -1, // requires candidate-service client
-	}, nil
+		ActiveExamCount:    -1, 
+		ActiveSessionCount: -1,
+	}
+
+	sub, err := uc.paymentClient.GetActiveSubscription(ctx, id)
+	if err != nil {
+		zap.L().Warn("GetEnterpriseSummary: failed to fetch subscription from payment-service",
+			zap.String("enterprise_id", id.String()), zap.Error(err))
+	} else {
+		summary.Subscription = sub
+	}
+
+	return summary, nil
 }
 
 func (uc *enterpriseUsecase) GetAuditLogs(ctx context.Context, id uuid.UUID, params pagination.Params) ([]*domain.AuditLog, int, error) {
-	// Confirm enterprise exists first
 	if _, err := uc.enterpriseRepo.FindByID(ctx, id); err != nil {
 		return nil, 0, err
 	}
 	return uc.auditRepo.ListByEnterprise(ctx, id, params)
+}
+
+func (uc *enterpriseUsecase) SuspendForPayment(ctx context.Context, enterpriseID uuid.UUID) error {
+	e, err := uc.enterpriseRepo.FindByID(ctx, enterpriseID)
+	if err != nil {
+		return err
+	}
+	if e.Status == domain.StatusSuspended {
+		return nil
+	}
+	now := time.Now()
+	e.Status = domain.StatusSuspended
+	e.SuspendedAt = &now
+	e.UpdatedAt = now
+	e.UpdatedBy = uuid.Nil
+	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		if err := uc.enterpriseRepo.WithTx(tx).Update(ctx, e); err != nil {
+			return err
+		}
+		uc.emit(ctx, tx, enterpriseID, uuid.Nil, "system", domain.EventSubscriptionSuspended, nil)
+		return nil
+	})
 }
