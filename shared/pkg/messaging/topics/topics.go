@@ -11,3 +11,8 @@ const (
 const (
 	EnterpriseCreated = "enterprise.enterprise.created"
 )
+
+// Payment-Service topics
+const (
+	SubscriptionPaymentFailed = "subscription.payment.failed"
+)
