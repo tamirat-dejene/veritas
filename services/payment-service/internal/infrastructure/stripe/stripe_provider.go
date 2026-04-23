@@ -5,8 +5,9 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/stripe/stripe-go/v74"
+	stripego "github.com/stripe/stripe-go/v74"
 	"github.com/stripe/stripe-go/v74/checkout/session"
+	stripesubscription "github.com/stripe/stripe-go/v74/subscription"
 	"github.com/stripe/stripe-go/v74/webhook"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
 )
@@ -17,7 +18,7 @@ type stripeProvider struct {
 }
 
 func NewStripeProvider(secretKey, webhookSecret string) domain.PaymentProvider {
-	stripe.Key = secretKey
+	stripego.Key = secretKey
 	return &stripeProvider{
 		secretKey:     secretKey,
 		webhookSecret: webhookSecret,
@@ -25,17 +26,17 @@ func NewStripeProvider(secretKey, webhookSecret string) domain.PaymentProvider {
 }
 
 func (p *stripeProvider) CreateCheckoutSession(ctx context.Context, enterpriseID uuid.UUID, plan *domain.SubscriptionPlan) (string, error) {
-	params := &stripe.CheckoutSessionParams{
-		SuccessURL: stripe.String("https://veritas.com/payment/success?session_id={CHECKOUT_SESSION_ID}"),
-		CancelURL:  stripe.String("https://veritas.com/payment/cancel"),
-		Mode:       stripe.String(string(stripe.CheckoutSessionModeSubscription)),
-		LineItems: []*stripe.CheckoutSessionLineItemParams{
+	params := &stripego.CheckoutSessionParams{
+		SuccessURL: stripego.String("https://veritas.com/payment/success?session_id={CHECKOUT_SESSION_ID}"),
+		CancelURL:  stripego.String("https://veritas.com/payment/cancel"),
+		Mode:       stripego.String(string(stripego.CheckoutSessionModeSubscription)),
+		LineItems: []*stripego.CheckoutSessionLineItemParams{
 			{
-				Price:    stripe.String(plan.StripePriceID),
-				Quantity: stripe.Int64(1),
+				Price:    stripego.String(plan.StripePriceID),
+				Quantity: stripego.Int64(1),
 			},
 		},
-		Params: stripe.Params{
+		Params: stripego.Params{
 			Metadata: map[string]string{
 				"enterprise_id": enterpriseID.String(),
 				"plan_id":       plan.ID.String(),
@@ -56,5 +57,37 @@ func (p *stripeProvider) ConstructEvent(payload []byte, sigHeader string) (any, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to construct stripe event: %w", err)
 	}
-	return event, nil
+	return &event, nil
+}
+
+// CancelStripeSubscription cancels a Stripe subscription.
+// When cancelAtPeriodEnd is true, the subscription stays active until billing period ends.
+func (p *stripeProvider) CancelStripeSubscription(_ context.Context, stripeSubscriptionID string, cancelAtPeriodEnd bool) error {
+	if cancelAtPeriodEnd {
+		params := &stripego.SubscriptionParams{
+			CancelAtPeriodEnd: stripego.Bool(true),
+		}
+		_, err := stripesubscription.Update(stripeSubscriptionID, params)
+		if err != nil {
+			return fmt.Errorf("stripe: schedule cancel at period end: %w", err)
+		}
+		return nil
+	}
+	_, err := stripesubscription.Cancel(stripeSubscriptionID, nil)
+	if err != nil {
+		return fmt.Errorf("stripe: cancel subscription: %w", err)
+	}
+	return nil
+}
+
+// ReactivateStripeSubscription removes a pending period-end cancellation.
+func (p *stripeProvider) ReactivateStripeSubscription(_ context.Context, stripeSubscriptionID string) error {
+	params := &stripego.SubscriptionParams{
+		CancelAtPeriodEnd: stripego.Bool(false),
+	}
+	_, err := stripesubscription.Update(stripeSubscriptionID, params)
+	if err != nil {
+		return fmt.Errorf("stripe: reactivate subscription: %w", err)
+	}
+	return nil
 }

@@ -10,27 +10,40 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stripe/stripe-go/v74"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
+	"go.uber.org/zap"
 )
 
 type paymentUsecase struct {
-	pool        *pgxpool.Pool
-	subRepo     domain.SubscriptionRepository
-	billingRepo domain.BillingRepository
-	payProvider domain.PaymentProvider
+	pool           *pgxpool.Pool
+	subRepo        domain.SubscriptionRepository
+	billingRepo    domain.BillingRepository
+	payProvider    domain.PaymentProvider
+	eventPublisher domain.PaymentEventPublisher
 }
 
-func NewPaymentUsecase(pool *pgxpool.Pool, subRepo domain.SubscriptionRepository, billingRepo domain.BillingRepository, payProvider domain.PaymentProvider) domain.PaymentUsecase {
+func NewPaymentUsecase(
+	pool *pgxpool.Pool,
+	subRepo domain.SubscriptionRepository,
+	billingRepo domain.BillingRepository,
+	payProvider domain.PaymentProvider,
+	eventPublisher domain.PaymentEventPublisher,
+) domain.PaymentUsecase {
 	return &paymentUsecase{
-		pool:        pool,
-		subRepo:     subRepo,
-		billingRepo: billingRepo,
-		payProvider: payProvider,
+		pool:           pool,
+		subRepo:        subRepo,
+		billingRepo:    billingRepo,
+		payProvider:    payProvider,
+		eventPublisher: eventPublisher,
 	}
 }
+
+// ─── Plans ────────────────────────────────────────────────────────────────────
 
 func (u *paymentUsecase) ListPlans(ctx context.Context) ([]*domain.SubscriptionPlan, error) {
 	return u.subRepo.ListPlans(ctx)
 }
+
+// ─── Subscriptions ────────────────────────────────────────────────────────────
 
 func (u *paymentUsecase) GetActiveSubscription(ctx context.Context, enterpriseID uuid.UUID) (*domain.EnterpriseSubscription, error) {
 	return u.subRepo.GetSubscriptionByEnterpriseID(ctx, enterpriseID)
@@ -41,15 +54,112 @@ func (u *paymentUsecase) UpgradeSubscription(ctx context.Context, enterpriseID u
 	if err != nil {
 		return "", err
 	}
+	return u.payProvider.CreateCheckoutSession(ctx, enterpriseID, plan)
+}
 
-	// In a Stripe-based flow, we create a checkout session
-	checkoutURL, err := u.payProvider.CreateCheckoutSession(ctx, enterpriseID, plan)
+// CancelSubscription cancels an enterprise's Stripe subscription.
+// When cancelAtPeriodEnd is true, the subscription remains active until the
+// billing period ends. When false, it is canceled immediately.
+func (u *paymentUsecase) CancelSubscription(ctx context.Context, enterpriseID uuid.UUID, cancelAtPeriodEnd bool) error {
+	sub, err := u.subRepo.GetSubscriptionByEnterpriseID(ctx, enterpriseID)
 	if err != nil {
-		return "", err
+		return err
+	}
+	if sub.Status == domain.SubStatusCanceled {
+		return domain.ErrSubscriptionAlreadyCanceled
+	}
+	if sub.StripeSubscriptionID == nil {
+		return fmt.Errorf("subscription has no associated Stripe subscription ID")
 	}
 
-	return checkoutURL, nil
+	// Cancel via Stripe
+	if err := u.payProvider.CancelStripeSubscription(ctx, *sub.StripeSubscriptionID, cancelAtPeriodEnd); err != nil {
+		return fmt.Errorf("cancel stripe subscription: %w", err)
+	}
+
+	// Update local record
+	now := time.Now()
+	sub.CancelAtPeriodEnd = cancelAtPeriodEnd
+	if !cancelAtPeriodEnd {
+		sub.Status = domain.SubStatusCanceled
+		sub.CanceledAt = &now
+		sub.EndedAt = &now
+	}
+	sub.UpdatedAt = now
+	return u.subRepo.UpdateSubscription(ctx, sub)
 }
+
+// ReactivateSubscription un-schedules a pending cancellation on a subscription.
+func (u *paymentUsecase) ReactivateSubscription(ctx context.Context, enterpriseID uuid.UUID) error {
+	sub, err := u.subRepo.GetSubscriptionByEnterpriseID(ctx, enterpriseID)
+	if err != nil {
+		return err
+	}
+	if sub.Status == domain.SubStatusCanceled {
+		return domain.ErrSubscriptionAlreadyCanceled
+	}
+	if !sub.CancelAtPeriodEnd {
+		return fmt.Errorf("subscription is not scheduled for cancellation")
+	}
+	if sub.StripeSubscriptionID == nil {
+		return fmt.Errorf("subscription has no associated Stripe subscription ID")
+	}
+
+	if err := u.payProvider.ReactivateStripeSubscription(ctx, *sub.StripeSubscriptionID); err != nil {
+		return fmt.Errorf("reactivate stripe subscription: %w", err)
+	}
+
+	sub.CancelAtPeriodEnd = false
+	sub.UpdatedAt = time.Now()
+	return u.subRepo.UpdateSubscription(ctx, sub)
+}
+
+// AdminSetSubscription lets a system admin manually override subscription state
+// (e.g. for trials, manual plans). No Stripe call is made.
+func (u *paymentUsecase) AdminSetSubscription(ctx context.Context, enterpriseID uuid.UUID, req domain.AdminSetSubscriptionRequest) error {
+	now := time.Now()
+
+	periodStart := now
+	if req.PeriodStart != nil {
+		periodStart = *req.PeriodStart
+	}
+	periodEnd := u.calculatePeriodEnd(periodStart, domain.BillingCycleMonthly)
+	if req.PeriodEnd != nil {
+		periodEnd = *req.PeriodEnd
+	}
+
+	return RunInTx(ctx, u.pool, func(tx pgx.Tx) error {
+		existing, err := u.subRepo.WithTx(tx).GetSubscriptionByEnterpriseID(ctx, enterpriseID)
+		if err != nil && err != domain.ErrSubscriptionNotFound {
+			return err
+		}
+
+		if err == domain.ErrSubscriptionNotFound || existing == nil {
+			// Create new subscription record
+			newSub := &domain.EnterpriseSubscription{
+				ID:                 uuid.New(),
+				EnterpriseID:       enterpriseID,
+				PlanID:             req.PlanID,
+				Status:             req.Status,
+				CurrentPeriodStart: periodStart,
+				CurrentPeriodEnd:   periodEnd,
+				CreatedAt:          now,
+				UpdatedAt:          now,
+			}
+			return u.subRepo.WithTx(tx).CreateSubscription(ctx, newSub)
+		}
+
+		// Update existing
+		existing.PlanID = req.PlanID
+		existing.Status = req.Status
+		existing.CurrentPeriodStart = periodStart
+		existing.CurrentPeriodEnd = periodEnd
+		existing.UpdatedAt = now
+		return u.subRepo.WithTx(tx).UpdateSubscription(ctx, existing)
+	})
+}
+
+// ─── Webhook ──────────────────────────────────────────────────────────────────
 
 func (u *paymentUsecase) HandleWebhook(ctx context.Context, payload []byte, sigHeader string) error {
 	eventAny, err := u.payProvider.ConstructEvent(payload, sigHeader)
@@ -64,13 +174,10 @@ func (u *paymentUsecase) HandleWebhook(ctx context.Context, payload []byte, sigH
 
 	switch event.Type {
 	case "checkout.session.completed":
-		// Handle initial subscription completion
 		return u.handleCheckoutSessionCompleted(ctx, event)
 	case "invoice.paid":
-		// Handle recurring payment success
 		return u.handleInvoicePaid(ctx, event)
 	case "invoice.payment_failed":
-		// Handle payment failure
 		return u.handleInvoicePaymentFailed(ctx, event)
 	}
 
@@ -78,7 +185,6 @@ func (u *paymentUsecase) HandleWebhook(ctx context.Context, payload []byte, sigH
 }
 
 func (u *paymentUsecase) handleCheckoutSessionCompleted(ctx context.Context, event *stripe.Event) error {
-	// Logic to extract metadata and update subscription status
 	metadata := event.Data.Object["metadata"].(map[string]any)
 	enterpriseIDStr := metadata["enterprise_id"].(string)
 	planIDStr := metadata["plan_id"].(string)
@@ -116,10 +222,16 @@ func (u *paymentUsecase) handleCheckoutSessionCompleted(ctx context.Context, eve
 }
 
 func (u *paymentUsecase) handleInvoicePaid(ctx context.Context, event *stripe.Event) error {
-	// Extract invoice data and record payment
 	invoiceObj := event.Data.Object
 	invoiceNumber := invoiceObj["number"].(string)
-	amountPaid := float64(invoiceObj["amount_paid"].(int64)) / 100
+	amountPaidRaw := invoiceObj["amount_paid"]
+	var amountPaid float64
+	switch v := amountPaidRaw.(type) {
+	case float64:
+		amountPaid = v / 100
+	case int64:
+		amountPaid = float64(v) / 100
+	}
 	currency := domain.Currency(invoiceObj["currency"].(string))
 
 	return RunInTx(ctx, u.pool, func(tx pgx.Tx) error {
@@ -152,10 +264,59 @@ func (u *paymentUsecase) handleInvoicePaid(ctx context.Context, event *stripe.Ev
 	})
 }
 
+// handleInvoicePaymentFailed is called when Stripe fires invoice.payment_failed.
+// It marks the invoice as Uncollectible, updates the subscription to PastDue,
+// and publishes a Kafka event so enterprise-service can suspend the enterprise.
 func (u *paymentUsecase) handleInvoicePaymentFailed(ctx context.Context, event *stripe.Event) error {
-	// Logic to mark invoice as failed and notify user
+	invoiceObj := event.Data.Object
+	invoiceNumber, _ := invoiceObj["number"].(string)
+
+	// Extract the enterprise_id from subscription metadata if possible
+	// Fall back to looking up by invoice number
+	var enterpriseID uuid.UUID
+
+	if err := RunInTx(ctx, u.pool, func(tx pgx.Tx) error {
+		if invoiceNumber == "" {
+			return nil
+		}
+		inv, err := u.billingRepo.WithTx(tx).GetInvoiceByNumber(ctx, invoiceNumber)
+		if err != nil {
+			return err
+		}
+		enterpriseID = inv.EnterpriseID
+
+		// Mark invoice as Uncollectible
+		inv.Status = domain.InvoiceStatusUncollectible
+		if err := u.billingRepo.WithTx(tx).UpdateInvoice(ctx, inv); err != nil {
+			return err
+		}
+
+		// Mark subscription as PastDue
+		sub, err := u.subRepo.WithTx(tx).GetSubscriptionByEnterpriseID(ctx, inv.EnterpriseID)
+		if err != nil {
+			return err
+		}
+		sub.Status = domain.SubStatusPastDue
+		sub.UpdatedAt = time.Now()
+		return u.subRepo.WithTx(tx).UpdateSubscription(ctx, sub)
+	}); err != nil {
+		return err
+	}
+
+	// Publish Kafka event — non-fatal: log and continue if Kafka is unavailable.
+	if enterpriseID != uuid.Nil {
+		if err := u.eventPublisher.PublishPaymentFailed(ctx, enterpriseID); err != nil {
+			zap.L().Error("handleInvoicePaymentFailed: failed to publish kafka event",
+				zap.String("enterprise_id", enterpriseID.String()),
+				zap.Error(err),
+			)
+		}
+	}
+
 	return nil
 }
+
+// ─── Invoices & Payments ──────────────────────────────────────────────────────
 
 func (u *paymentUsecase) GetInvoice(ctx context.Context, invoiceID uuid.UUID) (*domain.Invoice, error) {
 	return u.billingRepo.GetInvoiceByID(ctx, invoiceID)
