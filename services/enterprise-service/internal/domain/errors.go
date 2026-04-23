@@ -14,7 +14,6 @@ var (
 	ErrInternal             = errors.New("internal server error")
 	ErrInvalidStatus        = errors.New("invalid status transition")
 	ErrAlreadyActive        = errors.New("enterprise is already active")
-	ErrSubscriptionRequired = errors.New("no active subscription found")
 	ErrDomainValidation     = errors.New("domain validation failed")
 	ErrRetentionActive      = errors.New("retention period has not yet expired")
 	ErrInvalidRole          = errors.New("role not allowed for enterprise users")

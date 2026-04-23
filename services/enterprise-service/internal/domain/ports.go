@@ -17,7 +17,6 @@ type UserRepository interface {
 	FindByEmail(ctx context.Context, email string) (*User, error)
 	Update(ctx context.Context, user *User) error
 	Delete(ctx context.Context, id uuid.UUID) error
-	// Extended
 	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*User, int, error)
 	FindByEnterpriseAndID(ctx context.Context, enterpriseID, userID uuid.UUID) (*User, error)
 	CountByEnterprise(ctx context.Context, enterpriseID uuid.UUID) (int, error)
@@ -33,7 +32,6 @@ type EnterpriseRepository interface {
 	Update(ctx context.Context, enterprise *Enterprise) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	List(ctx context.Context, filter map[string]interface{}) ([]*Enterprise, error)
-	// Extended
 	ListPaginated(ctx context.Context, filter EnterpriseFilter) ([]*Enterprise, int, error)
 	HardDelete(ctx context.Context, id uuid.UUID) error
 	WithTx(tx pgx.Tx) EnterpriseRepository
@@ -48,7 +46,7 @@ type AuditRepository interface {
 // ─── Usecase Interfaces ──────────────────────────────────────────────────────
 
 type EnterpriseUsecase interface {
-	// Existing
+	// Registration & core CRUD
 	RegisterEnterprise(ctx context.Context, enterprise *Enterprise, owner *User) (*Enterprise, error)
 	ApproveEnterprise(ctx context.Context, id uuid.UUID, adminID uuid.UUID) error
 	SuspendEnterprise(ctx context.Context, id uuid.UUID, adminID uuid.UUID) error
@@ -65,17 +63,11 @@ type EnterpriseUsecase interface {
 	UpdateBranding(ctx context.Context, id uuid.UUID, req UpdateBrandingRequest, adminID uuid.UUID) error
 	UpdateSettings(ctx context.Context, id uuid.UUID, patch map[string]interface{}, adminID uuid.UUID) error
 
-	// Subscription
-	UpdateSubscription(ctx context.Context, id uuid.UUID, req UpdateSubscriptionRequest, adminID uuid.UUID) error
-	CancelSubscription(ctx context.Context, id uuid.UUID, adminID uuid.UUID) error
-	RenewSubscription(ctx context.Context, id uuid.UUID, adminID uuid.UUID) error
-	GetSubscriptionInfo(ctx context.Context, id uuid.UUID) (*Enterprise, error)
-	SuspendForPayment(ctx context.Context, id uuid.UUID, actorID uuid.UUID) error
-
 	// Lifecycle & Governance
 	ReactivateEnterprise(ctx context.Context, id uuid.UUID, adminID uuid.UUID) error
 	RestoreEnterprise(ctx context.Context, id uuid.UUID, adminID uuid.UUID) error
 	HardDeleteEnterprise(ctx context.Context, id uuid.UUID, adminID uuid.UUID) error
+	SuspendForPayment(ctx context.Context, enterpriseID uuid.UUID) error
 
 	// Status, Domain, Audit
 	GetEnterpriseStatus(ctx context.Context, id uuid.UUID) (*EnterpriseStatusResponse, error)
@@ -100,4 +92,9 @@ type UserUsecase interface {
 
 type EventPublisher interface {
 	PublishEnterpriseCreated(ctx context.Context, enterpriseID uuid.UUID, legalName string, ownerEmail string) error
+}
+
+type PaymentClient interface {
+	// Used to fetch live subscription state for status/summary endpoints.
+	GetActiveSubscription(ctx context.Context, enterpriseID uuid.UUID) (*SubscriptionSnapshot, error)
 }
