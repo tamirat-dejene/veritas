@@ -51,13 +51,6 @@ func (g *RouterGroup) RegisterEnterpriseRoutes(proxy http.Handler) {
 	g.register("GET", "/enterprises/:enterpriseId/summary", proxy, sysOrEntAdmin...)
 	g.register("GET", "/enterprises/:enterpriseId/audit-logs", proxy, sysOrEntAdmin...)
 
-	// Subscription management
-	g.register("POST", "/enterprises/:enterpriseId/subscription", proxy, sysAdmin...)
-	g.register("POST", "/enterprises/:enterpriseId/subscription/cancel", proxy, sysAdmin...)
-	g.register("POST", "/enterprises/:enterpriseId/subscription/renew", proxy, sysAdmin...)
-	g.register("GET", "/enterprises/:enterpriseId/subscription", proxy, sysOrEntAdmin...)
-	g.register("POST", "/enterprises/:enterpriseId/suspend-payment", proxy, sysAdmin...)
-
 	// Enterprise user management
 	g.register("POST", "/enterprises/:enterpriseId/users", proxy, entAdmin...)
 	g.register("GET", "/enterprises/:enterpriseId/users", proxy, entAdmin...)
@@ -70,11 +63,28 @@ func (g *RouterGroup) RegisterEnterpriseRoutes(proxy http.Handler) {
 
 // RegisterPaymentRoutes attaches Payment Service proxy routes
 func (g *RouterGroup) RegisterPaymentRoutes(proxy http.Handler) {
+	sysAdmin := g.authWithRoles(domain.RoleSystemAdmin)
+	entAdmin := g.authWithRoles(domain.RoleEnterpriseAdmin)
+	sysOrEntAdmin := g.authWithRoles(domain.RoleSystemAdmin, domain.RoleEnterpriseAdmin)
+
+	// Plans (public)
 	g.register("GET", "/subscriptions/plans", proxy)
-	g.register("POST", "/subscriptions/:enterpriseId/upgrade", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
-	g.register("GET", "/payments/history", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
-	g.register("GET", "/invoices/:invoiceId", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
-	g.register("POST", "/webhooks/stripe", proxy) // Public webhook
+
+	// Subscription management (moved from enterprise-service)
+	g.register("GET", "/subscriptions/:enterpriseId", proxy, sysOrEntAdmin...)
+	g.register("POST", "/subscriptions/:enterpriseId/upgrade", proxy, entAdmin...)
+	g.register("POST", "/subscriptions/:enterpriseId/cancel", proxy, entAdmin...)
+	g.register("POST", "/subscriptions/:enterpriseId/reactivate", proxy, entAdmin...)
+
+	// Admin subscription override
+	g.register("POST", "/admin/subscriptions/:enterpriseId", proxy, sysAdmin...)
+
+	// Billing & invoices
+	g.register("GET", "/payments/history", proxy, entAdmin...)
+	g.register("GET", "/invoices/:invoiceId", proxy, entAdmin...)
+
+	// Stripe webhook (public)
+	g.register("POST", "/webhooks/stripe", proxy)
 }
 
 // RegisterExamRoutes attaches Exam Service proxy routes
@@ -154,7 +164,6 @@ func (g *RouterGroup) RegisterCandidateRoutes(proxy http.Handler) {
 	// Submissions
 	g.register("GET", "/submissions/:submissionId", proxy, adminRole...)
 }
-
 
 // RegisterProctoringRoutes attaches Proctoring Service proxy routes
 func (g *RouterGroup) RegisterProctoringRoutes(proxy http.Handler) {
