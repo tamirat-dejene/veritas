@@ -1,0 +1,65 @@
+[
+  {
+    "date": "2026-04-23",
+    "changes": [
+      {
+        "type": "breaking",
+        "service": "enterprise",
+        "summary": "Subscription management endpoints removed",
+        "description": "All subscription management endpoints have been removed from the enterprise-service. The enterprise-service no longer owns subscription state. Migrate all calls to the equivalent endpoints on the payment-service.",
+        "migration": [
+          { "before": "GET  /enterprises/:enterpriseId/subscription",       "after": "GET  /subscriptions/:enterpriseId" },
+          { "before": "POST /enterprises/:enterpriseId/subscription",       "after": "POST /subscriptions/:enterpriseId/upgrade" },
+          { "before": "POST /enterprises/:enterpriseId/subscription/renew", "after": "POST /subscriptions/:enterpriseId/reactivate" },
+          { "before": "POST /enterprises/:enterpriseId/subscription/cancel","after": "POST /subscriptions/:enterpriseId/cancel" },
+          { "before": "POST /enterprises/:enterpriseId/suspend-payment",    "after": "Automated via Kafka event — no client call needed" }
+        ]
+      },
+      {
+        "type": "new",
+        "service": "payment",
+        "summary": "Subscription management endpoints added",
+        "description": "The payment-service is now the single source of truth for all subscription state and Stripe interactions. Four self-service and one admin endpoint are available.",
+        "endpoints": [
+          "GET  /subscriptions/:enterpriseId",
+          "POST /subscriptions/:enterpriseId/upgrade",
+          "POST /subscriptions/:enterpriseId/cancel",
+          "POST /subscriptions/:enterpriseId/reactivate"
+        ]
+      },
+      {
+        "type": "new",
+        "service": "payment",
+        "summary": "Admin subscription override endpoint added",
+        "description": "System administrators can now manually set subscription state (plan, status, dates) without triggering a Stripe operation. Useful for trials and manual adjustments.",
+        "endpoints": [
+          "POST /admin/subscriptions/:enterpriseId"
+        ]
+      },
+      {
+        "type": "changed",
+        "service": "enterprise",
+        "summary": "Enterprise base model no longer contains subscription fields",
+        "description": "The core Enterprise object returned by GET /enterprises, GET /enterprises/:enterpriseId, and related list endpoints no longer includes subscription-related fields (subscriptionPlanId, subscriptionStatus, currentPeriodStart, currentPeriodEnd). These fields have been removed from the database and are now exclusively owned by the payment-service. If you need subscription state alongside enterprise data, use GET /enterprises/:enterpriseId/status or /summary which include a subscription_snapshot field."
+      },
+      {
+        "type": "changed",
+        "service": "enterprise",
+        "summary": "EnterpriseStatusResponse shape extended with subscription_snapshot",
+        "description": "The response body of GET /enterprises/:enterpriseId/status now includes an optional subscription_snapshot object. This field is populated in real-time from the payment-service. It will be null if the enterprise has no active subscription or if the payment-service is temporarily unreachable.",
+        "endpoints": [
+          "GET /enterprises/:enterpriseId/status"
+        ]
+      },
+      {
+        "type": "changed",
+        "service": "enterprise",
+        "summary": "EnterpriseSummary response shape extended with subscription_snapshot",
+        "description": "The response body of GET /enterprises/:enterpriseId/summary now includes an optional subscription_snapshot object with the same structure as in the status endpoint.",
+        "endpoints": [
+          "GET /enterprises/:enterpriseId/summary"
+        ]
+      }
+    ]
+  }
+]
