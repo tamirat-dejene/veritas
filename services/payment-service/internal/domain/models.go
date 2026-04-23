@@ -114,3 +114,12 @@ type Payment struct {
 	ProviderErrorMessage *string       `db:"provider_error_message" json:"provider_error_message,omitempty"`
 	CreatedAt            time.Time     `db:"created_at" json:"created_at"`
 }
+
+// AdminSetSubscriptionRequest is used by system admins to manually override
+// an enterprise's subscription state without going through Stripe.
+type AdminSetSubscriptionRequest struct {
+	PlanID      uuid.UUID          `json:"plan_id"`
+	Status      SubscriptionStatus `json:"status"`
+	PeriodStart *time.Time         `json:"period_start,omitempty"`
+	PeriodEnd   *time.Time         `json:"period_end,omitempty"`
+}
