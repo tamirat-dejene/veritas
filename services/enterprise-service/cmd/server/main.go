@@ -2,14 +2,12 @@
 //
 //	@title			Veritas Enterprise Service API
 //	@version		1.0
-//	@description	Enterprise onboarding, account management, subscription, and user administration service.
+//	@description	Enterprise onboarding, account management, and user administration service.
 //
 //	@contact.name	Veritas Platform Team
 //
 //	@tag.name		enterprise
 //	@tag.description	Enterprise profile and lifecycle management endpoints.
-//	@tag.name		subscription
-//	@tag.description	Subscription and billing lifecycle endpoints.
 //	@tag.name		user
 //	@tag.description	Enterprise user management endpoints.
 //	@tag.name		system
@@ -32,6 +30,7 @@ import (
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/config"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/handler"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/infrastructure/messaging"
+	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/infrastructure/client"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/usecase"
@@ -78,7 +77,7 @@ func main() {
 	enterpriseRepo := postgres.NewEnterpriseRepository(pool)
 	auditRepo := postgres.NewAuditRepository(pool)
 
-	// Messaging: Kafka
+	// 5. Messaging: Kafka producer (for enterprise events)
 	kafkaProducer, err := kafka.NewProducer(kafka.Config{
 		Brokers: cfg.KafkaBrokers,
 	})
@@ -88,19 +87,21 @@ func main() {
 	defer kafkaProducer.Close()
 	eventPublisher := messaging.NewKafkaPublisher(kafkaProducer)
 
-	// 5. Initialize Usecases
-	enterpriseUC := usecase.NewEnterpriseUsecase(pool, userRepo, enterpriseRepo, auditRepo, eventPublisher)
+	// 6. Payment-service HTTP client (for live subscription enrichment)
+	payClient := client.NewPaymentClient(cfg.PaymentServiceURL)
+
+	// 7. Initialize Usecases
+	enterpriseUC := usecase.NewEnterpriseUsecase(pool, userRepo, enterpriseRepo, auditRepo, eventPublisher, payClient)
 	userUC := usecase.NewUserUsecase(pool, userRepo, enterpriseRepo, auditRepo)
 
-	// 6. Initialize Handlers
+	// 8. Initialize Handlers
 	enterpriseHandler := handler.NewEnterpriseHandler(enterpriseUC)
-	subscriptionHandler := handler.NewSubscriptionHandler(enterpriseUC)
 	userHandler := handler.NewUserHandler(userUC)
 
-	// 7. Initialize Router
-	r := router.NewRouter(enterpriseHandler, subscriptionHandler, userHandler)
+	// 9. Initialize Router
+	r := router.NewRouter(enterpriseHandler, userHandler)
 
-	// 8. Start HTTP Server
+	// 10. Start HTTP Server
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,
 		Handler: r,
@@ -112,6 +113,30 @@ func main() {
 			log.Fatal("listen error", zap.Error(err))
 		}
 	}()
+
+	// 11. Start Kafka consumer for payment-service events
+	kafkaSubscriber, err := kafka.NewSubscriber(kafka.Config{
+		Brokers:       cfg.KafkaBrokers,
+		ConsumerGroup: "enterprise-service",
+	})
+	if err != nil {
+		log.Error("failed to initialize kafka subscriber — payment suspension events will not be processed", zap.Error(err))
+	} else {
+		defer kafkaSubscriber.Close()
+		subRouter := messaging.NewSubscriptionRouter(enterpriseUC, log)
+		consumerCtx, consumerCancel := context.WithCancel(context.Background())
+		defer consumerCancel()
+		go func() {
+			if err := kafkaSubscriber.Subscribe(
+				consumerCtx,
+				subRouter.Topics(),
+				subRouter.Handle,
+			); err != nil {
+				log.Error("kafka subscriber exited", zap.Error(err))
+			}
+		}()
+		log.Info("kafka subscriber started", zap.Strings("topics", subRouter.Topics()))
+	}
 
 	// Graceful Shutdown
 	quit := make(chan os.Signal, 1)

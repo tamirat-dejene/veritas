@@ -11,13 +11,8 @@ import (
 )
 
 // NewRouter creates and configures the Gin engine.
-// NOTE: Role-based access control is enforced by the API Gateway via JWT claims
-// before requests reach this service. This service does NOT re-validate tokens
-// or roles — it trusts the X-User-ID, X-User-Role, and X-Enterprise-ID headers
-// injected by the gateway proxy.
 func NewRouter(
 	eh *handler.EnterpriseHandler,
-	sh *handler.SubscriptionHandler,
 	uh *handler.UserHandler,
 ) *gin.Engine {
 	engine := gin.New()
@@ -60,13 +55,6 @@ func NewRouter(
 		enterprises.POST("/:enterpriseId/validate-domain", eh.ValidateDomain)
 		enterprises.GET("/:enterpriseId/summary", eh.GetSummary)
 		enterprises.GET("/:enterpriseId/audit-logs", eh.GetAuditLogs)
-
-		// ── Subscription Management ───────────────────────────────────────────
-		enterprises.POST("/:enterpriseId/subscription", sh.UpdateSubscription)
-		enterprises.POST("/:enterpriseId/subscription/cancel", sh.CancelSubscription)
-		enterprises.POST("/:enterpriseId/subscription/renew", sh.RenewSubscription)
-		enterprises.GET("/:enterpriseId/subscription", sh.GetSubscriptionInfo)
-		enterprises.POST("/:enterpriseId/suspend-payment", sh.SuspendForPayment)
 
 		// ── Enterprise User Management ────────────────────────────────────────
 		enterprises.POST("/:enterpriseId/users", uh.CreateUser)

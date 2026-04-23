@@ -1,18 +1,15 @@
 package handler
 
 import (
-	"time"
-
-	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/domain"
 )
 
-// ErrorResponse is the standard error payload for this service.
+// ErrorResponse represents a structured error response.
 type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
-// EnterpriseRegisterRequest is the request body for enterprise registration.
+// EnterpriseRegisterRequest represents the request body for enterprise registration.
 type EnterpriseRegisterRequest struct {
 	Slug          string `json:"slug" binding:"required"`
 	DisplayName   string `json:"displayName" binding:"required"`
@@ -22,7 +19,7 @@ type EnterpriseRegisterRequest struct {
 	OwnerPassword string `json:"ownerPassword" binding:"required,min=8"`
 }
 
-// EnterpriseListResponse models paginated enterprise list output.
+// EnterpriseListResponse represents a paginated list of enterprises.
 type EnterpriseListResponse struct {
 	Items []*domain.Enterprise `json:"items"`
 	Total int                  `json:"total"`
@@ -30,7 +27,7 @@ type EnterpriseListResponse struct {
 	Limit int                  `json:"limit"`
 }
 
-// UserListResponse models paginated enterprise user list output.
+// UserListResponse represents a paginated list of enterprise users.
 type UserListResponse struct {
 	Items []*domain.User `json:"items"`
 	Total int            `json:"total"`
@@ -38,7 +35,7 @@ type UserListResponse struct {
 	Limit int            `json:"limit"`
 }
 
-// AuditLogListResponse models paginated audit log list output.
+// AuditLogListResponse represents a paginated list of audit logs.
 type AuditLogListResponse struct {
 	Items []*domain.AuditLog `json:"items"`
 	Total int                `json:"total"`
@@ -46,16 +43,7 @@ type AuditLogListResponse struct {
 	Limit int                `json:"limit"`
 }
 
-// SubscriptionInfoResponse is returned by the subscription info endpoint.
-type SubscriptionInfoResponse struct {
-	EnterpriseID       uuid.UUID                  `json:"enterprise_id"`
-	SubscriptionPlanID *uuid.UUID                 `json:"subscription_plan_id"`
-	SubscriptionStatus *domain.SubscriptionStatus `json:"subscription_status"`
-	CurrentPeriodStart *time.Time                 `json:"current_period_start"`
-	CurrentPeriodEnd   *time.Time                 `json:"current_period_end"`
-}
-
-// ResetPasswordResponse carries a temporary password for user reset operations.
+// ResetPasswordResponse represents the response body containing a temporary password.
 type ResetPasswordResponse struct {
 	TemporaryPassword string `json:"temporary_password"`
 }

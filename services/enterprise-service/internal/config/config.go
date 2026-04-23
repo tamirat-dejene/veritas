@@ -7,14 +7,15 @@ import (
 )
 
 type Config struct {
-	Port         string
-	DBUser       string
-	DBPass       string
-	DBHost       string
-	DBPort       string
-	DBName       string
-	DSN          string
-	KafkaBrokers []string
+	Port             string
+	DBUser           string
+	DBPass           string
+	DBHost           string
+	DBPort           string
+	DBName           string
+	DSN              string
+	KafkaBrokers     []string
+	PaymentServiceURL string
 }
 
 func Load() *Config {
@@ -26,6 +27,7 @@ func Load() *Config {
 		DBPort:       getEnv("PG_VERITAS_PORT", "5432"),
 		DBName:       getEnv("PG_VERITAS_CORE_DB", "veritas_core"),
 		KafkaBrokers: getEnvList("KAFKA_BROKERS", ","),
+		PaymentServiceURL: getEnv("PAYMENT_SERVICE_URL", "http://payment-service:8080"),
 	}
 
 	cfg.DSN = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",

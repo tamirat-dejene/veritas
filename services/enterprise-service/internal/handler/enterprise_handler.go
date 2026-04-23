@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 	"go.uber.org/zap"
@@ -209,7 +208,6 @@ func (h *EnterpriseHandler) Delete(c *gin.Context) {
 //	@Tags			enterprise
 //	@Produce		json
 //	@Param			status				query	string	false	"Enterprise status"
-//	@Param			subscription_status	query	string	false	"Subscription status"
 //	@Param			search				query	string	false	"Search by slug or display name"
 //	@Param			page				query	int		false	"Page number"
 //	@Param			limit				query	int		false	"Page size"
@@ -223,10 +221,6 @@ func (h *EnterpriseHandler) List(c *gin.Context) {
 	if s := c.Query("status"); s != "" {
 		st := domain.EnterpriseStatus(s)
 		filter.Status = &st
-	}
-	if s := c.Query("subscription_status"); s != "" {
-		ss := domain.SubscriptionStatus(s)
-		filter.SubscriptionStatus = &ss
 	}
 	filter.Search = c.Query("search")
 	filter.Params = pagination.ParseGin(c)
@@ -611,10 +605,4 @@ func (h *EnterpriseHandler) handleEnterpriseError(c *gin.Context, err error) {
 		zap.L().Error("Unhandled enterprise error", zap.Error(err))
 		writeError(c, http.StatusInternalServerError, "internal server error")
 	}
-}
-
-// getRequestUserID kept for compat (replaced by GetCallerID).
-func getRequestUserID(c *gin.Context) uuid.UUID {
-	id, _ := GetCallerID(c)
-	return id
 }
