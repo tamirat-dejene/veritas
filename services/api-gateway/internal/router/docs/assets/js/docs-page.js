@@ -48,11 +48,15 @@ function registerEndpointItemComponent() {
             const method = (this.getAttribute('method') || 'GET').toUpperCase();
             const path = this.getAttribute('path') || '';
             const methodClass = method.toLowerCase();
+            const isDeprecated = this.hasAttribute('deprecated');
             const badgesMarkup = this.innerHTML.trim();
+            const deprecatedPill = isDeprecated
+                ? `<span style="font-family:inherit;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;padding:2px 7px;border-radius:4px;margin-left:8px;">Deprecated</span>`
+                : '';
             this.innerHTML = `
-        <div class="endpoint-item">
+        <div class="endpoint-item" style="${isDeprecated ? 'opacity:0.7;' : ''}">
           <span class="method ${escapeHtml(methodClass)}">${escapeHtml(method)}</span>
-          <span class="endpoint-path">${escapeHtml(path)}</span>
+          <span class="endpoint-path" style="${isDeprecated ? 'text-decoration:line-through;text-decoration-color:#d1d5db;' : ''}">${escapeHtml(path)}${deprecatedPill}</span>
           <div class="access-badges">
             ${badgesMarkup}
           </div>
@@ -70,6 +74,7 @@ function registerEndpointItemComponent() {
         }
     }
     customElements.define('endpoint-item', EndpointItem);
+
 }
 
 async function loadService(serviceName) {
