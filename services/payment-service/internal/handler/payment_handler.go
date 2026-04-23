@@ -170,3 +170,141 @@ func (h *PaymentHandler) GetInvoice(c *gin.Context) {
 
 	writeJSON(c, http.StatusOK, invoice)
 }
+
+// GetActiveSubscription returns the current subscription for an enterprise.
+//
+//	@Summary		Get active subscription
+//	@Description	Returns the current subscription state for an enterprise.
+//	@Tags			subscription
+//	@Produce		json
+//	@Param			enterpriseId	path		string	true	"Enterprise ID (UUID)"
+//	@Success		200				{object}	domain.EnterpriseSubscription
+//	@Failure		400				{object}	ErrorResponse
+//	@Failure		404				{object}	ErrorResponse
+//	@Failure		500				{object}	ErrorResponse
+//	@Router			/subscriptions/{enterpriseId} [get]
+func (h *PaymentHandler) GetActiveSubscription(c *gin.Context) {
+	enterpriseID, err := uuid.Parse(c.Param("enterpriseId"))
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid enterprise id")
+		return
+	}
+	sub, err := h.usecase.GetActiveSubscription(c.Request.Context(), enterpriseID)
+	if err != nil {
+		if err == domain.ErrSubscriptionNotFound {
+			writeError(c, http.StatusNotFound, "no subscription found")
+			return
+		}
+		writeError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(c, http.StatusOK, sub)
+}
+
+// CancelSubscription cancels an enterprise's subscription.
+//
+//	@Summary		Cancel subscription
+//	@Description	Cancels an enterprise subscription immediately or at period end.
+//	@Tags			subscription
+//	@Accept			json
+//	@Param			enterpriseId	path		string						true	"Enterprise ID (UUID)"
+//	@Param			body			body		CancelSubscriptionRequest	false	"Cancel options"
+//	@Success		204
+//	@Failure		400				{object}	ErrorResponse
+//	@Failure		404				{object}	ErrorResponse
+//	@Failure		409				{object}	ErrorResponse
+//	@Failure		500				{object}	ErrorResponse
+//	@Router			/subscriptions/{enterpriseId}/cancel [post]
+func (h *PaymentHandler) CancelSubscription(c *gin.Context) {
+	enterpriseID, err := uuid.Parse(c.Param("enterpriseId"))
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid enterprise id")
+		return
+	}
+	var req CancelSubscriptionRequest
+	// body is optional — default is immediate cancel
+	_ = c.ShouldBindJSON(&req)
+
+	if err := h.usecase.CancelSubscription(c.Request.Context(), enterpriseID, req.CancelAtPeriodEnd); err != nil {
+		switch err {
+		case domain.ErrSubscriptionNotFound:
+			writeError(c, http.StatusNotFound, "no subscription found")
+		case domain.ErrSubscriptionAlreadyCanceled:
+			writeError(c, http.StatusConflict, "subscription is already canceled")
+		default:
+			writeError(c, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// ReactivateSubscription un-schedules a pending subscription cancellation.
+//
+//	@Summary		Reactivate subscription
+//	@Description	Cancels a pending period-end cancellation, keeping the subscription active.
+//	@Tags			subscription
+//	@Param			enterpriseId	path	string	true	"Enterprise ID (UUID)"
+//	@Success		204
+//	@Failure		400				{object}	ErrorResponse
+//	@Failure		404				{object}	ErrorResponse
+//	@Failure		500				{object}	ErrorResponse
+//	@Router			/subscriptions/{enterpriseId}/reactivate [post]
+func (h *PaymentHandler) ReactivateSubscription(c *gin.Context) {
+	enterpriseID, err := uuid.Parse(c.Param("enterpriseId"))
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid enterprise id")
+		return
+	}
+	if err := h.usecase.ReactivateSubscription(c.Request.Context(), enterpriseID); err != nil {
+		switch err {
+		case domain.ErrSubscriptionNotFound:
+			writeError(c, http.StatusNotFound, "no subscription found")
+		default:
+			writeError(c, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// AdminSetSubscription lets a system admin manually set an enterprise's subscription.
+//
+//	@Summary		Admin set subscription
+//	@Description	Manually override an enterprise's subscription plan and status (no Stripe call).
+//	@Tags			subscription
+//	@Accept			json
+//	@Param			enterpriseId	path		string						true	"Enterprise ID (UUID)"
+//	@Param			body			body		AdminSetSubscriptionRequest	true	"Subscription override"
+//	@Success		204
+//	@Failure		400				{object}	ErrorResponse
+//	@Failure		500				{object}	ErrorResponse
+//	@Router			/admin/subscriptions/{enterpriseId} [post]
+func (h *PaymentHandler) AdminSetSubscription(c *gin.Context) {
+	enterpriseID, err := uuid.Parse(c.Param("enterpriseId"))
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid enterprise id")
+		return
+	}
+	var req AdminSetSubscriptionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	planID, err := uuid.Parse(req.PlanID)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid plan id")
+		return
+	}
+	domainReq := domain.AdminSetSubscriptionRequest{
+		PlanID:      planID,
+		Status:      domain.SubscriptionStatus(req.Status),
+		PeriodStart: req.PeriodStart,
+		PeriodEnd:   req.PeriodEnd,
+	}
+	if err := h.usecase.AdminSetSubscription(c.Request.Context(), enterpriseID, domainReq); err != nil {
+		writeError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.Status(http.StatusNoContent)
+}

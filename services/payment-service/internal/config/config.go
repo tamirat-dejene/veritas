@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 type Config struct {
@@ -15,6 +16,7 @@ type Config struct {
 	StripeSecretKey     string
 	StripeWebhookSecret string
 	DSN                 string
+	KafkaBrokers        []string
 }
 
 func Load() *Config {
@@ -31,6 +33,10 @@ func Load() *Config {
 
 	cfg.DSN = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		cfg.Pg_Veritas_User, cfg.Pg_Veritas_Password, cfg.Pg_Veritas_Host, cfg.Pg_Veritas_Port, cfg.Pg_Veritas_Core_DB)
+
+	if brokers := os.Getenv("KAFKA_BROKERS"); brokers != "" {
+		cfg.KafkaBrokers = strings.Split(brokers, ",")
+	}
 
 	return cfg
 }

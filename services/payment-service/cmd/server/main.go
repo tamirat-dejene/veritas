@@ -2,14 +2,14 @@
 //
 //	@title			Veritas Payment Service API
 //	@version		1.0
-//	@description	Subscription plans, upgrades, invoice retrieval, payment history, and Stripe webhook processing.
+//	@description	Subscription plans, upgrades, cancellations, invoice retrieval, payment history, and Stripe webhook processing.
 //
 //	@contact.name	Veritas Platform Team
 //
 //	@tag.name		payment
 //	@tag.description	Payment and billing operations.
 //	@tag.name		subscription
-//	@tag.description	Subscription plan and upgrade operations.
+//	@tag.description	Subscription plan and management operations.
 //	@tag.name		webhook
 //	@tag.description	External payment provider webhook endpoints.
 //	@tag.name		system
@@ -31,29 +31,31 @@ import (
 
 	_ "github.com/tamirat-dejene/veritas/services/payment-service/docs/swagger"
 	"github.com/jackc/pgx/v5/pgxpool"
-	_ "github.com/tamirat-dejene/veritas/services/payment-service/docs/swagger"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/config"
+	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/handler"
-	"github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/stripe"
+	"github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/messaging"
+	stripeprovider "github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/stripe"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/usecase"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
+	"github.com/tamirat-dejene/veritas/shared/pkg/messaging/kafka"
 	"go.uber.org/zap"
 )
 
 func main() {
-	// Initialize logger
+	// 1. Initialize logger
 	log, err := logger.NewLogger("payment-service")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
 		os.Exit(1)
 	}
 
-	// Load configuration
+	// 2. Load configuration
 	cfg := config.Load()
 
-	// Database connection (using pgxpool directly)
+	// 3. Database connection
 	pool, err := pgxpool.New(context.Background(), cfg.DSN)
 	if err != nil {
 		log.Fatal("failed to connect to database", zap.Error(err))
@@ -61,23 +63,35 @@ func main() {
 	defer pool.Close()
 	log.Info("connected to postgres (via pgxpool)")
 
-	// Wire dependencies
+	// 4. Wire repositories and Stripe provider
 	subRepo := postgres.NewSubscriptionRepository(pool)
 	billingRepo := postgres.NewBillingRepository(pool)
-	payProvider := stripe.NewStripeProvider(cfg.StripeSecretKey, cfg.StripeWebhookSecret)
+	payProvider := stripeprovider.NewStripeProvider(cfg.StripeSecretKey, cfg.StripeWebhookSecret)
 
-	payUsecase := usecase.NewPaymentUsecase(pool, subRepo, billingRepo, payProvider)
+	// 5. Wire Kafka event publisher (graceful degradation if Kafka is unavailable)
+	var eventPublisher domain.PaymentEventPublisher
+	kafkaProducer, err := kafka.NewProducer(kafka.Config{Brokers: cfg.KafkaBrokers})
+	if err != nil {
+		log.Error("kafka producer unavailable — payment.failed events will NOT reach enterprise-service", zap.Error(err))
+	} else {
+		defer kafkaProducer.Close()
+		eventPublisher = messaging.NewKafkaPublisher(kafkaProducer)
+		log.Info("kafka producer initialized")
+	}
+
+	// 6. Wire usecase and handler
+	payUsecase := usecase.NewPaymentUsecase(pool, subRepo, billingRepo, payProvider, eventPublisher)
 	payHandler := handler.NewPaymentHandler(payUsecase)
 
+	// 7. Build router
 	r := router.NewRouter(payHandler)
 
-	// Server setup
+	// 8. Start HTTP server
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,
 		Handler: r,
 	}
 
-	// Start server in a goroutine
 	go func() {
 		log.Info("starting payment-service", zap.String("port", cfg.Port))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -85,7 +99,7 @@ func main() {
 		}
 	}()
 
-	// Graceful shutdown
+	// 9. Graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit

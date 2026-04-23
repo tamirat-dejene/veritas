@@ -23,10 +23,19 @@ func NewRouter(h *handler.PaymentHandler) *gin.Engine {
 	api := r.Group("/")
 	{
 		api.GET("/subscriptions/plans", h.ListPlans)
+		api.GET("/subscriptions/:enterpriseId", h.GetActiveSubscription)
 		api.POST("/subscriptions/:enterpriseId/upgrade", h.UpgradeSubscription)
+		api.POST("/subscriptions/:enterpriseId/cancel", h.CancelSubscription)
+		api.POST("/subscriptions/:enterpriseId/reactivate", h.ReactivateSubscription)
 		api.GET("/payments/history", h.ListPaymentHistory)
 		api.GET("/invoices/:invoiceId", h.GetInvoice)
 		api.POST("/webhooks/stripe", h.HandleWebhook)
+	}
+
+	// Admin-only routes
+	admin := r.Group("/admin")
+	{
+		admin.POST("/subscriptions/:enterpriseId", h.AdminSetSubscription)
 	}
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
