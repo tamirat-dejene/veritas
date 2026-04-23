@@ -2,7 +2,7 @@
 <section class="section" data-service="enterprise">
     <div class="section-header">
         <h2>Enterprise Management</h2>
-        <span class="section-count">30 endpoints</span>
+        <span class="section-count">25 endpoints</span>
     </div>
     <div class="endpoint-list">
         <!-- Discovery & Listing -->
@@ -82,25 +82,6 @@
         </endpoint-item>
         <endpoint-item method="POST" path="/enterprises/:enterpriseId/users/:userId/change-password">
             <span class="badge badge-all">All</span>
-        </endpoint-item>
-
-        <!-- Subscription Management -->
-        <h3 class="endpoint-group-title">Subscription Management</h3>
-        <endpoint-item method="GET" path="/enterprises/:enterpriseId/subscription">
-            <span class="badge badge-super">SystemAdmin</span>
-            <span class="badge badge-admin">EnterpriseAdmin</span>
-        </endpoint-item>
-        <endpoint-item method="POST" path="/enterprises/:enterpriseId/subscription">
-            <span class="badge badge-super">SystemAdmin</span>
-        </endpoint-item>
-        <endpoint-item method="POST" path="/enterprises/:enterpriseId/subscription/renew">
-            <span class="badge badge-super">SystemAdmin</span>
-        </endpoint-item>
-        <endpoint-item method="POST" path="/enterprises/:enterpriseId/subscription/cancel">
-            <span class="badge badge-super">SystemAdmin</span>
-        </endpoint-item>
-        <endpoint-item method="POST" path="/enterprises/:enterpriseId/suspend-payment">
-            <span class="badge badge-super">SystemAdmin</span>
         </endpoint-item>
 
         <!-- Status & Audit -->

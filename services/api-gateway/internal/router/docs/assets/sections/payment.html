@@ -2,16 +2,35 @@
 <section class="section" data-service="payment">
     <div class="section-header">
         <h2>Payments & Subscriptions</h2>
-        <span class="section-count">5 endpoints</span>
+        <span class="section-count">9 endpoints</span>
     </div>
     <div class="endpoint-list">
+        <!-- Subscription Management -->
         <h3 class="endpoint-group-title">Subscription Management</h3>
         <endpoint-item method="GET" path="/subscriptions/plans">
             <span class="badge badge-public">Public</span>
         </endpoint-item>
+        <endpoint-item method="GET" path="/subscriptions/:enterpriseId">
+            <span class="badge badge-super">SystemAdmin</span>
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+        </endpoint-item>
         <endpoint-item method="POST" path="/subscriptions/:enterpriseId/upgrade">
             <span class="badge badge-admin">EnterpriseAdmin</span>
         </endpoint-item>
+        <endpoint-item method="POST" path="/subscriptions/:enterpriseId/cancel">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+        </endpoint-item>
+        <endpoint-item method="POST" path="/subscriptions/:enterpriseId/reactivate">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+        </endpoint-item>
+
+        <!-- Admin Overrides -->
+        <h3 class="endpoint-group-title">Admin Overrides</h3>
+        <endpoint-item method="POST" path="/admin/subscriptions/:enterpriseId">
+            <span class="badge badge-super">SystemAdmin</span>
+        </endpoint-item>
+
+        <!-- Billing Operations -->
         <h3 class="endpoint-group-title">Billing Operations</h3>
         <endpoint-item method="POST" path="/webhooks/stripe">
             <span class="badge badge-public">Public</span>
