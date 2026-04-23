@@ -36,12 +36,6 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Subscription status",
-                        "name": "subscription_status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
                         "description": "Search by slug or display name",
                         "name": "search",
                         "in": "query"
@@ -900,237 +894,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/enterprises/{enterpriseId}/subscription": {
-            "get": {
-                "description": "Return enterprise subscription details only.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "subscription"
-                ],
-                "summary": "Get subscription info",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Enterprise ID (UUID)",
-                        "name": "enterpriseId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/SubscriptionInfoResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Update enterprise subscription plan/status/period fields.",
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "subscription"
-                ],
-                "summary": "Update subscription",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Enterprise ID (UUID)",
-                        "name": "enterpriseId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Actor user ID (UUID)",
-                        "name": "X-User-ID",
-                        "in": "header"
-                    },
-                    {
-                        "description": "Subscription update payload",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/UpdateSubscriptionRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/enterprises/{enterpriseId}/subscription/cancel": {
-            "post": {
-                "description": "Cancel the current enterprise subscription.",
-                "tags": [
-                    "subscription"
-                ],
-                "summary": "Cancel subscription",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Enterprise ID (UUID)",
-                        "name": "enterpriseId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Actor user ID (UUID)",
-                        "name": "X-User-ID",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/enterprises/{enterpriseId}/subscription/renew": {
-            "post": {
-                "description": "Renew the current enterprise subscription period.",
-                "tags": [
-                    "subscription"
-                ],
-                "summary": "Renew subscription",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Enterprise ID (UUID)",
-                        "name": "enterpriseId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Actor user ID (UUID)",
-                        "name": "X-User-ID",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/enterprises/{enterpriseId}/summary": {
             "get": {
                 "description": "Get compact operational summary for an enterprise.",
@@ -1221,62 +984,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/enterprises/{enterpriseId}/suspend-payment": {
-            "post": {
-                "description": "Suspend enterprise subscription due to payment failure.",
-                "tags": [
-                    "subscription"
-                ],
-                "summary": "Suspend for payment",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Enterprise ID (UUID)",
-                        "name": "enterpriseId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Actor user ID (UUID)",
-                        "name": "X-User-ID",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -2022,12 +1729,6 @@ const docTemplate = `{
                 "createdBy": {
                     "type": "string"
                 },
-                "currentPeriodEnd": {
-                    "type": "string"
-                },
-                "currentPeriodStart": {
-                    "type": "string"
-                },
                 "customDomain": {
                     "type": "string"
                 },
@@ -2068,12 +1769,6 @@ const docTemplate = `{
                 "status": {
                     "$ref": "#/definitions/EnterpriseStatus"
                 },
-                "subscriptionPlanId": {
-                    "type": "string"
-                },
-                "subscriptionStatus": {
-                    "$ref": "#/definitions/SubscriptionStatus"
-                },
                 "suspendedAt": {
                     "type": "string"
                 },
@@ -2106,9 +1801,6 @@ const docTemplate = `{
                 "approved_at": {
                     "type": "string"
                 },
-                "current_period_end": {
-                    "type": "string"
-                },
                 "deleted_at": {
                     "type": "string"
                 },
@@ -2121,8 +1813,8 @@ const docTemplate = `{
                 "status": {
                     "$ref": "#/definitions/EnterpriseStatus"
                 },
-                "subscription_status": {
-                    "$ref": "#/definitions/SubscriptionStatus"
+                "subscription": {
+                    "$ref": "#/definitions/SubscriptionSnapshot"
                 },
                 "suspended_at": {
                     "type": "string"
@@ -2133,7 +1825,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "active_exam_count": {
-                    "description": "ActiveExamCount and ActiveSessionCount require inter-service calls – set to -1 when unavailable.",
                     "type": "integer"
                 },
                 "active_session_count": {
@@ -2148,11 +1839,8 @@ const docTemplate = `{
                 "status": {
                     "$ref": "#/definitions/EnterpriseStatus"
                 },
-                "subscription_expiry": {
-                    "type": "string"
-                },
-                "subscription_status": {
-                    "$ref": "#/definitions/SubscriptionStatus"
+                "subscription": {
+                    "$ref": "#/definitions/SubscriptionSnapshot"
                 },
                 "user_count": {
                     "type": "integer"
@@ -2176,22 +1864,28 @@ const docTemplate = `{
                 "RoleExamCandidate"
             ]
         },
-        "SubscriptionStatus": {
-            "type": "string",
-            "enum": [
-                "Trial",
-                "Active",
-                "PastDue",
-                "Canceled",
-                "Expired"
-            ],
-            "x-enum-varnames": [
-                "SubTrial",
-                "SubActive",
-                "SubPastDue",
-                "SubCanceled",
-                "SubExpired"
-            ]
+        "SubscriptionSnapshot": {
+            "type": "object",
+            "properties": {
+                "cancel_at_period_end": {
+                    "type": "boolean"
+                },
+                "current_period_end": {
+                    "type": "string"
+                },
+                "current_period_start": {
+                    "type": "string"
+                },
+                "plan_id": {
+                    "type": "string"
+                },
+                "plan_name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
         },
         "UpdateBrandingRequest": {
             "type": "object",
@@ -2204,23 +1898,6 @@ const docTemplate = `{
                 },
                 "secondary_color": {
                     "type": "string"
-                }
-            }
-        },
-        "UpdateSubscriptionRequest": {
-            "type": "object",
-            "properties": {
-                "period_end": {
-                    "type": "string"
-                },
-                "period_start": {
-                    "type": "string"
-                },
-                "subscription_plan_id": {
-                    "type": "string"
-                },
-                "subscription_status": {
-                    "$ref": "#/definitions/SubscriptionStatus"
                 }
             }
         },
@@ -2363,26 +2040,6 @@ const docTemplate = `{
                 }
             }
         },
-        "SubscriptionInfoResponse": {
-            "type": "object",
-            "properties": {
-                "current_period_end": {
-                    "type": "string"
-                },
-                "current_period_start": {
-                    "type": "string"
-                },
-                "enterprise_id": {
-                    "type": "string"
-                },
-                "subscription_plan_id": {
-                    "type": "string"
-                },
-                "subscription_status": {
-                    "$ref": "#/definitions/SubscriptionStatus"
-                }
-            }
-        },
         "Metadata": {
             "type": "object",
             "properties": {
@@ -2455,10 +2112,6 @@ const docTemplate = `{
             "name": "enterprise"
         },
         {
-            "description": "Subscription and billing lifecycle endpoints.",
-            "name": "subscription"
-        },
-        {
             "description": "Enterprise user management endpoints.",
             "name": "user"
         },
@@ -2476,7 +2129,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/",
 	Schemes:          []string{"http", "https"},
 	Title:            "Veritas Enterprise Service API",
-	Description:      "Enterprise onboarding, account management, subscription, and user administration service.",
+	Description:      "Enterprise onboarding, account management, and user administration service.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

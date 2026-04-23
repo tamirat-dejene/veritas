@@ -5,7 +5,7 @@
     ],
     "swagger": "2.0",
     "info": {
-        "description": "Subscription plans, upgrades, invoice retrieval, payment history, and Stripe webhook processing.",
+        "description": "Subscription plans, upgrades, cancellations, invoice retrieval, payment history, and Stripe webhook processing.",
         "title": "Veritas Payment Service API",
         "contact": {
             "name": "Veritas Platform Team"
@@ -14,6 +14,53 @@
     },
     "basePath": "/",
     "paths": {
+        "/admin/subscriptions/{enterpriseId}": {
+            "post": {
+                "description": "Manually override an enterprise's subscription plan and status (no Stripe call).",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscription"
+                ],
+                "summary": "Admin set subscription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Enterprise ID (UUID)",
+                        "name": "enterpriseId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Subscription override",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/AdminSetSubscriptionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Returns a simple JSON indicating the service is alive.",
@@ -158,6 +205,152 @@
                 }
             }
         },
+        "/subscriptions/{enterpriseId}": {
+            "get": {
+                "description": "Returns the current subscription state for an enterprise.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscription"
+                ],
+                "summary": "Get active subscription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Enterprise ID (UUID)",
+                        "name": "enterpriseId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/EnterpriseSubscription"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/{enterpriseId}/cancel": {
+            "post": {
+                "description": "Cancels an enterprise subscription immediately or at period end.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscription"
+                ],
+                "summary": "Cancel subscription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Enterprise ID (UUID)",
+                        "name": "enterpriseId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Cancel options",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/CancelSubscriptionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/{enterpriseId}/reactivate": {
+            "post": {
+                "description": "Cancels a pending period-end cancellation, keeping the subscription active.",
+                "tags": [
+                    "subscription"
+                ],
+                "summary": "Reactivate subscription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Enterprise ID (UUID)",
+                        "name": "enterpriseId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/subscriptions/{enterpriseId}/upgrade": {
             "post": {
                 "description": "Creates a provider checkout session for upgrading an enterprise subscription plan.",
@@ -285,6 +478,50 @@
                 "CurrencyEUR",
                 "CurrencyGBP"
             ]
+        },
+        "EnterpriseSubscription": {
+            "type": "object",
+            "properties": {
+                "cancel_at_period_end": {
+                    "type": "boolean"
+                },
+                "canceled_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "current_period_end": {
+                    "type": "string"
+                },
+                "current_period_start": {
+                    "type": "string"
+                },
+                "ended_at": {
+                    "type": "string"
+                },
+                "enterprise_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "plan_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/SubscriptionStatus"
+                },
+                "stripe_customer_id": {
+                    "type": "string"
+                },
+                "stripe_subscription_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
         },
         "Invoice": {
             "type": "object",
@@ -451,6 +688,53 @@
                 }
             }
         },
+        "SubscriptionStatus": {
+            "type": "string",
+            "enum": [
+                "Active",
+                "PastDue",
+                "Canceled",
+                "Expired",
+                "Trial"
+            ],
+            "x-enum-varnames": [
+                "SubStatusActive",
+                "SubStatusPastDue",
+                "SubStatusCanceled",
+                "SubStatusExpired",
+                "SubStatusTrial"
+            ]
+        },
+        "AdminSetSubscriptionRequest": {
+            "type": "object",
+            "required": [
+                "plan_id",
+                "status"
+            ],
+            "properties": {
+                "period_end": {
+                    "type": "string"
+                },
+                "period_start": {
+                    "type": "string"
+                },
+                "plan_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "CancelSubscriptionRequest": {
+            "type": "object",
+            "properties": {
+                "cancel_at_period_end": {
+                    "description": "When true, the subscription remains active until the current period ends.\nWhen false (default), it is canceled immediately.",
+                    "type": "boolean"
+                }
+            }
+        },
         "CheckoutURLResponse": {
             "type": "object",
             "properties": {
@@ -485,7 +769,7 @@
             "name": "payment"
         },
         {
-            "description": "Subscription plan and upgrade operations.",
+            "description": "Subscription plan and management operations.",
             "name": "subscription"
         },
         {

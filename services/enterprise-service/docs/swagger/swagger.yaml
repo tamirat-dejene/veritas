@@ -128,10 +128,6 @@ definitions:
         type: string
       createdBy:
         type: string
-      currentPeriodEnd:
-        type: string
-      currentPeriodStart:
-        type: string
       customDomain:
         type: string
       deletedAt:
@@ -159,10 +155,6 @@ definitions:
         type: string
       status:
         $ref: '#/definitions/EnterpriseStatus'
-      subscriptionPlanId:
-        type: string
-      subscriptionStatus:
-        $ref: '#/definitions/SubscriptionStatus'
       suspendedAt:
         type: string
       updatedAt:
@@ -186,8 +178,6 @@ definitions:
     properties:
       approved_at:
         type: string
-      current_period_end:
-        type: string
       deleted_at:
         type: string
       enterprise_id:
@@ -196,16 +186,14 @@ definitions:
         type: string
       status:
         $ref: '#/definitions/EnterpriseStatus'
-      subscription_status:
-        $ref: '#/definitions/SubscriptionStatus'
+      subscription:
+        $ref: '#/definitions/SubscriptionSnapshot'
       suspended_at:
         type: string
     type: object
   EnterpriseSummary:
     properties:
       active_exam_count:
-        description: ActiveExamCount and ActiveSessionCount require inter-service
-          calls – set to -1 when unavailable.
         type: integer
       active_session_count:
         type: integer
@@ -215,10 +203,8 @@ definitions:
         type: string
       status:
         $ref: '#/definitions/EnterpriseStatus'
-      subscription_expiry:
-        type: string
-      subscription_status:
-        $ref: '#/definitions/SubscriptionStatus'
+      subscription:
+        $ref: '#/definitions/SubscriptionSnapshot'
       user_count:
         type: integer
     type: object
@@ -236,20 +222,21 @@ definitions:
     - RoleEnterpriseAuto
     - RoleEnterpriseStaff
     - RoleExamCandidate
-  SubscriptionStatus:
-    enum:
-    - Trial
-    - Active
-    - PastDue
-    - Canceled
-    - Expired
-    type: string
-    x-enum-varnames:
-    - SubTrial
-    - SubActive
-    - SubPastDue
-    - SubCanceled
-    - SubExpired
+  SubscriptionSnapshot:
+    properties:
+      cancel_at_period_end:
+        type: boolean
+      current_period_end:
+        type: string
+      current_period_start:
+        type: string
+      plan_id:
+        type: string
+      plan_name:
+        type: string
+      status:
+        type: string
+    type: object
   UpdateBrandingRequest:
     properties:
       logo_url:
@@ -258,17 +245,6 @@ definitions:
         type: string
       secondary_color:
         type: string
-    type: object
-  UpdateSubscriptionRequest:
-    properties:
-      period_end:
-        type: string
-      period_start:
-        type: string
-      subscription_plan_id:
-        type: string
-      subscription_status:
-        $ref: '#/definitions/SubscriptionStatus'
     type: object
   UpdateUserRequest:
     properties:
@@ -363,19 +339,6 @@ definitions:
       temporary_password:
         type: string
     type: object
-  SubscriptionInfoResponse:
-    properties:
-      current_period_end:
-        type: string
-      current_period_start:
-        type: string
-      enterprise_id:
-        type: string
-      subscription_plan_id:
-        type: string
-      subscription_status:
-        $ref: '#/definitions/SubscriptionStatus'
-    type: object
   Metadata:
     properties:
       current_page:
@@ -421,7 +384,7 @@ definitions:
 info:
   contact:
     name: Veritas Platform Team
-  description: Enterprise onboarding, account management, subscription, and user administration
+  description: Enterprise onboarding, account management, and user administration
     service.
   title: Veritas Enterprise Service API
   version: "1.0"
@@ -433,10 +396,6 @@ paths:
       - description: Enterprise status
         in: query
         name: status
-        type: string
-      - description: Subscription status
-        in: query
-        name: subscription_status
         type: string
       - description: Search by slug or display name
         in: query
@@ -952,159 +911,6 @@ paths:
       summary: Get enterprise status
       tags:
       - enterprise
-  /enterprises/{enterpriseId}/subscription:
-    get:
-      description: Return enterprise subscription details only.
-      parameters:
-      - description: Enterprise ID (UUID)
-        in: path
-        name: enterpriseId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SubscriptionInfoResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Get subscription info
-      tags:
-      - subscription
-    post:
-      consumes:
-      - application/json
-      description: Update enterprise subscription plan/status/period fields.
-      parameters:
-      - description: Enterprise ID (UUID)
-        in: path
-        name: enterpriseId
-        required: true
-        type: string
-      - description: Actor user ID (UUID)
-        in: header
-        name: X-User-ID
-        type: string
-      - description: Subscription update payload
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/UpdateSubscriptionRequest'
-      responses:
-        "204":
-          description: No Content
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Update subscription
-      tags:
-      - subscription
-  /enterprises/{enterpriseId}/subscription/cancel:
-    post:
-      description: Cancel the current enterprise subscription.
-      parameters:
-      - description: Enterprise ID (UUID)
-        in: path
-        name: enterpriseId
-        required: true
-        type: string
-      - description: Actor user ID (UUID)
-        in: header
-        name: X-User-ID
-        type: string
-      responses:
-        "204":
-          description: No Content
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Cancel subscription
-      tags:
-      - subscription
-  /enterprises/{enterpriseId}/subscription/renew:
-    post:
-      description: Renew the current enterprise subscription period.
-      parameters:
-      - description: Enterprise ID (UUID)
-        in: path
-        name: enterpriseId
-        required: true
-        type: string
-      - description: Actor user ID (UUID)
-        in: header
-        name: X-User-ID
-        type: string
-      responses:
-        "204":
-          description: No Content
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Renew subscription
-      tags:
-      - subscription
   /enterprises/{enterpriseId}/summary:
     get:
       description: Get compact operational summary for an enterprise.
@@ -1173,43 +979,6 @@ paths:
       summary: Suspend enterprise
       tags:
       - enterprise
-  /enterprises/{enterpriseId}/suspend-payment:
-    post:
-      description: Suspend enterprise subscription due to payment failure.
-      parameters:
-      - description: Enterprise ID (UUID)
-        in: path
-        name: enterpriseId
-        required: true
-        type: string
-      - description: Actor user ID (UUID)
-        in: header
-        name: X-User-ID
-        type: string
-      responses:
-        "204":
-          description: No Content
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Suspend for payment
-      tags:
-      - subscription
   /enterprises/{enterpriseId}/users:
     get:
       description: List users belonging to the specified enterprise.
@@ -1647,8 +1416,6 @@ swagger: "2.0"
 tags:
 - description: Enterprise profile and lifecycle management endpoints.
   name: enterprise
-- description: Subscription and billing lifecycle endpoints.
-  name: subscription
 - description: Enterprise user management endpoints.
   name: user
 - description: Operational and health endpoints.
