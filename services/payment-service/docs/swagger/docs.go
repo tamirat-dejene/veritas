@@ -149,8 +149,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Enterprise ID (UUID)",
-                        "name": "enterpriseId",
-                        "in": "query",
+                        "name": "X-Enterprise-ID",
+                        "in": "header",
                         "required": true
                     }
                 ],

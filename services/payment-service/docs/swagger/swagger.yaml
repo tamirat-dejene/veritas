@@ -308,8 +308,8 @@ paths:
       description: Returns payment history for the specified enterprise.
       parameters:
       - description: Enterprise ID (UUID)
-        in: query
-        name: enterpriseId
+        in: header
+        name: X-Enterprise-ID
         required: true
         type: string
       produces:
