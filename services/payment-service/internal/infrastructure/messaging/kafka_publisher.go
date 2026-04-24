@@ -52,3 +52,57 @@ func (p *kafkaPublisher) PublishPaymentFailed(ctx context.Context, enterpriseID 
 
 	return nil
 }
+
+// subscriptionEvent is the payload published on topics.SubscriptionUpdated and topics.SubscriptionCanceled.
+type subscriptionEvent struct {
+	EnterpriseID uuid.UUID `json:"enterprise_id"`
+	Timestamp    int64     `json:"timestamp"`
+}
+
+func (p *kafkaPublisher) PublishSubscriptionUpdated(ctx context.Context, enterpriseID uuid.UUID) error {
+	event := subscriptionEvent{
+		EnterpriseID: enterpriseID,
+		Timestamp:    time.Now().Unix(),
+	}
+
+	payload, err := json.Marshal(event)
+	if err != nil {
+		return fmt.Errorf("kafka_publisher: marshal subscription_updated event: %w", err)
+	}
+
+	msg := messaging.Message{
+		Topic: topics.SubscriptionUpdated,
+		Key:   enterpriseID[:],
+		Value: payload,
+	}
+
+	if err := p.publisher.Publish(ctx, msg); err != nil {
+		return fmt.Errorf("kafka_publisher: publish subscription_updated: %w", err)
+	}
+
+	return nil
+}
+
+func (p *kafkaPublisher) PublishSubscriptionCanceled(ctx context.Context, enterpriseID uuid.UUID) error {
+	event := subscriptionEvent{
+		EnterpriseID: enterpriseID,
+		Timestamp:    time.Now().Unix(),
+	}
+
+	payload, err := json.Marshal(event)
+	if err != nil {
+		return fmt.Errorf("kafka_publisher: marshal subscription_canceled event: %w", err)
+	}
+
+	msg := messaging.Message{
+		Topic: topics.SubscriptionCanceled,
+		Key:   enterpriseID[:],
+		Value: payload,
+	}
+
+	if err := p.publisher.Publish(ctx, msg); err != nil {
+		return fmt.Errorf("kafka_publisher: publish subscription_canceled: %w", err)
+	}
+
+	return nil
+}
