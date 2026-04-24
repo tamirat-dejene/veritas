@@ -2,7 +2,7 @@
 <section class="section" data-service="payment">
     <div class="section-header">
         <h2>Payments & Subscriptions</h2>
-        <span class="section-count">9 endpoints</span>
+        <span class="section-count">15 endpoints</span>
     </div>
     <div class="endpoint-list">
         <!-- Subscription Management -->
@@ -29,6 +29,18 @@
         <endpoint-item method="POST" path="/admin/subscriptions/:enterpriseId">
             <span class="badge badge-super">SystemAdmin</span>
         </endpoint-item>
+        <endpoint-item method="POST" path="/admin/plans">
+            <span class="badge badge-super">SystemAdmin</span>
+        </endpoint-item>
+        <endpoint-item method="GET" path="/admin/plans">
+            <span class="badge badge-super">SystemAdmin</span>
+        </endpoint-item>
+        <endpoint-item method="PATCH" path="/admin/plans/:planId">
+            <span class="badge badge-super">SystemAdmin</span>
+        </endpoint-item>
+        <endpoint-item method="DELETE" path="/admin/plans/:planId">
+            <span class="badge badge-super">SystemAdmin</span>
+        </endpoint-item>
 
         <!-- Billing Operations -->
         <h3 class="endpoint-group-title">Billing Operations</h3>
@@ -38,7 +50,13 @@
         <endpoint-item method="GET" path="/payments/history">
             <span class="badge badge-admin">EnterpriseAdmin</span>
         </endpoint-item>
+        <endpoint-item method="GET" path="/invoices">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+        </endpoint-item>
         <endpoint-item method="GET" path="/invoices/:invoiceId">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+        </endpoint-item>
+        <endpoint-item method="GET" path="/billing/summary">
             <span class="badge badge-admin">EnterpriseAdmin</span>
         </endpoint-item>
     </div>

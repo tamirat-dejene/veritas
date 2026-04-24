@@ -10,6 +10,40 @@
         "migration": [
           { "before": "GET /payments/history?enterpriseId=UUID", "after": "GET /payments/history (ID from JWT)" }
         ]
+      },
+      {
+        "type": "new",
+        "service": "payment",
+        "summary": "Admin subscription plan management endpoints added",
+        "description": "System administrators can now fully manage subscription plans directly through the API, including creating, updating, listing, and safely deactivating plans.",
+        "endpoints": [
+          "GET /admin/plans",
+          "POST /admin/plans",
+          "PATCH /admin/plans/:planId",
+          "DELETE /admin/plans/:planId"
+        ]
+      },
+      {
+        "type": "new",
+        "service": "payment",
+        "summary": "Billing summary and invoice endpoints added",
+        "description": "Enterprise administrators can now retrieve a summarized dashboard of their billing aggregates (YTD paid, outstanding balance, last payment) and list all invoices.",
+        "endpoints": [
+          "GET /billing/summary",
+          "GET /invoices"
+        ]
+      },
+      {
+        "type": "changed",
+        "service": "payment",
+        "summary": "Standardized pagination and dynamic sorting across list endpoints",
+        "description": "All list endpoints in the payment service now return a standardized `pagination.PaginatedResponse` structure. They support `page` and `limit` query parameters, as well as safe, dynamic sorting via `sort` and `sort_dir` parameters with strict field allow-lists.",
+        "endpoints": [
+          "GET /subscriptions/plans",
+          "GET /admin/plans",
+          "GET /payments/history",
+          "GET /invoices"
+        ]
       }
     ]
   },
