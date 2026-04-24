@@ -106,3 +106,34 @@ func (p *kafkaPublisher) PublishSubscriptionCanceled(ctx context.Context, enterp
 
 	return nil
 }
+
+type invoiceUpcomingEvent struct {
+	EnterpriseID uuid.UUID `json:"enterprise_id"`
+	DaysUntil    int       `json:"days_until"`
+	Timestamp    int64     `json:"timestamp"`
+}
+
+func (p *kafkaPublisher) PublishInvoiceUpcoming(ctx context.Context, enterpriseID uuid.UUID, daysUntil int) error {
+	event := invoiceUpcomingEvent{
+		EnterpriseID: enterpriseID,
+		DaysUntil:    daysUntil,
+		Timestamp:    time.Now().Unix(),
+	}
+
+	payload, err := json.Marshal(event)
+	if err != nil {
+		return fmt.Errorf("kafka_publisher: marshal invoice_upcoming event: %w", err)
+	}
+
+	msg := messaging.Message{
+		Topic: topics.InvoiceUpcoming,
+		Key:   enterpriseID[:],
+		Value: payload,
+	}
+
+	if err := p.publisher.Publish(ctx, msg); err != nil {
+		return fmt.Errorf("kafka_publisher: publish invoice_upcoming: %w", err)
+	}
+
+	return nil
+}

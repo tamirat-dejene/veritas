@@ -152,6 +152,21 @@ func (r *billingRepository) CreatePayment(ctx context.Context, p *domain.Payment
 	return err
 }
 
+func (r *billingRepository) GetPaymentByInvoiceID(ctx context.Context, invoiceID uuid.UUID) (*domain.Payment, error) {
+	query := fmt.Sprintf("SELECT %s FROM veritas_payments WHERE invoice_id = $1 ORDER BY created_at DESC LIMIT 1", paymentFields)
+	var p domain.Payment
+	err := r.db.QueryRow(ctx, query, invoiceID).Scan(
+		&p.ID, &p.EnterpriseID, &p.InvoiceID, &p.Amount, &p.Currency, &p.Status, &p.PaymentMethodType, &p.Provider, &p.ProviderPaymentID, &p.ProviderErrorCode, &p.ProviderErrorMessage, &p.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("payment not found for invoice %s", invoiceID)
+		}
+		return nil, err
+	}
+	return &p, nil
+}
+
 func (r *billingRepository) ListPaymentsByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*domain.Payment, int64, error) {
 	var total int64
 	countQuery := "SELECT COUNT(*) FROM veritas_payments WHERE enterprise_id = $1"

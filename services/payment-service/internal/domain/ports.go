@@ -31,6 +31,7 @@ type BillingRepository interface {
 	UpdateInvoice(ctx context.Context, inv *Invoice) error
 
 	CreatePayment(ctx context.Context, p *Payment) error
+	GetPaymentByInvoiceID(ctx context.Context, invoiceID uuid.UUID) (*Payment, error)
 	ListPaymentsByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*Payment, int64, error)
 
 	RecordEventProcessed(ctx context.Context, eventID string, eventType string) error
@@ -46,6 +47,7 @@ type PaymentProvider interface {
 	ConstructEvent(payload []byte, sigHeader string) (any, error)
 	CancelStripeSubscription(ctx context.Context, stripeSubscriptionID string, cancelAtPeriodEnd bool) error
 	ReactivateStripeSubscription(ctx context.Context, stripeSubscriptionID string) error
+	RefundStripePayment(ctx context.Context, stripePaymentID string, amount float64) error
 }
 
 type PaymentUsecase interface {
@@ -65,11 +67,14 @@ type PaymentUsecase interface {
 	HandleWebhook(ctx context.Context, payload []byte, sigHeader string) error
 	CancelSubscription(ctx context.Context, enterpriseID uuid.UUID, cancelAtPeriodEnd bool) error
 	ReactivateSubscription(ctx context.Context, enterpriseID uuid.UUID) error
+	CreateTrialSubscription(ctx context.Context, enterpriseID uuid.UUID, planID uuid.UUID, trialDays int) error
 	AdminSetSubscription(ctx context.Context, enterpriseID uuid.UUID, req AdminSetSubscriptionRequest) error
+	RefundPayment(ctx context.Context, invoiceID uuid.UUID, amount float64, reason string) error
 }
 
 type PaymentEventPublisher interface {
 	PublishPaymentFailed(ctx context.Context, enterpriseID uuid.UUID) error
 	PublishSubscriptionUpdated(ctx context.Context, enterpriseID uuid.UUID) error
 	PublishSubscriptionCanceled(ctx context.Context, enterpriseID uuid.UUID) error
+	PublishInvoiceUpcoming(ctx context.Context, enterpriseID uuid.UUID, daysUntil int) error
 }

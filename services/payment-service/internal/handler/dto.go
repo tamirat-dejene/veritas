@@ -56,3 +56,20 @@ type UpdatePlanRequest struct {
 	StripePriceID *string         `json:"stripe_price_id"`
 	IsActive      *bool           `json:"is_active"`
 }
+
+// RefundRequest is the request body for refunding an invoice.
+type RefundRequest struct {
+	Amount float64 `json:"amount" binding:"required,gt=0"`
+	Reason string  `json:"reason"`
+}
+
+// CreateTrialRequest is the request body for starting a free trial without Stripe.
+type CreateTrialRequest struct {
+	PlanID    string `json:"plan_id" binding:"required"`
+	TrialDays int    `json:"trial_days" binding:"required,gt=0"`
+}
+
+// UsageResponse is the response for internal feature gate checks.
+type UsageResponse struct {
+	PlanFeatures map[string]any `json:"plan_features"`
+}

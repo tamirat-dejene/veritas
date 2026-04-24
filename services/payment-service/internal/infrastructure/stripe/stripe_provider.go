@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	stripego "github.com/stripe/stripe-go/v74"
 	"github.com/stripe/stripe-go/v74/checkout/session"
+	"github.com/stripe/stripe-go/v74/refund"
 	stripesubscription "github.com/stripe/stripe-go/v74/subscription"
 	"github.com/stripe/stripe-go/v74/webhook"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
@@ -89,5 +90,23 @@ func (p *stripeProvider) ReactivateStripeSubscription(_ context.Context, stripeS
 	if err != nil {
 		return fmt.Errorf("stripe: reactivate subscription: %w", err)
 	}
+	return nil
+}
+
+// RefundStripePayment refunds a Stripe payment (Charge or PaymentIntent).
+func (p *stripeProvider) RefundStripePayment(_ context.Context, stripePaymentID string, amount float64) error {
+	// Stripe expects the refund amount in cents
+	amountCents := int64(amount * 100)
+
+	params := &stripego.RefundParams{
+		PaymentIntent: stripego.String(stripePaymentID),
+		Amount:        stripego.Int64(amountCents),
+	}
+
+	_, err := refund.New(params)
+	if err != nil {
+		return fmt.Errorf("stripe: refund payment: %w", err)
+	}
+
 	return nil
 }
