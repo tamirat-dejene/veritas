@@ -38,10 +38,18 @@ func NewRouter(h *handler.PaymentHandler) *gin.Engine {
 	admin := r.Group("/admin")
 	{
 		admin.POST("/subscriptions/:enterpriseId", h.AdminSetSubscription)
+		admin.POST("/subscriptions/:enterpriseId/trial", h.CreateTrialSubscription)
 		admin.POST("/plans", h.CreatePlan)
 		admin.GET("/plans", h.AdminListPlans)
 		admin.PATCH("/plans/:planId", h.UpdatePlan)
 		admin.DELETE("/plans/:planId", h.DeactivatePlan)
+		admin.POST("/invoices/:invoiceId/refund", h.RefundInvoice)
+	}
+
+	// Internal routes
+	internal := r.Group("/billing")
+	{
+		internal.GET("/usage/:enterpriseId", h.GetFeatureGate)
 	}
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

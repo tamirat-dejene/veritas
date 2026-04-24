@@ -551,3 +551,119 @@ func (h *PaymentHandler) DeactivatePlan(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+// RefundInvoice issues a refund for an invoice via Stripe.
+//
+//	@Summary		Refund invoice
+//	@Description	Refunds a specific invoice by its ID.
+//	@Tags			admin
+//	@Accept			json
+//	@Produce		json
+//	@Param			invoiceId	path		string			true	"Invoice ID (UUID)"
+//	@Param			body		body		RefundRequest	true	"Refund request"
+//	@Success		204
+//	@Failure		400	{object}	ErrorResponse
+//	@Failure		500	{object}	ErrorResponse
+//	@Router			/admin/invoices/{invoiceId}/refund [post]
+func (h *PaymentHandler) RefundInvoice(c *gin.Context) {
+	invoiceID, err := uuid.Parse(c.Param("invoiceId"))
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid invoice id")
+		return
+	}
+
+	var req RefundRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if err := h.usecase.RefundPayment(c.Request.Context(), invoiceID, req.Amount, req.Reason); err != nil {
+		writeError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// CreateTrialSubscription provisions a free trial for an enterprise.
+//
+//	@Summary		Create trial subscription
+//	@Description	Starts a free trial subscription without a payment method.
+//	@Tags			admin
+//	@Accept			json
+//	@Produce		json
+//	@Param			enterpriseId	path		string				true	"Enterprise ID (UUID)"
+//	@Param			body			body		CreateTrialRequest	true	"Trial request"
+//	@Success		204
+//	@Failure		400	{object}	ErrorResponse
+//	@Failure		500	{object}	ErrorResponse
+//	@Router			/admin/subscriptions/{enterpriseId}/trial [post]
+func (h *PaymentHandler) CreateTrialSubscription(c *gin.Context) {
+	enterpriseID, err := uuid.Parse(c.Param("enterpriseId"))
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid enterprise id")
+		return
+	}
+
+	var req CreateTrialRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	planID, err := uuid.Parse(req.PlanID)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid plan id")
+		return
+	}
+
+	if err := h.usecase.CreateTrialSubscription(c.Request.Context(), enterpriseID, planID, req.TrialDays); err != nil {
+		writeError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// GetFeatureGate returns the features available for the enterprise's active plan.
+//
+//	@Summary		Get plan features (Internal)
+//	@Description	Returns the features JSONB for the active subscription plan. Used internally by other services.
+//	@Tags			internal
+//	@Produce		json
+//	@Param			enterpriseId	path		string	true	"Enterprise ID (UUID)"
+//	@Success		200	{object}	UsageResponse
+//	@Failure		400	{object}	ErrorResponse
+//	@Failure		404	{object}	ErrorResponse
+//	@Failure		500	{object}	ErrorResponse
+//	@Router			/billing/usage/{enterpriseId} [get]
+func (h *PaymentHandler) GetFeatureGate(c *gin.Context) {
+	enterpriseID, err := uuid.Parse(c.Param("enterpriseId"))
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid enterprise id")
+		return
+	}
+
+	sub, err := h.usecase.GetActiveSubscription(c.Request.Context(), enterpriseID)
+	if err != nil {
+		if err == domain.ErrSubscriptionNotFound {
+			writeError(c, http.StatusNotFound, "subscription not found")
+			return
+		}
+		writeError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	plan, err := h.usecase.GetPlanByID(c.Request.Context(), sub.PlanID)
+	if err != nil {
+		writeError(c, http.StatusInternalServerError, "failed to get plan")
+		return
+	}
+
+	resp := UsageResponse{
+		PlanFeatures: plan.Features,
+	}
+
+	writeJSON(c, http.StatusOK, resp)
+}
