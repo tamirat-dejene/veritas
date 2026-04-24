@@ -158,3 +158,19 @@ func (r *billingRepository) ListPaymentsByEnterprise(ctx context.Context, enterp
 	}
 	return payments, nil
 }
+
+func (r *billingRepository) RecordEventProcessed(ctx context.Context, eventID string, eventType string) error {
+	query := `
+		INSERT INTO veritas_processed_webhook_events (event_id, event_type)
+		VALUES ($1, $2)
+	`
+	_, err := r.db.Exec(ctx, query, eventID, eventType)
+	return err
+}
+
+func (r *billingRepository) HasEventBeenProcessed(ctx context.Context, eventID string) (bool, error) {
+	query := `SELECT EXISTS(SELECT 1 FROM veritas_processed_webhook_events WHERE event_id = $1)`
+	var exists bool
+	err := r.db.QueryRow(ctx, query, eventID).Scan(&exists)
+	return exists, err
+}

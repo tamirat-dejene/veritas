@@ -13,6 +13,7 @@ type SubscriptionRepository interface {
 	GetPlanBySlug(ctx context.Context, slug string) (*SubscriptionPlan, error)
 
 	GetSubscriptionByEnterpriseID(ctx context.Context, enterpriseID uuid.UUID) (*EnterpriseSubscription, error)
+	GetSubscriptionByStripeID(ctx context.Context, stripeSubscriptionID string) (*EnterpriseSubscription, error)
 	CreateSubscription(ctx context.Context, sub *EnterpriseSubscription) error
 	UpdateSubscription(ctx context.Context, sub *EnterpriseSubscription) error
 	WithTx(tx pgx.Tx) SubscriptionRepository
@@ -27,6 +28,10 @@ type BillingRepository interface {
 
 	CreatePayment(ctx context.Context, p *Payment) error
 	ListPaymentsByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]*Payment, error)
+
+	RecordEventProcessed(ctx context.Context, eventID string, eventType string) error
+	HasEventBeenProcessed(ctx context.Context, eventID string) (bool, error)
+
 	WithTx(tx pgx.Tx) BillingRepository
 }
 
@@ -53,4 +58,6 @@ type PaymentUsecase interface {
 
 type PaymentEventPublisher interface {
 	PublishPaymentFailed(ctx context.Context, enterpriseID uuid.UUID) error
+	PublishSubscriptionUpdated(ctx context.Context, enterpriseID uuid.UUID) error
+	PublishSubscriptionCanceled(ctx context.Context, enterpriseID uuid.UUID) error
 }
