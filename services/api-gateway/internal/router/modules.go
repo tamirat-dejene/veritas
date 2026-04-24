@@ -78,6 +78,7 @@ func (g *RouterGroup) RegisterPaymentRoutes(proxy http.Handler) {
 
 	// Admin subscription override
 	g.register("POST", "/admin/subscriptions/:enterpriseId", proxy, sysAdmin...)
+	g.register("POST", "/admin/subscriptions/:enterpriseId/trial", proxy, sysAdmin...)
 	g.register("POST", "/admin/plans", proxy, sysAdmin...)
 	g.register("GET", "/admin/plans", proxy, sysAdmin...)
 	g.register("PATCH", "/admin/plans/:planId", proxy, sysAdmin...)
@@ -87,6 +88,7 @@ func (g *RouterGroup) RegisterPaymentRoutes(proxy http.Handler) {
 	g.register("GET", "/payments/history", proxy, entAdmin...)
 	g.register("GET", "/invoices", proxy, entAdmin...)
 	g.register("GET", "/invoices/:invoiceId", proxy, entAdmin...)
+	g.register("POST", "/admin/invoices/:invoiceId/refund", proxy, sysAdmin...)
 	g.register("GET", "/billing/summary", proxy, entAdmin...)
 
 	// Stripe webhook (public)

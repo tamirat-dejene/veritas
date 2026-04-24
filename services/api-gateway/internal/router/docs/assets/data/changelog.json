@@ -14,6 +14,25 @@
       {
         "type": "new",
         "service": "payment",
+        "summary": "Admin trial provisioning and refund endpoints added",
+        "description": "System administrators can now provision free trial subscriptions for enterprises and issue refunds for existing invoices.",
+        "endpoints": [
+          "POST /admin/subscriptions/:enterpriseId/trial",
+          "POST /admin/invoices/:invoiceId/refund"
+        ]
+      },
+      {
+        "type": "new",
+        "service": "payment",
+        "summary": "Internal feature gate usage endpoint added",
+        "description": "An internal endpoint has been added to retrieve plan features for an enterprise's active subscription. This is strictly for internal microservice communication and is not proxied via the API Gateway.",
+        "endpoints": [
+          "GET /billing/usage/:enterpriseId"
+        ]
+      },
+      {
+        "type": "new",
+        "service": "payment",
         "summary": "Admin subscription plan management endpoints added",
         "description": "System administrators can now fully manage subscription plans directly through the API, including creating, updating, listing, and safely deactivating plans.",
         "endpoints": [

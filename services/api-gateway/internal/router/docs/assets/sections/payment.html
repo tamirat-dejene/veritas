@@ -2,7 +2,7 @@
 <section class="section" data-service="payment">
     <div class="section-header">
         <h2>Payments & Subscriptions</h2>
-        <span class="section-count">15 endpoints</span>
+        <span class="section-count">17 endpoints</span>
     </div>
     <div class="endpoint-list">
         <!-- Subscription Management -->
@@ -27,6 +27,9 @@
         <!-- Admin Overrides -->
         <h3 class="endpoint-group-title">Admin Overrides</h3>
         <endpoint-item method="POST" path="/admin/subscriptions/:enterpriseId">
+            <span class="badge badge-super">SystemAdmin</span>
+        </endpoint-item>
+        <endpoint-item method="POST" path="/admin/subscriptions/:enterpriseId/trial">
             <span class="badge badge-super">SystemAdmin</span>
         </endpoint-item>
         <endpoint-item method="POST" path="/admin/plans">
@@ -55,6 +58,9 @@
         </endpoint-item>
         <endpoint-item method="GET" path="/invoices/:invoiceId">
             <span class="badge badge-admin">EnterpriseAdmin</span>
+        </endpoint-item>
+        <endpoint-item method="POST" path="/admin/invoices/:invoiceId/refund">
+            <span class="badge badge-super">SystemAdmin</span>
         </endpoint-item>
         <endpoint-item method="GET" path="/billing/summary">
             <span class="badge badge-admin">EnterpriseAdmin</span>
