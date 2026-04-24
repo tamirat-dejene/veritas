@@ -248,10 +248,29 @@ definitions:
     - slug
     - stripe_price_id
     type: object
+  CreateTrialRequest:
+    properties:
+      plan_id:
+        type: string
+      trial_days:
+        type: integer
+    required:
+    - plan_id
+    - trial_days
+    type: object
   ErrorResponse:
     properties:
       error:
         type: string
+    type: object
+  RefundRequest:
+    properties:
+      amount:
+        type: number
+      reason:
+        type: string
+    required:
+    - amount
     type: object
   UpdatePlanRequest:
     properties:
@@ -281,6 +300,12 @@ definitions:
         type: string
     required:
     - plan_id
+    type: object
+  UsageResponse:
+    properties:
+      plan_features:
+        additionalProperties: {}
+        type: object
     type: object
   Metadata:
     properties:
@@ -332,6 +357,39 @@ info:
   title: Veritas Payment Service API
   version: "1.0"
 paths:
+  /admin/invoices/{invoiceId}/refund:
+    post:
+      consumes:
+      - application/json
+      description: Refunds a specific invoice by its ID.
+      parameters:
+      - description: Invoice ID (UUID)
+        in: path
+        name: invoiceId
+        required: true
+        type: string
+      - description: Refund request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/RefundRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Refund invoice
+      tags:
+      - admin
   /admin/plans:
     get:
       description: Returns all subscription plans, including inactive ones.
@@ -484,6 +542,39 @@ paths:
       summary: Admin set subscription
       tags:
       - subscription
+  /admin/subscriptions/{enterpriseId}/trial:
+    post:
+      consumes:
+      - application/json
+      description: Starts a free trial subscription without a payment method.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Trial request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/CreateTrialRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Create trial subscription
+      tags:
+      - admin
   /billing/summary:
     get:
       description: Returns aggregated billing details including current plan, subscription
@@ -512,6 +603,38 @@ paths:
       summary: Get billing summary
       tags:
       - billing
+  /billing/usage/{enterpriseId}:
+    get:
+      description: Returns the features JSONB for the active subscription plan. Used
+        internally by other services.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/UsageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get plan features (Internal)
+      tags:
+      - internal
   /health:
     get:
       description: Returns a simple JSON indicating the service is alive.

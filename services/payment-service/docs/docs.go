@@ -17,6 +17,56 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/admin/invoices/{invoiceId}/refund": {
+            "post": {
+                "description": "Refunds a specific invoice by its ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Refund invoice",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Invoice ID (UUID)",
+                        "name": "invoiceId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Refund request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.RefundRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/plans": {
             "get": {
                 "description": "Returns all subscription plans, including inactive ones.",
@@ -246,6 +296,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/subscriptions/{enterpriseId}/trial": {
+            "post": {
+                "description": "Starts a free trial subscription without a payment method.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Create trial subscription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Enterprise ID (UUID)",
+                        "name": "enterpriseId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Trial request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.CreateTrialRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/billing/summary": {
             "get": {
                 "description": "Returns aggregated billing details including current plan, subscription status, and balances.",
@@ -274,6 +374,53 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/billing/usage/{enterpriseId}": {
+            "get": {
+                "description": "Returns the features JSONB for the active subscription plan. Used internally by other services.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "internal"
+                ],
+                "summary": "Get plan features (Internal)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Enterprise ID (UUID)",
+                        "name": "enterpriseId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.UsageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
@@ -1142,10 +1289,39 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_handler.CreateTrialRequest": {
+            "type": "object",
+            "required": [
+                "plan_id",
+                "trial_days"
+            ],
+            "properties": {
+                "plan_id": {
+                    "type": "string"
+                },
+                "trial_days": {
+                    "type": "integer"
+                }
+            }
+        },
         "internal_handler.ErrorResponse": {
             "type": "object",
             "properties": {
                 "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler.RefundRequest": {
+            "type": "object",
+            "required": [
+                "amount"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "reason": {
                     "type": "string"
                 }
             }
@@ -1191,6 +1367,15 @@ const docTemplate = `{
             "properties": {
                 "plan_id": {
                     "type": "string"
+                }
+            }
+        },
+        "internal_handler.UsageResponse": {
+            "type": "object",
+            "properties": {
+                "plan_features": {
+                    "type": "object",
+                    "additionalProperties": {}
                 }
             }
         },
