@@ -85,6 +85,7 @@ func (g *RouterGroup) RegisterPaymentRoutes(proxy http.Handler) {
 	g.register("DELETE", "/admin/plans/:planId", proxy, sysAdmin...)
 
 	// Billing & invoices
+	g.register("GET", "/payments/:paymentId", proxy, sysOrEntAdmin...)
 	g.register("GET", "/payments/history", proxy, entAdmin...)
 	g.register("GET", "/invoices", proxy, entAdmin...)
 	g.register("GET", "/invoices/:invoiceId", proxy, entAdmin...)

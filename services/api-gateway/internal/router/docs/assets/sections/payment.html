@@ -2,7 +2,7 @@
 <section class="section" data-service="payment">
     <div class="section-header">
         <h2>Payments & Subscriptions</h2>
-        <span class="section-count">17 endpoints</span>
+        <span class="section-count">18 endpoints</span>
     </div>
     <div class="endpoint-list">
         <!-- Subscription Management -->
@@ -49,6 +49,10 @@
         <h3 class="endpoint-group-title">Billing Operations</h3>
         <endpoint-item method="POST" path="/webhooks/stripe">
             <span class="badge badge-public">Public</span>
+        </endpoint-item>
+        <endpoint-item method="GET" path="/payments/:paymentId">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+            <span class="badge badge-super">SystemAdmin</span>
         </endpoint-item>
         <endpoint-item method="GET" path="/payments/history">
             <span class="badge badge-admin">EnterpriseAdmin</span>

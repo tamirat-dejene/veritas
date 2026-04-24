@@ -24,6 +24,25 @@
       {
         "type": "new",
         "service": "payment",
+        "summary": "Single payment retrieval endpoint added",
+        "description": "Enterprise administrators and system administrators can now retrieve detailed information for a single specific payment using its ID.",
+        "endpoints": [
+          "GET /payments/:paymentId"
+        ]
+      },
+      {
+        "type": "changed",
+        "service": "payment",
+        "summary": "Added notes field to Payment model",
+        "description": "A new `notes` field has been added to the Payment model to safely store administrative comments and refund reasons, separating them from provider-specific error messages.",
+        "endpoints": [
+          "GET /payments/:paymentId",
+          "GET /payments/history"
+        ]
+      },
+      {
+        "type": "new",
+        "service": "payment",
         "summary": "Internal feature gate usage endpoint added",
         "description": "An internal endpoint has been added to retrieve plan features for an enterprise's active subscription. This is strictly for internal microservice communication and is not proxied via the API Gateway.",
         "endpoints": [
