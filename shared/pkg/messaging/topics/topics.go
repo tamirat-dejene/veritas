@@ -15,4 +15,6 @@ const (
 // Payment-Service topics
 const (
 	SubscriptionPaymentFailed = "subscription.payment.failed"
+	SubscriptionUpdated       = "subscription.updated"
+	SubscriptionCanceled      = "subscription.canceled"
 )
