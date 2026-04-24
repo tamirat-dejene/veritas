@@ -14,7 +14,7 @@ import (
 
 const (
 	invoiceFields = "id, enterprise_id, subscription_id, number, status, amount_due, amount_paid, amount_remaining, currency, due_date, paid_at, hosted_invoice_url, invoice_pdf_url, created_at, updated_at"
-	paymentFields = "id, enterprise_id, invoice_id, amount, currency, status, payment_method_type, provider, provider_payment_id, provider_error_code, provider_error_message, created_at"
+	paymentFields = "id, enterprise_id, invoice_id, amount, currency, status, payment_method_type, provider, provider_payment_id, provider_error_code, provider_error_message, notes, created_at"
 )
 
 type billingRepository struct {
@@ -135,8 +135,8 @@ func (r *billingRepository) CreatePayment(ctx context.Context, p *domain.Payment
 	query := `
 		INSERT INTO veritas_payments (
 			id, enterprise_id, invoice_id, amount, currency, status, payment_method_type,
-			provider, provider_payment_id, provider_error_code, provider_error_message, created_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			provider, provider_payment_id, provider_error_code, provider_error_message, notes, created_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 	`
 	if p.ID == uuid.Nil {
 		p.ID = uuid.New()
@@ -147,7 +147,7 @@ func (r *billingRepository) CreatePayment(ctx context.Context, p *domain.Payment
 
 	_, err := r.db.Exec(ctx, query,
 		p.ID, p.EnterpriseID, p.InvoiceID, p.Amount, p.Currency, p.Status, p.PaymentMethodType,
-		p.Provider, p.ProviderPaymentID, p.ProviderErrorCode, p.ProviderErrorMessage, p.CreatedAt,
+		p.Provider, p.ProviderPaymentID, p.ProviderErrorCode, p.ProviderErrorMessage, p.Notes, p.CreatedAt,
 	)
 	return err
 }
@@ -156,11 +156,26 @@ func (r *billingRepository) GetPaymentByInvoiceID(ctx context.Context, invoiceID
 	query := fmt.Sprintf("SELECT %s FROM veritas_payments WHERE invoice_id = $1 ORDER BY created_at DESC LIMIT 1", paymentFields)
 	var p domain.Payment
 	err := r.db.QueryRow(ctx, query, invoiceID).Scan(
-		&p.ID, &p.EnterpriseID, &p.InvoiceID, &p.Amount, &p.Currency, &p.Status, &p.PaymentMethodType, &p.Provider, &p.ProviderPaymentID, &p.ProviderErrorCode, &p.ProviderErrorMessage, &p.CreatedAt,
+		&p.ID, &p.EnterpriseID, &p.InvoiceID, &p.Amount, &p.Currency, &p.Status, &p.PaymentMethodType, &p.Provider, &p.ProviderPaymentID, &p.ProviderErrorCode, &p.ProviderErrorMessage, &p.Notes, &p.CreatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("payment not found for invoice %s", invoiceID)
+			return nil, domain.ErrPaymentNotFound
+		}
+		return nil, err
+	}
+	return &p, nil
+}
+
+func (r *billingRepository) GetPaymentByID(ctx context.Context, paymentID uuid.UUID) (*domain.Payment, error) {
+	query := fmt.Sprintf("SELECT %s FROM veritas_payments WHERE id = $1", paymentFields)
+	var p domain.Payment
+	err := r.db.QueryRow(ctx, query, paymentID).Scan(
+		&p.ID, &p.EnterpriseID, &p.InvoiceID, &p.Amount, &p.Currency, &p.Status, &p.PaymentMethodType, &p.Provider, &p.ProviderPaymentID, &p.ProviderErrorCode, &p.ProviderErrorMessage, &p.Notes, &p.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrPaymentNotFound
 		}
 		return nil, err
 	}
@@ -192,7 +207,7 @@ func (r *billingRepository) ListPaymentsByEnterprise(ctx context.Context, enterp
 	for rows.Next() {
 		var p domain.Payment
 		err := rows.Scan(
-			&p.ID, &p.EnterpriseID, &p.InvoiceID, &p.Amount, &p.Currency, &p.Status, &p.PaymentMethodType, &p.Provider, &p.ProviderPaymentID, &p.ProviderErrorCode, &p.ProviderErrorMessage, &p.CreatedAt,
+			&p.ID, &p.EnterpriseID, &p.InvoiceID, &p.Amount, &p.Currency, &p.Status, &p.PaymentMethodType, &p.Provider, &p.ProviderPaymentID, &p.ProviderErrorCode, &p.ProviderErrorMessage, &p.Notes, &p.CreatedAt,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -218,7 +233,7 @@ func (r *billingRepository) GetBillingAggregates(ctx context.Context, enterprise
 	paymentQuery := fmt.Sprintf("SELECT %s FROM veritas_payments WHERE enterprise_id = $1 ORDER BY created_at DESC LIMIT 1", paymentFields)
 	var p domain.Payment
 	err := r.db.QueryRow(ctx, paymentQuery, enterpriseID).Scan(
-		&p.ID, &p.EnterpriseID, &p.InvoiceID, &p.Amount, &p.Currency, &p.Status, &p.PaymentMethodType, &p.Provider, &p.ProviderPaymentID, &p.ProviderErrorCode, &p.ProviderErrorMessage, &p.CreatedAt,
+		&p.ID, &p.EnterpriseID, &p.InvoiceID, &p.Amount, &p.Currency, &p.Status, &p.PaymentMethodType, &p.Provider, &p.ProviderPaymentID, &p.ProviderErrorCode, &p.ProviderErrorMessage, &p.Notes, &p.CreatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

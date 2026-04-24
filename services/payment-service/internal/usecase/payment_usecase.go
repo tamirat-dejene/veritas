@@ -88,7 +88,13 @@ func (u *paymentUsecase) UpgradeSubscription(ctx context.Context, enterpriseID u
 	if err != nil {
 		return "", err
 	}
-	return u.payProvider.CreateCheckoutSession(ctx, enterpriseID, plan)
+	// Reuse existing Stripe Customer ID if the enterprise already has a subscription,
+	// preventing the creation of duplicate Stripe customer records on each upgrade.
+	var stripeCustomerID *string
+	if sub, err := u.subRepo.GetSubscriptionByEnterpriseID(ctx, enterpriseID); err == nil && sub != nil {
+		stripeCustomerID = sub.StripeCustomerID
+	}
+	return u.payProvider.CreateCheckoutSession(ctx, enterpriseID, plan, stripeCustomerID)
 }
 
 // CancelSubscription cancels an enterprise's Stripe subscription.
@@ -587,16 +593,16 @@ func (u *paymentUsecase) RefundPayment(ctx context.Context, invoiceID uuid.UUID,
 		}
 
 		refundPayment := &domain.Payment{
-			ID:                   uuid.New(),
-			EnterpriseID:         inv.EnterpriseID,
-			InvoiceID:            &inv.ID,
-			Amount:               -amount,
-			Currency:             inv.Currency,
-			Status:               domain.PaymentStatusRefunded,
-			Provider:             payment.Provider,
-			ProviderPaymentID:    payment.ProviderPaymentID,
-			ProviderErrorMessage: &reason,
-			CreatedAt:            time.Now(),
+			ID:                uuid.New(),
+			EnterpriseID:     inv.EnterpriseID,
+			InvoiceID:         &inv.ID,
+			Amount:            -amount,
+			Currency:          inv.Currency,
+			Status:            domain.PaymentStatusRefunded,
+			Provider:          payment.Provider,
+			ProviderPaymentID: payment.ProviderPaymentID,
+			Notes:             &reason,
+			CreatedAt:         time.Now(),
 		}
 		if err := u.billingRepo.WithTx(tx).CreatePayment(ctx, refundPayment); err != nil {
 			return err
@@ -607,6 +613,11 @@ func (u *paymentUsecase) RefundPayment(ctx context.Context, invoiceID uuid.UUID,
 		inv.UpdatedAt = time.Now()
 		return u.billingRepo.WithTx(tx).UpdateInvoice(ctx, inv)
 	})
+}
+
+// GetPayment retrieves a single payment record by its ID.
+func (u *paymentUsecase) GetPayment(ctx context.Context, paymentID uuid.UUID) (*domain.Payment, error) {
+	return u.billingRepo.GetPaymentByID(ctx, paymentID)
 }
 
 func (u *paymentUsecase) GetBillingSummary(ctx context.Context, enterpriseID uuid.UUID) (*domain.BillingSummary, error) {

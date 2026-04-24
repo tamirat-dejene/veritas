@@ -112,6 +112,7 @@ type Payment struct {
 	ProviderPaymentID    string        `db:"provider_payment_id" json:"provider_payment_id"`
 	ProviderErrorCode    *string       `db:"provider_error_code" json:"provider_error_code,omitempty"`
 	ProviderErrorMessage *string       `db:"provider_error_message" json:"provider_error_message,omitempty"`
+	Notes                *string       `db:"notes" json:"notes,omitempty"`
 	CreatedAt            time.Time     `db:"created_at" json:"created_at"`
 }
 
