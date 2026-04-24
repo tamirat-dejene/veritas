@@ -17,4 +17,5 @@ const (
 	SubscriptionPaymentFailed = "subscription.payment.failed"
 	SubscriptionUpdated       = "subscription.updated"
 	SubscriptionCanceled      = "subscription.canceled"
+	InvoiceUpcoming           = "payment.invoice.upcoming"
 )
