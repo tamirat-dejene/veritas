@@ -27,6 +27,7 @@ func NewRouter(h *handler.PaymentHandler) *gin.Engine {
 		api.POST("/subscriptions/:enterpriseId/upgrade", h.UpgradeSubscription)
 		api.POST("/subscriptions/:enterpriseId/cancel", h.CancelSubscription)
 		api.POST("/subscriptions/:enterpriseId/reactivate", h.ReactivateSubscription)
+		api.GET("/payments/:paymentId", h.GetPayment)
 		api.GET("/payments/history", h.ListPaymentHistory)
 		api.GET("/invoices", h.ListInvoices)
 		api.GET("/invoices/:invoiceId", h.GetInvoice)
