@@ -125,6 +125,8 @@ definitions:
         type: string
       invoice_id:
         type: string
+      notes:
+        type: string
       payment_method_type:
         type: string
       provider:
@@ -724,6 +726,37 @@ paths:
           schema:
             $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Get invoice
+      tags:
+      - payment
+  /payments/{paymentId}:
+    get:
+      description: Enterprise admin or system admin retrieves a specific payment.
+      parameters:
+      - description: Payment UUID
+        in: path
+        name: paymentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Payment'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      summary: Get a single payment by ID
       tags:
       - payment
   /payments/history:

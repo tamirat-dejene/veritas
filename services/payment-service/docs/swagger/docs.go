@@ -635,6 +635,53 @@ const docTemplate = `{
                 }
             }
         },
+        "/payments/{paymentId}": {
+            "get": {
+                "description": "Enterprise admin or system admin retrieves a specific payment.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "summary": "Get a single payment by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Payment UUID",
+                        "name": "paymentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/Payment"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/subscriptions/plans": {
             "get": {
                 "description": "Returns all available subscription plans.",
@@ -1114,6 +1161,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "invoice_id": {
+                    "type": "string"
+                },
+                "notes": {
                     "type": "string"
                 },
                 "payment_method_type": {
