@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 const (
@@ -24,11 +25,24 @@ func NewSubscriptionRepository(db DBTX) domain.SubscriptionRepository {
 	return &subscriptionRepository{db: db}
 }
 
-func (r *subscriptionRepository) ListPlans(ctx context.Context) ([]*domain.SubscriptionPlan, error) {
-	query := fmt.Sprintf("SELECT %s FROM veritas_subscription_plans WHERE is_active = true", planFields)
-	rows, err := r.db.Query(ctx, query)
+func (r *subscriptionRepository) ListPlans(ctx context.Context, params pagination.Params) ([]*domain.SubscriptionPlan, int64, error) {
+	var total int64
+	countQuery := "SELECT COUNT(*) FROM veritas_subscription_plans WHERE is_active = true"
+	err := r.db.QueryRow(ctx, countQuery).Scan(&total)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	sortCol := "created_at"
+	switch params.GetSort() {
+	case "price", "name":
+		sortCol = params.GetSort()
+	}
+
+	query := fmt.Sprintf("SELECT %s FROM veritas_subscription_plans WHERE is_active = true ORDER BY %s %s LIMIT $1 OFFSET $2", planFields, sortCol, params.GetSortDir())
+	rows, err := r.db.Query(ctx, query, params.GetLimit(), params.GetOffset())
+	if err != nil {
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -39,11 +53,46 @@ func (r *subscriptionRepository) ListPlans(ctx context.Context) ([]*domain.Subsc
 			&p.ID, &p.Name, &p.Slug, &p.Description, &p.Price, &p.Currency, &p.BillingCycle, &p.Features, &p.IsActive, &p.CreatedAt, &p.UpdatedAt,
 		)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		plans = append(plans, &p)
 	}
-	return plans, nil
+	return plans, total, nil
+}
+
+func (r *subscriptionRepository) ListAllPlans(ctx context.Context, params pagination.Params) ([]*domain.SubscriptionPlan, int64, error) {
+	var total int64
+	countQuery := "SELECT COUNT(*) FROM veritas_subscription_plans"
+	err := r.db.QueryRow(ctx, countQuery).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	sortCol := "created_at"
+	switch params.GetSort() {
+	case "price", "name":
+		sortCol = params.GetSort()
+	}
+
+	query := fmt.Sprintf("SELECT %s FROM veritas_subscription_plans ORDER BY %s %s LIMIT $1 OFFSET $2", planFields, sortCol, params.GetSortDir())
+	rows, err := r.db.Query(ctx, query, params.GetLimit(), params.GetOffset())
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var plans []*domain.SubscriptionPlan
+	for rows.Next() {
+		var p domain.SubscriptionPlan
+		err := rows.Scan(
+			&p.ID, &p.Name, &p.Slug, &p.Description, &p.Price, &p.Currency, &p.BillingCycle, &p.Features, &p.IsActive, &p.CreatedAt, &p.UpdatedAt,
+		)
+		if err != nil {
+			return nil, 0, err
+		}
+		plans = append(plans, &p)
+	}
+	return plans, total, nil
 }
 
 func (r *subscriptionRepository) GetPlanByID(ctx context.Context, id uuid.UUID) (*domain.SubscriptionPlan, error) {
@@ -142,6 +191,39 @@ func (r *subscriptionRepository) UpdateSubscription(ctx context.Context, s *doma
 		s.PlanID, s.Status, s.CurrentPeriodStart, s.CurrentPeriodEnd,
 		s.CancelAtPeriodEnd, s.CanceledAt, s.EndedAt,
 		s.StripeCustomerID, s.StripeSubscriptionID, s.UpdatedAt, s.ID,
+	)
+	return err
+}
+
+func (r *subscriptionRepository) CreatePlan(ctx context.Context, p *domain.SubscriptionPlan) error {
+	query := `
+		INSERT INTO veritas_subscription_plans (
+			id, name, slug, description, price, currency, billing_cycle, features, stripe_price_id, is_active, created_at, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+	`
+	if p.ID == uuid.Nil {
+		p.ID = uuid.New()
+	}
+	now := time.Now()
+	p.CreatedAt = now
+	p.UpdatedAt = now
+
+	_, err := r.db.Exec(ctx, query,
+		p.ID, p.Name, p.Slug, p.Description, p.Price, p.Currency, p.BillingCycle, p.Features, p.StripePriceID, p.IsActive, p.CreatedAt, p.UpdatedAt,
+	)
+	return err
+}
+
+func (r *subscriptionRepository) UpdatePlan(ctx context.Context, p *domain.SubscriptionPlan) error {
+	query := `
+		UPDATE veritas_subscription_plans SET
+			name = $1, slug = $2, description = $3, price = $4, currency = $5,
+			billing_cycle = $6, features = $7, stripe_price_id = $8, is_active = $9, updated_at = $10
+		WHERE id = $11
+	`
+	p.UpdatedAt = time.Now()
+	_, err := r.db.Exec(ctx, query,
+		p.Name, p.Slug, p.Description, p.Price, p.Currency, p.BillingCycle, p.Features, p.StripePriceID, p.IsActive, p.UpdatedAt, p.ID,
 	)
 	return err
 }

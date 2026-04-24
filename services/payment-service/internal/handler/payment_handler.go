@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 type PaymentHandler struct {
@@ -22,11 +23,16 @@ func NewPaymentHandler(u domain.PaymentUsecase) *PaymentHandler {
 //	@Description	Returns all available subscription plans.
 //	@Tags			subscription
 //	@Produce		json
-//	@Success		200	{array}		domain.SubscriptionPlan
+//	@Param			page			query		int		false	"Page number (default 1)"
+//	@Param			limit			query		int		false	"Items per page (default 10)"
+//	@Param			sort			query		string	false	"Sort field (allowed: price, name, created_at; default: created_at)"
+//	@Param			sort_dir		query		string	false	"Sort direction (asc/desc)"
+//	@Success		200	{object}	pagination.PaginatedResponse[domain.SubscriptionPlan]
 //	@Failure		500	{object}	ErrorResponse
 //	@Router			/subscriptions/plans [get]
 func (h *PaymentHandler) ListPlans(c *gin.Context) {
-	plans, err := h.usecase.ListPlans(c.Request.Context())
+	params := pagination.ParseGin(c)
+	plans, err := h.usecase.ListPlans(c.Request.Context(), params)
 	if err != nil {
 		writeError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -110,8 +116,12 @@ func (h *PaymentHandler) HandleWebhook(c *gin.Context) {
 //	@Description	Returns payment history for the specified enterprise.
 //	@Tags			payment
 //	@Produce		json
-//	@Param			X-Enterprise-ID	header		string	true	"Enterprise ID (UUID)"
-//	@Success		200				{array}		domain.Payment
+//	@Param			X-Enterprise-ID	header		string	true	"Enterprise ID"
+//	@Param			page			query		int		false	"Page number (default 1)"
+//	@Param			limit			query		int		false	"Items per page (default 10)"
+//	@Param			sort			query		string	false	"Sort field (allowed: amount, status, payment_method_type, created_at; default: created_at)"
+//	@Param			sort_dir		query		string	false	"Sort direction (asc/desc)"
+//	@Success		200				{object}	pagination.PaginatedResponse[domain.Payment]
 //	@Failure		400				{object}	ErrorResponse
 //	@Failure		500				{object}	ErrorResponse
 //	@Router			/payments/history [get]
@@ -128,13 +138,54 @@ func (h *PaymentHandler) ListPaymentHistory(c *gin.Context) {
 		return
 	}
 
-	payments, err := h.usecase.ListPaymentHistory(c.Request.Context(), enterpriseID)
+	params := pagination.ParseGin(c)
+
+	payments, err := h.usecase.ListPaymentHistory(c.Request.Context(), enterpriseID, params)
 	if err != nil {
 		writeError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	writeJSON(c, http.StatusOK, payments)
+}
+
+// ListInvoices lists invoices for an enterprise.
+//
+//	@Summary		List invoices
+//	@Description	Returns invoices for the specified enterprise.
+//	@Tags			payment
+//	@Produce		json
+//	@Param			X-Enterprise-ID	header		string	true	"Enterprise ID (UUID)"
+//	@Param			page			query		int		false	"Page number (default 1)"
+//	@Param			limit			query		int		false	"Items per page (default 10)"
+//	@Param			sort			query		string	false	"Sort field (allowed: amount_due, amount_paid, amount_remaining, due_date, status, created_at; default: created_at)"
+//	@Param			sort_dir		query		string	false	"Sort direction (asc/desc)"
+//	@Success		200				{object}	pagination.PaginatedResponse[domain.Invoice]
+//	@Failure		400				{object}	ErrorResponse
+//	@Failure		500				{object}	ErrorResponse
+//	@Router			/invoices [get]
+func (h *PaymentHandler) ListInvoices(c *gin.Context) {
+	enterpriseIDStr := c.GetHeader("X-Enterprise-ID")
+	if enterpriseIDStr == "" {
+		writeError(c, http.StatusBadRequest, "X-Enterprise-ID header is required")
+		return
+	}
+
+	enterpriseID, err := uuid.Parse(enterpriseIDStr)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid enterprise id")
+		return
+	}
+
+	params := pagination.ParseGin(c)
+
+	invoices, err := h.usecase.ListInvoices(c.Request.Context(), enterpriseID, params)
+	if err != nil {
+		writeError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	writeJSON(c, http.StatusOK, invoices)
 }
 
 // GetInvoice returns invoice details by ID.
@@ -168,6 +219,39 @@ func (h *PaymentHandler) GetInvoice(c *gin.Context) {
 	}
 
 	writeJSON(c, http.StatusOK, invoice)
+}
+
+// GetBillingSummary returns an aggregated billing summary for an enterprise.
+//
+//	@Summary		Get billing summary
+//	@Description	Returns aggregated billing details including current plan, subscription status, and balances.
+//	@Tags			billing
+//	@Produce		json
+//	@Param			X-Enterprise-ID	header		string	true	"Enterprise ID (UUID)"
+//	@Success		200				{object}	domain.BillingSummary
+//	@Failure		400				{object}	ErrorResponse
+//	@Failure		500				{object}	ErrorResponse
+//	@Router			/billing/summary [get]
+func (h *PaymentHandler) GetBillingSummary(c *gin.Context) {
+	enterpriseIDStr := c.GetHeader("X-Enterprise-ID")
+	if enterpriseIDStr == "" {
+		writeError(c, http.StatusBadRequest, "X-Enterprise-ID header is required")
+		return
+	}
+
+	enterpriseID, err := uuid.Parse(enterpriseIDStr)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid enterprise id")
+		return
+	}
+
+	summary, err := h.usecase.GetBillingSummary(c.Request.Context(), enterpriseID)
+	if err != nil {
+		writeError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	writeJSON(c, http.StatusOK, summary)
 }
 
 // GetActiveSubscription returns the current subscription for an enterprise.
@@ -305,5 +389,165 @@ func (h *PaymentHandler) AdminSetSubscription(c *gin.Context) {
 		writeError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	c.Status(http.StatusNoContent)
+}
+
+// CreatePlan creates a new subscription plan.
+//
+//	@Summary		Create plan
+//	@Description	System admin creates a new subscription plan.
+//	@Tags			admin
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		CreatePlanRequest	true	"Plan details"
+//	@Success		201		{object}	domain.SubscriptionPlan
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Router			/admin/plans [post]
+func (h *PaymentHandler) CreatePlan(c *gin.Context) {
+	var req CreatePlanRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	plan := &domain.SubscriptionPlan{
+		Name:          req.Name,
+		Slug:          req.Slug,
+		Description:   req.Description,
+		Price:         req.Price,
+		Currency:      domain.Currency(req.Currency),
+		BillingCycle:  domain.BillingCycle(req.BillingCycle),
+		Features:      req.Features,
+		StripePriceID: req.StripePriceID,
+		IsActive:      req.IsActive,
+	}
+
+	if err := h.usecase.CreatePlan(c.Request.Context(), plan); err != nil {
+		writeError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	writeJSON(c, http.StatusCreated, plan)
+}
+
+// UpdatePlan updates an existing subscription plan.
+//
+//	@Summary		Update plan
+//	@Description	System admin updates an existing subscription plan.
+//	@Tags			admin
+//	@Accept			json
+//	@Produce		json
+//	@Param			planId	path		string				true	"Plan ID (UUID)"
+//	@Param			body	body		UpdatePlanRequest	true	"Plan updates"
+//	@Success		200		{object}	domain.SubscriptionPlan
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Router			/admin/plans/{planId} [patch]
+func (h *PaymentHandler) UpdatePlan(c *gin.Context) {
+	planID, err := uuid.Parse(c.Param("planId"))
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid plan id")
+		return
+	}
+
+	var req UpdatePlanRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	// Fetch existing plan first to merge updates
+	targetPlan, err := h.usecase.GetPlanByID(c.Request.Context(), planID)
+	if err != nil {
+		if err == domain.ErrPlanNotFound {
+			writeError(c, http.StatusNotFound, "plan not found")
+			return
+		}
+		writeError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if req.Name != nil {
+		targetPlan.Name = *req.Name
+	}
+	if req.Slug != nil {
+		targetPlan.Slug = *req.Slug
+	}
+	if req.Description != nil {
+		targetPlan.Description = *req.Description
+	}
+	if req.Price != nil {
+		targetPlan.Price = *req.Price
+	}
+	if req.Currency != nil {
+		targetPlan.Currency = domain.Currency(*req.Currency)
+	}
+	if req.BillingCycle != nil {
+		targetPlan.BillingCycle = domain.BillingCycle(*req.BillingCycle)
+	}
+	if req.Features != nil {
+		targetPlan.Features = req.Features
+	}
+	if req.StripePriceID != nil {
+		targetPlan.StripePriceID = *req.StripePriceID
+	}
+	if req.IsActive != nil {
+		targetPlan.IsActive = *req.IsActive
+	}
+
+	if err := h.usecase.UpdatePlan(c.Request.Context(), targetPlan); err != nil {
+		writeError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	writeJSON(c, http.StatusOK, targetPlan)
+}
+
+// AdminListPlans lists all subscription plans (including inactive).
+//
+//	@Summary		Admin list plans
+//	@Description	Returns all subscription plans, including inactive ones.
+//	@Tags			admin
+//	@Produce		json
+//	@Param			page			query		int		false	"Page number (default 1)"
+//	@Param			limit			query		int		false	"Items per page (default 10)"
+//	@Param			sort			query		string	false	"Sort field (allowed: price, name, created_at; default: created_at)"
+//	@Param			sort_dir		query		string	false	"Sort direction (asc/desc)"
+//	@Success		200	{object}	pagination.PaginatedResponse[domain.SubscriptionPlan]
+//	@Failure		500	{object}	ErrorResponse
+//	@Router			/admin/plans [get]
+func (h *PaymentHandler) AdminListPlans(c *gin.Context) {
+	params := pagination.ParseGin(c)
+	plans, err := h.usecase.ListAllPlans(c.Request.Context(), params)
+	if err != nil {
+		writeError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(c, http.StatusOK, plans)
+}
+
+// DeactivatePlan soft-deletes a plan by setting is_active = false.
+//
+//	@Summary		Deactivate plan
+//	@Description	Sets is_active = false for a plan.
+//	@Tags			admin
+//	@Param			planId	path		string	true	"Plan ID (UUID)"
+//	@Success		204
+//	@Failure		400	{object}	ErrorResponse
+//	@Failure		500	{object}	ErrorResponse
+//	@Router			/admin/plans/{planId} [delete]
+func (h *PaymentHandler) DeactivatePlan(c *gin.Context) {
+	planID, err := uuid.Parse(c.Param("planId"))
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid plan id")
+		return
+	}
+
+	if err := h.usecase.DeactivatePlan(c.Request.Context(), planID); err != nil {
+		writeError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	c.Status(http.StatusNoContent)
 }

@@ -28,7 +28,9 @@ func NewRouter(h *handler.PaymentHandler) *gin.Engine {
 		api.POST("/subscriptions/:enterpriseId/cancel", h.CancelSubscription)
 		api.POST("/subscriptions/:enterpriseId/reactivate", h.ReactivateSubscription)
 		api.GET("/payments/history", h.ListPaymentHistory)
+		api.GET("/invoices", h.ListInvoices)
 		api.GET("/invoices/:invoiceId", h.GetInvoice)
+		api.GET("/billing/summary", h.GetBillingSummary)
 		api.POST("/webhooks/stripe", h.HandleWebhook)
 	}
 
@@ -36,6 +38,10 @@ func NewRouter(h *handler.PaymentHandler) *gin.Engine {
 	admin := r.Group("/admin")
 	{
 		admin.POST("/subscriptions/:enterpriseId", h.AdminSetSubscription)
+		admin.POST("/plans", h.CreatePlan)
+		admin.GET("/plans", h.AdminListPlans)
+		admin.PATCH("/plans/:planId", h.UpdatePlan)
+		admin.DELETE("/plans/:planId", h.DeactivatePlan)
 	}
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

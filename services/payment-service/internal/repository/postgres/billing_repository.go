@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 const (
@@ -77,11 +78,25 @@ func (r *billingRepository) GetInvoiceByNumber(ctx context.Context, number strin
 	return &i, nil
 }
 
-func (r *billingRepository) ListInvoicesByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]*domain.Invoice, error) {
-	query := fmt.Sprintf("SELECT %s FROM veritas_invoices WHERE enterprise_id = $1 ORDER BY created_at DESC", invoiceFields)
-	rows, err := r.db.Query(ctx, query, enterpriseID)
+func (r *billingRepository) ListInvoicesByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*domain.Invoice, int64, error) {
+	// Get total count
+	var total int64
+	countQuery := "SELECT COUNT(*) FROM veritas_invoices WHERE enterprise_id = $1"
+	err := r.db.QueryRow(ctx, countQuery, enterpriseID).Scan(&total)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	sortCol := "created_at"
+	switch params.GetSort() {
+	case "amount_due", "amount_paid", "amount_remaining", "due_date", "status":
+		sortCol = params.GetSort()
+	}
+
+	query := fmt.Sprintf("SELECT %s FROM veritas_invoices WHERE enterprise_id = $1 ORDER BY %s %s LIMIT $2 OFFSET $3", invoiceFields, sortCol, params.GetSortDir())
+	rows, err := r.db.Query(ctx, query, enterpriseID, params.GetLimit(), params.GetOffset())
+	if err != nil {
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -92,11 +107,11 @@ func (r *billingRepository) ListInvoicesByEnterprise(ctx context.Context, enterp
 			&i.ID, &i.EnterpriseID, &i.SubscriptionID, &i.Number, &i.Status, &i.AmountDue, &i.AmountPaid, &i.AmountRemaining, &i.Currency, &i.DueDate, &i.PaidAt, &i.HostedInvoiceURL, &i.InvoicePDFURL, &i.CreatedAt, &i.UpdatedAt,
 		)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		invoices = append(invoices, &i)
 	}
-	return invoices, nil
+	return invoices, total, nil
 }
 
 func (r *billingRepository) UpdateInvoice(ctx context.Context, i *domain.Invoice) error {
@@ -137,11 +152,24 @@ func (r *billingRepository) CreatePayment(ctx context.Context, p *domain.Payment
 	return err
 }
 
-func (r *billingRepository) ListPaymentsByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]*domain.Payment, error) {
-	query := fmt.Sprintf("SELECT %s FROM veritas_payments WHERE enterprise_id = $1 ORDER BY created_at DESC", paymentFields)
-	rows, err := r.db.Query(ctx, query, enterpriseID)
+func (r *billingRepository) ListPaymentsByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*domain.Payment, int64, error) {
+	var total int64
+	countQuery := "SELECT COUNT(*) FROM veritas_payments WHERE enterprise_id = $1"
+	err := r.db.QueryRow(ctx, countQuery, enterpriseID).Scan(&total)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	sortCol := "created_at"
+	switch params.GetSort() {
+	case "amount", "status", "payment_method_type":
+		sortCol = params.GetSort()
+	}
+
+	query := fmt.Sprintf("SELECT %s FROM veritas_payments WHERE enterprise_id = $1 ORDER BY %s %s LIMIT $2 OFFSET $3", paymentFields, sortCol, params.GetSortDir())
+	rows, err := r.db.Query(ctx, query, enterpriseID, params.GetLimit(), params.GetOffset())
+	if err != nil {
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -152,11 +180,39 @@ func (r *billingRepository) ListPaymentsByEnterprise(ctx context.Context, enterp
 			&p.ID, &p.EnterpriseID, &p.InvoiceID, &p.Amount, &p.Currency, &p.Status, &p.PaymentMethodType, &p.Provider, &p.ProviderPaymentID, &p.ProviderErrorCode, &p.ProviderErrorMessage, &p.CreatedAt,
 		)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		payments = append(payments, &p)
 	}
-	return payments, nil
+	return payments, total, nil
+}
+
+func (r *billingRepository) GetBillingAggregates(ctx context.Context, enterpriseID uuid.UUID) (float64, float64, *domain.Payment, error) {
+	var totalPaidYTD float64
+	ytdQuery := `SELECT COALESCE(SUM(amount_paid), 0) FROM veritas_invoices WHERE enterprise_id = $1 AND status = 'Paid' AND EXTRACT(YEAR FROM paid_at) = EXTRACT(YEAR FROM CURRENT_DATE)`
+	if err := r.db.QueryRow(ctx, ytdQuery, enterpriseID).Scan(&totalPaidYTD); err != nil {
+		return 0, 0, nil, err
+	}
+
+	var outstandingBalance float64
+	outstandingQuery := `SELECT COALESCE(SUM(amount_remaining), 0) FROM veritas_invoices WHERE enterprise_id = $1 AND status = 'Open'`
+	if err := r.db.QueryRow(ctx, outstandingQuery, enterpriseID).Scan(&outstandingBalance); err != nil {
+		return 0, 0, nil, err
+	}
+
+	paymentQuery := fmt.Sprintf("SELECT %s FROM veritas_payments WHERE enterprise_id = $1 ORDER BY created_at DESC LIMIT 1", paymentFields)
+	var p domain.Payment
+	err := r.db.QueryRow(ctx, paymentQuery, enterpriseID).Scan(
+		&p.ID, &p.EnterpriseID, &p.InvoiceID, &p.Amount, &p.Currency, &p.Status, &p.PaymentMethodType, &p.Provider, &p.ProviderPaymentID, &p.ProviderErrorCode, &p.ProviderErrorMessage, &p.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return totalPaidYTD, outstandingBalance, nil, nil
+		}
+		return 0, 0, nil, err
+	}
+
+	return totalPaidYTD, outstandingBalance, &p, nil
 }
 
 func (r *billingRepository) RecordEventProcessed(ctx context.Context, eventID string, eventType string) error {

@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stripe/stripe-go/v74"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 	"go.uber.org/zap"
 )
 
@@ -39,8 +40,41 @@ func NewPaymentUsecase(
 
 // ─── Plans ────────────────────────────────────────────────────────────────────
 
-func (u *paymentUsecase) ListPlans(ctx context.Context) ([]*domain.SubscriptionPlan, error) {
-	return u.subRepo.ListPlans(ctx)
+func (u *paymentUsecase) ListPlans(ctx context.Context, params pagination.Params) (pagination.PaginatedResponse[*domain.SubscriptionPlan], error) {
+	plans, total, err := u.subRepo.ListPlans(ctx, params)
+	if err != nil {
+		return pagination.PaginatedResponse[*domain.SubscriptionPlan]{}, err
+	}
+	return pagination.NewPaginatedResponse(plans, total, params), nil
+}
+
+func (u *paymentUsecase) ListAllPlans(ctx context.Context, params pagination.Params) (pagination.PaginatedResponse[*domain.SubscriptionPlan], error) {
+	plans, total, err := u.subRepo.ListAllPlans(ctx, params)
+	if err != nil {
+		return pagination.PaginatedResponse[*domain.SubscriptionPlan]{}, err
+	}
+	return pagination.NewPaginatedResponse(plans, total, params), nil
+}
+
+func (u *paymentUsecase) GetPlanByID(ctx context.Context, id uuid.UUID) (*domain.SubscriptionPlan, error) {
+	return u.subRepo.GetPlanByID(ctx, id)
+}
+
+func (u *paymentUsecase) CreatePlan(ctx context.Context, plan *domain.SubscriptionPlan) error {
+	return u.subRepo.CreatePlan(ctx, plan)
+}
+
+func (u *paymentUsecase) UpdatePlan(ctx context.Context, plan *domain.SubscriptionPlan) error {
+	return u.subRepo.UpdatePlan(ctx, plan)
+}
+
+func (u *paymentUsecase) DeactivatePlan(ctx context.Context, planID uuid.UUID) error {
+	plan, err := u.subRepo.GetPlanByID(ctx, planID)
+	if err != nil {
+		return err
+	}
+	plan.IsActive = false
+	return u.subRepo.UpdatePlan(ctx, plan)
 }
 
 // ─── Subscriptions ────────────────────────────────────────────────────────────
@@ -214,7 +248,7 @@ func (u *paymentUsecase) handleCheckoutSessionCompleted(ctx context.Context, eve
 	enterpriseID, _ := uuid.Parse(enterpriseIDStr)
 	planID, _ := uuid.Parse(planIDStr)
 
-	return RunInTx(ctx, u.pool, func(tx pgx.Tx) error {
+	err := RunInTx(ctx, u.pool, func(tx pgx.Tx) error {
 		plan, err := u.subRepo.WithTx(tx).GetPlanByID(ctx, planID)
 		if err != nil {
 			return err
@@ -253,6 +287,12 @@ func (u *paymentUsecase) handleCheckoutSessionCompleted(ctx context.Context, eve
 		}
 		return u.subRepo.WithTx(tx).UpdateSubscription(ctx, sub)
 	})
+	if err == nil {
+		if pubErr := u.eventPublisher.PublishSubscriptionUpdated(ctx, enterpriseID); pubErr != nil {
+			zap.L().Error("failed to publish subscription_updated event after checkout", zap.Error(pubErr))
+		}
+	}
+	return err
 }
 
 func (u *paymentUsecase) handleInvoicePaid(ctx context.Context, event *stripe.Event) error {
@@ -444,12 +484,58 @@ func (u *paymentUsecase) GetInvoice(ctx context.Context, invoiceID uuid.UUID) (*
 	return u.billingRepo.GetInvoiceByID(ctx, invoiceID)
 }
 
-func (u *paymentUsecase) ListInvoices(ctx context.Context, enterpriseID uuid.UUID) ([]*domain.Invoice, error) {
-	return u.billingRepo.ListInvoicesByEnterprise(ctx, enterpriseID)
+func (u *paymentUsecase) ListInvoices(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*domain.Invoice], error) {
+	invoices, total, err := u.billingRepo.ListInvoicesByEnterprise(ctx, enterpriseID, params)
+	if err != nil {
+		return pagination.PaginatedResponse[*domain.Invoice]{}, err
+	}
+	return pagination.NewPaginatedResponse(invoices, total, params), nil
 }
 
-func (u *paymentUsecase) ListPaymentHistory(ctx context.Context, enterpriseID uuid.UUID) ([]*domain.Payment, error) {
-	return u.billingRepo.ListPaymentsByEnterprise(ctx, enterpriseID)
+func (u *paymentUsecase) ListPaymentHistory(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*domain.Payment], error) {
+	payments, total, err := u.billingRepo.ListPaymentsByEnterprise(ctx, enterpriseID, params)
+	if err != nil {
+		return pagination.PaginatedResponse[*domain.Payment]{}, err
+	}
+	return pagination.NewPaginatedResponse(payments, total, params), nil
+}
+
+func (u *paymentUsecase) GetBillingSummary(ctx context.Context, enterpriseID uuid.UUID) (*domain.BillingSummary, error) {
+	sub, err := u.GetActiveSubscription(ctx, enterpriseID)
+	if err != nil && err != domain.ErrSubscriptionNotFound {
+		return nil, fmt.Errorf("get active subscription: %w", err)
+	}
+
+	summary := &domain.BillingSummary{
+		ActivePlanName:     "None",
+		SubscriptionStatus: domain.SubStatusExpired,
+		TotalPaidYTD:       0,
+		OutstandingBalance: 0,
+		LastPayment:        nil,
+	}
+
+	if sub != nil {
+		summary.SubscriptionStatus = sub.Status
+		if !sub.CurrentPeriodEnd.IsZero() {
+			summary.NextBillingDate = &sub.CurrentPeriodEnd
+		}
+		
+		plan, err := u.subRepo.GetPlanByID(ctx, sub.PlanID)
+		if err == nil && plan != nil {
+			summary.ActivePlanName = plan.Name
+		}
+	}
+
+	totalPaid, outstanding, lastPayment, err := u.billingRepo.GetBillingAggregates(ctx, enterpriseID)
+	if err != nil {
+		return nil, fmt.Errorf("get billing aggregates: %w", err)
+	}
+
+	summary.TotalPaidYTD = totalPaid
+	summary.OutstandingBalance = outstanding
+	summary.LastPayment = lastPayment
+
+	return summary, nil
 }
 
 func (u *paymentUsecase) calculatePeriodEnd(start time.Time, cycle domain.BillingCycle) time.Time {

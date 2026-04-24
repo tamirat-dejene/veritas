@@ -32,3 +32,27 @@ type AdminSetSubscriptionRequest struct {
 	PeriodStart *time.Time `json:"period_start"`
 	PeriodEnd   *time.Time `json:"period_end"`
 }
+
+type CreatePlanRequest struct {
+	Name          string         `json:"name" binding:"required"`
+	Slug          string         `json:"slug" binding:"required"`
+	Description   string         `json:"description"`
+	Price         float64        `json:"price" binding:"required"`
+	Currency      string         `json:"currency" binding:"required"`
+	BillingCycle  string         `json:"billing_cycle" binding:"required"`
+	Features      map[string]any `json:"features"`
+	StripePriceID string         `json:"stripe_price_id" binding:"required"`
+	IsActive      bool           `json:"is_active"`
+}
+
+type UpdatePlanRequest struct {
+	Name          *string         `json:"name"`
+	Slug          *string         `json:"slug"`
+	Description   *string         `json:"description"`
+	Price         *float64        `json:"price"`
+	Currency      *string         `json:"currency"`
+	BillingCycle  *string         `json:"billing_cycle"`
+	Features      map[string]any  `json:"features"`
+	StripePriceID *string         `json:"stripe_price_id"`
+	IsActive      *bool           `json:"is_active"`
+}

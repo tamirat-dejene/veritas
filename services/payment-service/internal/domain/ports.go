@@ -3,12 +3,14 @@ package domain
 import (
 	"context"
 
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
 type SubscriptionRepository interface {
-	ListPlans(ctx context.Context) ([]*SubscriptionPlan, error)
+	ListPlans(ctx context.Context, params pagination.Params) ([]*SubscriptionPlan, int64, error)
+	ListAllPlans(ctx context.Context, params pagination.Params) ([]*SubscriptionPlan, int64, error)
 	GetPlanByID(ctx context.Context, id uuid.UUID) (*SubscriptionPlan, error)
 	GetPlanBySlug(ctx context.Context, slug string) (*SubscriptionPlan, error)
 
@@ -16,6 +18,8 @@ type SubscriptionRepository interface {
 	GetSubscriptionByStripeID(ctx context.Context, stripeSubscriptionID string) (*EnterpriseSubscription, error)
 	CreateSubscription(ctx context.Context, sub *EnterpriseSubscription) error
 	UpdateSubscription(ctx context.Context, sub *EnterpriseSubscription) error
+	CreatePlan(ctx context.Context, plan *SubscriptionPlan) error
+	UpdatePlan(ctx context.Context, plan *SubscriptionPlan) error
 	WithTx(tx pgx.Tx) SubscriptionRepository
 }
 
@@ -23,14 +27,16 @@ type BillingRepository interface {
 	CreateInvoice(ctx context.Context, inv *Invoice) error
 	GetInvoiceByID(ctx context.Context, id uuid.UUID) (*Invoice, error)
 	GetInvoiceByNumber(ctx context.Context, number string) (*Invoice, error)
-	ListInvoicesByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]*Invoice, error)
+	ListInvoicesByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*Invoice, int64, error)
 	UpdateInvoice(ctx context.Context, inv *Invoice) error
 
 	CreatePayment(ctx context.Context, p *Payment) error
-	ListPaymentsByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]*Payment, error)
+	ListPaymentsByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*Payment, int64, error)
 
 	RecordEventProcessed(ctx context.Context, eventID string, eventType string) error
 	HasEventBeenProcessed(ctx context.Context, eventID string) (bool, error)
+
+	GetBillingAggregates(ctx context.Context, enterpriseID uuid.UUID) (float64, float64, *Payment, error)
 
 	WithTx(tx pgx.Tx) BillingRepository
 }
@@ -43,13 +49,19 @@ type PaymentProvider interface {
 }
 
 type PaymentUsecase interface {
-	ListPlans(ctx context.Context) ([]*SubscriptionPlan, error)
+	ListPlans(ctx context.Context, params pagination.Params) (pagination.PaginatedResponse[*SubscriptionPlan], error)
+	ListAllPlans(ctx context.Context, params pagination.Params) (pagination.PaginatedResponse[*SubscriptionPlan], error)
+	GetPlanByID(ctx context.Context, id uuid.UUID) (*SubscriptionPlan, error)
+	CreatePlan(ctx context.Context, plan *SubscriptionPlan) error
+	UpdatePlan(ctx context.Context, plan *SubscriptionPlan) error
+	DeactivatePlan(ctx context.Context, planID uuid.UUID) error
 	GetActiveSubscription(ctx context.Context, enterpriseID uuid.UUID) (*EnterpriseSubscription, error)
 	UpgradeSubscription(ctx context.Context, enterpriseID uuid.UUID, planID uuid.UUID) (string, error)
 
 	GetInvoice(ctx context.Context, invoiceID uuid.UUID) (*Invoice, error)
-	ListInvoices(ctx context.Context, enterpriseID uuid.UUID) ([]*Invoice, error)
-	ListPaymentHistory(ctx context.Context, enterpriseID uuid.UUID) ([]*Payment, error)
+	ListInvoices(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*Invoice], error)
+	ListPaymentHistory(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*Payment], error)
+	GetBillingSummary(ctx context.Context, enterpriseID uuid.UUID) (*BillingSummary, error)
 	HandleWebhook(ctx context.Context, payload []byte, sigHeader string) error
 	CancelSubscription(ctx context.Context, enterpriseID uuid.UUID, cancelAtPeriodEnd bool) error
 	ReactivateSubscription(ctx context.Context, enterpriseID uuid.UUID) error

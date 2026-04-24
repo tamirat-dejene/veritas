@@ -123,3 +123,12 @@ type AdminSetSubscriptionRequest struct {
 	PeriodStart *time.Time         `json:"period_start,omitempty"`
 	PeriodEnd   *time.Time         `json:"period_end,omitempty"`
 }
+
+type BillingSummary struct {
+	ActivePlanName     string             `json:"active_plan_name"`
+	SubscriptionStatus SubscriptionStatus `json:"subscription_status"`
+	NextBillingDate    *time.Time         `json:"next_billing_date"`
+	TotalPaidYTD       float64            `json:"total_paid_ytd"`
+	OutstandingBalance float64            `json:"outstanding_balance"`
+	LastPayment        *Payment           `json:"last_payment"`
+}
