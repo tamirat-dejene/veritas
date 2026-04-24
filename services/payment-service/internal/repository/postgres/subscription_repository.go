@@ -91,6 +91,21 @@ func (r *subscriptionRepository) GetSubscriptionByEnterpriseID(ctx context.Conte
 	return &s, nil
 }
 
+func (r *subscriptionRepository) GetSubscriptionByStripeID(ctx context.Context, stripeSubscriptionID string) (*domain.EnterpriseSubscription, error) {
+	query := fmt.Sprintf("SELECT %s FROM veritas_enterprise_subscriptions WHERE stripe_subscription_id = $1", subFields)
+	var s domain.EnterpriseSubscription
+	err := r.db.QueryRow(ctx, query, stripeSubscriptionID).Scan(
+		&s.ID, &s.EnterpriseID, &s.PlanID, &s.Status, &s.CurrentPeriodStart, &s.CurrentPeriodEnd, &s.CancelAtPeriodEnd, &s.CanceledAt, &s.EndedAt, &s.StripeCustomerID, &s.StripeSubscriptionID, &s.CreatedAt, &s.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrSubscriptionNotFound
+		}
+		return nil, err
+	}
+	return &s, nil
+}
+
 func (r *subscriptionRepository) CreateSubscription(ctx context.Context, s *domain.EnterpriseSubscription) error {
 	query := `
 		INSERT INTO veritas_enterprise_subscriptions (
