@@ -110,16 +110,15 @@ func (h *PaymentHandler) HandleWebhook(c *gin.Context) {
 //	@Description	Returns payment history for the specified enterprise.
 //	@Tags			payment
 //	@Produce		json
-//	@Param			enterpriseId	query		string	true	"Enterprise ID (UUID)"
+//	@Param			X-Enterprise-ID	header		string	true	"Enterprise ID (UUID)"
 //	@Success		200				{array}		domain.Payment
 //	@Failure		400				{object}	ErrorResponse
 //	@Failure		500				{object}	ErrorResponse
 //	@Router			/payments/history [get]
 func (h *PaymentHandler) ListPaymentHistory(c *gin.Context) {
-	// In a real scenario, we'd extract enterpriseID from the authenticated user claims
-	enterpriseIDStr := c.Query("enterpriseId")
+	enterpriseIDStr := c.GetHeader("X-Enterprise-ID")
 	if enterpriseIDStr == "" {
-		writeError(c, http.StatusBadRequest, "enterpriseId is required")
+		writeError(c, http.StatusBadRequest, "X-Enterprise-ID header is required")
 		return
 	}
 
