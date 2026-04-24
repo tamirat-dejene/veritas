@@ -183,14 +183,50 @@ func (u *paymentUsecase) AdminSetSubscription(ctx context.Context, enterpriseID 
 			return u.subRepo.WithTx(tx).CreateSubscription(ctx, newSub)
 		}
 
+		return u.subRepo.WithTx(tx).UpdateSubscription(ctx, existing)
+	})
+}
+
+// CreateTrialSubscription provisions a free trial for the enterprise without requiring Stripe.
+func (u *paymentUsecase) CreateTrialSubscription(ctx context.Context, enterpriseID uuid.UUID, planID uuid.UUID, trialDays int) error {
+	now := time.Now()
+	periodEnd := now.AddDate(0, 0, trialDays)
+
+	err := RunInTx(ctx, u.pool, func(tx pgx.Tx) error {
+		existing, err := u.subRepo.WithTx(tx).GetSubscriptionByEnterpriseID(ctx, enterpriseID)
+		if err != nil && err != domain.ErrSubscriptionNotFound {
+			return err
+		}
+
+		if err == domain.ErrSubscriptionNotFound || existing == nil {
+			newSub := &domain.EnterpriseSubscription{
+				ID:                 uuid.New(),
+				EnterpriseID:       enterpriseID,
+				PlanID:             planID,
+				Status:             domain.SubStatusTrial,
+				CurrentPeriodStart: now,
+				CurrentPeriodEnd:   periodEnd,
+				CreatedAt:          now,
+				UpdatedAt:          now,
+			}
+			return u.subRepo.WithTx(tx).CreateSubscription(ctx, newSub)
+		}
+
 		// Update existing
-		existing.PlanID = req.PlanID
-		existing.Status = req.Status
-		existing.CurrentPeriodStart = periodStart
+		existing.PlanID = planID
+		existing.Status = domain.SubStatusTrial
+		existing.CurrentPeriodStart = now
 		existing.CurrentPeriodEnd = periodEnd
 		existing.UpdatedAt = now
 		return u.subRepo.WithTx(tx).UpdateSubscription(ctx, existing)
 	})
+
+	if err != nil {
+		return err
+	}
+
+	// Publish event so enterprise-service knows the subscription changed
+	return u.eventPublisher.PublishSubscriptionUpdated(ctx, enterpriseID)
 }
 
 // ─── Webhook ──────────────────────────────────────────────────────────────────
@@ -223,6 +259,8 @@ func (u *paymentUsecase) HandleWebhook(ctx context.Context, payload []byte, sigH
 		processErr = u.handleInvoicePaid(ctx, event)
 	case "invoice.payment_failed":
 		processErr = u.handleInvoicePaymentFailed(ctx, event)
+	case "invoice.upcoming":
+		processErr = u.handleInvoiceUpcoming(ctx, event)
 	case "customer.subscription.updated":
 		processErr = u.handleSubscriptionUpdated(ctx, event)
 	case "customer.subscription.deleted":
@@ -390,6 +428,34 @@ func (u *paymentUsecase) handleInvoicePaymentFailed(ctx context.Context, event *
 	return nil
 }
 
+func (u *paymentUsecase) handleInvoiceUpcoming(ctx context.Context, event *stripe.Event) error {
+	invoiceObj := event.Data.Object
+	subscriptionStr, _ := invoiceObj["subscription"].(string)
+
+	if subscriptionStr == "" {
+		return nil
+	}
+
+	sub, err := u.subRepo.GetSubscriptionByStripeID(ctx, subscriptionStr)
+	if err != nil {
+		if err == domain.ErrSubscriptionNotFound {
+			return nil // We don't track this subscription, ignore
+		}
+		return err
+	}
+
+	nextPaymentAttemptRaw, ok := invoiceObj["next_payment_attempt"].(float64)
+	if !ok {
+		return nil
+	}
+
+	nextPaymentAttempt := time.Unix(int64(nextPaymentAttemptRaw), 0)
+	daysUntil := int(time.Until(nextPaymentAttempt).Hours() / 24)
+
+	// Publish notification event
+	return u.eventPublisher.PublishInvoiceUpcoming(ctx, sub.EnterpriseID, daysUntil)
+}
+
 func (u *paymentUsecase) handleSubscriptionUpdated(ctx context.Context, event *stripe.Event) error {
 	subObj := event.Data.Object
 	stripeSubscriptionID, _ := subObj["id"].(string)
@@ -498,6 +564,49 @@ func (u *paymentUsecase) ListPaymentHistory(ctx context.Context, enterpriseID uu
 		return pagination.PaginatedResponse[*domain.Payment]{}, err
 	}
 	return pagination.NewPaginatedResponse(payments, total, params), nil
+}
+
+func (u *paymentUsecase) RefundPayment(ctx context.Context, invoiceID uuid.UUID, amount float64, reason string) error {
+	return RunInTx(ctx, u.pool, func(tx pgx.Tx) error {
+		inv, err := u.billingRepo.WithTx(tx).GetInvoiceByID(ctx, invoiceID)
+		if err != nil {
+			return err
+		}
+
+		if inv.AmountPaid < amount {
+			return fmt.Errorf("refund amount exceeds paid amount")
+		}
+
+		payment, err := u.billingRepo.WithTx(tx).GetPaymentByInvoiceID(ctx, invoiceID)
+		if err != nil {
+			return fmt.Errorf("fetch payment: %w", err)
+		}
+
+		if err := u.payProvider.RefundStripePayment(ctx, payment.ProviderPaymentID, amount); err != nil {
+			return err
+		}
+
+		refundPayment := &domain.Payment{
+			ID:                   uuid.New(),
+			EnterpriseID:         inv.EnterpriseID,
+			InvoiceID:            &inv.ID,
+			Amount:               -amount,
+			Currency:             inv.Currency,
+			Status:               domain.PaymentStatusRefunded,
+			Provider:             payment.Provider,
+			ProviderPaymentID:    payment.ProviderPaymentID,
+			ProviderErrorMessage: &reason,
+			CreatedAt:            time.Now(),
+		}
+		if err := u.billingRepo.WithTx(tx).CreatePayment(ctx, refundPayment); err != nil {
+			return err
+		}
+
+		inv.AmountPaid -= amount
+		inv.AmountRemaining += amount
+		inv.UpdatedAt = time.Now()
+		return u.billingRepo.WithTx(tx).UpdateInvoice(ctx, inv)
+	})
 }
 
 func (u *paymentUsecase) GetBillingSummary(ctx context.Context, enterpriseID uuid.UUID) (*domain.BillingSummary, error) {
