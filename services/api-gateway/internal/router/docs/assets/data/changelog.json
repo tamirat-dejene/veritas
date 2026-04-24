@@ -1,5 +1,19 @@
 [
   {
+    "date": "2026-04-24",
+    "changes": [
+      {
+        "type": "breaking",
+        "service": "payment",
+        "summary": "Secure enterprise ID extraction for payment history",
+        "description": "The GET /payments/history endpoint no longer accepts enterpriseId as a query parameter. The enterprise ID is now automatically extracted from the authenticated user's JWT claims (passed via X-Enterprise-ID header by the gateway). This prevents unauthorized access to other enterprises' payment data.",
+        "migration": [
+          { "before": "GET /payments/history?enterpriseId=UUID", "after": "GET /payments/history (ID from JWT)" }
+        ]
+      }
+    ]
+  },
+  {
     "date": "2026-04-23",
     "changes": [
       {
