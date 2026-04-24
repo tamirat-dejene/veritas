@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  BillingCycle:
+  github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.BillingCycle:
     enum:
     - monthly
     - yearly
@@ -8,22 +8,22 @@ definitions:
     x-enum-varnames:
     - BillingCycleMonthly
     - BillingCycleYearly
-  BillingSummary:
+  github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.BillingSummary:
     properties:
       active_plan_name:
         type: string
       last_payment:
-        $ref: '#/definitions/Payment'
+        $ref: '#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Payment'
       next_billing_date:
         type: string
       outstanding_balance:
         type: number
       subscription_status:
-        $ref: '#/definitions/SubscriptionStatus'
+        $ref: '#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.SubscriptionStatus'
       total_paid_ytd:
         type: number
     type: object
-  Currency:
+  github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Currency:
     enum:
     - ETB
     - USD
@@ -35,7 +35,7 @@ definitions:
     - CurrencyUSD
     - CurrencyEUR
     - CurrencyGBP
-  EnterpriseSubscription:
+  github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.EnterpriseSubscription:
     properties:
       cancel_at_period_end:
         type: boolean
@@ -56,7 +56,7 @@ definitions:
       plan_id:
         type: string
       status:
-        $ref: '#/definitions/SubscriptionStatus'
+        $ref: '#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.SubscriptionStatus'
       stripe_customer_id:
         type: string
       stripe_subscription_id:
@@ -64,7 +64,7 @@ definitions:
       updated_at:
         type: string
     type: object
-  Invoice:
+  github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Invoice:
     properties:
       amount_due:
         type: number
@@ -75,7 +75,7 @@ definitions:
       created_at:
         type: string
       currency:
-        $ref: '#/definitions/Currency'
+        $ref: '#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Currency'
       due_date:
         type: string
       enterprise_id:
@@ -91,13 +91,13 @@ definitions:
       paid_at:
         type: string
       status:
-        $ref: '#/definitions/InvoiceStatus'
+        $ref: '#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.InvoiceStatus'
       subscription_id:
         type: string
       updated_at:
         type: string
     type: object
-  InvoiceStatus:
+  github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.InvoiceStatus:
     enum:
     - Draft
     - Open
@@ -111,14 +111,14 @@ definitions:
     - InvoiceStatusPaid
     - InvoiceStatusVoid
     - InvoiceStatusUncollectible
-  Payment:
+  github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Payment:
     properties:
       amount:
         type: number
       created_at:
         type: string
       currency:
-        $ref: '#/definitions/Currency'
+        $ref: '#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Currency'
       enterprise_id:
         type: string
       id:
@@ -136,9 +136,9 @@ definitions:
       provider_payment_id:
         type: string
       status:
-        $ref: '#/definitions/PaymentStatus'
+        $ref: '#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.PaymentStatus'
     type: object
-  PaymentStatus:
+  github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.PaymentStatus:
     enum:
     - Pending
     - Succeeded
@@ -150,14 +150,14 @@ definitions:
     - PaymentStatusSucceeded
     - PaymentStatusFailed
     - PaymentStatusRefunded
-  SubscriptionPlan:
+  github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.SubscriptionPlan:
     properties:
       billing_cycle:
-        $ref: '#/definitions/BillingCycle'
+        $ref: '#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.BillingCycle'
       created_at:
         type: string
       currency:
-        $ref: '#/definitions/Currency'
+        $ref: '#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Currency'
       description:
         type: string
       features:
@@ -178,7 +178,7 @@ definitions:
       updated_at:
         type: string
     type: object
-  SubscriptionStatus:
+  github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.SubscriptionStatus:
     enum:
     - Active
     - PastDue
@@ -192,7 +192,7 @@ definitions:
     - SubStatusCanceled
     - SubStatusExpired
     - SubStatusTrial
-  AdminSetSubscriptionRequest:
+  internal_handler.AdminSetSubscriptionRequest:
     properties:
       period_end:
         type: string
@@ -206,7 +206,7 @@ definitions:
     - plan_id
     - status
     type: object
-  CancelSubscriptionRequest:
+  internal_handler.CancelSubscriptionRequest:
     properties:
       cancel_at_period_end:
         description: |-
@@ -214,12 +214,12 @@ definitions:
           When false (default), it is canceled immediately.
         type: boolean
     type: object
-  CheckoutURLResponse:
+  internal_handler.CheckoutURLResponse:
     properties:
       checkout_url:
         type: string
     type: object
-  CreatePlanRequest:
+  internal_handler.CreatePlanRequest:
     properties:
       billing_cycle:
         type: string
@@ -248,12 +248,12 @@ definitions:
     - slug
     - stripe_price_id
     type: object
-  ErrorResponse:
+  internal_handler.ErrorResponse:
     properties:
       error:
         type: string
     type: object
-  UpdatePlanRequest:
+  internal_handler.UpdatePlanRequest:
     properties:
       billing_cycle:
         type: string
@@ -275,14 +275,14 @@ definitions:
       stripe_price_id:
         type: string
     type: object
-  UpgradeSubscriptionRequest:
+  internal_handler.UpgradeSubscriptionRequest:
     properties:
       plan_id:
         type: string
     required:
     - plan_id
     type: object
-  Metadata:
+  pagination.Metadata:
     properties:
       current_page:
         type: integer
@@ -297,32 +297,32 @@ definitions:
       total_pages:
         type: integer
     type: object
-  PaginatedResponse-Invoice:
+  pagination.PaginatedResponse-github_com_tamirat-dejene_veritas_services_payment-service_internal_domain_Invoice:
     properties:
       data:
         items:
-          $ref: '#/definitions/Invoice'
+          $ref: '#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Invoice'
         type: array
       metadata:
-        $ref: '#/definitions/Metadata'
+        $ref: '#/definitions/pagination.Metadata'
     type: object
-  PaginatedResponse-Payment:
+  pagination.PaginatedResponse-github_com_tamirat-dejene_veritas_services_payment-service_internal_domain_Payment:
     properties:
       data:
         items:
-          $ref: '#/definitions/Payment'
+          $ref: '#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Payment'
         type: array
       metadata:
-        $ref: '#/definitions/Metadata'
+        $ref: '#/definitions/pagination.Metadata'
     type: object
-  PaginatedResponse-SubscriptionPlan:
+  pagination.PaginatedResponse-github_com_tamirat-dejene_veritas_services_payment-service_internal_domain_SubscriptionPlan:
     properties:
       data:
         items:
-          $ref: '#/definitions/SubscriptionPlan'
+          $ref: '#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.SubscriptionPlan'
         type: array
       metadata:
-        $ref: '#/definitions/Metadata'
+        $ref: '#/definitions/pagination.Metadata'
     type: object
 info:
   contact:
@@ -358,11 +358,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/PaginatedResponse-SubscriptionPlan'
+            $ref: '#/definitions/pagination.PaginatedResponse-github_com_tamirat-dejene_veritas_services_payment-service_internal_domain_SubscriptionPlan'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Admin list plans
       tags:
       - admin
@@ -376,22 +376,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/CreatePlanRequest'
+          $ref: '#/definitions/internal_handler.CreatePlanRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/SubscriptionPlan'
+            $ref: '#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.SubscriptionPlan'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Create plan
       tags:
       - admin
@@ -410,11 +410,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Deactivate plan
       tags:
       - admin
@@ -433,22 +433,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/UpdatePlanRequest'
+          $ref: '#/definitions/internal_handler.UpdatePlanRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SubscriptionPlan'
+            $ref: '#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.SubscriptionPlan'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Update plan
       tags:
       - admin
@@ -469,18 +469,18 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/AdminSetSubscriptionRequest'
+          $ref: '#/definitions/internal_handler.AdminSetSubscriptionRequest'
       responses:
         "204":
           description: No Content
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Admin set subscription
       tags:
       - subscription
@@ -500,15 +500,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/BillingSummary'
+            $ref: '#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.BillingSummary'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Get billing summary
       tags:
       - billing
@@ -560,15 +560,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/PaginatedResponse-Invoice'
+            $ref: '#/definitions/pagination.PaginatedResponse-github_com_tamirat-dejene_veritas_services_payment-service_internal_domain_Invoice'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: List invoices
       tags:
       - payment
@@ -587,19 +587,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/Invoice'
+            $ref: '#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Invoice'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Get invoice
       tags:
       - payment
@@ -635,15 +635,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/PaginatedResponse-Payment'
+            $ref: '#/definitions/pagination.PaginatedResponse-github_com_tamirat-dejene_veritas_services_payment-service_internal_domain_Payment'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: List payment history
       tags:
       - payment
@@ -662,19 +662,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/EnterpriseSubscription'
+            $ref: '#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.EnterpriseSubscription'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Get active subscription
       tags:
       - subscription
@@ -693,26 +693,26 @@ paths:
         in: body
         name: body
         schema:
-          $ref: '#/definitions/CancelSubscriptionRequest'
+          $ref: '#/definitions/internal_handler.CancelSubscriptionRequest'
       responses:
         "204":
           description: No Content
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Cancel subscription
       tags:
       - subscription
@@ -732,15 +732,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Reactivate subscription
       tags:
       - subscription
@@ -761,22 +761,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/UpgradeSubscriptionRequest'
+          $ref: '#/definitions/internal_handler.UpgradeSubscriptionRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/CheckoutURLResponse'
+            $ref: '#/definitions/internal_handler.CheckoutURLResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Upgrade enterprise subscription
       tags:
       - subscription
@@ -806,11 +806,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/PaginatedResponse-SubscriptionPlan'
+            $ref: '#/definitions/pagination.PaginatedResponse-github_com_tamirat-dejene_veritas_services_payment-service_internal_domain_SubscriptionPlan'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: List subscription plans
       tags:
       - subscription
@@ -837,11 +837,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "503":
           description: Service Unavailable
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Handle Stripe webhook
       tags:
       - webhook

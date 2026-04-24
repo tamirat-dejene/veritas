@@ -54,13 +54,13 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PaginatedResponse-SubscriptionPlan"
+                            "$ref": "#/definitions/pagination.PaginatedResponse-github_com_tamirat-dejene_veritas_services_payment-service_internal_domain_SubscriptionPlan"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -84,7 +84,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreatePlanRequest"
+                            "$ref": "#/definitions/internal_handler.CreatePlanRequest"
                         }
                     }
                 ],
@@ -92,19 +92,19 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/SubscriptionPlan"
+                            "$ref": "#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.SubscriptionPlan"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -133,13 +133,13 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -170,7 +170,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdatePlanRequest"
+                            "$ref": "#/definitions/internal_handler.UpdatePlanRequest"
                         }
                     }
                 ],
@@ -178,19 +178,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SubscriptionPlan"
+                            "$ref": "#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.SubscriptionPlan"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -220,7 +220,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/AdminSetSubscriptionRequest"
+                            "$ref": "#/definitions/internal_handler.AdminSetSubscriptionRequest"
                         }
                     }
                 ],
@@ -231,13 +231,13 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -266,19 +266,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/BillingSummary"
+                            "$ref": "#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.BillingSummary"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -355,19 +355,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PaginatedResponse-Invoice"
+                            "$ref": "#/definitions/pagination.PaginatedResponse-github_com_tamirat-dejene_veritas_services_payment-service_internal_domain_Invoice"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -396,25 +396,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/Invoice"
+                            "$ref": "#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Invoice"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -467,19 +467,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PaginatedResponse-Payment"
+                            "$ref": "#/definitions/pagination.PaginatedResponse-github_com_tamirat-dejene_veritas_services_payment-service_internal_domain_Payment"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -525,13 +525,13 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PaginatedResponse-SubscriptionPlan"
+                            "$ref": "#/definitions/pagination.PaginatedResponse-github_com_tamirat-dejene_veritas_services_payment-service_internal_domain_SubscriptionPlan"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -560,25 +560,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/EnterpriseSubscription"
+                            "$ref": "#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.EnterpriseSubscription"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -607,7 +607,7 @@
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/CancelSubscriptionRequest"
+                            "$ref": "#/definitions/internal_handler.CancelSubscriptionRequest"
                         }
                     }
                 ],
@@ -618,25 +618,25 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -665,19 +665,19 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -710,7 +710,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpgradeSubscriptionRequest"
+                            "$ref": "#/definitions/internal_handler.UpgradeSubscriptionRequest"
                         }
                     }
                 ],
@@ -718,19 +718,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CheckoutURLResponse"
+                            "$ref": "#/definitions/internal_handler.CheckoutURLResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -771,13 +771,13 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "503": {
                         "description": "Service Unavailable",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -785,7 +785,7 @@
         }
     },
     "definitions": {
-        "BillingCycle": {
+        "github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.BillingCycle": {
             "type": "string",
             "enum": [
                 "monthly",
@@ -796,14 +796,14 @@
                 "BillingCycleYearly"
             ]
         },
-        "BillingSummary": {
+        "github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.BillingSummary": {
             "type": "object",
             "properties": {
                 "active_plan_name": {
                     "type": "string"
                 },
                 "last_payment": {
-                    "$ref": "#/definitions/Payment"
+                    "$ref": "#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Payment"
                 },
                 "next_billing_date": {
                     "type": "string"
@@ -812,14 +812,14 @@
                     "type": "number"
                 },
                 "subscription_status": {
-                    "$ref": "#/definitions/SubscriptionStatus"
+                    "$ref": "#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.SubscriptionStatus"
                 },
                 "total_paid_ytd": {
                     "type": "number"
                 }
             }
         },
-        "Currency": {
+        "github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Currency": {
             "type": "string",
             "enum": [
                 "ETB",
@@ -834,7 +834,7 @@
                 "CurrencyGBP"
             ]
         },
-        "EnterpriseSubscription": {
+        "github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.EnterpriseSubscription": {
             "type": "object",
             "properties": {
                 "cancel_at_period_end": {
@@ -865,7 +865,7 @@
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/SubscriptionStatus"
+                    "$ref": "#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.SubscriptionStatus"
                 },
                 "stripe_customer_id": {
                     "type": "string"
@@ -878,7 +878,7 @@
                 }
             }
         },
-        "Invoice": {
+        "github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Invoice": {
             "type": "object",
             "properties": {
                 "amount_due": {
@@ -894,7 +894,7 @@
                     "type": "string"
                 },
                 "currency": {
-                    "$ref": "#/definitions/Currency"
+                    "$ref": "#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Currency"
                 },
                 "due_date": {
                     "type": "string"
@@ -918,7 +918,7 @@
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/InvoiceStatus"
+                    "$ref": "#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.InvoiceStatus"
                 },
                 "subscription_id": {
                     "type": "string"
@@ -928,7 +928,7 @@
                 }
             }
         },
-        "InvoiceStatus": {
+        "github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.InvoiceStatus": {
             "type": "string",
             "enum": [
                 "Draft",
@@ -945,7 +945,7 @@
                 "InvoiceStatusUncollectible"
             ]
         },
-        "Payment": {
+        "github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Payment": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -955,7 +955,7 @@
                     "type": "string"
                 },
                 "currency": {
-                    "$ref": "#/definitions/Currency"
+                    "$ref": "#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Currency"
                 },
                 "enterprise_id": {
                     "type": "string"
@@ -982,11 +982,11 @@
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/PaymentStatus"
+                    "$ref": "#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.PaymentStatus"
                 }
             }
         },
-        "PaymentStatus": {
+        "github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.PaymentStatus": {
             "type": "string",
             "enum": [
                 "Pending",
@@ -1001,17 +1001,17 @@
                 "PaymentStatusRefunded"
             ]
         },
-        "SubscriptionPlan": {
+        "github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.SubscriptionPlan": {
             "type": "object",
             "properties": {
                 "billing_cycle": {
-                    "$ref": "#/definitions/BillingCycle"
+                    "$ref": "#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.BillingCycle"
                 },
                 "created_at": {
                     "type": "string"
                 },
                 "currency": {
-                    "$ref": "#/definitions/Currency"
+                    "$ref": "#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Currency"
                 },
                 "description": {
                     "type": "string"
@@ -1043,7 +1043,7 @@
                 }
             }
         },
-        "SubscriptionStatus": {
+        "github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.SubscriptionStatus": {
             "type": "string",
             "enum": [
                 "Active",
@@ -1060,7 +1060,7 @@
                 "SubStatusTrial"
             ]
         },
-        "AdminSetSubscriptionRequest": {
+        "internal_handler.AdminSetSubscriptionRequest": {
             "type": "object",
             "required": [
                 "plan_id",
@@ -1081,7 +1081,7 @@
                 }
             }
         },
-        "CancelSubscriptionRequest": {
+        "internal_handler.CancelSubscriptionRequest": {
             "type": "object",
             "properties": {
                 "cancel_at_period_end": {
@@ -1090,7 +1090,7 @@
                 }
             }
         },
-        "CheckoutURLResponse": {
+        "internal_handler.CheckoutURLResponse": {
             "type": "object",
             "properties": {
                 "checkout_url": {
@@ -1098,7 +1098,7 @@
                 }
             }
         },
-        "CreatePlanRequest": {
+        "internal_handler.CreatePlanRequest": {
             "type": "object",
             "required": [
                 "billing_cycle",
@@ -1139,7 +1139,7 @@
                 }
             }
         },
-        "ErrorResponse": {
+        "internal_handler.ErrorResponse": {
             "type": "object",
             "properties": {
                 "error": {
@@ -1147,7 +1147,7 @@
                 }
             }
         },
-        "UpdatePlanRequest": {
+        "internal_handler.UpdatePlanRequest": {
             "type": "object",
             "properties": {
                 "billing_cycle": {
@@ -1180,7 +1180,7 @@
                 }
             }
         },
-        "UpgradeSubscriptionRequest": {
+        "internal_handler.UpgradeSubscriptionRequest": {
             "type": "object",
             "required": [
                 "plan_id"
@@ -1191,7 +1191,7 @@
                 }
             }
         },
-        "Metadata": {
+        "pagination.Metadata": {
             "type": "object",
             "properties": {
                 "current_page": {
@@ -1214,45 +1214,45 @@
                 }
             }
         },
-        "PaginatedResponse-Invoice": {
+        "pagination.PaginatedResponse-github_com_tamirat-dejene_veritas_services_payment-service_internal_domain_Invoice": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/Invoice"
+                        "$ref": "#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Invoice"
                     }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/Metadata"
+                    "$ref": "#/definitions/pagination.Metadata"
                 }
             }
         },
-        "PaginatedResponse-Payment": {
+        "pagination.PaginatedResponse-github_com_tamirat-dejene_veritas_services_payment-service_internal_domain_Payment": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/Payment"
+                        "$ref": "#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.Payment"
                     }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/Metadata"
+                    "$ref": "#/definitions/pagination.Metadata"
                 }
             }
         },
-        "PaginatedResponse-SubscriptionPlan": {
+        "pagination.PaginatedResponse-github_com_tamirat-dejene_veritas_services_payment-service_internal_domain_SubscriptionPlan": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/SubscriptionPlan"
+                        "$ref": "#/definitions/github_com_tamirat-dejene_veritas_services_payment-service_internal_domain.SubscriptionPlan"
                     }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/Metadata"
+                    "$ref": "#/definitions/pagination.Metadata"
                 }
             }
         }
