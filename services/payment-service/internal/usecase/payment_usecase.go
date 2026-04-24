@@ -172,22 +172,44 @@ func (u *paymentUsecase) HandleWebhook(ctx context.Context, payload []byte, sigH
 		return fmt.Errorf("unexpected event type")
 	}
 
-	switch event.Type {
-	case "checkout.session.completed":
-		return u.handleCheckoutSessionCompleted(ctx, event)
-	case "invoice.paid":
-		return u.handleInvoicePaid(ctx, event)
-	case "invoice.payment_failed":
-		return u.handleInvoicePaymentFailed(ctx, event)
+	// Idempotency check
+	processed, err := u.billingRepo.HasEventBeenProcessed(ctx, event.ID)
+	if err != nil {
+		return fmt.Errorf("check event processed: %w", err)
+	}
+	if processed {
+		return nil // Already processed, return success
 	}
 
-	return nil
+	var processErr error
+	switch event.Type {
+	case "checkout.session.completed":
+		processErr = u.handleCheckoutSessionCompleted(ctx, event)
+	case "invoice.paid":
+		processErr = u.handleInvoicePaid(ctx, event)
+	case "invoice.payment_failed":
+		processErr = u.handleInvoicePaymentFailed(ctx, event)
+	case "customer.subscription.updated":
+		processErr = u.handleSubscriptionUpdated(ctx, event)
+	case "customer.subscription.deleted":
+		processErr = u.handleSubscriptionDeleted(ctx, event)
+	}
+
+	if processErr != nil {
+		return processErr
+	}
+
+	// Record success
+	return u.billingRepo.RecordEventProcessed(ctx, event.ID, string(event.Type))
 }
 
 func (u *paymentUsecase) handleCheckoutSessionCompleted(ctx context.Context, event *stripe.Event) error {
 	metadata := event.Data.Object["metadata"].(map[string]any)
 	enterpriseIDStr := metadata["enterprise_id"].(string)
 	planIDStr := metadata["plan_id"].(string)
+
+	customerStr, _ := event.Data.Object["customer"].(string)
+	subscriptionStr, _ := event.Data.Object["subscription"].(string)
 
 	enterpriseID, _ := uuid.Parse(enterpriseIDStr)
 	planID, _ := uuid.Parse(planIDStr)
@@ -209,6 +231,12 @@ func (u *paymentUsecase) handleCheckoutSessionCompleted(ctx context.Context, eve
 					CurrentPeriodStart: time.Now(),
 					CurrentPeriodEnd:   u.calculatePeriodEnd(time.Now(), plan.BillingCycle),
 				}
+				if customerStr != "" {
+					newSub.StripeCustomerID = &customerStr
+				}
+				if subscriptionStr != "" {
+					newSub.StripeSubscriptionID = &subscriptionStr
+				}
 				return u.subRepo.WithTx(tx).CreateSubscription(ctx, newSub)
 			}
 			return err
@@ -217,6 +245,12 @@ func (u *paymentUsecase) handleCheckoutSessionCompleted(ctx context.Context, eve
 		sub.PlanID = planID
 		sub.Status = domain.SubStatusActive
 		sub.UpdatedAt = time.Now()
+		if customerStr != "" {
+			sub.StripeCustomerID = &customerStr
+		}
+		if subscriptionStr != "" {
+			sub.StripeSubscriptionID = &subscriptionStr
+		}
 		return u.subRepo.WithTx(tx).UpdateSubscription(ctx, sub)
 	})
 }
@@ -314,6 +348,94 @@ func (u *paymentUsecase) handleInvoicePaymentFailed(ctx context.Context, event *
 	}
 
 	return nil
+}
+
+func (u *paymentUsecase) handleSubscriptionUpdated(ctx context.Context, event *stripe.Event) error {
+	subObj := event.Data.Object
+	stripeSubscriptionID, _ := subObj["id"].(string)
+	if stripeSubscriptionID == "" {
+		return nil
+	}
+
+	status, _ := subObj["status"].(string)
+	currentPeriodStartRaw, _ := subObj["current_period_start"].(float64)
+	currentPeriodEndRaw, _ := subObj["current_period_end"].(float64)
+	cancelAtPeriodEnd, _ := subObj["cancel_at_period_end"].(bool)
+
+	var subStatus domain.SubscriptionStatus
+	switch status {
+	case "active":
+		subStatus = domain.SubStatusActive
+	case "past_due":
+		subStatus = domain.SubStatusPastDue
+	case "canceled":
+		subStatus = domain.SubStatusCanceled
+	case "trialing":
+		subStatus = domain.SubStatusTrial
+	default:
+		subStatus = domain.SubStatusExpired
+	}
+
+	return RunInTx(ctx, u.pool, func(tx pgx.Tx) error {
+		sub, err := u.subRepo.WithTx(tx).GetSubscriptionByStripeID(ctx, stripeSubscriptionID)
+		if err != nil {
+			if err == domain.ErrSubscriptionNotFound {
+				return nil // Ignore if we don't have it locally
+			}
+			return err
+		}
+
+		sub.Status = subStatus
+		sub.CurrentPeriodStart = time.Unix(int64(currentPeriodStartRaw), 0)
+		sub.CurrentPeriodEnd = time.Unix(int64(currentPeriodEndRaw), 0)
+		sub.CancelAtPeriodEnd = cancelAtPeriodEnd
+		sub.UpdatedAt = time.Now()
+
+		if err := u.subRepo.WithTx(tx).UpdateSubscription(ctx, sub); err != nil {
+			return err
+		}
+
+		if err := u.eventPublisher.PublishSubscriptionUpdated(ctx, sub.EnterpriseID); err != nil {
+			zap.L().Error("failed to publish subscription_updated event", zap.Error(err))
+		}
+
+		return nil
+	})
+}
+
+func (u *paymentUsecase) handleSubscriptionDeleted(ctx context.Context, event *stripe.Event) error {
+	subObj := event.Data.Object
+	stripeSubscriptionID, _ := subObj["id"].(string)
+	if stripeSubscriptionID == "" {
+		return nil
+	}
+
+	return RunInTx(ctx, u.pool, func(tx pgx.Tx) error {
+		sub, err := u.subRepo.WithTx(tx).GetSubscriptionByStripeID(ctx, stripeSubscriptionID)
+		if err != nil {
+			if err == domain.ErrSubscriptionNotFound {
+				return nil
+			}
+			return err
+		}
+
+		now := time.Now()
+		sub.Status = domain.SubStatusCanceled
+		sub.CanceledAt = &now
+		sub.EndedAt = &now
+		sub.UpdatedAt = now
+		sub.CancelAtPeriodEnd = false
+
+		if err := u.subRepo.WithTx(tx).UpdateSubscription(ctx, sub); err != nil {
+			return err
+		}
+
+		if err := u.eventPublisher.PublishSubscriptionCanceled(ctx, sub.EnterpriseID); err != nil {
+			zap.L().Error("failed to publish subscription_canceled event", zap.Error(err))
+		}
+
+		return nil
+	})
 }
 
 // ─── Invoices & Payments ──────────────────────────────────────────────────────
