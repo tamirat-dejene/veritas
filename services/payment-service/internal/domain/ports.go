@@ -32,6 +32,7 @@ type BillingRepository interface {
 
 	CreatePayment(ctx context.Context, p *Payment) error
 	GetPaymentByInvoiceID(ctx context.Context, invoiceID uuid.UUID) (*Payment, error)
+	GetPaymentByID(ctx context.Context, paymentID uuid.UUID) (*Payment, error)
 	ListPaymentsByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*Payment, int64, error)
 
 	RecordEventProcessed(ctx context.Context, eventID string, eventType string) error
@@ -43,7 +44,7 @@ type BillingRepository interface {
 }
 
 type PaymentProvider interface {
-	CreateCheckoutSession(ctx context.Context, enterpriseID uuid.UUID, plan *SubscriptionPlan) (string, error)
+	CreateCheckoutSession(ctx context.Context, enterpriseID uuid.UUID, plan *SubscriptionPlan, stripeCustomerID *string) (string, error)
 	ConstructEvent(payload []byte, sigHeader string) (any, error)
 	CancelStripeSubscription(ctx context.Context, stripeSubscriptionID string, cancelAtPeriodEnd bool) error
 	ReactivateStripeSubscription(ctx context.Context, stripeSubscriptionID string) error
@@ -63,6 +64,7 @@ type PaymentUsecase interface {
 	GetInvoice(ctx context.Context, invoiceID uuid.UUID) (*Invoice, error)
 	ListInvoices(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*Invoice], error)
 	ListPaymentHistory(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*Payment], error)
+	GetPayment(ctx context.Context, paymentID uuid.UUID) (*Payment, error)
 	GetBillingSummary(ctx context.Context, enterpriseID uuid.UUID) (*BillingSummary, error)
 	HandleWebhook(ctx context.Context, payload []byte, sigHeader string) error
 	CancelSubscription(ctx context.Context, enterpriseID uuid.UUID, cancelAtPeriodEnd bool) error
