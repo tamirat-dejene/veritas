@@ -15,6 +15,8 @@ type Config struct {
 	Pg_Veritas_Core_DB  string
 	StripeSecretKey     string
 	StripeWebhookSecret string
+	StripeSuccessURL    string
+	StripeCancelURL     string
 	DSN                 string
 	KafkaBrokers        []string
 }
@@ -29,6 +31,8 @@ func Load() *Config {
 		Pg_Veritas_Core_DB:  getEnv("PG_VERITAS_CORE_DB", "veritas_core"),
 		StripeSecretKey:     getEnv("STRIPE_SECRET_KEY", ""),
 		StripeWebhookSecret: getEnv("STRIPE_WEBHOOK_SECRET", ""),
+		StripeSuccessURL:    getEnv("STRIPE_SUCCESS_URL", "https://veritas.com/payment/success?session_id={CHECKOUT_SESSION_ID}"),
+		StripeCancelURL:     getEnv("STRIPE_CANCEL_URL", "https://veritas.com/payment/cancel"),
 	}
 
 	cfg.DSN = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",

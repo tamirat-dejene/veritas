@@ -16,20 +16,24 @@ import (
 type stripeProvider struct {
 	secretKey     string
 	webhookSecret string
+	successURL    string
+	cancelURL     string
 }
 
-func NewStripeProvider(secretKey, webhookSecret string) domain.PaymentProvider {
+func NewStripeProvider(secretKey, webhookSecret, successURL, cancelURL string) domain.PaymentProvider {
 	stripego.Key = secretKey
 	return &stripeProvider{
 		secretKey:     secretKey,
 		webhookSecret: webhookSecret,
+		successURL:    successURL,
+		cancelURL:     cancelURL,
 	}
 }
 
-func (p *stripeProvider) CreateCheckoutSession(ctx context.Context, enterpriseID uuid.UUID, plan *domain.SubscriptionPlan) (string, error) {
+func (p *stripeProvider) CreateCheckoutSession(ctx context.Context, enterpriseID uuid.UUID, plan *domain.SubscriptionPlan, stripeCustomerID *string) (string, error) {
 	params := &stripego.CheckoutSessionParams{
-		SuccessURL: stripego.String("https://veritas.com/payment/success?session_id={CHECKOUT_SESSION_ID}"),
-		CancelURL:  stripego.String("https://veritas.com/payment/cancel"),
+		SuccessURL: stripego.String(p.successURL),
+		CancelURL:  stripego.String(p.cancelURL),
 		Mode:       stripego.String(string(stripego.CheckoutSessionModeSubscription)),
 		LineItems: []*stripego.CheckoutSessionLineItemParams{
 			{
@@ -43,6 +47,9 @@ func (p *stripeProvider) CreateCheckoutSession(ctx context.Context, enterpriseID
 				"plan_id":       plan.ID.String(),
 			},
 		},
+	}
+	if stripeCustomerID != nil && *stripeCustomerID != "" {
+		params.Customer = stripego.String(*stripeCustomerID)
 	}
 
 	s, err := session.New(params)

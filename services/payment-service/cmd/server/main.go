@@ -66,7 +66,7 @@ func main() {
 	// 4. Wire repositories and Stripe provider
 	subRepo := postgres.NewSubscriptionRepository(pool)
 	billingRepo := postgres.NewBillingRepository(pool)
-	payProvider := stripeprovider.NewStripeProvider(cfg.StripeSecretKey, cfg.StripeWebhookSecret)
+	payProvider := stripeprovider.NewStripeProvider(cfg.StripeSecretKey, cfg.StripeWebhookSecret, cfg.StripeSuccessURL, cfg.StripeCancelURL)
 
 	// 5. Wire Kafka event publisher (graceful degradation if Kafka is unavailable)
 	var eventPublisher domain.PaymentEventPublisher
