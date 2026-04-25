@@ -1347,6 +1347,63 @@
                 }
             }
         },
+        "/enterprises/{enterpriseId}/users/{userId}/activate": {
+            "patch": {
+                "description": "Reactivate a previously deactivated user account.",
+                "tags": [
+                    "user"
+                ],
+                "summary": "Activate enterprise user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Enterprise ID (UUID)",
+                        "name": "enterpriseId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID (UUID)",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Actor user ID (UUID)",
+                        "name": "X-User-ID",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/enterprises/{enterpriseId}/users/{userId}/change-password": {
             "post": {
                 "description": "Self-service password change for authenticated users.",
@@ -1660,6 +1717,7 @@
                 "user.created",
                 "user.updated",
                 "user.deactivated",
+                "user.activated",
                 "user.password_reset",
                 "user.password_changed",
                 "enterprise.domain_validated",
@@ -1684,6 +1742,7 @@
                 "EventUserCreated",
                 "EventUserUpdated",
                 "EventUserDeactivated",
+                "EventUserActivated",
                 "EventUserPasswordReset",
                 "EventUserPasswordChanged",
                 "EventDomainValidated",

@@ -19,6 +19,7 @@ definitions:
     - user.created
     - user.updated
     - user.deactivated
+    - user.activated
     - user.password_reset
     - user.password_changed
     - enterprise.domain_validated
@@ -43,6 +44,7 @@ definitions:
     - EventUserCreated
     - EventUserUpdated
     - EventUserDeactivated
+    - EventUserActivated
     - EventUserPasswordReset
     - EventUserPasswordChanged
     - EventDomainValidated
@@ -1239,6 +1241,44 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
       summary: Update enterprise user
+      tags:
+      - user
+  /enterprises/{enterpriseId}/users/{userId}/activate:
+    patch:
+      description: Reactivate a previously deactivated user account.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: User ID (UUID)
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Activate enterprise user
       tags:
       - user
   /enterprises/{enterpriseId}/users/{userId}/change-password:
