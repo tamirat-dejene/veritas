@@ -22,6 +22,8 @@ definitions:
     - user.password_reset
     - user.password_changed
     - enterprise.domain_validated
+    - user.forgot_password
+    - user.password_reset_via_token
     type: string
     x-enum-varnames:
     - EventEnterpriseCreated
@@ -44,6 +46,8 @@ definitions:
     - EventUserPasswordReset
     - EventUserPasswordChanged
     - EventDomainValidated
+    - EventUserForgotPassword
+    - EventUserPasswordResetViaToken
   AuditLog:
     properties:
       actor_id:
@@ -208,6 +212,24 @@ definitions:
       user_count:
         type: integer
     type: object
+  ForgotPasswordRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  ResetPasswordRequest:
+    properties:
+      new_password:
+        minLength: 8
+        type: string
+      token:
+        type: string
+    required:
+    - new_password
+    - token
+    type: object
   Role:
     enum:
     - SystemAdmin
@@ -334,6 +356,11 @@ definitions:
       error:
         type: string
     type: object
+  MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
   ResetPasswordResponse:
     properties:
       temporary_password:
@@ -389,6 +416,63 @@ info:
   title: Veritas Enterprise Service API
   version: "1.0"
 paths:
+  /auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Request a password reset link via email. Always returns 200 OK.
+      parameters:
+      - description: Email address
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Forgot password
+      tags:
+      - auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Set a new password using the token received in the password reset
+        email.
+      parameters:
+      - description: Token and new password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Reset password via token
+      tags:
+      - auth
   /enterprises:
     get:
       description: List enterprises with optional status and search filters.

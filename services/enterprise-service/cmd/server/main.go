@@ -76,6 +76,7 @@ func main() {
 	userRepo := postgres.NewUserRepository(pool)
 	enterpriseRepo := postgres.NewEnterpriseRepository(pool)
 	auditRepo := postgres.NewAuditRepository(pool)
+	passwordResetRepo := postgres.NewPasswordResetRepository(pool)
 
 	// 5. Messaging: Kafka producer (for enterprise events)
 	kafkaProducer, err := kafka.NewProducer(kafka.Config{
@@ -92,7 +93,7 @@ func main() {
 
 	// 7. Initialize Usecases
 	enterpriseUC := usecase.NewEnterpriseUsecase(pool, userRepo, enterpriseRepo, auditRepo, eventPublisher, payClient)
-	userUC := usecase.NewUserUsecase(pool, userRepo, enterpriseRepo, auditRepo, eventPublisher)
+	userUC := usecase.NewUserUsecase(pool, userRepo, enterpriseRepo, auditRepo, eventPublisher, passwordResetRepo, cfg.FrontendBaseURL)
 
 	// 8. Initialize Handlers
 	enterpriseHandler := handler.NewEnterpriseHandler(enterpriseUC)

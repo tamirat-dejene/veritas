@@ -270,6 +270,65 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// ForgotPassword initiates a self-service password reset by email.
+// It always returns 200 OK regardless of whether the email is registered
+// to prevent user enumeration.
+//
+//	@Summary		Forgot password
+//	@Description	Request a password reset link via email. Always returns 200 OK.
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body	domain.ForgotPasswordRequest	true	"Email address"
+//	@Success		200	{object}	MessageResponse
+//	@Failure		400	{object}	ErrorResponse
+//	@Router			/auth/forgot-password [post]
+func (h *UserHandler) ForgotPassword(c *gin.Context) {
+	var req domain.ForgotPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// Error is intentionally discarded — the response is always identical
+	// regardless of outcome to prevent email enumeration.
+	_ = h.usecase.ForgotPassword(c.Request.Context(), req.Email)
+
+	writeJSON(c, http.StatusOK, MessageResponse{
+		Message: "If an account with that email exists, a password reset link has been sent.",
+	})
+}
+
+// ResetPasswordViaToken completes a password reset using the one-time token
+// delivered via email.
+//
+//	@Summary		Reset password via token
+//	@Description	Set a new password using the token received in the password reset email.
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body	domain.ResetPasswordRequest	true	"Token and new password"
+//	@Success		200	{object}	MessageResponse
+//	@Failure		400	{object}	ErrorResponse
+//	@Failure		500	{object}	ErrorResponse
+//	@Router			/auth/reset-password [post]
+func (h *UserHandler) ResetPasswordViaToken(c *gin.Context) {
+	var req domain.ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := h.usecase.ResetPasswordViaToken(c.Request.Context(), req); err != nil {
+		h.handleErr(c, err)
+		return
+	}
+
+	writeJSON(c, http.StatusOK, MessageResponse{
+		Message: "Password has been reset successfully.",
+	})
+}
+
 func (h *UserHandler) handleErr(c *gin.Context, err error) {
 	switch err {
 	case domain.ErrUserNotFound:
@@ -282,6 +341,10 @@ func (h *UserHandler) handleErr(c *gin.Context, err error) {
 		writeError(c, http.StatusBadRequest, "role not allowed for enterprise users")
 	case domain.ErrInvalidCredentials:
 		writeError(c, http.StatusUnauthorized, "invalid credentials")
+	case domain.ErrResetTokenInvalid:
+		writeError(c, http.StatusBadRequest, "invalid or expired reset link")
+	case domain.ErrResetTokenUsed:
+		writeError(c, http.StatusBadRequest, "this reset link has already been used")
 	default:
 		zap.L().Error("Unhandled user error", zap.Error(err))
 		writeError(c, http.StatusInternalServerError, "internal server error")

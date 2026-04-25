@@ -24,6 +24,10 @@ func NewRouter(
 
 	engine.GET("/health", healthCheck)
 
+	// ── Public Auth Routes (no authentication required) ───────────────────
+	engine.POST("/auth/forgot-password", uh.ForgotPassword)
+	engine.POST("/auth/reset-password", uh.ResetPasswordViaToken)
+
 	enterprises := engine.Group("/enterprises")
 	{
 		// ── Registration (public) ─────────────────────────────────────────────
