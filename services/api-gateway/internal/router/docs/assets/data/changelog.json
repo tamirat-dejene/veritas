@@ -3,6 +3,15 @@
     "date": "2026-04-25",
     "changes": [
       {
+        "type": "changed",
+        "service": "enterprise",
+        "summary": "Self-service user profile updates",
+        "description": "The user update endpoint now allows self-service updates for all authenticated enterprise users. Enterprise staff can update their own profile fields (e.g., name, phone, honorific), but cannot change their roles. Enterprise administrators retain full access to update any user and manage roles.",
+        "endpoints": [
+          "PATCH /enterprises/:enterpriseId/users/:userId"
+        ]
+      },
+      {
         "type": "new",
         "service": "enterprise",
         "summary": "User activation endpoint added",

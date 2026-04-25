@@ -1277,7 +1277,7 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "Update profile and role fields for an enterprise user.",
+                "description": "Update profile fields for an enterprise user. Admins can update any user and change roles. Non-admins can only update their own profile and cannot change their role.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1325,6 +1325,18 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
