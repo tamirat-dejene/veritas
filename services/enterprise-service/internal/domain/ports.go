@@ -25,6 +25,14 @@ type UserRepository interface {
 	WithTx(tx pgx.Tx) UserRepository
 }
 
+type PasswordResetRepository interface {
+	CreateToken(ctx context.Context, userID uuid.UUID, tokenHash string, expiresAt time.Time) error
+	FindByTokenHash(ctx context.Context, tokenHash string) (*PasswordResetToken, error)
+	InvalidatePreviousTokens(ctx context.Context, userID uuid.UUID) error
+	MarkUsed(ctx context.Context, tokenID uuid.UUID) error
+	WithTx(tx pgx.Tx) PasswordResetRepository
+}
+
 type EnterpriseRepository interface {
 	Create(ctx context.Context, enterprise *Enterprise) error
 	FindByID(ctx context.Context, id uuid.UUID) (*Enterprise, error)
@@ -84,6 +92,8 @@ type UserUsecase interface {
 	DeactivateEnterpriseUser(ctx context.Context, enterpriseID, userID, adminID uuid.UUID) error
 	ResetUserPassword(ctx context.Context, enterpriseID, userID, adminID uuid.UUID) (string, error)
 	ChangePassword(ctx context.Context, userID uuid.UUID, req ChangePasswordRequest) error
+	ForgotPassword(ctx context.Context, email string) error
+	ResetPasswordViaToken(ctx context.Context, req ResetPasswordRequest) error
 	RecordLoginSuccess(ctx context.Context, userID uuid.UUID, ip, userAgent string) error
 	RecordLoginFailure(ctx context.Context, userID uuid.UUID, lockUntil *time.Time, failedLoginAttempts int) error
 	GetByEmail(ctx context.Context, email string) (*User, error)
@@ -93,6 +103,7 @@ type UserUsecase interface {
 type EventPublisher interface {
 	PublishEnterpriseCreated(ctx context.Context, enterpriseID uuid.UUID, legalName string, ownerEmail string) error
 	PublishEnterpriseStaffCreated(ctx context.Context, staffID uuid.UUID, email, name, tempPassword, enterpriseName string) error
+	PublishPasswordResetRequested(ctx context.Context, userID uuid.UUID, email, name, resetLink string) error
 }
 
 type PaymentClient interface {

@@ -19,4 +19,6 @@ var (
 	ErrInvalidRole          = errors.New("role not allowed for enterprise users")
 	ErrCustomDomainInUse    = errors.New("custom domain already in use")
 	ErrInvalidCredentials   = errors.New("current password is incorrect")
+	ErrResetTokenInvalid    = errors.New("password reset token is invalid or expired")
+	ErrResetTokenUsed       = errors.New("password reset token has already been used")
 )
