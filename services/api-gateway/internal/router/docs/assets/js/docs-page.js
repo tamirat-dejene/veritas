@@ -8,7 +8,7 @@ const serviceCards = document.getElementById('serviceCards');
 const backToHome = document.getElementById('backToHome');
 
 const serviceGroups = {
-    go: ['auth', 'enterprise', 'payment', 'exam', 'candidate'],
+    go: ['auth', 'enterprise', 'payment', 'exam', 'candidate', 'notification'],
     python: ['proctoring', 'face', 'grading', 'reporting'],
     monitoring: ['monitoring'],
 };
@@ -26,6 +26,7 @@ const serviceDetails = {
     grading: { description: 'Automated grading service for exam responses.', swagger: '/swagger/grading/index.html' },
     reporting: { description: 'Analytics and reporting service for exam results.', swagger: '/swagger/reporting/index.html' },
     monitoring: { description: 'Real-time system monitoring and alerting service.', swagger: '/swagger/monitoring/index.html' },
+    notification: { description: 'Event-driven notification and mailing service for system alerts and user communications.', swagger: '' },
 };
 
 const loadedServices = new Set();

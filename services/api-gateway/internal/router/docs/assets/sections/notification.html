@@ -1,0 +1,28 @@
+<!-- Notification Service -->
+<section class="section" data-service="notification">
+    <div class="section-header">
+        <h2>Notification Service</h2>
+        <span class="section-count">Internal Worker</span>
+    </div>
+    <div class="service-description" style="margin-bottom: 24px; color: var(--text-secondary); line-height: 1.6;">
+        <p>The Notification Service is an event-driven worker responsible for dispatching system-wide communications via Email and other channels. It does not expose public HTTP endpoints and operates primarily by consuming Kafka events from other microservices.</p>
+    </div>
+
+    <div class="endpoint-list">
+        <h3 class="endpoint-group-title">Consumed Events (Kafka)</h3>
+        
+        <event-item topic="enterprise.staff.created">
+            Triggered when a new staff member is onboarded. Dispatches a "Welcome Email" containing initial login credentials.
+        </event-item>
+    </div>
+
+    <div class="tech-stack" style="margin-top: 32px;">
+        <h3 class="endpoint-group-title">Tech Stack</h3>
+        <ul style="color: var(--text-secondary); font-size: 0.9rem;">
+            <li><strong>Language:</strong> Go 1.25</li>
+            <li><strong>Communication:</strong> Kafka (Sarama)</li>
+            <li><strong>Delivery:</strong> SMTP (Gomail)</li>
+            <li><strong>Templating:</strong> Go <code>html/template</code> (Embedded)</li>
+        </ul>
+    </div>
+</section>
