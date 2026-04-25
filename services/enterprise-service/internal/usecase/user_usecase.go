@@ -50,8 +50,15 @@ func NewUserUsecase(
 	}
 }
 
-// allowedEnterpriseRoles are the roles that an EnterpriseAdmin is permitted to create.
-var allowedEnterpriseRoles = map[domain.Role]bool{
+// allowedCreateEnterpriseRoles are the roles that an EnterpriseAdmin is permitted to create.
+var allowedCreateEnterpriseRoles = map[domain.Role]bool{
+	domain.RoleEnterpriseAdmin: true,
+	domain.RoleEnterpriseStaff: true,
+	domain.RoleEnterpriseAuto:  true,
+}
+
+// allowedUpdateEnterpriseRoles are the roles that an EnterpriseAdmin is permitted to update.
+var allowedUpdateEnterpriseRoles = map[domain.Role]bool{
 	domain.RoleEnterpriseAdmin: true,
 	domain.RoleEnterpriseStaff: true,
 	domain.RoleEnterpriseAuto:  true,
@@ -85,7 +92,7 @@ func (uc *userUsecase) CreateEnterpriseUser(ctx context.Context, enterpriseID uu
 	}
 
 	// Validate role
-	if !allowedEnterpriseRoles[req.Role] {
+	if !allowedCreateEnterpriseRoles[req.Role] {
 		return nil, domain.ErrInvalidRole
 	}
 
@@ -167,7 +174,7 @@ func (uc *userUsecase) UpdateEnterpriseUser(ctx context.Context, enterpriseID, u
 		u.Honorific = req.Honorific
 	}
 	if req.Role != nil {
-		if !allowedEnterpriseRoles[*req.Role] {
+		if !allowedUpdateEnterpriseRoles[*req.Role] {
 			return domain.ErrInvalidRole
 		}
 		u.Role = *req.Role
