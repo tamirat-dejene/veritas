@@ -1,0 +1,145 @@
+/* ================================
+   SECTION BASE
+================================ */
+.section {
+    margin-bottom: 40px;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.section-count {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+/* ================================
+   DESCRIPTION
+================================ */
+.service-description {
+    margin-bottom: 24px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* ================================
+   GROUP CONTAINER (Kafka / Tech)
+================================ */
+.endpoint-list,
+.tech-stack {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 16px;
+}
+
+/* section titles like "CONSUMED EVENTS" */
+.endpoint-group-title {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    margin-bottom: 12px;
+}
+
+/* ================================
+   EVENT ITEM
+================================ */
+.event-item {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 16px 18px;
+
+    /* subtle inset feel */
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        transform 0.15s ease;
+}
+
+/* spacing between multiple events */
+.event-item+.event-item {
+    margin-top: 12px;
+}
+
+.event-item:hover {
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* ================================
+   EVENT HEADER
+================================ */
+.event-topic-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.event-icon {
+    color: var(--accent);
+    opacity: 0.85;
+    flex-shrink: 0;
+    transform: translateY(1px);
+}
+
+/* Kafka topic tag */
+.event-topic {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+
+    color: var(--accent);
+
+    padding: 3px 8px;
+    border-radius: 6px;
+
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ================================
+   EVENT DESCRIPTION
+================================ */
+.event-description {
+    margin: 0;
+    padding-left: 26px;
+
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+/* ================================
+   TECH STACK
+================================ */
+.tech-stack {
+    margin-top: 24px;
+}
+
+.tech-stack ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.tech-stack li {
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.tech-stack strong {
+    color: var(--text-primary);
+}
