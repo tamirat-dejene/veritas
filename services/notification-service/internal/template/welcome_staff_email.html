@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to {{.EnterpriseName}}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .password-box {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            letter-spacing: 2px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .footer {
+            margin-top: 40px;
+            font-size: 12px;
+            color: #777777;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome, {{.Name}}!</h1>
+        <p>You have been invited to join <strong>{{.EnterpriseName}}</strong> on the Veritas platform.</p>
+        <p>Your account has been created. Please use the following temporary password to log in. You will be required to change this password upon your first login.</p>
+        
+        <p><strong>Email:</strong> {{.Email}}</p>
+        <div class="password-box">
+            {{.TempPassword}}
+        </div>
+        
+        <p>Please log in to your account to get started.</p>
+        
+        <div class="footer">
+            <p>&copy; Veritas Platform. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
