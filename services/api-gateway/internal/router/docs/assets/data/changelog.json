@@ -35,6 +35,18 @@
         "service": "notification",
         "summary": "Password reset email template and delivery",
         "description": "The notification service now consumes `enterprise.password.reset.requested` events to deliver branded HTML password reset emails to users. The email includes a secure link and expiration notice."
+      },
+      {
+        "type": "new",
+        "service": "notification",
+        "summary": "Enterprise lifecycle notifications",
+        "description": "Implemented automated email notifications for enterprise lifecycle events including approval, suspension (administrative/payment), and soft-deletion/retention period starts."
+      },
+      {
+        "type": "new",
+        "service": "notification",
+        "summary": "User lifecycle and security notifications",
+        "description": "Implemented security and lifecycle notifications for enterprise users, including account activation/deactivation, password change confirmations, and administrative password resets with temporary credential delivery."
       }
     ]
   },

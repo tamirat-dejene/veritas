@@ -17,6 +17,39 @@
         <event-item topic="enterprise.password.reset.requested">
             Triggers when a user requests a password reset, sending them a secure reset link.
         </event-item>
+        <event-item topic="enterprise.enterprise.created">
+            Triggered when a new enterprise registration is received. Sends a "Registration Complete" receipt.
+        </event-item>
+        <event-item topic="enterprise.enterprise.approved">
+            Triggers when an enterprise is approved. Sends a confirmation email to the contact email address.
+        </event-item>
+        <event-item topic="enterprise.enterprise.suspended">
+            Triggers when an enterprise is suspended (administrative or payment). Sends a notice to the contact email.
+        </event-item>
+        <event-item topic="enterprise.enterprise.deleted">
+            Triggers on soft-deletion. Notifies the enterprise about the start of the data retention period.
+        </event-item>
+        <event-item topic="enterprise.enterprise.hard_deleted">
+            Triggers when an enterprise is permanently deleted after the retention period.
+        </event-item>
+        <event-item topic="enterprise.enterprise.reactivated">
+            Notifies the enterprise contact that their suspended account has been reactivated.
+        </event-item>
+        <event-item topic="enterprise.enterprise.restored">
+            Notifies the enterprise contact that their deletion request has been canceled and account restored.
+        </event-item>
+        <event-item topic="enterprise.user.deactivated">
+            Notifies a user that their account has been deactivated by an administrator.
+        </event-item>
+        <event-item topic="enterprise.user.activated">
+            Notifies a user that their account has been reactivated.
+        </event-item>
+        <event-item topic="enterprise.user.password.changed">
+            Security notification sent after a user changes their password or resets it via token.
+        </event-item>
+        <event-item topic="enterprise.user.password.reset.admin">
+            Delivers a new temporary password to a user when reset by an enterprise administrator.
+        </event-item>
     </div>
 
     <div class="tech-stack" style="margin-top: 32px;">
