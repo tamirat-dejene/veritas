@@ -19,4 +19,5 @@ type Mailer interface {
 // NotificationUsecase handles the business logic for incoming events.
 type NotificationUsecase interface {
 	HandleEnterpriseStaffCreated(ctx context.Context, payload []byte) error
+	HandlePasswordResetRequested(ctx context.Context, payload []byte) error
 }
