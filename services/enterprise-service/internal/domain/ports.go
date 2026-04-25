@@ -90,6 +90,7 @@ type UserUsecase interface {
 	GetEnterpriseUser(ctx context.Context, enterpriseID, userID uuid.UUID) (*User, error)
 	UpdateEnterpriseUser(ctx context.Context, enterpriseID, userID uuid.UUID, req UpdateUserRequest, adminID uuid.UUID) error
 	DeactivateEnterpriseUser(ctx context.Context, enterpriseID, userID, adminID uuid.UUID) error
+	ActivateEnterpriseUser(ctx context.Context, enterpriseID, userID, adminID uuid.UUID) error
 	ResetUserPassword(ctx context.Context, enterpriseID, userID, adminID uuid.UUID) (string, error)
 	ChangePassword(ctx context.Context, userID uuid.UUID, req ChangePasswordRequest) error
 	ForgotPassword(ctx context.Context, email string) error

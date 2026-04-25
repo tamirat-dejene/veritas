@@ -205,6 +205,26 @@ func (uc *userUsecase) DeactivateEnterpriseUser(ctx context.Context, enterpriseI
 	}
 	return nil
 }
+func (uc *userUsecase) ActivateEnterpriseUser(ctx context.Context, enterpriseID, userID, adminID uuid.UUID) error {
+	u, err := uc.userRepo.FindByEnterpriseAndID(ctx, enterpriseID, userID)
+	if err != nil {
+		return err
+	}
+	u.IsActive = true
+	u.UpdatedAt = time.Now()
+	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		if err := uc.userRepo.WithTx(tx).Update(ctx, u); err != nil {
+			return err
+		}
+		uc.emitUser(ctx, tx, enterpriseID, adminID, string(domain.RoleEnterpriseAdmin), domain.EventUserActivated,
+			map[string]interface{}{"user_id": userID.String()})
+		return nil
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
 
 func (uc *userUsecase) ResetUserPassword(ctx context.Context, enterpriseID, userID, adminID uuid.UUID) (string, error) {
 	u, err := uc.userRepo.FindByEnterpriseAndID(ctx, enterpriseID, userID)
