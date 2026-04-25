@@ -211,6 +211,19 @@ func (uc *userUsecase) DeactivateEnterpriseUser(ctx context.Context, enterpriseI
 	}); err != nil {
 		return err
 	}
+
+	name := "User"
+	if u.FirstName != nil {
+		name = *u.FirstName
+	}
+	entName := ""
+	if ent, _ := uc.enterpriseRepo.FindByID(context.Background(), enterpriseID); ent != nil {
+		entName = ent.LegalName
+	}
+	if uc.eventPublisher != nil {
+		_ = uc.eventPublisher.PublishUserDeactivated(context.Background(), u.ID, u.Email, name, entName)
+	}
+
 	return nil
 }
 func (uc *userUsecase) ActivateEnterpriseUser(ctx context.Context, enterpriseID, userID, adminID uuid.UUID) error {
@@ -230,6 +243,19 @@ func (uc *userUsecase) ActivateEnterpriseUser(ctx context.Context, enterpriseID,
 	}); err != nil {
 		return err
 	}
+
+	name := "User"
+	if u.FirstName != nil {
+		name = *u.FirstName
+	}
+	entName := ""
+	if ent, _ := uc.enterpriseRepo.FindByID(context.Background(), enterpriseID); ent != nil {
+		entName = ent.LegalName
+	}
+	if uc.eventPublisher != nil {
+		_ = uc.eventPublisher.PublishUserActivated(context.Background(), u.ID, u.Email, name, entName)
+	}
+
 	return nil
 }
 
@@ -263,6 +289,18 @@ func (uc *userUsecase) ResetUserPassword(ctx context.Context, enterpriseID, user
 		return nil
 	}); err != nil {
 		return "", err
+	}
+
+	name := "User"
+	if u.FirstName != nil {
+		name = *u.FirstName
+	}
+	entName := ""
+	if ent, _ := uc.enterpriseRepo.FindByID(context.Background(), enterpriseID); ent != nil {
+		entName = ent.LegalName
+	}
+	if uc.eventPublisher != nil {
+		_ = uc.eventPublisher.PublishUserPasswordResetAdmin(context.Background(), u.ID, u.Email, name, tempPassword, entName)
 	}
 
 	return tempPassword, nil
@@ -306,6 +344,20 @@ func (uc *userUsecase) ChangePassword(ctx context.Context, userID uuid.UUID, req
 		return nil
 	}); err != nil {
 		return err
+	}
+
+	name := "User"
+	if u.FirstName != nil {
+		name = *u.FirstName
+	}
+	entName := ""
+	if enterpriseID != uuid.Nil {
+		if ent, _ := uc.enterpriseRepo.FindByID(context.Background(), enterpriseID); ent != nil {
+			entName = ent.LegalName
+		}
+	}
+	if uc.eventPublisher != nil {
+		_ = uc.eventPublisher.PublishUserPasswordChanged(context.Background(), u.ID, u.Email, name, entName)
 	}
 
 	return nil
@@ -433,7 +485,7 @@ func (uc *userUsecase) ResetPasswordViaToken(ctx context.Context, req domain.Res
 	}
 
 	// Update user + mark token used in one transaction.
-	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		if err := uc.userRepo.WithTx(tx).Update(ctx, u); err != nil {
 			return err
 		}
@@ -443,5 +495,23 @@ func (uc *userUsecase) ResetPasswordViaToken(ctx context.Context, req domain.Res
 		uc.emitUser(ctx, tx, enterpriseID, u.ID, string(u.Role), domain.EventUserPasswordResetViaToken,
 			map[string]interface{}{"user_id": u.ID.String()})
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+
+	name := "User"
+	if u.FirstName != nil {
+		name = *u.FirstName
+	}
+	entName := ""
+	if enterpriseID != uuid.Nil {
+		if ent, _ := uc.enterpriseRepo.FindByID(context.Background(), enterpriseID); ent != nil {
+			entName = ent.LegalName
+		}
+	}
+	if uc.eventPublisher != nil {
+		_ = uc.eventPublisher.PublishUserPasswordChanged(context.Background(), u.ID, u.Email, name, entName)
+	}
+
+	return nil
 }

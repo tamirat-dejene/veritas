@@ -148,7 +148,11 @@ func (uc *enterpriseUsecase) ApproveEnterprise(ctx context.Context, id uuid.UUID
 	e.ApprovedAt = &now
 	e.UpdatedAt = now
 	e.UpdatedBy = adminID
-	return uc.enterpriseRepo.Update(ctx, e)
+	if err := uc.enterpriseRepo.Update(ctx, e); err != nil {
+		return err
+	}
+	_ = uc.eventPublisher.PublishEnterpriseApproved(ctx, e.ID, e.LegalName, e.ContactEmail)
+	return nil
 }
 
 func (uc *enterpriseUsecase) SuspendEnterprise(ctx context.Context, id uuid.UUID, adminID uuid.UUID) error {
@@ -161,15 +165,24 @@ func (uc *enterpriseUsecase) SuspendEnterprise(ctx context.Context, id uuid.UUID
 	e.SuspendedAt = &now
 	e.UpdatedAt = now
 	e.UpdatedBy = adminID
-	return uc.enterpriseRepo.Update(ctx, e)
+	if err := uc.enterpriseRepo.Update(ctx, e); err != nil {
+		return err
+	}
+	_ = uc.eventPublisher.PublishEnterpriseSuspended(ctx, e.ID, e.LegalName, e.ContactEmail, "administrative suspension")
+	return nil
 }
 
 func (uc *enterpriseUsecase) DeleteEnterprise(ctx context.Context, id uuid.UUID, adminID uuid.UUID) error {
+	e, err := uc.enterpriseRepo.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
 	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		if err := uc.enterpriseRepo.WithTx(tx).Delete(ctx, id); err != nil {
 			return err
 		}
 		uc.emit(ctx, tx, id, adminID, string(domain.RoleSystemAdmin), domain.EventEnterpriseDeleted, nil)
+		_ = uc.eventPublisher.PublishEnterpriseDeleted(ctx, id, e.LegalName, e.ContactEmail)
 		return nil
 	})
 }
@@ -292,6 +305,7 @@ func (uc *enterpriseUsecase) ReactivateEnterprise(ctx context.Context, id uuid.U
 			return err
 		}
 		uc.emit(ctx, tx, id, adminID, string(domain.RoleSystemAdmin), domain.EventEnterpriseReactivated, nil)
+		_ = uc.eventPublisher.PublishEnterpriseReactivated(ctx, e.ID, e.LegalName, e.ContactEmail)
 		return nil
 	})
 }
@@ -318,6 +332,7 @@ func (uc *enterpriseUsecase) RestoreEnterprise(ctx context.Context, id uuid.UUID
 			return err
 		}
 		uc.emit(ctx, tx, id, adminID, string(domain.RoleSystemAdmin), domain.EventEnterpriseRestored, nil)
+		_ = uc.eventPublisher.PublishEnterpriseRestored(ctx, e.ID, e.LegalName, e.ContactEmail)
 		return nil
 	})
 }
@@ -335,7 +350,11 @@ func (uc *enterpriseUsecase) HardDeleteEnterprise(ctx context.Context, id uuid.U
 	}
 	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		uc.emit(ctx, tx, id, adminID, string(domain.RoleSystemAdmin), domain.EventEnterpriseHardDeleted, nil)
-		return uc.enterpriseRepo.WithTx(tx).HardDelete(ctx, id)
+		if err := uc.enterpriseRepo.WithTx(tx).HardDelete(ctx, id); err != nil {
+			return err
+		}
+		_ = uc.eventPublisher.PublishEnterpriseHardDeleted(ctx, e.ID, e.LegalName, e.ContactEmail)
+		return nil
 	})
 }
 
@@ -467,6 +486,7 @@ func (uc *enterpriseUsecase) SuspendForPayment(ctx context.Context, enterpriseID
 			return err
 		}
 		uc.emit(ctx, tx, enterpriseID, uuid.Nil, "system", domain.EventSubscriptionSuspended, nil)
+		_ = uc.eventPublisher.PublishEnterpriseSuspended(ctx, e.ID, e.LegalName, e.ContactEmail, "payment issue")
 		return nil
 	})
 }
