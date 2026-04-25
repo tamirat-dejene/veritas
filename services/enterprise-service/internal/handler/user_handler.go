@@ -122,7 +122,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 // UpdateUser updates an enterprise user.
 //
 //	@Summary		Update enterprise user
-//	@Description	Update profile and role fields for an enterprise user.
+//	@Description	Update profile fields for an enterprise user. Admins can update any user and change roles. Non-admins can only update their own profile and cannot change their role.
 //	@Tags			user
 //	@Accept			json
 //	@Param			enterpriseId	path	string				true	"Enterprise ID (UUID)"
@@ -131,6 +131,8 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 //	@Param			body			body	domain.UpdateUserRequest	true	"Update user payload"
 //	@Success		204			{string}	string				"No Content"
 //	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Failure		403			{object}	ErrorResponse
 //	@Failure		404			{object}	ErrorResponse
 //	@Failure		409			{object}	ErrorResponse
 //	@Failure		500			{object}	ErrorResponse
@@ -146,12 +148,32 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		writeError(c, http.StatusBadRequest, "invalid user ID")
 		return
 	}
+
 	var req domain.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	callerID, _ := GetCallerID(c)
+
+	callerID, ok := GetCallerID(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	callerRole := GetCallerRole(c)
+
+	// Enforce self-service rules for non-admins
+	if callerRole != string(domain.RoleEnterpriseAdmin) {
+		if callerID != userID {
+			writeError(c, http.StatusForbidden, "unauthorized to update another user's profile")
+			return
+		}
+		if req.Role != nil {
+			writeError(c, http.StatusForbidden, "unauthorized to change role")
+			return
+		}
+	}
+
 	if err := h.usecase.UpdateEnterpriseUser(c.Request.Context(), enterpriseID, userID, req, callerID); err != nil {
 		h.handleErr(c, err)
 		return
@@ -222,7 +244,6 @@ func (h *UserHandler) ActivateUser(c *gin.Context) {
 	}
 	c.Status(http.StatusNoContent)
 }
-
 
 // ResetPassword resets an enterprise user's password and returns a temporary password.
 //
@@ -447,7 +468,7 @@ func (h *UserHandler) RecordLoginFailure(c *gin.Context) {
 		return
 	}
 	var req struct {
-		LockedUntil *time.Time `json:"locked_until"`
+		LockedUntil         *time.Time `json:"locked_until"`
 		FailedLoginAttempts int        `json:"failed_login_attempts"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
