@@ -149,6 +149,25 @@ services:
       postgres:
         condition: service_healthy
 
+  notification-service:
+    build:
+      context: .
+      dockerfile: infra/docker/dev/go-service.Dockerfile
+      args:
+        SERVICE_NAME: notification-service
+    ports:
+      - "8090:8080"
+    volumes:
+      - ./.env.dev:/app/.env
+      - ./services/notification-service:/app/services/notification-service
+      - ./shared:/app/shared:ro
+      - go_pkg_cache:/go/pkg/mod
+    env_file:
+      - .env.dev
+    depends_on:
+      kafka:
+        condition: service_healthy
+
   payment-service:
     build:
       context: .

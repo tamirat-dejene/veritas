@@ -138,6 +138,20 @@ services:
     networks:
       - backend
 
+  notification-service:
+    build:
+      context: .
+      dockerfile: infra/docker/prod/notification-service.Dockerfile
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env.production
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - backend
+
   payment-service:
     build:
       context: .
