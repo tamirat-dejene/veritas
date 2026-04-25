@@ -55,6 +55,7 @@ var allowedEnterpriseRoles = map[domain.Role]bool{
 	domain.RoleEnterpriseAdmin: true,
 	domain.RoleEnterpriseStaff: true,
 	domain.RoleEnterpriseAuto:  true,
+	domain.RoleSystemAdmin:     true,
 }
 
 func (uc *userUsecase) emitUser(ctx context.Context, tx pgx.Tx, enterpriseID, actorID uuid.UUID, role string, event domain.AuditEvent, meta map[string]interface{}) {
