@@ -9,7 +9,8 @@ const (
 
 // Enterprise-Service topics
 const (
-	EnterpriseCreated = "enterprise.enterprise.created"
+	EnterpriseCreated      = "enterprise.enterprise.created"
+	EnterpriseStaffCreated = "enterprise.staff.created"
 )
 
 // Payment-Service topics

@@ -92,6 +92,7 @@ type UserUsecase interface {
 
 type EventPublisher interface {
 	PublishEnterpriseCreated(ctx context.Context, enterpriseID uuid.UUID, legalName string, ownerEmail string) error
+	PublishEnterpriseStaffCreated(ctx context.Context, staffID uuid.UUID, email, name, tempPassword, enterpriseName string) error
 }
 
 type PaymentClient interface {
