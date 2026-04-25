@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Enterprise Deletion Initiated: {{.Name}}</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; color: #333333; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { color: #e67e22; }
+        .footer { margin-top: 40px; font-size: 12px; color: #777777; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Deletion Initiated</h1>
+        <p>Hello,</p>
+        <p>Your enterprise <strong>{{.Name}}</strong> has been marked for deletion.</p>
+        <p>A retention period of 90 days is active. During this time, you can request a restoration of your account.</p>
+        <p>If the account is not restored within 90 days, it will be permanently deleted.</p>
+        <div class="footer"><p>&copy; Veritas Platform. All rights reserved.</p></div>
+    </div>
+</body>
+</html>
