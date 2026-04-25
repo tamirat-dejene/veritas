@@ -103,8 +103,18 @@ type UserUsecase interface {
 
 type EventPublisher interface {
 	PublishEnterpriseCreated(ctx context.Context, enterpriseID uuid.UUID, legalName string, ownerEmail string) error
+	PublishEnterpriseApproved(ctx context.Context, enterpriseID uuid.UUID, legalName, contactEmail string) error
+	PublishEnterpriseSuspended(ctx context.Context, enterpriseID uuid.UUID, legalName, contactEmail, reason string) error
+	PublishEnterpriseDeleted(ctx context.Context, enterpriseID uuid.UUID, legalName, contactEmail string) error
+	PublishEnterpriseHardDeleted(ctx context.Context, enterpriseID uuid.UUID, legalName, contactEmail string) error
+	PublishEnterpriseReactivated(ctx context.Context, enterpriseID uuid.UUID, legalName, contactEmail string) error
+	PublishEnterpriseRestored(ctx context.Context, enterpriseID uuid.UUID, legalName, contactEmail string) error
 	PublishEnterpriseStaffCreated(ctx context.Context, staffID uuid.UUID, email, name, tempPassword, enterpriseName string) error
 	PublishPasswordResetRequested(ctx context.Context, userID uuid.UUID, email, name, resetLink string) error
+	PublishUserDeactivated(ctx context.Context, userID uuid.UUID, email, name, enterpriseName string) error
+	PublishUserActivated(ctx context.Context, userID uuid.UUID, email, name, enterpriseName string) error
+	PublishUserPasswordChanged(ctx context.Context, userID uuid.UUID, email, name, enterpriseName string) error
+	PublishUserPasswordResetAdmin(ctx context.Context, userID uuid.UUID, email, name, tempPassword, enterpriseName string) error
 }
 
 type PaymentClient interface {
