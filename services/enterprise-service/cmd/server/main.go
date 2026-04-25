@@ -92,7 +92,7 @@ func main() {
 
 	// 7. Initialize Usecases
 	enterpriseUC := usecase.NewEnterpriseUsecase(pool, userRepo, enterpriseRepo, auditRepo, eventPublisher, payClient)
-	userUC := usecase.NewUserUsecase(pool, userRepo, enterpriseRepo, auditRepo)
+	userUC := usecase.NewUserUsecase(pool, userRepo, enterpriseRepo, auditRepo, eventPublisher)
 
 	// 8. Initialize Handlers
 	enterpriseHandler := handler.NewEnterpriseHandler(enterpriseUC)

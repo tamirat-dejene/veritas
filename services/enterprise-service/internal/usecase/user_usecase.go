@@ -21,6 +21,7 @@ type userUsecase struct {
 	userRepo       domain.UserRepository
 	enterpriseRepo domain.EnterpriseRepository
 	auditRepo      domain.AuditRepository
+	eventPublisher domain.EventPublisher
 }
 
 // NewUserUsecase creates a UserUsecase.
@@ -29,12 +30,14 @@ func NewUserUsecase(
 	userRepo domain.UserRepository,
 	enterpriseRepo domain.EnterpriseRepository,
 	auditRepo domain.AuditRepository,
+	eventPublisher domain.EventPublisher,
 ) domain.UserUsecase {
 	return &userUsecase{
 		pool:           pool,
 		userRepo:       userRepo,
 		enterpriseRepo: enterpriseRepo,
 		auditRepo:      auditRepo,
+		eventPublisher: eventPublisher,
 	}
 }
 
@@ -66,7 +69,8 @@ func (uc *userUsecase) emitUser(ctx context.Context, tx pgx.Tx, enterpriseID, ac
 
 func (uc *userUsecase) CreateEnterpriseUser(ctx context.Context, enterpriseID uuid.UUID, req domain.CreateUserRequest, adminID uuid.UUID) (*domain.User, error) {
 	// Validate enterprise exists
-	if _, err := uc.enterpriseRepo.FindByID(ctx, enterpriseID); err != nil {
+	ent, err := uc.enterpriseRepo.FindByID(ctx, enterpriseID)
+	if err != nil {
 		return nil, err
 	}
 
@@ -104,6 +108,20 @@ func (uc *userUsecase) CreateEnterpriseUser(ctx context.Context, enterpriseID uu
 		return nil
 	}); err != nil {
 		return nil, err
+	}
+
+	// Publish event after transaction commits
+	name := ""
+	if user.FirstName != nil && user.LastName != nil {
+		name = fmt.Sprintf("%s %s", *user.FirstName, *user.LastName)
+	} else if user.FirstName != nil {
+		name = *user.FirstName
+	} else {
+		name = "Staff Member"
+	}
+
+	if uc.eventPublisher != nil && (user.Role == domain.RoleEnterpriseStaff || user.Role == domain.RoleEnterpriseAdmin) {
+		_ = uc.eventPublisher.PublishEnterpriseStaffCreated(context.Background(), user.ID, user.Email, name, req.Password, ent.LegalName)
 	}
 
 	return user, nil
