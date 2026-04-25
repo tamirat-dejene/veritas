@@ -2,6 +2,9 @@ package usecase
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -17,11 +20,13 @@ import (
 
 // userUsecase implements domain.UserUsecase.
 type userUsecase struct {
-	pool           *pgxpool.Pool
-	userRepo       domain.UserRepository
-	enterpriseRepo domain.EnterpriseRepository
-	auditRepo      domain.AuditRepository
-	eventPublisher domain.EventPublisher
+	pool             *pgxpool.Pool
+	userRepo         domain.UserRepository
+	enterpriseRepo   domain.EnterpriseRepository
+	auditRepo        domain.AuditRepository
+	eventPublisher   domain.EventPublisher
+	passwordResetRepo domain.PasswordResetRepository
+	frontendBaseURL  string
 }
 
 // NewUserUsecase creates a UserUsecase.
@@ -31,13 +36,17 @@ func NewUserUsecase(
 	enterpriseRepo domain.EnterpriseRepository,
 	auditRepo domain.AuditRepository,
 	eventPublisher domain.EventPublisher,
+	passwordResetRepo domain.PasswordResetRepository,
+	frontendBaseURL string,
 ) domain.UserUsecase {
 	return &userUsecase{
-		pool:           pool,
-		userRepo:       userRepo,
-		enterpriseRepo: enterpriseRepo,
-		auditRepo:      auditRepo,
-		eventPublisher: eventPublisher,
+		pool:              pool,
+		userRepo:          userRepo,
+		enterpriseRepo:    enterpriseRepo,
+		auditRepo:         auditRepo,
+		eventPublisher:    eventPublisher,
+		passwordResetRepo: passwordResetRepo,
+		frontendBaseURL:   frontendBaseURL,
 	}
 }
 
@@ -288,4 +297,123 @@ func (uc *userUsecase) GetByEmail(ctx context.Context, email string) (*domain.Us
 
 func (uc *userUsecase) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	return uc.userRepo.FindByID(ctx, id)
+}
+
+// ForgotPassword initiates a self-service password reset. It is intentionally
+// silent — the same 200 OK is returned whether the email exists or not to
+// prevent user enumeration.
+func (uc *userUsecase) ForgotPassword(ctx context.Context, email string) error {
+	// Silently resolve the user; any error (not found, inactive) is swallowed.
+	u, err := uc.userRepo.FindByEmail(ctx, email)
+	if err != nil || !u.IsActive || u.IsDeleted {
+		return nil
+	}
+
+	// Invalidate all previous tokens for this user.
+	if err := uc.passwordResetRepo.InvalidatePreviousTokens(ctx, u.ID); err != nil {
+		return fmt.Errorf("forgot_password: invalidate previous tokens: %w", err)
+	}
+
+	// Generate a 32-byte cryptographically-secure random token.
+	rawBytes := make([]byte, 32)
+	if _, err := rand.Read(rawBytes); err != nil {
+		return fmt.Errorf("forgot_password: generate token: %w", err)
+	}
+	rawToken := hex.EncodeToString(rawBytes) // 64-char hex string
+
+	// Store only the SHA-256 hash — never the raw token.
+	hashBytes := sha256.Sum256([]byte(rawToken))
+	tokenHash := hex.EncodeToString(hashBytes[:])
+
+	expiresAt := time.Now().UTC().Add(30 * time.Minute)
+	if err := uc.passwordResetRepo.CreateToken(ctx, u.ID, tokenHash, expiresAt); err != nil {
+		return fmt.Errorf("forgot_password: create token: %w", err)
+	}
+
+	// Build the reset link using the raw (un-hashed) token.
+	resetLink := fmt.Sprintf("%s/reset-password?token=%s", uc.frontendBaseURL, rawToken)
+
+	// Resolve a display name for the email greeting.
+	name := "User"
+	if u.FirstName != nil && *u.FirstName != "" {
+		name = *u.FirstName
+		if u.LastName != nil && *u.LastName != "" {
+			name += " " + *u.LastName
+		}
+	}
+
+	// Publish the event asynchronously — a Kafka failure must not block the response.
+	if uc.eventPublisher != nil {
+		_ = uc.eventPublisher.PublishPasswordResetRequested(context.Background(), u.ID, u.Email, name, resetLink)
+	}
+
+	// Emit an audit log entry (best-effort).
+	enterpriseID := uuid.Nil
+	if u.EnterpriseID != nil {
+		enterpriseID = *u.EnterpriseID
+	}
+	uc.emitUser(ctx, nil, enterpriseID, u.ID, string(u.Role), domain.EventUserForgotPassword,
+		map[string]interface{}{"user_id": u.ID.String()})
+
+	return nil
+}
+
+// ResetPasswordViaToken validates the one-time token and sets a new password
+// for the user in a single atomic transaction.
+func (uc *userUsecase) ResetPasswordViaToken(ctx context.Context, req domain.ResetPasswordRequest) error {
+	// Hash the supplied raw token to look it up in the DB.
+	hashBytes := sha256.Sum256([]byte(req.Token))
+	tokenHash := hex.EncodeToString(hashBytes[:])
+
+	token, err := uc.passwordResetRepo.FindByTokenHash(ctx, tokenHash)
+	if err != nil {
+		// FindByTokenHash returns ErrResetTokenInvalid for no-rows.
+		return domain.ErrResetTokenInvalid
+	}
+
+	// Guard against already-used tokens.
+	if token.Used {
+		return domain.ErrResetTokenUsed
+	}
+
+	// Guard against expired tokens.
+	if time.Now().UTC().After(token.ExpiresAt) {
+		return domain.ErrResetTokenInvalid
+	}
+
+	// Fetch the owning user.
+	u, err := uc.userRepo.FindByID(ctx, token.UserID)
+	if err != nil {
+		return err
+	}
+
+	// Hash the new password.
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("reset_password_via_token: hash password: %w", err)
+	}
+
+	now := time.Now().UTC()
+	u.PasswordHash = string(hash)
+	u.PasswordChangedAt = now
+	u.MustChangePassword = false
+	u.UpdatedAt = now
+
+	enterpriseID := uuid.Nil
+	if u.EnterpriseID != nil {
+		enterpriseID = *u.EnterpriseID
+	}
+
+	// Update user + mark token used in one transaction.
+	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		if err := uc.userRepo.WithTx(tx).Update(ctx, u); err != nil {
+			return err
+		}
+		if err := uc.passwordResetRepo.WithTx(tx).MarkUsed(ctx, token.ID); err != nil {
+			return err
+		}
+		uc.emitUser(ctx, tx, enterpriseID, u.ID, string(u.Role), domain.EventUserPasswordResetViaToken,
+			map[string]interface{}{"user_id": u.ID.String()})
+		return nil
+	})
 }

@@ -96,3 +96,40 @@ func (p *kafkaPublisher) PublishEnterpriseStaffCreated(ctx context.Context, staf
 
 	return nil
 }
+
+// PasswordResetRequestedEvent is the payload for the enterprise.password.reset.requested event.
+type PasswordResetRequestedEvent struct {
+	UserID    uuid.UUID `json:"user_id"`
+	Email     string    `json:"email"`
+	Name      string    `json:"name"`
+	ResetLink string    `json:"reset_link"`
+	Timestamp int64     `json:"timestamp"`
+}
+
+// PublishPasswordResetRequested publishes a password reset request event.
+func (p *kafkaPublisher) PublishPasswordResetRequested(ctx context.Context, userID uuid.UUID, email, name, resetLink string) error {
+	event := PasswordResetRequestedEvent{
+		UserID:    userID,
+		Email:     email,
+		Name:      name,
+		ResetLink: resetLink,
+		Timestamp: time.Now().Unix(),
+	}
+
+	payload, err := json.Marshal(event)
+	if err != nil {
+		return fmt.Errorf("kafka_publisher: marshal event: %w", err)
+	}
+
+	msg := messaging.Message{
+		Topic: topics.EnterprisePasswordResetRequested,
+		Key:   userID[:],
+		Value: payload,
+	}
+
+	if err := p.publisher.Publish(ctx, msg); err != nil {
+		return fmt.Errorf("kafka_publisher: publish: %w", err)
+	}
+
+	return nil
+}
