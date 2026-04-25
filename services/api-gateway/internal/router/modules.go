@@ -21,6 +21,10 @@ func (g *RouterGroup) RegisterEnterpriseRoutes(proxy http.Handler) {
 	sysOrEntAdmin := g.authWithRoles(domain.RoleSystemAdmin, domain.RoleEnterpriseAdmin)
 	allAuth := g.authWithRoles(domain.RoleAll)
 
+	// Public — no authentication required
+	g.register("POST", "/auth/forgot-password", proxy)
+	g.register("POST", "/auth/reset-password", proxy)
+
 	// Registration (anyone can register an enterprise)
 	g.register("POST", "/enterprises", proxy)
 
