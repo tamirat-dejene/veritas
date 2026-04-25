@@ -5,6 +5,15 @@
       {
         "type": "new",
         "service": "enterprise",
+        "summary": "User activation endpoint added",
+        "description": "Enterprise administrators can now reactivate previously deactivated user accounts. This restores the user's login access and records an audit event.",
+        "endpoints": [
+          "PATCH /enterprises/:enterpriseId/users/:userId/activate"
+        ]
+      },
+      {
+        "type": "new",
+        "service": "enterprise",
         "summary": "Self-service password reset flow (Forgot Password)",
         "description": "Implemented a secure, token-based password reset flow. Users can request a reset link via email, which is delivered asynchronously through the notification service. The system uses SHA-256 hashing for tokens and enforces a 30-minute expiry. All responses are non-enumerating for security.",
         "endpoints": [
