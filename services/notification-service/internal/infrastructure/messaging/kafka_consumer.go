@@ -25,6 +25,17 @@ func (r *NotificationRouter) Topics() []string {
 	return []string{
 		topics.EnterpriseStaffCreated,
 		topics.EnterprisePasswordResetRequested,
+		topics.EnterpriseCreated,
+		topics.EnterpriseApproved,
+		topics.EnterpriseSuspended,
+		topics.EnterpriseDeleted,
+		topics.EnterpriseHardDeleted,
+		topics.EnterpriseReactivated,
+		topics.EnterpriseRestored,
+		topics.UserDeactivated,
+		topics.UserActivated,
+		topics.UserPasswordChanged,
+		topics.UserPasswordResetAdmin,
 	}
 }
 
@@ -34,6 +45,28 @@ func (r *NotificationRouter) Handle(ctx context.Context, msg messaging.Message) 
 		return r.uc.HandleEnterpriseStaffCreated(ctx, msg.Value)
 	case topics.EnterprisePasswordResetRequested:
 		return r.uc.HandlePasswordResetRequested(ctx, msg.Value)
+	case topics.EnterpriseCreated:
+		return r.uc.HandleEnterpriseCreated(ctx, msg.Value)
+	case topics.EnterpriseApproved:
+		return r.uc.HandleEnterpriseApproved(ctx, msg.Value)
+	case topics.EnterpriseSuspended:
+		return r.uc.HandleEnterpriseSuspended(ctx, msg.Value)
+	case topics.EnterpriseDeleted:
+		return r.uc.HandleEnterpriseDeleted(ctx, msg.Value)
+	case topics.EnterpriseHardDeleted:
+		return r.uc.HandleEnterpriseHardDeleted(ctx, msg.Value)
+	case topics.EnterpriseReactivated:
+		return r.uc.HandleEnterpriseReactivated(ctx, msg.Value)
+	case topics.EnterpriseRestored:
+		return r.uc.HandleEnterpriseRestored(ctx, msg.Value)
+	case topics.UserDeactivated:
+		return r.uc.HandleUserDeactivated(ctx, msg.Value)
+	case topics.UserActivated:
+		return r.uc.HandleUserActivated(ctx, msg.Value)
+	case topics.UserPasswordChanged:
+		return r.uc.HandleUserPasswordChanged(ctx, msg.Value)
+	case topics.UserPasswordResetAdmin:
+		return r.uc.HandleUserPasswordResetAdmin(ctx, msg.Value)
 	default:
 		r.logger.Warn("Unhandled topic", zap.String("topic", msg.Topic))
 		return nil

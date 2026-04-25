@@ -20,4 +20,15 @@ type Mailer interface {
 type NotificationUsecase interface {
 	HandleEnterpriseStaffCreated(ctx context.Context, payload []byte) error
 	HandlePasswordResetRequested(ctx context.Context, payload []byte) error
+	HandleEnterpriseCreated(ctx context.Context, payload []byte) error
+	HandleEnterpriseApproved(ctx context.Context, payload []byte) error
+	HandleEnterpriseSuspended(ctx context.Context, payload []byte) error
+	HandleEnterpriseDeleted(ctx context.Context, payload []byte) error
+	HandleEnterpriseHardDeleted(ctx context.Context, payload []byte) error
+	HandleEnterpriseReactivated(ctx context.Context, payload []byte) error
+	HandleEnterpriseRestored(ctx context.Context, payload []byte) error
+	HandleUserDeactivated(ctx context.Context, payload []byte) error
+	HandleUserActivated(ctx context.Context, payload []byte) error
+	HandleUserPasswordChanged(ctx context.Context, payload []byte) error
+	HandleUserPasswordResetAdmin(ctx context.Context, payload []byte) error
 }
