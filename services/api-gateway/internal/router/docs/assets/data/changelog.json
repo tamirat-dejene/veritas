@@ -1,5 +1,26 @@
 [
   {
+    "date": "2026-04-25",
+    "changes": [
+      {
+        "type": "new",
+        "service": "enterprise",
+        "summary": "Self-service password reset flow (Forgot Password)",
+        "description": "Implemented a secure, token-based password reset flow. Users can request a reset link via email, which is delivered asynchronously through the notification service. The system uses SHA-256 hashing for tokens and enforces a 30-minute expiry. All responses are non-enumerating for security.",
+        "endpoints": [
+          "POST /auth/forgot-password",
+          "POST /auth/reset-password"
+        ]
+      },
+      {
+        "type": "new",
+        "service": "notification",
+        "summary": "Password reset email template and delivery",
+        "description": "The notification service now consumes `enterprise.password.reset.requested` events to deliver branded HTML password reset emails to users. The email includes a secure link and expiration notice."
+      }
+    ]
+  },
+  {
     "date": "2026-04-24",
     "changes": [
       {

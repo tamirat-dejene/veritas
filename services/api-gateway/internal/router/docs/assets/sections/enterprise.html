@@ -2,7 +2,7 @@
 <section class="section" data-service="enterprise">
     <div class="section-header">
         <h2>Enterprise Management</h2>
-        <span class="section-count">25 endpoints</span>
+        <span class="section-count">27 endpoints</span>
     </div>
     <div class="endpoint-list">
         <!-- Discovery & Listing -->
@@ -82,6 +82,15 @@
         </endpoint-item>
         <endpoint-item method="POST" path="/enterprises/:enterpriseId/users/:userId/change-password">
             <span class="badge badge-all">All</span>
+        </endpoint-item>
+        
+        <!-- Forgot password and reset password -->
+        <h3 class="endpoint-group-title">Password Recovery</h3>
+        <endpoint-item method="POST" path="/auth/forgot-password">
+            <span class="badge badge-public">Public</span>
+        </endpoint-item>
+        <endpoint-item method="POST" path="/auth/reset-password">
+            <span class="badge badge-public">Public</span>
         </endpoint-item>
 
         <!-- Status & Audit -->
