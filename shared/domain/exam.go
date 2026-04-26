@@ -32,13 +32,6 @@ type ExamQuestionInput struct {
 	OrderIndex     *int
 }
 
-type ExamRandomizationRule struct {
-	ID            uuid.UUID        `db:"id" json:"id"`
-	ExamID        uuid.UUID        `db:"exam_id" json:"examId"`
-	Topic         *string          `db:"topic" json:"topic,omitempty"`
-	Difficulty    *DifficultyLevel `db:"difficulty" json:"difficulty,omitempty"`
-	QuestionCount int              `db:"question_count" json:"questionCount"`
-}
 
 type Exam struct {
 	ID                  uuid.UUID              `db:"id" json:"id"`
@@ -59,5 +52,4 @@ type Exam struct {
 	UpdatedAt           time.Time              `db:"updated_at" json:"updatedAt"`
 
 	Questions          []ExamQuestion          `json:"questions,omitempty"`
-	RandomizationRules []ExamRandomizationRule `json:"randomizationRules,omitempty"`
 }
