@@ -271,7 +271,36 @@ func (uc *examUsecase) RemoveQuestionFromExam(ctx context.Context, enterpriseID,
 			return domain.ErrInvalidStatus
 		}
 
-		return uc.examRepo.WithTx(tx).RemoveQuestion(ctx, examID, questionID)
+		// Find the index of the question being removed
+		var removedIdx int
+		found := false
+		for _, eq := range exam.Questions {
+			if eq.QuestionID == questionID {
+				if eq.OrderIndex != nil {
+					removedIdx = *eq.OrderIndex
+					found = true
+				}
+				break
+			}
+		}
+
+		if err := uc.examRepo.WithTx(tx).RemoveQuestion(ctx, examID, questionID); err != nil {
+			return err
+		}
+
+		// If it had an index, shift all subsequent questions
+		if found {
+			for _, eq := range exam.Questions {
+				if eq.OrderIndex != nil && *eq.OrderIndex > removedIdx {
+					newIdx := *eq.OrderIndex - 1
+					eq.OrderIndex = &newIdx
+					if err := uc.examRepo.WithTx(tx).UpdateQuestionMapping(ctx, examID, &eq); err != nil {
+						return fmt.Errorf("failed to shift order index for question %s: %w", eq.QuestionID, err)
+					}
+				}
+			}
+		}
+		return nil
 	})
 }
 
