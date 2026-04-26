@@ -30,10 +30,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/config"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/handler"
+	"github.com/tamirat-dejene/veritas/services/exam-service/internal/infrastructure/client"
+	"github.com/tamirat-dejene/veritas/services/exam-service/internal/infrastructure/messaging"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/usecase"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
+	"github.com/tamirat-dejene/veritas/shared/pkg/messaging/kafka"
 	"go.uber.org/zap"
 
 	// Import generated swagger docs so the spec is registered at startup.
@@ -60,13 +63,27 @@ func main() {
 	defer pool.Close()
 	log.Info("connected to postgres (via pgxpool)")
 
-	// 4. Initialize Repositories (passing pool as DBTX)
+	// 4. Initialize Repositories
 	questionRepo := postgres.NewQuestionRepository(pool)
 	examRepo := postgres.NewExamRepository(pool)
 
-	// 5. Initialize Usecases
+	// 5. Messaging: Kafka producer
+	kafkaProducer, err := kafka.NewProducer(kafka.Config{
+		Brokers: cfg.KafkaBrokers,
+	})
+	if err != nil {
+		log.Fatal("failed to initialize kafka producer", zap.Error(err))
+	}
+	defer kafkaProducer.Close()
+	eventPublisher := messaging.NewKafkaPublisher(kafkaProducer)
+
+	// 6. Internal Clients
+	entClient := client.NewEnterpriseClient(cfg.EnterpriseServiceURL)
+	candClient := client.NewCandidateClient(cfg.CandidateServiceURL)
+
+	// 7. Initialize Usecases
 	questionUC := usecase.NewQuestionUsecase(pool, questionRepo)
-	examUC := usecase.NewExamUsecase(pool, examRepo, questionRepo)
+	examUC := usecase.NewExamUsecase(pool, examRepo, questionRepo, eventPublisher, entClient, candClient, log)
 
 	// 6. Initialize Handlers
 	questionHandler := handler.NewQuestionHandler(questionUC)

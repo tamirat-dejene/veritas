@@ -11,19 +11,36 @@ import (
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/domain"
 	sdomain "github.com/tamirat-dejene/veritas/shared/domain"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
+	"go.uber.org/zap"
 )
 
 type examUsecase struct {
-	pool         *pgxpool.Pool
-	examRepo     domain.ExamRepository
-	questionRepo domain.QuestionRepository
+	pool             *pgxpool.Pool
+	examRepo         domain.ExamRepository
+	questionRepo     domain.QuestionRepository
+	eventPublisher   domain.EventPublisher
+	enterpriseClient domain.EnterpriseClient
+	candidateClient  domain.CandidateClient
+	logger           *zap.Logger
 }
 
-func NewExamUsecase(pool *pgxpool.Pool, examRepo domain.ExamRepository, questionRepo domain.QuestionRepository) domain.ExamUsecase {
+func NewExamUsecase(
+	pool *pgxpool.Pool,
+	examRepo domain.ExamRepository,
+	questionRepo domain.QuestionRepository,
+	eventPublisher domain.EventPublisher,
+	enterpriseClient domain.EnterpriseClient,
+	candidateClient domain.CandidateClient,
+	logger *zap.Logger,
+) domain.ExamUsecase {
 	return &examUsecase{
-		pool:         pool,
-		examRepo:     examRepo,
-		questionRepo: questionRepo,
+		pool:             pool,
+		examRepo:         examRepo,
+		questionRepo:     questionRepo,
+		eventPublisher:   eventPublisher,
+		enterpriseClient: enterpriseClient,
+		candidateClient:  candidateClient,
+		logger:           logger,
 	}
 }
 
@@ -46,6 +63,26 @@ func (uc *examUsecase) CreateExam(ctx context.Context, exam *sdomain.Exam, userI
 	if err != nil {
 		return nil, err
 	}
+
+	// Publish event (non-blocking/best effort)
+	go func() {
+		bgCtx := context.Background()
+		adminEmail, err := uc.enterpriseClient.GetEnterpriseAdminEmail(bgCtx, exam.EnterpriseID)
+		if err != nil {
+			uc.logger.Warn("Failed to fetch admin email for ExamCreated event", zap.Error(err), zap.String("examID", exam.ID.String()))
+		}
+
+		err = uc.eventPublisher.PublishExamCreated(bgCtx, domain.ExamCreatedEvent{
+			ExamID:       exam.ID,
+			EnterpriseID: exam.EnterpriseID,
+			Title:        exam.Title,
+			AdminEmail:   adminEmail,
+			Timestamp:    time.Now().Unix(),
+		})
+		if err != nil {
+			uc.logger.Error("Failed to publish ExamCreated event", zap.Error(err), zap.String("examID", exam.ID.String()))
+		}
+	}()
 
 	return exam, nil
 }
@@ -91,7 +128,11 @@ func (uc *examUsecase) ScheduleExam(ctx context.Context, id uuid.UUID, enterpris
 			return domain.ErrInsufficientTime
 		}
 
-		return uc.examRepo.WithTx(tx).Update(ctx, exam)
+		err = uc.examRepo.WithTx(tx).Update(ctx, exam)
+		if err == nil {
+			go uc.publishLifecycleEvent(context.Background(), exam, "scheduled")
+		}
+		return err
 	})
 }
 
@@ -171,7 +212,11 @@ func (uc *examUsecase) PublishExam(ctx context.Context, id uuid.UUID, enterprise
 		// Set the exam status to active
 		exam.Status = sdomain.ExamActive
 
-		return uc.examRepo.WithTx(tx).Update(ctx, exam)
+		err = uc.examRepo.WithTx(tx).Update(ctx, exam)
+		if err == nil {
+			go uc.publishLifecycleEvent(context.Background(), exam, "published")
+		}
+		return err
 	})
 }
 
@@ -215,7 +260,11 @@ func (uc *examUsecase) CloseExam(ctx context.Context, id uuid.UUID, enterpriseID
 
 		exam.Status = sdomain.ExamClosed
 
-		return uc.examRepo.WithTx(tx).Update(ctx, exam)
+		err = uc.examRepo.WithTx(tx).Update(ctx, exam)
+		if err == nil {
+			go uc.publishLifecycleEvent(context.Background(), exam, "closed")
+		}
+		return err
 	})
 }
 
@@ -443,4 +492,44 @@ func (uc *examUsecase) validateAndAssignOrderIndexes(existing []sdomain.ExamQues
 	}
 
 	return nil
+}
+
+func (uc *examUsecase) publishLifecycleEvent(_ context.Context, exam *sdomain.Exam, action string) {
+	// Use Background context to ensure publishing finishes even if request context is cancelled
+	bgCtx := context.Background()
+
+	adminEmail, err := uc.enterpriseClient.GetEnterpriseAdminEmail(bgCtx, exam.EnterpriseID)
+	if err != nil {
+		uc.logger.Warn("Failed to fetch admin email for lifecycle event", zap.Error(err), zap.String("action", action), zap.String("examID", exam.ID.String()))
+	}
+
+	candidateEmails, err := uc.candidateClient.GetCandidateEmailsForExam(bgCtx, exam.EnterpriseID, exam.ID)
+	if err != nil {
+		uc.logger.Warn("Failed to fetch candidate emails for lifecycle event", zap.Error(err), zap.String("action", action), zap.String("examID", exam.ID.String()))
+	}
+
+	event := domain.ExamLifecycleEvent{
+		ExamID:          exam.ID,
+		EnterpriseID:    exam.EnterpriseID,
+		Title:           exam.Title,
+		AdminEmail:      adminEmail,
+		CandidateEmails: candidateEmails,
+		StartTime:       exam.ScheduledStart,
+		EndTime:         exam.ScheduledEnd,
+		Timestamp:       time.Now().Unix(),
+	}
+
+	var pubErr error
+	switch action {
+	case "scheduled":
+		pubErr = uc.eventPublisher.PublishExamScheduled(bgCtx, event)
+	case "published":
+		pubErr = uc.eventPublisher.PublishExamPublished(bgCtx, event)
+	case "closed":
+		pubErr = uc.eventPublisher.PublishExamClosed(bgCtx, event)
+	}
+
+	if pubErr != nil {
+		uc.logger.Error("Failed to publish exam lifecycle event", zap.Error(pubErr), zap.String("action", action), zap.String("examID", exam.ID.String()))
+	}
 }
