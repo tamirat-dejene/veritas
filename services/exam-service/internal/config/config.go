@@ -12,7 +12,10 @@ type Config struct {
 	DBHost string
 	DBPort string
 	DBName string
-	DSN    string
+	DSN                 string
+	KafkaBrokers        []string
+	EnterpriseServiceURL string
+	CandidateServiceURL  string
 }
 
 func Load() *Config {
@@ -27,6 +30,10 @@ func Load() *Config {
 
 	cfg.DSN = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		cfg.DBUser, cfg.DBPass, cfg.DBHost, cfg.DBPort, cfg.DBName)
+
+	cfg.KafkaBrokers = []string{getEnv("KAFKA_BROKERS", "localhost:9092")}
+	cfg.EnterpriseServiceURL = getEnv("ENTERPRISE_SERVICE_URL", "http://localhost:8081")
+	cfg.CandidateServiceURL = getEnv("CANDIDATE_SERVICE_URL", "http://localhost:8082")
 
 	return cfg
 }
