@@ -31,3 +31,11 @@ const (
 	SubscriptionCanceled      = "subscription.canceled"
 	InvoiceUpcoming           = "payment.invoice.upcoming"
 )
+
+// Exam-Service topics
+const (
+	ExamCreated   = "exam.exam.created"
+	ExamScheduled = "exam.exam.scheduled"
+	ExamPublished = "exam.exam.published"
+	ExamClosed    = "exam.exam.closed"
+)
