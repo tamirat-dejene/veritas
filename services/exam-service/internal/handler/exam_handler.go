@@ -193,6 +193,11 @@ func (h *ExamHandler) ScheduleExam(c *gin.Context) {
 		return
 	}
 
+	if !startTime.Before(endTime) {
+		writeError(c, http.StatusBadRequest, "start time must be before end time")
+		return
+	}
+
 	if err := h.usecase.ScheduleExam(c.Request.Context(), examID, enterpriseID, startTime, endTime, userID); err != nil {
 		handleError(c, err)
 		return

@@ -3,7 +3,6 @@ package usecase
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -58,15 +57,13 @@ func (uc *examUsecase) UpdateExam(ctx context.Context, exam *sdomain.Exam, userI
 			return err
 		}
 
-		log.Printf("Existing exam status: %s\n", existing.Status)
-
 		// Only draft exams can be fully updated
 		if existing.Status != sdomain.ExamDraft {
 			if existing.Status == sdomain.ExamActive || existing.Status == sdomain.ExamClosed || existing.Status == sdomain.ExamArchived {
 				return domain.ErrInvalidStatus
 			}
 		}
-		exam.Status = existing.Status // prevent status changes through this method
+		exam.Status = existing.Status
 
 		return uc.examRepo.WithTx(tx).Update(ctx, exam)
 	})
@@ -79,13 +76,20 @@ func (uc *examUsecase) ScheduleExam(ctx context.Context, id uuid.UUID, enterpris
 			return err
 		}
 
-		if exam.Status != sdomain.ExamDraft && exam.Status != sdomain.ExamScheduled {
+		// Only draft exams can be scheduled
+		if exam.Status != sdomain.ExamDraft {
 			return domain.ErrInvalidStatus
 		}
 
 		exam.Status = sdomain.ExamScheduled
 		exam.ScheduledStart = &startTime
 		exam.ScheduledEnd = &endTime
+
+		// Scheduled duration must be at least as long as the exam's durationMinutes
+		duration := endTime.Sub(startTime)
+		if duration < time.Duration(exam.DurationMinutes)*time.Minute {
+			return domain.ErrInsufficientTime
+		}
 
 		return uc.examRepo.WithTx(tx).Update(ctx, exam)
 	})
@@ -120,7 +124,6 @@ func (uc *examUsecase) CloneExam(ctx context.Context, sourceID uuid.UUID, enterp
 			qClone.ExamID = uuid.Nil
 			clone.Questions = append(clone.Questions, qClone)
 		}
-
 
 		err = uc.examRepo.WithTx(tx).Create(ctx, clone)
 		if err != nil {
@@ -364,7 +367,6 @@ func (uc *examUsecase) UpdateExamQuestion(ctx context.Context, enterpriseID, exa
 		return uc.examRepo.WithTx(tx).UpdateQuestionMapping(ctx, examID, eq)
 	})
 }
-
 
 func (uc *examUsecase) validateAndAssignOrderIndexes(existing []sdomain.ExamQuestion, incoming []*sdomain.ExamQuestion) error {
 	total := len(existing) + len(incoming)

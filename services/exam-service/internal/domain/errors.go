@@ -16,4 +16,5 @@ var (
 	ErrQuestionValidationFailed = errors.New("failed to validate question")
 	ErrMarshalFailed            = errors.New("failed to marshal data")
 	ErrInternal                 = errors.New("internal service error")
+	ErrInsufficientTime         = errors.New("scheduled duration is less than the exam duration")
 )
