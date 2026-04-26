@@ -1,5 +1,27 @@
 [
   {
+    "date": "2026-04-26",
+    "changes": [
+      {
+        "type": "breaking",
+        "service": "exam",
+        "summary": "Removal of Exam Randomization Rules",
+        "description": "Exam randomization rules have been completely removed from the system. All questions must now be manually mapped to exams using the Questions Assembly endpoints. The 'RandomizationRules' field has also been removed from the Exam domain model.",
+        "endpoints": [
+          "POST /exams/:examId/rules",
+          "PATCH /exams/:examId/rules/:ruleId",
+          "DELETE /exams/:examId/rules/:ruleId"
+        ],
+        "migration": [
+          {
+            "before": "Randomization rules logic for dynamic question selection",
+            "after": "Manual question selection via /exams/:examId/questions"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "date": "2026-04-25",
     "changes": [
       {

@@ -2,7 +2,7 @@
 <section class="section" data-service="exam">
     <div class="section-header">
         <h2>Exam Management</h2>
-        <span class="section-count">21 endpoints</span>
+        <span class="section-count">18 endpoints</span>
     </div>
     <div class="endpoint-list">
         <!-- Questions -->
@@ -70,18 +70,6 @@
             <span class="badge badge-admin">EnterpriseAdmin</span>
         </endpoint-item>
         <endpoint-item method="PATCH" path="/exams/:examId/questions/:questionId">
-            <span class="badge badge-admin">EnterpriseAdmin</span>
-        </endpoint-item>
-
-        <!-- Exam Randomization Rules -->
-        <h3 class="endpoint-group-title">Exam Randomization Rules</h3>
-        <endpoint-item method="POST" path="/exams/:examId/rules">
-            <span class="badge badge-admin">EnterpriseAdmin</span>
-        </endpoint-item>
-        <endpoint-item method="PATCH" path="/exams/:examId/rules/:ruleId">
-            <span class="badge badge-admin">EnterpriseAdmin</span>
-        </endpoint-item>
-        <endpoint-item method="DELETE" path="/exams/:examId/rules/:ruleId">
             <span class="badge badge-admin">EnterpriseAdmin</span>
         </endpoint-item>
     </div>
