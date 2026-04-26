@@ -78,7 +78,7 @@ func (h *QuestionHandler) CreateQuestion(c *gin.Context) {
 
 	created, err := h.usecase.CreateQuestion(c.Request.Context(), &q, userID)
 	if err != nil {
-		writeError(c, http.StatusInternalServerError, "failed to create question")
+		handleError(c, err)
 		return
 	}
 
@@ -113,7 +113,7 @@ func (h *QuestionHandler) ListQuestions(c *gin.Context) {
 
 	questions, err := h.usecase.GetQuestions(c.Request.Context(), enterpriseID, params, withCorrectAnswer)
 	if err != nil {
-		writeError(c, http.StatusInternalServerError, "failed to fetch questions")
+		handleError(c, err)
 		return
 	}
 
@@ -153,11 +153,7 @@ func (h *QuestionHandler) GetQuestion(c *gin.Context) {
 
 	q, err := h.usecase.GetQuestion(c.Request.Context(), questionID, enterpriseID, withCorrectAnswer)
 	if err != nil {
-		if err == domain.ErrQuestionNotFound {
-			writeError(c, http.StatusNotFound, "question not found")
-			return
-		}
-		writeError(c, http.StatusInternalServerError, "failed to fetch question")
+		handleError(c, err)
 		return
 	}
 
@@ -231,11 +227,7 @@ func (h *QuestionHandler) UpdateQuestion(c *gin.Context) {
 	}
 
 	if err := h.usecase.UpdateQuestion(c.Request.Context(), &q, userID); err != nil {
-		if err == domain.ErrQuestionNotFound {
-			writeError(c, http.StatusNotFound, "question not found")
-			return
-		}
-		writeError(c, http.StatusInternalServerError, "failed to update question")
+		handleError(c, err)
 		return
 	}
 
@@ -270,11 +262,7 @@ func (h *QuestionHandler) DeleteQuestion(c *gin.Context) {
 	}
 
 	if err := h.usecase.DeleteQuestion(c.Request.Context(), questionID, enterpriseID); err != nil {
-		if err == domain.ErrQuestionNotFound {
-			writeError(c, http.StatusNotFound, "question not found")
-			return
-		}
-		writeError(c, http.StatusInternalServerError, "failed to delete question")
+		handleError(c, err)
 		return
 	}
 
