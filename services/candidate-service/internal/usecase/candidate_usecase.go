@@ -135,3 +135,7 @@ func (uc *candidateUseCase) DeactivateCandidate(ctx context.Context, id uuid.UUI
 	uc.logger.Info("candidate deactivated", zap.String("candidateID", id.String()), zap.String("enterpriseID", enterpriseID.String()))
 	return nil
 }
+
+func (uc *candidateUseCase) GetEmailsByExamID(ctx context.Context, examID, enterpriseID uuid.UUID) ([]string, error) {
+	return uc.repo.GetEmailsByExamID(ctx, examID, enterpriseID)
+}

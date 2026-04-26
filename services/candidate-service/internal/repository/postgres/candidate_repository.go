@@ -206,3 +206,27 @@ func (r *candidateRepository) Deactivate(ctx context.Context, id uuid.UUID, ente
 func (r *candidateRepository) WithTx(tx pgx.Tx) domain.CandidateRepository {
 	return &candidateRepository{db: tx}
 }
+
+func (r *candidateRepository) GetEmailsByExamID(ctx context.Context, examID, enterpriseID uuid.UUID) ([]string, error) {
+	const query = `
+		SELECT cp.email
+		FROM candidate_profiles cp
+		JOIN exam_enrollments ee ON cp.id = ee.candidate_id
+		WHERE ee.exam_id = $1 AND ee.enterprise_id = $2 AND cp.email IS NOT NULL
+	`
+	rows, err := r.db.Query(ctx, query, examID, enterpriseID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var emails []string
+	for rows.Next() {
+		var email string
+		if err := rows.Scan(&email); err != nil {
+			return nil, err
+		}
+		emails = append(emails, email)
+	}
+	return emails, nil
+}
