@@ -285,6 +285,52 @@ func (uc *examUsecase) UpdateExamQuestion(ctx context.Context, enterpriseID, exa
 			return domain.ErrInvalidStatus
 		}
 
+		// If OrderIndex is being updated, handle reordering
+		if orderIndex != nil {
+			total := len(exam.Questions)
+			if *orderIndex <= 0 || *orderIndex > total {
+				return domain.ErrInvalidOrderIndex
+			}
+
+			var oldIndex int
+			found := false
+			for _, q := range exam.Questions {
+				if q.QuestionID == questionID {
+					if q.OrderIndex != nil {
+						oldIndex = *q.OrderIndex
+						found = true
+					}
+					break
+				}
+			}
+
+			if found && oldIndex != *orderIndex {
+				if *orderIndex > oldIndex {
+					// Moving up: shift questions between (oldIndex, newIndex] down by 1
+					for _, q := range exam.Questions {
+						if q.OrderIndex != nil && *q.OrderIndex > oldIndex && *q.OrderIndex <= *orderIndex && q.QuestionID != questionID {
+							newVal := *q.OrderIndex - 1
+							q.OrderIndex = &newVal
+							if err := uc.examRepo.WithTx(tx).UpdateQuestionMapping(ctx, examID, &q); err != nil {
+								return err
+							}
+						}
+					}
+				} else {
+					// Moving down: shift questions between [newIndex, oldIndex) up by 1
+					for _, q := range exam.Questions {
+						if q.OrderIndex != nil && *q.OrderIndex >= *orderIndex && *q.OrderIndex < oldIndex && q.QuestionID != questionID {
+							newVal := *q.OrderIndex + 1
+							q.OrderIndex = &newVal
+							if err := uc.examRepo.WithTx(tx).UpdateQuestionMapping(ctx, examID, &q); err != nil {
+								return err
+							}
+						}
+					}
+				}
+			}
+		}
+
 		eq := &sdomain.ExamQuestion{
 			ExamID:         examID,
 			QuestionID:     questionID,
