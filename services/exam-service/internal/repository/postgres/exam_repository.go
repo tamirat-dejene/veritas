@@ -53,14 +53,6 @@ func scanExamQuestion(row pgx.Row) (*sdomain.ExamQuestion, error) {
 	return &eq, nil
 }
 
-func scanExamRandomizationRule(row pgx.Row) (*sdomain.ExamRandomizationRule, error) {
-	var r sdomain.ExamRandomizationRule
-	err := row.Scan(&r.ID, &r.ExamID, &r.Topic, &r.Difficulty, &r.QuestionCount)
-	if err != nil {
-		return nil, err
-	}
-	return &r, nil
-}
 
 func (r *examRepository) Create(ctx context.Context, e *sdomain.Exam) error {
 	const insertExam = `
@@ -107,18 +99,6 @@ func (r *examRepository) Create(ctx context.Context, e *sdomain.Exam) error {
 		}
 	}
 
-	// Insert RandomizationRules
-	for i := range e.RandomizationRules {
-		if e.RandomizationRules[i].ID == uuid.Nil {
-			e.RandomizationRules[i].ID = uuid.New()
-		}
-		e.RandomizationRules[i].ExamID = e.ID
-		_, rErr := r.db.Exec(ctx, `INSERT INTO veritas_exam_randomization_rules (id, exam_id, topic, difficulty, question_count) VALUES ($1, $2, $3, $4, $5)`,
-			e.RandomizationRules[i].ID, e.RandomizationRules[i].ExamID, e.RandomizationRules[i].Topic, e.RandomizationRules[i].Difficulty, e.RandomizationRules[i].QuestionCount)
-		if rErr != nil {
-			return fmt.Errorf("failed to save randomization rule: %w", rErr)
-		}
-	}
 
 	return nil
 }
@@ -142,17 +122,6 @@ func (r *examRepository) GetByID(ctx context.Context, id uuid.UUID, enterpriseID
 		}
 	}
 
-	// Get associated Randomization rules
-	rRows, err := r.db.Query(ctx, "SELECT id, exam_id, topic, difficulty, question_count FROM veritas_exam_randomization_rules WHERE exam_id = $1", id)
-	if err == nil {
-		defer rRows.Close()
-		for rRows.Next() {
-			rr, rrErr := scanExamRandomizationRule(rRows)
-			if rrErr == nil && rr != nil {
-				e.RandomizationRules = append(e.RandomizationRules, *rr)
-			}
-		}
-	}
 
 	return e, nil
 }
@@ -315,47 +284,6 @@ func (r *examRepository) UpdateQuestionMapping(ctx context.Context, examID uuid.
 	return nil
 }
 
-func (r *examRepository) AddRandomizationRule(ctx context.Context, examID uuid.UUID, rule *sdomain.ExamRandomizationRule) error {
-	if rule.ID == uuid.Nil {
-		rule.ID = uuid.New()
-	}
-	rule.ExamID = examID
-
-	const insertRule = `
-		INSERT INTO veritas_exam_randomization_rules (id, exam_id, topic, difficulty, question_count)
-		VALUES ($1, $2, $3, $4, $5)
-	`
-	_, err := r.db.Exec(ctx, insertRule, rule.ID, rule.ExamID, rule.Topic, rule.Difficulty, rule.QuestionCount)
-	return err
-}
-
-func (r *examRepository) UpdateRandomizationRule(ctx context.Context, examID uuid.UUID, rule *sdomain.ExamRandomizationRule) error {
-	const updateRule = `
-		UPDATE veritas_exam_randomization_rules
-		SET topic = $3, difficulty = $4, question_count = $5
-		WHERE exam_id = $1 AND id = $2
-	`
-	tag, err := r.db.Exec(ctx, updateRule, examID, rule.ID, rule.Topic, rule.Difficulty, rule.QuestionCount)
-	if err != nil {
-		return err
-	}
-	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("randomization rule not found")
-	}
-	return nil
-}
-
-func (r *examRepository) DeleteRandomizationRule(ctx context.Context, examID uuid.UUID, ruleID uuid.UUID) error {
-	const deleteRule = `DELETE FROM veritas_exam_randomization_rules WHERE exam_id = $1 AND id = $2`
-	tag, err := r.db.Exec(ctx, deleteRule, examID, ruleID)
-	if err != nil {
-		return err
-	}
-	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("randomization rule not found")
-	}
-	return nil
-}
 
 func (r *examRepository) WithTx(tx pgx.Tx) domain.ExamRepository {
 	return &examRepository{db: tx}
