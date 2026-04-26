@@ -143,26 +143,32 @@ func (uc *examUsecase) GetExams(ctx context.Context, enterpriseID uuid.UUID, par
 	return uc.examRepo.ListByEnterprise(ctx, enterpriseID, params)
 }
 
+// TODO: Also returns archived ones. Refactor it later.
 func (uc *examUsecase) GetExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*sdomain.Exam, error) {
 	return uc.examRepo.GetByID(ctx, id, enterpriseID)
 }
 
 func (uc *examUsecase) PublishExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
+	// Exam will be published at the start of the scheduled time. 
+	// This method will be called by a cron job 
+	
 	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		exam, err := uc.examRepo.WithTx(tx).GetByID(ctx, id, enterpriseID)
 		if err != nil {
 			return err
 		}
 
-		if exam.Status != sdomain.ExamDraft && exam.Status != sdomain.ExamScheduled {
+		// Only scheduled exams can be published
+		if exam.Status != sdomain.ExamScheduled {
 			return domain.ErrInvalidStatus
 		}
 
-		// Verification logic
+		// For an exam to be published, it must have at least one question
 		if len(exam.Questions) == 0 {
 			return domain.ErrNoQuestions
 		}
 
+		// Set the exam status to active
 		exam.Status = sdomain.ExamActive
 
 		return uc.examRepo.WithTx(tx).Update(ctx, exam)
@@ -194,6 +200,9 @@ func (uc *examUsecase) GetExamQuestions(ctx context.Context, examID uuid.UUID, e
 }
 
 func (uc *examUsecase) CloseExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
+	// Exam will be closed at the end of the scheduled time. 
+	// This method will be called by a cron job 
+	
 	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		exam, err := uc.examRepo.WithTx(tx).GetByID(ctx, id, enterpriseID)
 		if err != nil {
@@ -211,7 +220,19 @@ func (uc *examUsecase) CloseExam(ctx context.Context, id uuid.UUID, enterpriseID
 }
 
 func (uc *examUsecase) DeleteExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
-	return uc.examRepo.Delete(ctx, id, enterpriseID)
+	// Exam can be deleted only if it is in draft or scheduled state
+	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		exam, err := uc.examRepo.WithTx(tx).GetByID(ctx, id, enterpriseID)
+		if err != nil {
+			return err
+		}
+
+		if exam.Status != sdomain.ExamDraft && exam.Status != sdomain.ExamScheduled {
+			return domain.ErrExamCannotBeDeleted
+		}
+
+		return uc.examRepo.WithTx(tx).Delete(ctx, id, enterpriseID)
+	})
 }
 
 func (uc *examUsecase) AddQuestionsToExam(ctx context.Context, enterpriseID, examID uuid.UUID, inputs []sdomain.ExamQuestionInput) ([]*sdomain.ExamQuestion, error) {
