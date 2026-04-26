@@ -69,7 +69,7 @@ func (h *ExamHandler) CreateExam(c *gin.Context) {
 
 	created, err := h.usecase.CreateExam(c.Request.Context(), &e, userID)
 	if err != nil {
-		writeError(c, http.StatusInternalServerError, "failed to create exam")
+		handleError(c, err)
 		return
 	}
 
@@ -132,15 +132,7 @@ func (h *ExamHandler) UpdateExam(c *gin.Context) {
 	}
 
 	if err := h.usecase.UpdateExam(c.Request.Context(), &e, userID); err != nil {
-		if err == domain.ErrExamNotFound {
-			writeError(c, http.StatusNotFound, "exam not found")
-			return
-		}
-		if err == domain.ErrInvalidStatus {
-			writeError(c, http.StatusConflict, "cannot update non-draft exam")
-			return
-		}
-		writeError(c, http.StatusInternalServerError, "failed to update exam")
+		handleError(c, err)
 		return
 	}
 
@@ -202,15 +194,7 @@ func (h *ExamHandler) ScheduleExam(c *gin.Context) {
 	}
 
 	if err := h.usecase.ScheduleExam(c.Request.Context(), examID, enterpriseID, startTime, endTime, userID); err != nil {
-		if err == domain.ErrExamNotFound {
-			writeError(c, http.StatusNotFound, "exam not found")
-			return
-		}
-		if err == domain.ErrInvalidStatus {
-			writeError(c, http.StatusConflict, "exam status must be draft or scheduled")
-			return
-		}
-		writeError(c, http.StatusInternalServerError, "failed to schedule exam")
+		handleError(c, err)
 		return
 	}
 
@@ -262,11 +246,7 @@ func (h *ExamHandler) CloneExam(c *gin.Context) {
 
 	cloned, err := h.usecase.CloneExam(c.Request.Context(), examID, enterpriseID, req.Title, userID)
 	if err != nil {
-		if err == domain.ErrExamNotFound {
-			writeError(c, http.StatusNotFound, "source exam not found")
-			return
-		}
-		writeError(c, http.StatusInternalServerError, "failed to clone exam")
+		handleError(c, err)
 		return
 	}
 
@@ -299,7 +279,7 @@ func (h *ExamHandler) ListExams(c *gin.Context) {
 
 	exams, err := h.usecase.GetExams(c.Request.Context(), enterpriseID, params)
 	if err != nil {
-		writeError(c, http.StatusInternalServerError, "failed to fetch exams")
+		handleError(c, err)
 		return
 	}
 
@@ -336,11 +316,7 @@ func (h *ExamHandler) GetExam(c *gin.Context) {
 
 	e, err := h.usecase.GetExam(c.Request.Context(), examID, enterpriseID)
 	if err != nil {
-		if err == domain.ErrExamNotFound {
-			writeError(c, http.StatusNotFound, "exam not found")
-			return
-		}
-		writeError(c, http.StatusInternalServerError, "failed to fetch exam")
+		handleError(c, err)
 		return
 	}
 
@@ -385,11 +361,7 @@ func (h *ExamHandler) GetExamQuestions(c *gin.Context) {
 
 	questions, err := h.usecase.GetExamQuestions(c.Request.Context(), examID, enterpriseID, params, withCorrectAnswer)
 	if err != nil {
-		if err == domain.ErrExamNotFound {
-			writeError(c, http.StatusNotFound, "exam not found")
-			return
-		}
-		writeError(c, http.StatusInternalServerError, "failed to fetch exam questions")
+		handleError(c, err)
 		return
 	}
 
@@ -424,15 +396,7 @@ func (h *ExamHandler) PublishExam(c *gin.Context) {
 	}
 
 	if err := h.usecase.PublishExam(c.Request.Context(), examID, enterpriseID); err != nil {
-		if err == domain.ErrExamNotFound {
-			writeError(c, http.StatusNotFound, "exam not found")
-			return
-		}
-		if err == domain.ErrInvalidStatus {
-			writeError(c, http.StatusConflict, "exam status must be draft or scheduled")
-			return
-		}
-		writeError(c, http.StatusBadRequest, err.Error())
+		handleError(c, err)
 		return
 	}
 
@@ -468,15 +432,7 @@ func (h *ExamHandler) CloseExam(c *gin.Context) {
 	}
 
 	if err := h.usecase.CloseExam(c.Request.Context(), examID, enterpriseID); err != nil {
-		if err == domain.ErrExamNotFound {
-			writeError(c, http.StatusNotFound, "exam not found")
-			return
-		}
-		if err == domain.ErrInvalidStatus {
-			writeError(c, http.StatusConflict, "exam must be active to close")
-			return
-		}
-		writeError(c, http.StatusInternalServerError, "failed to close exam")
+		handleError(c, err)
 		return
 	}
 
@@ -511,11 +467,7 @@ func (h *ExamHandler) DeleteExam(c *gin.Context) {
 	}
 
 	if err := h.usecase.DeleteExam(c.Request.Context(), examID, enterpriseID); err != nil {
-		if err == domain.ErrExamNotFound {
-			writeError(c, http.StatusNotFound, "exam not found")
-			return
-		}
-		writeError(c, http.StatusInternalServerError, "failed to delete exam")
+		handleError(c, err)
 		return
 	}
 
@@ -573,7 +525,7 @@ func (h *ExamHandler) AddQuestionsToExam(c *gin.Context) {
 
 	eqs, err := h.usecase.AddQuestionsToExam(c.Request.Context(), enterpriseID, examID, inputs)
 	if err != nil {
-		writeError(c, http.StatusInternalServerError, err.Error())
+		handleError(c, err)
 		return
 	}
 
@@ -615,7 +567,7 @@ func (h *ExamHandler) RemoveQuestionFromExam(c *gin.Context) {
 	}
 
 	if err := h.usecase.RemoveQuestionFromExam(c.Request.Context(), enterpriseID, examID, questionID); err != nil {
-		writeError(c, http.StatusInternalServerError, err.Error())
+		handleError(c, err)
 		return
 	}
 
@@ -665,7 +617,7 @@ func (h *ExamHandler) UpdateExamQuestion(c *gin.Context) {
 	}
 
 	if err := h.usecase.UpdateExamQuestion(c.Request.Context(), enterpriseID, examID, questionID, req.PointsOverride, req.OrderIndex); err != nil {
-		writeError(c, http.StatusInternalServerError, err.Error())
+		handleError(c, err)
 		return
 	}
 
@@ -709,15 +661,7 @@ func (h *ExamHandler) AddRandomizationRule(c *gin.Context) {
 
 	rule, err := h.usecase.AddRandomizationRule(c.Request.Context(), enterpriseID, examID, req.Topic, req.Difficulty, req.QuestionCount)
 	if err != nil {
-		if err == domain.ErrExamNotFound {
-			writeError(c, http.StatusNotFound, "exam not found")
-			return
-		}
-		if err == domain.ErrInvalidStatus {
-			writeError(c, http.StatusConflict, "exam status must be draft or scheduled")
-			return
-		}
-		writeError(c, http.StatusInternalServerError, err.Error())
+		handleError(c, err)
 		return
 	}
 
@@ -767,7 +711,7 @@ func (h *ExamHandler) UpdateRandomizationRule(c *gin.Context) {
 	}
 
 	if err := h.usecase.UpdateRandomizationRule(c.Request.Context(), enterpriseID, examID, ruleID, req.Topic, req.Difficulty, req.QuestionCount); err != nil {
-		writeError(c, http.StatusInternalServerError, err.Error())
+		handleError(c, err)
 		return
 	}
 
@@ -809,7 +753,7 @@ func (h *ExamHandler) DeleteRandomizationRule(c *gin.Context) {
 	}
 
 	if err := h.usecase.DeleteRandomizationRule(c.Request.Context(), enterpriseID, examID, ruleID); err != nil {
-		writeError(c, http.StatusInternalServerError, err.Error())
+		handleError(c, err)
 		return
 	}
 
