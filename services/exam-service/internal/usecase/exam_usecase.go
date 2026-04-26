@@ -33,6 +33,15 @@ func (uc *examUsecase) CreateExam(ctx context.Context, exam *sdomain.Exam, userI
 	exam.Status = sdomain.ExamDraft
 
 	err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		// Convert pointer array to struct array for helper (or modify helper)
+		var incoming []*sdomain.ExamQuestion
+		for i := range exam.Questions {
+			incoming = append(incoming, &exam.Questions[i])
+		}
+		if err := uc.validateAndAssignOrderIndexes(nil, incoming); err != nil {
+			return err
+		}
+
 		return uc.examRepo.WithTx(tx).Create(ctx, exam)
 	})
 	if err != nil {
@@ -234,6 +243,10 @@ func (uc *examUsecase) AddQuestionsToExam(ctx context.Context, enterpriseID, exa
 			eqs = append(eqs, eq)
 		}
 
+		if err := uc.validateAndAssignOrderIndexes(exam.Questions, eqs); err != nil {
+			return err
+		}
+
 		err = uc.examRepo.WithTx(tx).AddQuestions(ctx, examID, eqs)
 		if err != nil {
 			return fmt.Errorf("failed to add questions to exam: %w", err)
@@ -349,4 +362,60 @@ func (uc *examUsecase) DeleteRandomizationRule(ctx context.Context, enterpriseID
 
 		return uc.examRepo.WithTx(tx).DeleteRandomizationRule(ctx, examID, ruleID)
 	})
+}
+
+func (uc *examUsecase) validateAndAssignOrderIndexes(existing []sdomain.ExamQuestion, incoming []*sdomain.ExamQuestion) error {
+	total := len(existing) + len(incoming)
+	used := make(map[int]bool)
+
+	for _, eq := range existing {
+		if eq.OrderIndex != nil {
+			if *eq.OrderIndex <= 0 {
+				return domain.ErrInvalidOrderIndex
+			}
+			if used[*eq.OrderIndex] {
+				return domain.ErrDuplicateOrderIndex
+			}
+			used[*eq.OrderIndex] = true
+		}
+	}
+
+	// First pass: validate provided indexes for incoming questions
+	for _, eq := range incoming {
+		if eq.OrderIndex != nil {
+			if *eq.OrderIndex <= 0 {
+				return domain.ErrInvalidOrderIndex
+			}
+			if *eq.OrderIndex > total {
+				return domain.ErrOrderIndexGap
+			}
+			if used[*eq.OrderIndex] {
+				return domain.ErrDuplicateOrderIndex
+			}
+			used[*eq.OrderIndex] = true
+		}
+	}
+
+	// Second pass: auto-assign missing indexes
+	for _, eq := range incoming {
+		if eq.OrderIndex == nil {
+			for j := 1; j <= total; j++ {
+				if !used[j] {
+					idx := j
+					eq.OrderIndex = &idx
+					used[j] = true
+					break
+				}
+			}
+		}
+	}
+
+	// Final gap check
+	for i := 1; i <= total; i++ {
+		if !used[i] {
+			return domain.ErrOrderIndexGap
+		}
+	}
+
+	return nil
 }
