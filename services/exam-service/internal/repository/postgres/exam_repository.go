@@ -64,7 +64,7 @@ func (r *examRepository) Create(ctx context.Context, e *sdomain.Exam) error {
 	`
 	settingsJson, err := json.Marshal(e.Settings)
 	if err != nil {
-		return fmt.Errorf("failed to marshal exam settings: %w", err)
+		return fmt.Errorf("%w: exam settings: %v", domain.ErrMarshalFailed, err)
 	}
 	if e.ID == uuid.Nil {
 		e.ID = uuid.New()
@@ -95,7 +95,7 @@ func (r *examRepository) Create(ctx context.Context, e *sdomain.Exam) error {
 		_, optErr := r.db.Exec(ctx, `INSERT INTO veritas_exam_questions (id, exam_id, question_id, points_override, order_index) VALUES ($1, $2, $3, $4, $5)`,
 			e.Questions[i].ID, e.Questions[i].ExamID, e.Questions[i].QuestionID, e.Questions[i].PointsOverride, e.Questions[i].OrderIndex)
 		if optErr != nil {
-			return fmt.Errorf("failed to save exam question: %w", optErr)
+			return fmt.Errorf("%w: exam question: %v", domain.ErrInternal, optErr)
 		}
 	}
 
@@ -136,7 +136,7 @@ func (r *examRepository) Update(ctx context.Context, e *sdomain.Exam) error {
 	`
 	settingsJson, err := json.Marshal(e.Settings)
 	if err != nil {
-		return fmt.Errorf("failed to marshal exam settings: %w", err)
+		return fmt.Errorf("%w: exam settings: %v", domain.ErrMarshalFailed, err)
 	}
 
 	_, err = r.db.Exec(ctx, updateExam,
@@ -263,7 +263,7 @@ func (r *examRepository) RemoveQuestion(ctx context.Context, examID uuid.UUID, q
 		return err
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("exam question mapping not found")
+		return domain.ErrMappingNotFound
 	}
 	return nil
 }
@@ -279,7 +279,7 @@ func (r *examRepository) UpdateQuestionMapping(ctx context.Context, examID uuid.
 		return err
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("exam question mapping not found")
+		return domain.ErrMappingNotFound
 	}
 	return nil
 }

@@ -66,7 +66,7 @@ func (r *questionRepository) Create(ctx context.Context, q *sdomain.Question) er
 
 	metadataJson, err := json.Marshal(q.Metadata)
 	if err != nil {
-		return fmt.Errorf("failed to marshal metadata: %w", err)
+		return fmt.Errorf("%w: metadata: %v", domain.ErrMarshalFailed, err)
 	}
 
 	if q.ID == uuid.Nil {
@@ -99,7 +99,7 @@ func (r *questionRepository) Create(ctx context.Context, q *sdomain.Question) er
 		_, optErr := r.db.Exec(ctx, insertOption, q.Options[i].ID, q.Options[i].QuestionID, q.Options[i].Content, q.Options[i].IsCorrect)
 		if optErr != nil {
 			// partial fail
-			return fmt.Errorf("failed to save option: %w", optErr)
+			return fmt.Errorf("%w: question option: %v", domain.ErrInternal, optErr)
 		}
 	}
 
@@ -234,7 +234,7 @@ func (r *questionRepository) Update(ctx context.Context, q *sdomain.Question) er
 	const deleteOptions = `DELETE FROM veritas_question_options WHERE question_id = $1`
 	_, err = r.db.Exec(ctx, deleteOptions, q.ID)
 	if err != nil {
-		return fmt.Errorf("failed to clear old options: %w", err)
+		return fmt.Errorf("%w: clear old options: %v", domain.ErrInternal, err)
 	}
 
 	const insertOption = `
@@ -248,7 +248,7 @@ func (r *questionRepository) Update(ctx context.Context, q *sdomain.Question) er
 		q.Options[i].QuestionID = q.ID
 		_, optErr := r.db.Exec(ctx, insertOption, q.Options[i].ID, q.Options[i].QuestionID, q.Options[i].Content, q.Options[i].IsCorrect)
 		if optErr != nil {
-			return fmt.Errorf("failed to save updated option: %w", optErr)
+			return fmt.Errorf("%w: question option update: %v", domain.ErrInternal, optErr)
 		}
 	}
 
