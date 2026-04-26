@@ -130,10 +130,6 @@ func (g *RouterGroup) RegisterExamRoutes(proxy http.Handler) {
 	g.register("DELETE", "/exams/:examId/questions/:questionId", proxy, adminRole...)
 	g.register("PATCH", "/exams/:examId/questions/:questionId", proxy, adminRole...)
 
-	// Exam Randomization Rules
-	g.register("POST", "/exams/:examId/rules", proxy, adminRole...)
-	g.register("PATCH", "/exams/:examId/rules/:ruleId", proxy, adminRole...)
-	g.register("DELETE", "/exams/:examId/rules/:ruleId", proxy, adminRole...)
 }
 
 // RegisterCandidateRoutes attaches Candidate Service proxy routes
