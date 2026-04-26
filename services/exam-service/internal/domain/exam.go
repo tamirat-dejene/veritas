@@ -22,9 +22,6 @@ type ExamRepository interface {
 	RemoveQuestion(ctx context.Context, examID uuid.UUID, questionID uuid.UUID) error
 	UpdateQuestionMapping(ctx context.Context, examID uuid.UUID, eq *sdomain.ExamQuestion) error
 
-	AddRandomizationRule(ctx context.Context, examID uuid.UUID, rule *sdomain.ExamRandomizationRule) error
-	UpdateRandomizationRule(ctx context.Context, examID uuid.UUID, rule *sdomain.ExamRandomizationRule) error
-	DeleteRandomizationRule(ctx context.Context, examID uuid.UUID, ruleID uuid.UUID) error
 	WithTx(tx pgx.Tx) ExamRepository
 }
 
@@ -44,7 +41,4 @@ type ExamUsecase interface {
 	RemoveQuestionFromExam(ctx context.Context, enterpriseID, examID, questionID uuid.UUID) error
 	UpdateExamQuestion(ctx context.Context, enterpriseID, examID, questionID uuid.UUID, pointsOverride *int, orderIndex *int) error
 
-	AddRandomizationRule(ctx context.Context, enterpriseID, examID uuid.UUID, topic *string, difficulty *sdomain.DifficultyLevel, questionCount int) (*sdomain.ExamRandomizationRule, error)
-	UpdateRandomizationRule(ctx context.Context, enterpriseID, examID, ruleID uuid.UUID, topic *string, difficulty *sdomain.DifficultyLevel, questionCount int) error
-	DeleteRandomizationRule(ctx context.Context, enterpriseID, examID, ruleID uuid.UUID) error
 }
