@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Inter', sans-serif; line-height: 1.6; color: #1e293b; background-color: #f8fafc; margin: 0; }
+        .container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        .header { background: #10b981; padding: 32px; text-align: center; color: white; }
+        .content { padding: 32px; }
+        .footer { padding: 24px; text-align: center; font-size: 14px; color: #64748b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header"><h1>Exam Published</h1></div>
+        <div class="content">
+            <p>Hello Admin,</p>
+            <p>The exam <span style="color:#059669; font-weight:700">"{{.Title}}"</span> is now LIVE.</p>
+            <p>Candidates can now start their sessions within the scheduled window.</p>
+        </div>
+        <div class="footer">&copy; 2026 Veritas AI</div>
+    </div>
+</body>
+</html>

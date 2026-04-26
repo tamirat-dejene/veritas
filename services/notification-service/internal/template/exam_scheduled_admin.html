@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Inter', sans-serif; line-height: 1.6; color: #1e293b; background-color: #f8fafc; margin: 0; }
+        .container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        .header { background: #6366f1; padding: 32px; text-align: center; color: white; }
+        .content { padding: 32px; }
+        .info-box { background: #f1f5f9; padding: 20px; border-radius: 8px; margin-top: 20px; }
+        .footer { padding: 24px; text-align: center; font-size: 14px; color: #64748b; }
+        .highlight { color: #4f46e5; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header"><h1>Exam Scheduled</h1></div>
+        <div class="content">
+            <p>Hello Admin,</p>
+            <p>The exam <span class="highlight">"{{.Title}}"</span> has been scheduled and is ready for publishing.</p>
+            <div class="info-box">
+                <p style="margin:0"><strong>Start:</strong> {{.StartTime}}</p>
+                <p style="margin:5px 0 0 0"><strong>End:</strong> {{.EndTime}}</p>
+            </div>
+        </div>
+        <div class="footer">&copy; 2026 Veritas AI</div>
+    </div>
+</body>
+</html>
