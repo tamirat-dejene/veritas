@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/notification-service/internal/domain"
@@ -29,17 +30,16 @@ type notificationUsecase struct {
 	userActivatedTmpl         *template.Template
 	userPasswordChangedTmpl   *template.Template
 	userPasswordResetAdminTmpl *template.Template
+
+	examCreatedAdminTmpl      *template.Template
+	examScheduledAdminTmpl    *template.Template
+	examScheduledCandidateTmpl *template.Template
+	examPublishedAdminTmpl    *template.Template
+	examPublishedCandidateTmpl *template.Template
+	examClosedAdminTmpl       *template.Template
+	examClosedCandidateTmpl   *template.Template
 }
 
-// EnterpriseStaffCreatedEvent matches the payload sent by enterprise-service
-type EnterpriseStaffCreatedEvent struct {
-	StaffID        uuid.UUID `json:"staff_id"`
-	Email          string    `json:"email"`
-	Name           string    `json:"name"`
-	TempPassword   string    `json:"temp_password"`
-	EnterpriseName string    `json:"enterprise_name"`
-	Timestamp      int64     `json:"timestamp"`
-}
 
 // NewNotificationUsecase creates a new NotificationUsecase.
 func NewNotificationUsecase(mailer domain.Mailer, logger *zap.Logger) (domain.NotificationUsecase, error) {
@@ -76,6 +76,14 @@ func NewNotificationUsecase(mailer domain.Mailer, logger *zap.Logger) (domain.No
 	userPwdChgTmpl, _ := parse("user_password_changed_email.html", emailtemplate.UserPasswordChangedEmail)
 	userPwdRstAdmTmpl, _ := parse("user_password_reset_admin_email.html", emailtemplate.UserPasswordResetAdminEmail)
 
+	exCreAdm, _ := parse("exam_created_admin.html", emailtemplate.ExamCreatedAdminEmail)
+	exSchAdm, _ := parse("exam_scheduled_admin.html", emailtemplate.ExamScheduledAdminEmail)
+	exSchCan, _ := parse("exam_scheduled_candidate.html", emailtemplate.ExamScheduledCandidateEmail)
+	exPubAdm, _ := parse("exam_published_admin.html", emailtemplate.ExamPublishedAdminEmail)
+	exPubCan, _ := parse("exam_published_candidate.html", emailtemplate.ExamPublishedCandidateEmail)
+	exCloAdm, _ := parse("exam_closed_admin.html", emailtemplate.ExamClosedAdminEmail)
+	exCloCan, _ := parse("exam_closed_candidate.html", emailtemplate.ExamClosedCandidateEmail)
+
 	return &notificationUsecase{
 		mailer:                mailer,
 		logger:                logger,
@@ -92,10 +100,28 @@ func NewNotificationUsecase(mailer domain.Mailer, logger *zap.Logger) (domain.No
 		userActivatedTmpl:         userActTmpl,
 		userPasswordChangedTmpl:   userPwdChgTmpl,
 		userPasswordResetAdminTmpl: userPwdRstAdmTmpl,
+
+		examCreatedAdminTmpl:      exCreAdm,
+		examScheduledAdminTmpl:    exSchAdm,
+		examScheduledCandidateTmpl: exSchCan,
+		examPublishedAdminTmpl:    exPubAdm,
+		examPublishedCandidateTmpl: exPubCan,
+		examClosedAdminTmpl:       exCloAdm,
+		examClosedCandidateTmpl:   exCloCan,
 	}, nil
 }
 
-// HandleEnterpriseStaffCreated handles the enterprise.staff.created event.
+// ---- Enterprise Event Handlers ----
+
+type EnterpriseStaffCreatedEvent struct {
+	StaffID        uuid.UUID `json:"staff_id"`
+	Email          string    `json:"email"`
+	Name           string    `json:"name"`
+	TempPassword   string    `json:"temp_password"`
+	EnterpriseName string    `json:"enterprise_name"`
+	Timestamp      int64     `json:"timestamp"`
+}
+
 func (uc *notificationUsecase) HandleEnterpriseStaffCreated(ctx context.Context, payload []byte) error {
 	var event EnterpriseStaffCreatedEvent
 	if err := json.Unmarshal(payload, &event); err != nil {
@@ -134,7 +160,6 @@ func (uc *notificationUsecase) HandleEnterpriseStaffCreated(ctx context.Context,
 	return nil
 }
 
-// PasswordResetRequestedEvent matches the payload sent by enterprise-service
 type PasswordResetRequestedEvent struct {
 	UserID    string `json:"user_id"`
 	Email     string `json:"email"`
@@ -143,7 +168,6 @@ type PasswordResetRequestedEvent struct {
 	Timestamp int64  `json:"timestamp"`
 }
 
-// HandlePasswordResetRequested handles the enterprise.password.reset.requested event.
 func (uc *notificationUsecase) HandlePasswordResetRequested(ctx context.Context, payload []byte) error {
 	var event PasswordResetRequestedEvent
 	if err := json.Unmarshal(payload, &event); err != nil {
@@ -347,4 +371,118 @@ func (uc *notificationUsecase) HandleUserPasswordResetAdmin(ctx context.Context,
 		"EnterpriseName": event.EnterpriseName,
 		"TempPassword":   event.TempPassword,
 	})
+}
+
+// ---- Exam Event Handlers ----
+
+type ExamCreatedEvent struct {
+	ExamID       uuid.UUID `json:"exam_id"`
+	EnterpriseID uuid.UUID `json:"enterprise_id"`
+	Title        string    `json:"title"`
+	AdminEmail   string    `json:"admin_email"`
+	Timestamp    int64     `json:"timestamp"`
+}
+
+type ExamLifecycleEvent struct {
+	ExamID          uuid.UUID  `json:"exam_id"`
+	EnterpriseID    uuid.UUID  `json:"enterprise_id"`
+	Title           string     `json:"title"`
+	AdminEmail      string     `json:"admin_email"`
+	CandidateEmails []string   `json:"candidate_emails"`
+	StartTime       *time.Time `json:"start_time,omitempty"`
+	EndTime         *time.Time `json:"end_time,omitempty"`
+	Timestamp       int64      `json:"timestamp"`
+}
+
+func (uc *notificationUsecase) HandleExamCreated(ctx context.Context, payload []byte) error {
+	var event ExamCreatedEvent
+	if err := json.Unmarshal(payload, &event); err != nil {
+		uc.logger.Error("Failed to unmarshal ExamCreatedEvent", zap.Error(err))
+		return err
+	}
+
+	if event.AdminEmail != "" {
+		return uc.sendLifecycleEmail(ctx, event.AdminEmail, "Exam Created", uc.examCreatedAdminTmpl, map[string]interface{}{
+			"Title": event.Title,
+		})
+	}
+	return nil
+}
+
+func (uc *notificationUsecase) HandleExamScheduled(ctx context.Context, payload []byte) error {
+	var event ExamLifecycleEvent
+	if err := json.Unmarshal(payload, &event); err != nil {
+		uc.logger.Error("Failed to unmarshal ExamLifecycleEvent", zap.Error(err))
+		return err
+	}
+
+	data := map[string]interface{}{
+		"Title":     event.Title,
+		"StartTime": event.StartTime,
+		"EndTime":   event.EndTime,
+	}
+
+	// Notify Admin
+	if event.AdminEmail != "" {
+		_ = uc.sendLifecycleEmail(ctx, event.AdminEmail, "Exam Scheduled", uc.examScheduledAdminTmpl, data)
+	}
+
+	// Notify Candidates
+	for _, email := range event.CandidateEmails {
+		email := email // shadow for goroutine
+		go func() {
+			_ = uc.sendLifecycleEmail(context.Background(), email, "Upcoming Exam", uc.examScheduledCandidateTmpl, data)
+		}()
+	}
+
+	return nil
+}
+
+func (uc *notificationUsecase) HandleExamPublished(ctx context.Context, payload []byte) error {
+	var event ExamLifecycleEvent
+	if err := json.Unmarshal(payload, &event); err != nil {
+		uc.logger.Error("Failed to unmarshal ExamLifecycleEvent", zap.Error(err))
+		return err
+	}
+
+	data := map[string]interface{}{"Title": event.Title}
+
+	// Notify Admin
+	if event.AdminEmail != "" {
+		_ = uc.sendLifecycleEmail(ctx, event.AdminEmail, "Exam Published", uc.examPublishedAdminTmpl, data)
+	}
+
+	// Notify Candidates
+	for _, email := range event.CandidateEmails {
+		email := email
+		go func() {
+			_ = uc.sendLifecycleEmail(context.Background(), email, "Exam Now Live", uc.examPublishedCandidateTmpl, data)
+		}()
+	}
+
+	return nil
+}
+
+func (uc *notificationUsecase) HandleExamClosed(ctx context.Context, payload []byte) error {
+	var event ExamLifecycleEvent
+	if err := json.Unmarshal(payload, &event); err != nil {
+		uc.logger.Error("Failed to unmarshal ExamLifecycleEvent", zap.Error(err))
+		return err
+	}
+
+	data := map[string]interface{}{"Title": event.Title}
+
+	// Notify Admin
+	if event.AdminEmail != "" {
+		_ = uc.sendLifecycleEmail(ctx, event.AdminEmail, "Exam Closed", uc.examClosedAdminTmpl, data)
+	}
+
+	// Notify Candidates
+	for _, email := range event.CandidateEmails {
+		go func() {
+			_ = uc.sendLifecycleEmail(context.Background(), email, "Exam Finished", uc.examClosedCandidateTmpl, data)
+		}()
+	}
+
+	return nil
 }

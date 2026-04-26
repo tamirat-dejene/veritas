@@ -36,6 +36,10 @@ func (r *NotificationRouter) Topics() []string {
 		topics.UserActivated,
 		topics.UserPasswordChanged,
 		topics.UserPasswordResetAdmin,
+		topics.ExamCreated,
+		topics.ExamScheduled,
+		topics.ExamPublished,
+		topics.ExamClosed,
 	}
 }
 
@@ -67,6 +71,14 @@ func (r *NotificationRouter) Handle(ctx context.Context, msg messaging.Message) 
 		return r.uc.HandleUserPasswordChanged(ctx, msg.Value)
 	case topics.UserPasswordResetAdmin:
 		return r.uc.HandleUserPasswordResetAdmin(ctx, msg.Value)
+	case topics.ExamCreated:
+		return r.uc.HandleExamCreated(ctx, msg.Value)
+	case topics.ExamScheduled:
+		return r.uc.HandleExamScheduled(ctx, msg.Value)
+	case topics.ExamPublished:
+		return r.uc.HandleExamPublished(ctx, msg.Value)
+	case topics.ExamClosed:
+		return r.uc.HandleExamClosed(ctx, msg.Value)
 	default:
 		r.logger.Warn("Unhandled topic", zap.String("topic", msg.Topic))
 		return nil

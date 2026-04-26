@@ -31,4 +31,9 @@ type NotificationUsecase interface {
 	HandleUserActivated(ctx context.Context, payload []byte) error
 	HandleUserPasswordChanged(ctx context.Context, payload []byte) error
 	HandleUserPasswordResetAdmin(ctx context.Context, payload []byte) error
+
+	HandleExamCreated(ctx context.Context, payload []byte) error
+	HandleExamScheduled(ctx context.Context, payload []byte) error
+	HandleExamPublished(ctx context.Context, payload []byte) error
+	HandleExamClosed(ctx context.Context, payload []byte) error
 }
