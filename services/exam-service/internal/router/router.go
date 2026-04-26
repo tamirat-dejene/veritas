@@ -47,10 +47,6 @@ func NewRouter(qh *handler.QuestionHandler, eh *handler.ExamHandler) *gin.Engine
 		exams.DELETE("/:examId/questions/:questionId", eh.RemoveQuestionFromExam)
 		exams.PATCH("/:examId/questions/:questionId", eh.UpdateExamQuestion)
 
-		// Exam Randomization Rules
-		exams.POST("/:examId/rules", eh.AddRandomizationRule)
-		exams.PATCH("/:examId/rules/:ruleId", eh.UpdateRandomizationRule)
-		exams.DELETE("/:examId/rules/:ruleId", eh.DeleteRandomizationRule)
 	}
 
 	// Swagger UI — available at /swagger/index.html

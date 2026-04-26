@@ -823,198 +823,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/exams/{examId}/rules": {
-            "post": {
-                "description": "Add rule for selecting random questions by topic/difficulty.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "exam"
-                ],
-                "summary": "Add randomization rule",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Enterprise ID (UUID)",
-                        "name": "X-Enterprise-ID",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Exam ID (UUID)",
-                        "name": "examId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Rule payload",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/ExamRuleRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/ExamRandomizationRule"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/exams/{examId}/rules/{ruleId}": {
-            "delete": {
-                "description": "Delete one randomization rule from an exam.",
-                "tags": [
-                    "exam"
-                ],
-                "summary": "Delete randomization rule",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Enterprise ID (UUID)",
-                        "name": "X-Enterprise-ID",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Exam ID (UUID)",
-                        "name": "examId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Rule ID (UUID)",
-                        "name": "ruleId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "patch": {
-                "description": "Update topic/difficulty/questionCount for a rule.",
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "exam"
-                ],
-                "summary": "Update randomization rule",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Enterprise ID (UUID)",
-                        "name": "X-Enterprise-ID",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Exam ID (UUID)",
-                        "name": "examId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Rule ID (UUID)",
-                        "name": "ruleId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Rule payload",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/ExamRuleRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/exams/{examId}/schedule": {
             "post": {
                 "description": "Set start and end times for an exam.",
@@ -1589,23 +1397,6 @@ const docTemplate = `{
                 }
             }
         },
-        "ExamRuleRequest": {
-            "type": "object",
-            "required": [
-                "questionCount"
-            ],
-            "properties": {
-                "difficulty": {
-                    "$ref": "#/definitions/DifficultyLevel"
-                },
-                "questionCount": {
-                    "type": "integer"
-                },
-                "topic": {
-                    "type": "string"
-                }
-            }
-        },
         "QuestionOptionDTO": {
             "type": "object",
             "required": [
@@ -1831,12 +1622,6 @@ const docTemplate = `{
                         "$ref": "#/definitions/ExamQuestion"
                     }
                 },
-                "randomizationRules": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/ExamRandomizationRule"
-                    }
-                },
                 "scheduledEnd": {
                     "type": "string"
                 },
@@ -1880,26 +1665,6 @@ const docTemplate = `{
                     "$ref": "#/definitions/Question"
                 },
                 "questionId": {
-                    "type": "string"
-                }
-            }
-        },
-        "ExamRandomizationRule": {
-            "type": "object",
-            "properties": {
-                "difficulty": {
-                    "$ref": "#/definitions/DifficultyLevel"
-                },
-                "examId": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "questionCount": {
-                    "type": "integer"
-                },
-                "topic": {
                     "type": "string"
                 }
             }

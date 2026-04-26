@@ -92,17 +92,6 @@ definitions:
       error:
         type: string
     type: object
-  ExamRuleRequest:
-    properties:
-      difficulty:
-        $ref: '#/definitions/DifficultyLevel'
-      questionCount:
-        type: integer
-      topic:
-        type: string
-    required:
-    - questionCount
-    type: object
   QuestionOptionDTO:
     properties:
       content:
@@ -253,10 +242,6 @@ definitions:
         items:
           $ref: '#/definitions/ExamQuestion'
         type: array
-      randomizationRules:
-        items:
-          $ref: '#/definitions/ExamRandomizationRule'
-        type: array
       scheduledEnd:
         type: string
       scheduledStart:
@@ -286,19 +271,6 @@ definitions:
       question:
         $ref: '#/definitions/Question'
       questionId:
-        type: string
-    type: object
-  ExamRandomizationRule:
-    properties:
-      difficulty:
-        $ref: '#/definitions/DifficultyLevel'
-      examId:
-        type: string
-      id:
-        type: string
-      questionCount:
-        type: integer
-      topic:
         type: string
     type: object
   ExamStatus:
@@ -926,135 +898,6 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
       summary: Update exam question mapping
-      tags:
-      - exam
-  /exams/{examId}/rules:
-    post:
-      consumes:
-      - application/json
-      description: Add rule for selecting random questions by topic/difficulty.
-      parameters:
-      - description: Enterprise ID (UUID)
-        in: header
-        name: X-Enterprise-ID
-        required: true
-        type: string
-      - description: Exam ID (UUID)
-        in: path
-        name: examId
-        required: true
-        type: string
-      - description: Rule payload
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/ExamRuleRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/ExamRandomizationRule'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Add randomization rule
-      tags:
-      - exam
-  /exams/{examId}/rules/{ruleId}:
-    delete:
-      description: Delete one randomization rule from an exam.
-      parameters:
-      - description: Enterprise ID (UUID)
-        in: header
-        name: X-Enterprise-ID
-        required: true
-        type: string
-      - description: Exam ID (UUID)
-        in: path
-        name: examId
-        required: true
-        type: string
-      - description: Rule ID (UUID)
-        in: path
-        name: ruleId
-        required: true
-        type: string
-      responses:
-        "204":
-          description: No Content
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Delete randomization rule
-      tags:
-      - exam
-    patch:
-      consumes:
-      - application/json
-      description: Update topic/difficulty/questionCount for a rule.
-      parameters:
-      - description: Enterprise ID (UUID)
-        in: header
-        name: X-Enterprise-ID
-        required: true
-        type: string
-      - description: Exam ID (UUID)
-        in: path
-        name: examId
-        required: true
-        type: string
-      - description: Rule ID (UUID)
-        in: path
-        name: ruleId
-        required: true
-        type: string
-      - description: Rule payload
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/ExamRuleRequest'
-      responses:
-        "204":
-          description: No Content
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Update randomization rule
       tags:
       - exam
   /exams/{examId}/schedule:
