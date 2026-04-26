@@ -9,7 +9,7 @@
     </div>
 
     <div class="endpoint-list">
-        <h3 class="endpoint-group-title">Consumed Events (Kafka)</h3>
+        <h3 class="endpoint-group-title">Enterprise and Users Events (Kafka)</h3>
         
         <event-item topic="enterprise.staff.created">
             Triggered when a new staff member is onboarded. Dispatches a "Welcome Email" containing initial login credentials.
@@ -49,6 +49,21 @@
         </event-item>
         <event-item topic="enterprise.user.password.reset.admin">
             Delivers a new temporary password to a user when reset by an enterprise administrator.
+        </event-item>
+
+        <h3 class="endpoint-group-title" style="margin-top: 16px;">Exam Lifecycle Events (Kafka)</h3>
+        
+        <event-item topic="exam.exam.created">
+            Notifies the enterprise administrator when a new exam draft is created.
+        </event-item>
+        <event-item topic="exam.exam.scheduled">
+            Notifies both administrators and enrolled candidates when an exam window is scheduled.
+        </event-item>
+        <event-item topic="exam.exam.published">
+            Sends real-time "Go Live" notifications to candidates when an exam becomes available for attempt.
+        </event-item>
+        <event-item topic="exam.exam.closed">
+            Notifies all stakeholders when an examination window officially concludes.
         </event-item>
     </div>
 

@@ -18,6 +18,12 @@
             "after": "Manual question selection via /exams/:examId/questions"
           }
         ]
+      },
+      {
+        "type": "new",
+        "service": "exam",
+        "summary": "Event-driven lifecycle notifications",
+        "description": "Implemented event-driven notifications for exam lifecycle events (Created, Scheduled, Published, Closed). The service now automatically aggregates recipient data from candidate and enterprise services to support multi-stakeholder alerts."
       }
     ]
   },
