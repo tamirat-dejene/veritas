@@ -18,7 +18,7 @@ func handleError(c *gin.Context, err error) {
 		return
 	}
 
-	if errors.Is(err, domain.ErrExamNotFound) || errors.Is(err, domain.ErrQuestionNotFound) {
+	if errors.Is(err, domain.ErrExamNotFound) || errors.Is(err, domain.ErrQuestionNotFound) || errors.Is(err, domain.ErrMappingNotFound) {
 		writeError(c, http.StatusNotFound, err.Error())
 		return
 	}
@@ -28,13 +28,20 @@ func handleError(c *gin.Context, err error) {
 		return
 	}
 
-	if errors.Is(err, domain.ErrInvalidOrderIndex) || errors.Is(err, domain.ErrOrderIndexGap) || errors.Is(err, domain.ErrInvalidQuestion) {
+	if errors.Is(err, domain.ErrInvalidOrderIndex) || errors.Is(err, domain.ErrOrderIndexGap) ||
+		errors.Is(err, domain.ErrInvalidQuestion) || errors.Is(err, domain.ErrNoQuestions) ||
+		errors.Is(err, domain.ErrQuestionValidationFailed) {
 		writeError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if errors.Is(err, domain.ErrUnauthorized) {
 		writeError(c, http.StatusForbidden, err.Error())
+		return
+	}
+
+	if errors.Is(err, domain.ErrMarshalFailed) || errors.Is(err, domain.ErrInternal) {
+		writeError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
