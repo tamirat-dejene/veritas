@@ -79,6 +79,11 @@ func NewRouter(
 		submissions.GET("/:submissionId", mh.GetSubmissionDetail)
 	}
 
+	internal := engine.Group("/internal")
+	{
+		internal.GET("/candidates/emails", ch.GetEmailsForExam)
+	}
+
 	// Swagger UI — available at /swagger/index.html
 	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

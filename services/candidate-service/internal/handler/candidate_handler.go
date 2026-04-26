@@ -288,3 +288,28 @@ func (h *CandidateHandler) Deactivate(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Candidate deactivated"})
 }
+
+func (h *CandidateHandler) GetEmailsForExam(c *gin.Context) {
+	examIDStr := c.Query("exam_id")
+	enterpriseIDStr := c.Query("enterprise_id")
+
+	examID, err := uuid.Parse(examIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid exam_id"})
+		return
+	}
+
+	enterpriseID, err := uuid.Parse(enterpriseIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid enterprise_id"})
+		return
+	}
+
+	emails, err := h.uc.GetEmailsByExamID(c.Request.Context(), examID, enterpriseID)
+	if err != nil {
+		HandleError(c, h.logger, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"emails": emails})
+}
