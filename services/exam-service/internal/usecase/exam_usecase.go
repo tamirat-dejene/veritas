@@ -124,7 +124,7 @@ func (uc *examUsecase) CloneExam(ctx context.Context, sourceID uuid.UUID, enterp
 
 		err = uc.examRepo.WithTx(tx).Create(ctx, clone)
 		if err != nil {
-			return fmt.Errorf("failed to create cloned exam: %w", err)
+			return fmt.Errorf("%w: clone creation: %v", domain.ErrInternal, err)
 		}
 		return nil
 	})
@@ -157,7 +157,7 @@ func (uc *examUsecase) PublishExam(ctx context.Context, id uuid.UUID, enterprise
 
 		// Verification logic
 		if len(exam.Questions) == 0 {
-			return fmt.Errorf("exam must have at least one question to be published")
+			return domain.ErrNoQuestions
 		}
 
 		exam.Status = sdomain.ExamActive
@@ -225,7 +225,7 @@ func (uc *examUsecase) AddQuestionsToExam(ctx context.Context, enterpriseID, exa
 		for _, input := range inputs {
 			_, err = uc.questionRepo.WithTx(tx).GetByID(ctx, input.QuestionID, enterpriseID, false)
 			if err != nil {
-				return fmt.Errorf("failed to validate question %s: %w", input.QuestionID, err)
+				return fmt.Errorf("%w: question %s: %v", domain.ErrQuestionValidationFailed, input.QuestionID, err)
 			}
 
 			eq := &sdomain.ExamQuestion{
@@ -243,7 +243,7 @@ func (uc *examUsecase) AddQuestionsToExam(ctx context.Context, enterpriseID, exa
 
 		err = uc.examRepo.WithTx(tx).AddQuestions(ctx, examID, eqs)
 		if err != nil {
-			return fmt.Errorf("failed to add questions to exam: %w", err)
+			return fmt.Errorf("%w: add questions: %v", domain.ErrInternal, err)
 		}
 		return nil
 	})
@@ -289,7 +289,7 @@ func (uc *examUsecase) RemoveQuestionFromExam(ctx context.Context, enterpriseID,
 					newIdx := *eq.OrderIndex - 1
 					eq.OrderIndex = &newIdx
 					if err := uc.examRepo.WithTx(tx).UpdateQuestionMapping(ctx, examID, &eq); err != nil {
-						return fmt.Errorf("failed to shift order index for question %s: %w", eq.QuestionID, err)
+						return fmt.Errorf("%w: shift index %s: %v", domain.ErrInternal, eq.QuestionID, err)
 					}
 				}
 			}
