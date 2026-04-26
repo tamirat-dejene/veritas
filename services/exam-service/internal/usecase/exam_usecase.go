@@ -121,12 +121,6 @@ func (uc *examUsecase) CloneExam(ctx context.Context, sourceID uuid.UUID, enterp
 			clone.Questions = append(clone.Questions, qClone)
 		}
 
-		for _, r := range source.RandomizationRules {
-			rClone := r
-			rClone.ID = uuid.Nil
-			rClone.ExamID = uuid.Nil
-			clone.RandomizationRules = append(clone.RandomizationRules, rClone)
-		}
 
 		err = uc.examRepo.WithTx(tx).Create(ctx, clone)
 		if err != nil {
@@ -162,8 +156,8 @@ func (uc *examUsecase) PublishExam(ctx context.Context, id uuid.UUID, enterprise
 		}
 
 		// Verification logic
-		if len(exam.Questions) == 0 && len(exam.RandomizationRules) == 0 {
-			return fmt.Errorf("exam must have at least one question or randomization rule to be published")
+		if len(exam.Questions) == 0 {
+			return fmt.Errorf("exam must have at least one question to be published")
 		}
 
 		exam.Status = sdomain.ExamActive
@@ -371,73 +365,6 @@ func (uc *examUsecase) UpdateExamQuestion(ctx context.Context, enterpriseID, exa
 	})
 }
 
-func (uc *examUsecase) AddRandomizationRule(ctx context.Context, enterpriseID, examID uuid.UUID, topic *string, difficulty *sdomain.DifficultyLevel, questionCount int) (*sdomain.ExamRandomizationRule, error) {
-	var rule *sdomain.ExamRandomizationRule
-	err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
-		exam, err := uc.examRepo.WithTx(tx).GetByID(ctx, examID, enterpriseID)
-		if err != nil {
-			return err
-		}
-
-		if exam.Status != sdomain.ExamDraft && exam.Status != sdomain.ExamScheduled {
-			return domain.ErrInvalidStatus
-		}
-
-		rule = &sdomain.ExamRandomizationRule{
-			ExamID:        examID,
-			Topic:         topic,
-			Difficulty:    difficulty,
-			QuestionCount: questionCount,
-		}
-
-		if err := uc.examRepo.WithTx(tx).AddRandomizationRule(ctx, examID, rule); err != nil {
-			return fmt.Errorf("failed to add randomization rule: %w", err)
-		}
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return rule, nil
-}
-
-func (uc *examUsecase) UpdateRandomizationRule(ctx context.Context, enterpriseID, examID, ruleID uuid.UUID, topic *string, difficulty *sdomain.DifficultyLevel, questionCount int) error {
-	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
-		exam, err := uc.examRepo.WithTx(tx).GetByID(ctx, examID, enterpriseID)
-		if err != nil {
-			return err
-		}
-		if exam.Status != sdomain.ExamDraft {
-			return domain.ErrInvalidStatus
-		}
-
-		rule := &sdomain.ExamRandomizationRule{
-			ID:            ruleID,
-			ExamID:        examID,
-			Topic:         topic,
-			Difficulty:    difficulty,
-			QuestionCount: questionCount,
-		}
-
-		return uc.examRepo.WithTx(tx).UpdateRandomizationRule(ctx, examID, rule)
-	})
-}
-
-func (uc *examUsecase) DeleteRandomizationRule(ctx context.Context, enterpriseID, examID, ruleID uuid.UUID) error {
-	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
-		exam, err := uc.examRepo.WithTx(tx).GetByID(ctx, examID, enterpriseID)
-		if err != nil {
-			return err
-		}
-		if exam.Status != sdomain.ExamDraft {
-			return domain.ErrInvalidStatus
-		}
-
-		return uc.examRepo.WithTx(tx).DeleteRandomizationRule(ctx, examID, ruleID)
-	})
-}
 
 func (uc *examUsecase) validateAndAssignOrderIndexes(existing []sdomain.ExamQuestion, incoming []*sdomain.ExamQuestion) error {
 	total := len(existing) + len(incoming)
