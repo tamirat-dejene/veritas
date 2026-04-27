@@ -71,11 +71,6 @@ func (uc *candidateUseCase) BulkUpload(ctx context.Context, enterpriseID uuid.UU
 			c.Email = &email
 		}
 
-		if len(row) >= 5 && row[4] != "" {
-			faceRef := row[4]
-			c.FaceReferenceURL = &faceRef
-		}
-
 		candidates = append(candidates, c)
 	}
 
@@ -119,9 +114,6 @@ func (uc *candidateUseCase) UpdateCandidate(ctx context.Context, candidate *doma
 	existing.LastName = candidate.LastName
 	if candidate.Email != nil {
 		existing.Email = candidate.Email
-	}
-	if candidate.FaceReferenceURL != nil {
-		existing.FaceReferenceURL = candidate.FaceReferenceURL
 	}
 
 	return uc.repo.Update(ctx, existing)

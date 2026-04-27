@@ -62,7 +62,6 @@ func (h *CandidateHandler) Create(c *gin.Context) {
 		FirstName:        req.FirstName,
 		LastName:         req.LastName,
 		Email:            req.Email,
-		FaceReferenceURL: req.FaceReferenceURL,
 		IsActive:         true,
 	}
 
@@ -80,7 +79,7 @@ func (h *CandidateHandler) Create(c *gin.Context) {
 //	@Summary		Bulk upload candidates
 //	@Description	Create many candidate profiles from a CSV file (max 5MB).
 //	@Description	The CSV should have the following columns in order:
-//	@Description	external_id (required), first_name (required), last_name (required), email (optional), face_reference_url (optional).
+//	@Description	external_id (required), first_name (required), last_name (required), email (optional).
 //	@Description	The first row is expected to be a header and will be skipped.
 //	@Tags			candidate
 //	@Accept			multipart/form-data
@@ -239,7 +238,6 @@ func (h *CandidateHandler) Update(c *gin.Context) {
 		FirstName:        req.FirstName,
 		LastName:         req.LastName,
 		Email:            req.Email,
-		FaceReferenceURL: req.FaceReferenceURL,
 	}
 
 	if err := h.uc.UpdateCandidate(c.Request.Context(), candidate); err != nil {
