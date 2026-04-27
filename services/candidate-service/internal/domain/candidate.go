@@ -16,7 +16,6 @@ type CandidateProfile struct {
 	FirstName        string    `db:"first_name" json:"firstName"`
 	LastName         string    `db:"last_name" json:"lastName"`
 	Email            *string   `db:"email" json:"email,omitempty"`
-	FaceReferenceURL *string   `db:"face_reference_url" json:"faceReferenceUrl,omitempty"`
 	IsActive         bool      `db:"is_active" json:"isActive"`
 	CreatedAt        time.Time `db:"created_at" json:"createdAt"`
 }

@@ -21,14 +21,12 @@ type CandidateCreateRequest struct {
 	FirstName        string  `json:"firstName" binding:"required"`
 	LastName         string  `json:"lastName" binding:"required"`
 	Email            *string `json:"email"`
-	FaceReferenceURL *string `json:"faceReferenceUrl"`
 }
 
 type CandidateUpdateRequest struct {
 	FirstName        string  `json:"firstName" binding:"required"`
 	LastName         string  `json:"lastName" binding:"required"`
 	Email            *string `json:"email"`
-	FaceReferenceURL *string `json:"faceReferenceUrl"`
 }
 
 type CandidateResponse struct {
