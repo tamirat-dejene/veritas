@@ -1,5 +1,27 @@
 [
   {
+    "date": "2026-04-27",
+    "changes": [
+      {
+        "type": "breaking",
+        "service": "candidate",
+        "summary": "Removal of face reference URL from candidate profiles",
+        "description": "The face_reference_url field has been removed from the candidate_profiles table. Face ID management is now handled exclusively during active exam sessions and is no longer stored at the profile level. This change affects candidate creation, updates, and bulk CSV uploads (5th column removed).",
+        "endpoints": [
+          "POST /candidates",
+          "PATCH /candidates/:candidateId",
+          "POST /candidates/bulk"
+        ],
+        "migration": [
+          {
+            "before": "Storing face reference URL on candidate profiles",
+            "after": "Face ID managed during exam sessions only"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "date": "2026-04-26",
     "changes": [
       {
