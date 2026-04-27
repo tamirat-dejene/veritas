@@ -31,7 +31,7 @@ func handleError(c *gin.Context, err error) {
 	if errors.Is(err, domain.ErrInvalidOrderIndex) || errors.Is(err, domain.ErrOrderIndexGap) ||
 		errors.Is(err, domain.ErrInvalidQuestion) || errors.Is(err, domain.ErrNoQuestions) ||
 		errors.Is(err, domain.ErrQuestionValidationFailed) || errors.Is(err, domain.ErrInsufficientTime) ||
-		errors.Is(err, domain.ErrExamCannotBeDeleted) {
+		errors.Is(err, domain.ErrExamCannotBeDeleted) || errors.Is(err, domain.ErrInvalidTime) {
 		writeError(c, http.StatusBadRequest, err.Error())
 		return
 	}

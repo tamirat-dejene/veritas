@@ -122,6 +122,11 @@ func (uc *examUsecase) ScheduleExam(ctx context.Context, id uuid.UUID, enterpris
 		exam.ScheduledStart = &startTime
 		exam.ScheduledEnd = &endTime
 
+		// Start time should be future time
+		if startTime.Before(time.Now()) {
+			return domain.ErrInvalidTime
+		}
+
 		// Scheduled duration must be at least as long as the exam's durationMinutes
 		duration := endTime.Sub(startTime)
 		if duration < time.Duration(exam.DurationMinutes)*time.Minute {

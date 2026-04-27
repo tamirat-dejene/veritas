@@ -124,7 +124,7 @@ func (h *ExamHandler) UpdateExam(c *gin.Context) {
 		EnterpriseID:        enterpriseID,
 		Title:               req.Title,
 		Description:         req.Description,
-		DurationMinutes:     req.DurationMinutes,
+		DurationMinutes:     int(req.DurationMinutes),
 		PassingScorePercent: req.PassingScorePercent,
 		NegativeMarking:     req.NegativeMarking,
 		MaxParticipants:     req.MaxParticipants,

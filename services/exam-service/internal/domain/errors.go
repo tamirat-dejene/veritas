@@ -18,4 +18,5 @@ var (
 	ErrInternal                 = errors.New("internal service error")
 	ErrInsufficientTime         = errors.New("scheduled duration is less than the exam duration")
 	ErrExamCannotBeDeleted      = errors.New("exam cannot be deleted because it is active, closed or archived")
+	ErrInvalidTime              = errors.New("invalid time")
 )

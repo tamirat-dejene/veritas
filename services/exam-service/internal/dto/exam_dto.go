@@ -20,7 +20,7 @@ type CreateExamRequest struct {
 type UpdateExamRequest struct {
 	Title               string                 `json:"title"`
 	Description         *string                `json:"description,omitempty"`
-	DurationMinutes     int                    `json:"durationMinutes"`
+	DurationMinutes     uint                    `json:"durationMinutes"`
 	PassingScorePercent float64                `json:"passingScorePercent"`
 	NegativeMarking     bool                   `json:"negativeMarking"`
 	MaxParticipants     *int                   `json:"maxParticipants,omitempty"`
