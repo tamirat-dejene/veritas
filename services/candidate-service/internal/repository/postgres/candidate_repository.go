@@ -38,14 +38,14 @@ func NewCandidateRepository(db DBTX) domain.CandidateRepository {
 
 const candidateFields = `
 	id, enterprise_id, external_id, first_name, last_name, email,
-	face_reference_url, is_active, created_at
+	is_active, created_at
 `
 
 func scanCandidate(row pgx.Row) (*domain.CandidateProfile, error) {
 	var c domain.CandidateProfile
 	err := row.Scan(
 		&c.ID, &c.EnterpriseID, &c.ExternalID, &c.FirstName, &c.LastName, &c.Email,
-		&c.FaceReferenceURL, &c.IsActive, &c.CreatedAt,
+		&c.IsActive, &c.CreatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -60,8 +60,8 @@ func (r *candidateRepository) Create(ctx context.Context, c *domain.CandidatePro
 	const insertQuery = `
 		INSERT INTO candidate_profiles (
 			id, enterprise_id, external_id, first_name, last_name, email,
-			face_reference_url, is_active, created_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			is_active, created_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 	if c.ID == uuid.Nil {
 		c.ID = uuid.New()
@@ -72,7 +72,7 @@ func (r *candidateRepository) Create(ctx context.Context, c *domain.CandidatePro
 
 	_, err := r.db.Exec(ctx, insertQuery,
 		c.ID, c.EnterpriseID, c.ExternalID, c.FirstName, c.LastName, c.Email,
-		c.FaceReferenceURL, c.IsActive, c.CreatedAt,
+		c.IsActive, c.CreatedAt,
 	)
 	if err != nil {
 		// PostgreSQL duplicate key violation
@@ -89,7 +89,7 @@ func (r *candidateRepository) CreateBulk(ctx context.Context, candidates []*doma
 		return nil
 	}
 
-	cols := []string{"id", "enterprise_id", "external_id", "first_name", "last_name", "email", "face_reference_url", "is_active", "created_at"}
+	cols := []string{"id", "enterprise_id", "external_id", "first_name", "last_name", "email", "is_active", "created_at"}
 	rows := make([][]any, 0, len(candidates))
 
 	for _, c := range candidates {
@@ -101,7 +101,7 @@ func (r *candidateRepository) CreateBulk(ctx context.Context, candidates []*doma
 		}
 		rows = append(rows, []any{
 			c.ID, c.EnterpriseID, c.ExternalID, c.FirstName, c.LastName, c.Email,
-			c.FaceReferenceURL, c.IsActive, c.CreatedAt,
+			c.IsActive, c.CreatedAt,
 		})
 	}
 
@@ -172,11 +172,11 @@ func (r *candidateRepository) ListByEnterprise(ctx context.Context, enterpriseID
 func (r *candidateRepository) Update(ctx context.Context, c *domain.CandidateProfile) error {
 	const updateQuery = `
 		UPDATE candidate_profiles
-		SET first_name = $3, last_name = $4, email = $5, face_reference_url = $6
+		SET first_name = $3, last_name = $4, email = $5
 		WHERE id = $1 AND enterprise_id = $2
 	`
 	tag, err := r.db.Exec(ctx, updateQuery,
-		c.ID, c.EnterpriseID, c.FirstName, c.LastName, c.Email, c.FaceReferenceURL,
+		c.ID, c.EnterpriseID, c.FirstName, c.LastName, c.Email,
 	)
 	if err != nil {
 		return err
