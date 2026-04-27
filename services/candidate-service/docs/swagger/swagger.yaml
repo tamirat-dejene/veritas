@@ -10,8 +10,6 @@ definitions:
         type: string
       externalId:
         type: string
-      faceReferenceUrl:
-        type: string
       firstName:
         type: string
       id:
@@ -180,8 +178,6 @@ definitions:
         type: string
       externalId:
         type: string
-      faceReferenceUrl:
-        type: string
       firstName:
         type: string
       lastName:
@@ -199,8 +195,6 @@ definitions:
   CandidateUpdateRequest:
     properties:
       email:
-        type: string
-      faceReferenceUrl:
         type: string
       firstName:
         type: string
@@ -644,7 +638,7 @@ paths:
       description: |-
         Create many candidate profiles from a CSV file (max 5MB).
         The CSV should have the following columns in order:
-        external_id (required), first_name (required), last_name (required), email (optional), face_reference_url (optional).
+        external_id (required), first_name (required), last_name (required), email (optional).
         The first row is expected to be a header and will be skipped.
       parameters:
       - description: Enterprise ID (fallback if middleware context is absent)
