@@ -50,19 +50,19 @@ func (s *jwtTokenService) ParseToken(ctx context.Context, tokenString string) (*
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		enrollmentID, err := parseUUID(claims["eid"])
 		if err != nil {
-			return nil, fmt.Errorf("invalid enrollment id in token")
+			return nil, domain.ErrInvalidToken
 		}
 		candidateID, err := parseUUID(claims["cid"])
 		if err != nil {
-			return nil, fmt.Errorf("invalid candidate id in token")
+			return nil, domain.ErrInvalidToken
 		}
 		examID, err := parseUUID(claims["xid"])
 		if err != nil {
-			return nil, fmt.Errorf("invalid exam id in token")
+			return nil, domain.ErrInvalidToken
 		}
 		enterpriseID, err := parseUUID(claims["ent"])
 		if err != nil {
-			return nil, fmt.Errorf("invalid enterprise id in token")
+			return nil, domain.ErrInvalidToken
 		}
 
 		role, _ := claims["role"].(string)
@@ -81,13 +81,13 @@ func (s *jwtTokenService) ParseToken(ctx context.Context, tokenString string) (*
 		}, nil
 	}
 
-	return nil, fmt.Errorf("invalid token")
+	return nil, domain.ErrInvalidToken
 }
 
 func parseUUID(v interface{}) (uuid.UUID, error) {
 	s, ok := v.(string)
 	if !ok {
-		return uuid.Nil, fmt.Errorf("not a string")
+		return uuid.Nil, domain.ErrNotAString
 	}
 	return uuid.Parse(s)
 }

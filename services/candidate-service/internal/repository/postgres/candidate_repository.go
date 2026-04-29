@@ -109,7 +109,7 @@ func (r *candidateRepository) CreateBulk(ctx context.Context, candidates []*doma
 		CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error)
 	})
 	if !ok {
-		return fmt.Errorf("bulk insert not supported by current DB context")
+		return domain.ErrNotSupported
 	}
 
 	_, err := conn.CopyFrom(
@@ -123,7 +123,7 @@ func (r *candidateRepository) CreateBulk(ctx context.Context, candidates []*doma
 		if err.Error() == "ERROR: duplicate key value violates unique constraint \"uq_candidate_external\" (SQLSTATE 23505)" {
 			return domain.ErrDuplicateExternalID
 		}
-		return fmt.Errorf("bulk insert failed: %w", err)
+		return fmt.Errorf("bulk upload: %w", err)
 	}
 
 	return nil
