@@ -13,7 +13,7 @@ import (
 )
 
 var allowedEnrollmentSortFields = map[string]string{
-	"created_at":   "created_at",
+	"created_at":    "created_at",
 	"attempts_used": "attempts_used",
 }
 
@@ -32,17 +32,21 @@ func NewEnrollmentRepository(db DBTX) domain.EnrollmentRepository {
 	return &enrollmentRepository{db: db}
 }
 
+// enrollmentFields is the canonical SELECT column list — order must match scanEnrollment.
 const enrollmentFields = `
-	id, enterprise_id, exam_id, candidate_id, access_token_hash,
-	token_expires_at, max_attempts, attempts_used, created_at
+	id, enterprise_id, exam_id, candidate_id,
+	access_token_hash, invitation_code_hash,
+	token_expires_at, max_attempts, attempts_used,
+	status, invitation_sent_at, created_at
 `
 
 func scanEnrollment(row pgx.Row) (*domain.ExamEnrollment, error) {
 	var e domain.ExamEnrollment
 	err := row.Scan(
 		&e.ID, &e.EnterpriseID, &e.ExamID, &e.CandidateID,
-		&e.AccessTokenHash, &e.TokenExpiresAt, &e.MaxAttempts, &e.AttemptsUsed,
-		&e.CreatedAt,
+		&e.AccessTokenHash, &e.InvitationCodeHash,
+		&e.TokenExpiresAt, &e.MaxAttempts, &e.AttemptsUsed,
+		&e.Status, &e.InvitationSentAt, &e.CreatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -56,9 +60,11 @@ func scanEnrollment(row pgx.Row) (*domain.ExamEnrollment, error) {
 func (r *enrollmentRepository) Create(ctx context.Context, e *domain.ExamEnrollment) error {
 	const insertQuery = `
 		INSERT INTO exam_enrollments (
-			id, enterprise_id, exam_id, candidate_id, access_token_hash,
-			token_expires_at, max_attempts, attempts_used, created_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			id, enterprise_id, exam_id, candidate_id,
+			access_token_hash, invitation_code_hash,
+			token_expires_at, max_attempts, attempts_used,
+			status, invitation_sent_at, created_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
 	if e.ID == uuid.Nil {
 		e.ID = uuid.New()
@@ -66,13 +72,16 @@ func (r *enrollmentRepository) Create(ctx context.Context, e *domain.ExamEnrollm
 	if e.CreatedAt.IsZero() {
 		e.CreatedAt = time.Now()
 	}
+	if e.Status == "" {
+		e.Status = domain.StatusPending
+	}
 
 	_, err := r.db.Exec(ctx, insertQuery,
 		e.ID, e.EnterpriseID, e.ExamID, e.CandidateID,
-		e.AccessTokenHash, e.TokenExpiresAt, e.MaxAttempts, e.AttemptsUsed,
-		e.CreatedAt,
+		e.AccessTokenHash, e.InvitationCodeHash,
+		e.TokenExpiresAt, e.MaxAttempts, e.AttemptsUsed,
+		e.Status, e.InvitationSentAt, e.CreatedAt,
 	)
-	// Optionally check duplicate enrollment violation
 	return err
 }
 
@@ -86,8 +95,12 @@ func (r *enrollmentRepository) GetByExamAndCandidate(ctx context.Context, examID
 	return scanEnrollment(r.db.QueryRow(ctx, query, examID, candidateID))
 }
 
+func (r *enrollmentRepository) GetByInvitationCodeHash(ctx context.Context, codeHash string) (*domain.ExamEnrollment, error) {
+	query := fmt.Sprintf("SELECT %s FROM exam_enrollments WHERE invitation_code_hash = $1 LIMIT 1", enrollmentFields)
+	return scanEnrollment(r.db.QueryRow(ctx, query, codeHash))
+}
+
 func (r *enrollmentRepository) ListByExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) ([]*domain.ExamEnrollment, int64, error) {
-	// Count query
 	var total int64
 	if err := r.db.QueryRow(ctx,
 		"SELECT COUNT(*) FROM exam_enrollments WHERE exam_id = $1 AND enterprise_id = $2",
@@ -96,7 +109,6 @@ func (r *enrollmentRepository) ListByExam(ctx context.Context, examID uuid.UUID,
 		return nil, 0, err
 	}
 
-	// Data query with pagination
 	sortCol := safeEnrollmentSortField(params.GetSort())
 	query := fmt.Sprintf(
 		"SELECT %s FROM exam_enrollments WHERE exam_id = $1 AND enterprise_id = $2 ORDER BY %s %s LIMIT $3 OFFSET $4",
@@ -122,11 +134,19 @@ func (r *enrollmentRepository) ListByExam(ctx context.Context, examID uuid.UUID,
 func (r *enrollmentRepository) Update(ctx context.Context, e *domain.ExamEnrollment) error {
 	const updateQuery = `
 		UPDATE exam_enrollments
-		SET access_token_hash = $3, token_expires_at = $4, max_attempts = $5
+		SET access_token_hash    = $3,
+		    invitation_code_hash = $4,
+		    token_expires_at     = $5,
+		    max_attempts         = $6,
+		    status               = $7,
+		    invitation_sent_at   = $8
 		WHERE id = $1 AND enterprise_id = $2
 	`
 	tag, err := r.db.Exec(ctx, updateQuery,
-		e.ID, e.EnterpriseID, e.AccessTokenHash, e.TokenExpiresAt, e.MaxAttempts,
+		e.ID, e.EnterpriseID,
+		e.AccessTokenHash, e.InvitationCodeHash,
+		e.TokenExpiresAt, e.MaxAttempts,
+		e.Status, e.InvitationSentAt,
 	)
 	if err != nil {
 		return err
@@ -137,13 +157,21 @@ func (r *enrollmentRepository) Update(ctx context.Context, e *domain.ExamEnrollm
 	return nil
 }
 
+func (r *enrollmentRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.EnrollmentStatus) error {
+	const q = `UPDATE exam_enrollments SET status = $2 WHERE id = $1`
+	tag, err := r.db.Exec(ctx, q, id, status)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrEnrollmentNotFound
+	}
+	return nil
+}
+
 func (r *enrollmentRepository) IncrementAttempt(ctx context.Context, id uuid.UUID) error {
-	const updateQuery = `
-		UPDATE exam_enrollments
-		SET attempts_used = attempts_used + 1
-		WHERE id = $1
-	`
-	tag, err := r.db.Exec(ctx, updateQuery, id)
+	const q = `UPDATE exam_enrollments SET attempts_used = attempts_used + 1 WHERE id = $1`
+	tag, err := r.db.Exec(ctx, q, id)
 	if err != nil {
 		return err
 	}
