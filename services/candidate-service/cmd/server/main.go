@@ -9,7 +9,7 @@
 //	@tag.name		candidate
 //	@tag.description	Candidate profile management endpoints.
 //	@tag.name		enrollment
-//	@tag.description	Exam enrollment and enrollment token management endpoints.
+//	@tag.description	Exam enrollment and invitation management endpoints.
 //	@tag.name		session
 //	@tag.description	Session lifecycle, access validation, answers, and submission endpoints.
 //	@tag.name		monitoring
@@ -17,7 +17,7 @@
 //	@tag.name		system
 //	@tag.description	Operational and health endpoints.
 //
-//	@schemes		http https
+//	@schemes	http https
 //	@BasePath	/
 
 package main
@@ -28,6 +28,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -40,6 +41,7 @@ import (
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/usecase"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
+	"github.com/tamirat-dejene/veritas/shared/pkg/messaging/kafka"
 	"go.uber.org/zap"
 
 	// Import generated swagger docs so the spec is registered at startup.
@@ -47,20 +49,18 @@ import (
 )
 
 func main() {
-	// 1. Initialize Logger from Shared Library matching the original implementation
+	// 1. Initialize Logger
 	log, err := logger.NewLogger("candidate-service")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
 		os.Exit(1)
 	}
-	defer func() {
-		_ = log.Sync()
-	}()
+	defer func() { _ = log.Sync() }()
 
 	// 2. Load Configuration
 	cfg := config.Load()
 
-	// 3. Initialize pgxpool directly
+	// 3. Initialize pgxpool
 	pool, err := pgxpool.New(context.Background(), cfg.DSN)
 	if err != nil {
 		log.Fatal("failed to connect to database", zap.Error(err))
@@ -68,32 +68,52 @@ func main() {
 	defer pool.Close()
 	log.Info("connected to postgres (via pgxpool)")
 
-	// 4. Initialize Infrastructure Clients (HTTP Client for Exam Service)
+	// 4. Initialize Kafka producer for publishing enrollment events
+	kafkaBrokers := strings.Split(cfg.KafkaBrokers, ",")
+	publisher, err := kafka.NewProducer(kafka.Config{
+		Brokers: kafkaBrokers,
+	})
+	if err != nil {
+		log.Fatal("failed to create Kafka producer", zap.Error(err))
+	}
+	defer func() { _ = publisher.Close() }()
+	log.Info("connected to Kafka", zap.Strings("brokers", kafkaBrokers))
+
+	// 5. Initialize Infrastructure Clients
 	examClient := client.NewExamServiceClient(cfg.ExamServiceURL, 10*time.Second)
 
-	// 5. Initialize Repositories (passing pool as DBTX)
+	// 6. Initialize Repositories
 	candidateRepo := postgres.NewCandidateRepository(pool)
 	enrollmentRepo := postgres.NewEnrollmentRepository(pool)
 	sessionRepo := postgres.NewSessionRepository(pool)
 
-	// 6. Initialize UseCases
+	// 7. Initialize Token Service
 	tokenService := token.NewTokenService(cfg.EnrollmentTokenSecret)
 
+	// 8. Initialize UseCases
 	candidateUC := usecase.NewCandidateUseCase(pool, candidateRepo)
-	enrollmentUC := usecase.NewEnrollmentUseCase(pool, enrollmentRepo, tokenService)
+	enrollmentUC := usecase.NewEnrollmentUseCase(
+		pool,
+		enrollmentRepo,
+		candidateRepo,
+		tokenService,
+		examClient,
+		publisher,
+		cfg.CandidatePortalBaseURL,
+	)
 	sessionUC := usecase.NewSessionUseCase(pool, sessionRepo, enrollmentRepo, examClient, tokenService)
 	monitoringUC := usecase.NewMonitoringUseCase(sessionRepo)
 
-	// 7. Initialize Handlers
+	// 9. Initialize Handlers
 	candidateHandler := c_http.NewCandidateHandler(candidateUC)
 	enrollmentHandler := c_http.NewEnrollmentHandler(enrollmentUC)
 	sessionHandler := c_http.NewSessionHandler(sessionUC)
 	monitoringHandler := c_http.NewMonitoringHandler(monitoringUC)
 
-	// 8. Initialize Router
+	// 10. Initialize Router
 	r := router.NewRouter(candidateHandler, enrollmentHandler, sessionHandler, monitoringHandler)
 
-	// 9. Start Server
+	// 11. Start HTTP Server
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,
 		Handler: r,
@@ -106,7 +126,7 @@ func main() {
 		}
 	}()
 
-	// Graceful Shutdown block
+	// Graceful Shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit

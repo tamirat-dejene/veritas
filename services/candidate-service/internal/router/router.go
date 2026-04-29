@@ -25,6 +25,7 @@ func NewRouter(
 
 	engine.GET("/health", healthCheck)
 
+	// ── Candidate profile management ──────────────────────────────────────────
 	candidates := engine.Group("/candidates")
 	{
 		candidates.POST("", ch.Create)
@@ -35,27 +36,46 @@ func NewRouter(
 		candidates.PATCH("/:candidateId/deactivate", ch.Deactivate)
 	}
 
+	// ── Exam-scoped enrollment operations ─────────────────────────────────────
 	exams := engine.Group("/exams")
 	{
+		// Phase 1: create enrollment records (no email sent)
 		exams.POST("/:examId/enrollments", eh.Enroll)
 		exams.GET("/:examId/enrollments", eh.ListByExam)
+
+		// Phase 2: admin explicitly triggers notification emails
+		exams.POST("/:examId/enrollments/notify", eh.NotifyAll)
+
+		// Monitoring
 		exams.GET("/:examId/sessions", mh.ListSessions)
 		exams.GET("/:examId/submissions", mh.GetSubmissions)
 	}
 
+	// ── Enrollment-level management ────────────────────────────────────────────
 	enrollments := engine.Group("/enrollments")
 	{
 		enrollments.GET("/:enrollmentId", eh.Get)
-		enrollments.POST("/:enrollmentId/regenerate-token", eh.RegenerateToken)
 		enrollments.PATCH("/:enrollmentId/revoke", eh.Revoke)
 		enrollments.POST("/:enrollmentId/reset-attempts", eh.ResetAttempts)
+
+		// Phase 2 (single): admin resends/sends notification to one candidate
+		enrollments.POST("/:enrollmentId/notify", eh.Notify)
+
+		// Phase 4: admin fetches a fresh invitation URL for no-email candidates
+		enrollments.GET("/:enrollmentId/link", eh.GetLink)
 	}
 
+	// ── Access / candidate authentication ────────────────────────────────────
 	access := engine.Group("/access")
 	{
+		// Legacy: validate a raw JWT header directly (internal / gateway use)
 		access.POST("/validate", sh.ValidateAccess)
+
+		// Phase 3: candidate exchanges opaque invitation code → receives JWT in body
+		access.POST("/redeem", eh.RedeemCode)
 	}
 
+	// ── Exam session lifecycle ─────────────────────────────────────────────────
 	sessions := engine.Group("/sessions")
 	{
 		sessions.POST("/start", sh.StartSession)
@@ -74,11 +94,13 @@ func NewRouter(
 		sessions.GET("/:sessionId/result", mh.CandidateGetResult)
 	}
 
+	// ── Submission monitoring ─────────────────────────────────────────────────
 	submissions := engine.Group("/submissions")
 	{
 		submissions.GET("/:submissionId", mh.GetSubmissionDetail)
 	}
 
+	// ── Internal service-to-service endpoints ─────────────────────────────────
 	internal := engine.Group("/internal")
 	{
 		internal.GET("/candidates/emails", ch.GetEmailsForExam)
@@ -93,7 +115,7 @@ func NewRouter(
 // healthCheck returns 200 OK if the service is running.
 //
 //	@Summary		Health check
-//	@ID			healthCheck
+//	@ID				healthCheck
 //	@Description	Returns a simple JSON indicating the service is alive.
 //	@Tags			system
 //	@Produce		json

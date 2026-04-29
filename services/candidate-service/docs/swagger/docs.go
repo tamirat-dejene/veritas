@@ -17,6 +17,58 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/access/redeem": {
+            "post": {
+                "description": "Exchange the opaque invitation code (from the URL query param) for a JWT. JWT is in the response body only.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollment"
+                ],
+                "summary": "Redeem invitation code",
+                "parameters": [
+                    {
+                        "description": "Opaque code from invitation URL",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/RedeemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/RedeemResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/access/validate": {
             "post": {
                 "description": "Validate exam access token before session start.",
@@ -474,7 +526,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Enterprise ID (fallback if middleware context is absent)",
+                        "description": "Enterprise ID",
                         "name": "X-Enterprise-Id",
                         "in": "header"
                     },
@@ -520,20 +572,20 @@ const docTemplate = `{
                 }
             }
         },
-        "/enrollments/{enrollmentId}/regenerate-token": {
-            "post": {
-                "description": "Regenerate and return a new raw token for an enrollment.",
+        "/enrollments/{enrollmentId}/link": {
+            "get": {
+                "description": "Generate a fresh invitation URL (opaque code) for manual distribution. Old URL is invalidated.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "enrollment"
                 ],
-                "summary": "Regenerate enrollment token",
+                "summary": "Get invitation link",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Enterprise ID (fallback if middleware context is absent)",
+                        "description": "Enterprise ID",
                         "name": "X-Enterprise-Id",
                         "in": "header"
                     },
@@ -549,7 +601,66 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/EnrollmentTokenResponse"
+                            "$ref": "#/definitions/InvitationLinkResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/enrollments/{enrollmentId}/notify": {
+            "post": {
+                "description": "Send or resend an invitation email to one candidate enrollment.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollment"
+                ],
+                "summary": "Notify single candidate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Enterprise ID",
+                        "name": "X-Enterprise-Id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Enrollment ID (UUID)",
+                        "name": "enrollmentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/NotifyResponse"
                         }
                     },
                     "400": {
@@ -581,7 +692,7 @@ const docTemplate = `{
         },
         "/enrollments/{enrollmentId}/reset-attempts": {
             "post": {
-                "description": "Reset attempts used to zero for an enrollment.",
+                "description": "Reset attempts_used to zero for an enrollment.",
                 "produces": [
                     "application/json"
                 ],
@@ -592,7 +703,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Enterprise ID (fallback if middleware context is absent)",
+                        "description": "Enterprise ID",
                         "name": "X-Enterprise-Id",
                         "in": "header"
                     },
@@ -640,7 +751,7 @@ const docTemplate = `{
         },
         "/enrollments/{enrollmentId}/revoke": {
             "patch": {
-                "description": "Revoke an enrollment and prevent future use.",
+                "description": "Revoke an enrollment. Any outstanding invitation link is immediately invalidated.",
                 "produces": [
                     "application/json"
                 ],
@@ -651,7 +762,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Enterprise ID (fallback if middleware context is absent)",
+                        "description": "Enterprise ID",
                         "name": "X-Enterprise-Id",
                         "in": "header"
                     },
@@ -710,7 +821,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Enterprise ID (fallback if middleware context is absent)",
+                        "description": "Enterprise ID",
                         "name": "X-Enterprise-Id",
                         "in": "header"
                     },
@@ -774,7 +885,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create enrollments for an exam and return generated raw access tokens.",
+                "description": "Create enrollments for an exam. Returns per-candidate invitation URLs (opaque code, not JWT).",
                 "consumes": [
                     "application/json"
                 ],
@@ -788,7 +899,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Enterprise ID (fallback if middleware context is absent)",
+                        "description": "Enterprise ID",
                         "name": "X-Enterprise-Id",
                         "in": "header"
                     },
@@ -814,6 +925,70 @@ const docTemplate = `{
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/EnrollmentCreateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/exams/{examId}/enrollments/notify": {
+            "post": {
+                "description": "Send invitation emails to enrolled candidates. Admin-triggered; no emails are sent automatically on enroll.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollment"
+                ],
+                "summary": "Bulk notify candidates",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Enterprise ID",
+                        "name": "X-Enterprise-Id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Exam ID (UUID)",
+                        "name": "examId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Optional list of enrollment IDs to notify",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/NotifyBulkRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/NotifyResponse"
                         }
                     },
                     "400": {
@@ -1733,6 +1908,41 @@ const docTemplate = `{
                 }
             }
         },
+        "EnrollmentStatus": {
+            "type": "string",
+            "enum": [
+                "Pending",
+                "Invited",
+                "Opened",
+                "Started",
+                "Completed",
+                "Revoked"
+            ],
+            "x-enum-comments": {
+                "StatusCompleted": "candidate submitted the exam",
+                "StatusInvited": "notification email sent to candidate",
+                "StatusOpened": "candidate redeemed the invitation link",
+                "StatusPending": "enrolled, admin has not yet sent notification",
+                "StatusRevoked": "admin revoked access",
+                "StatusStarted": "candidate has an active exam session"
+            },
+            "x-enum-descriptions": [
+                "enrolled, admin has not yet sent notification",
+                "notification email sent to candidate",
+                "candidate redeemed the invitation link",
+                "candidate has an active exam session",
+                "candidate submitted the exam",
+                "admin revoked access"
+            ],
+            "x-enum-varnames": [
+                "StatusPending",
+                "StatusInvited",
+                "StatusOpened",
+                "StatusStarted",
+                "StatusCompleted",
+                "StatusRevoked"
+            ]
+        },
         "ExamEnrollment": {
             "type": "object",
             "properties": {
@@ -1754,8 +1964,14 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "invitationSentAt": {
+                    "type": "string"
+                },
                 "maxAttempts": {
                     "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/EnrollmentStatus"
                 },
                 "tokenExpiresAt": {
                     "type": "string"
@@ -2014,14 +2230,14 @@ const docTemplate = `{
         "EnrollmentCreateResponse": {
             "type": "object",
             "properties": {
-                "enrollmentTokens": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
                 "message": {
                     "type": "string"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/EnrollmentResultItem"
+                    }
                 }
             }
         },
@@ -2057,13 +2273,19 @@ const docTemplate = `{
                 }
             }
         },
-        "EnrollmentTokenResponse": {
+        "EnrollmentResultItem": {
             "type": "object",
             "properties": {
-                "message": {
+                "candidateId": {
                     "type": "string"
                 },
-                "rawToken": {
+                "enrollmentId": {
+                    "type": "string"
+                },
+                "invitationUrl": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "string"
                 }
             }
@@ -2076,10 +2298,87 @@ const docTemplate = `{
                 }
             }
         },
+        "InvitationLinkResponse": {
+            "type": "object",
+            "properties": {
+                "enrollmentId": {
+                    "type": "string"
+                },
+                "invitationUrl": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tokenExpiresAt": {
+                    "type": "string"
+                }
+            }
+        },
         "MessageResponse": {
             "type": "object",
             "properties": {
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "NotifyBulkRequest": {
+            "type": "object",
+            "properties": {
+                "enrollmentIds": {
+                    "description": "EnrollmentIDs is optional; if empty, all Pending/Invited enrollments for the exam are notified.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "NotifyResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/NotifyResultItem"
+                    }
+                }
+            }
+        },
+        "NotifyResultItem": {
+            "type": "object",
+            "properties": {
+                "candidateId": {
+                    "type": "string"
+                },
+                "enrollmentId": {
+                    "type": "string"
+                },
+                "notifyStatus": {
+                    "description": "NotifyStatus: \"sent\" | \"skipped_no_email\"",
+                    "type": "string"
+                }
+            }
+        },
+        "RedeemRequest": {
+            "type": "object",
+            "required": [
+                "code"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                }
+            }
+        },
+        "RedeemResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
                     "type": "string"
                 }
             }
@@ -2273,7 +2572,7 @@ const docTemplate = `{
             "name": "candidate"
         },
         {
-            "description": "Exam enrollment and enrollment token management endpoints.",
+            "description": "Exam enrollment and invitation management endpoints.",
             "name": "enrollment"
         },
         {
