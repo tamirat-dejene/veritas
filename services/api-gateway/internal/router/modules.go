@@ -153,12 +153,15 @@ func (g *RouterGroup) RegisterCandidateRoutes(proxy http.Handler) {
 	g.register("GET", "/exams/:examId/sessions", proxy, adminRole...)
 	g.register("GET", "/exams/:examId/submissions", proxy, adminRole...)
 	g.register("GET", "/enrollments/:enrollmentId", proxy, staffOrAdmin...)
-	g.register("POST", "/enrollments/:enrollmentId/regenerate-token", proxy, adminRole...)
+	g.register("POST", "/exams/:examId/enrollments/notify", proxy, staffOrAdmin...)
+	g.register("POST", "/enrollments/:enrollmentId/notify", proxy, staffOrAdmin...)
+	g.register("GET", "/enrollments/:enrollmentId/link", proxy, staffOrAdmin...)
 	g.register("PATCH", "/enrollments/:enrollmentId/revoke", proxy, adminRole...)
 	g.register("POST", "/enrollments/:enrollmentId/reset-attempts", proxy, adminRole...)
 
 	// Access & Sessions
 	g.register("POST", "/access/validate", proxy) // Public
+	g.register("POST", "/access/redeem", proxy)   // Public
 	g.register("POST", "/sessions/start", proxy, candidateRole...)
 	g.register("GET", "/sessions/me/active", proxy, candidateRole...)
 	g.register("GET", "/sessions/:sessionId", proxy, g.candidateOrAdminChain(domain.RoleEnterpriseAdmin)...)

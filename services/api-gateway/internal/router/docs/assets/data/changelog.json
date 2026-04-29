@@ -1,5 +1,36 @@
 [
   {
+    "date": "2026-04-29",
+    "changes": [
+      {
+        "type": "breaking",
+        "service": "candidate",
+        "summary": "Secure Opaque Code Invitation Workflow",
+        "description": "Re-engineered the candidate enrollment process to use opaque invitation codes and admin-triggered notifications. Raw JWTs are no longer returned in enrollment responses or exposed in URLs. Candidates now redeem an opaque code via a secure endpoint to receive their session token in the response body.",
+        "endpoints": [
+          "POST /exams/:examId/enrollments",
+          "POST /exams/:examId/enrollments/notify",
+          "POST /enrollments/:enrollmentId/notify",
+          "GET /enrollments/:enrollmentId/link",
+          "POST /access/redeem",
+          "POST /enrollments/:enrollmentId/regenerate-token (REMOVED)"
+        ],
+        "migration": [
+          {
+            "before": "Raw JWTs returned immediately upon enrollment and exposed in URLs",
+            "after": "Opaque codes issued; JWTs returned only via POST /access/redeem"
+          }
+        ]
+      },
+      {
+        "type": "new",
+        "service": "notification",
+        "summary": "Candidate enrollment invitation emails",
+        "description": "Implemented branded HTML email notifications for candidate invitations, delivered asynchronously via Kafka when triggered by an administrator."
+      }
+    ]
+  },
+  {
     "date": "2026-04-27",
     "changes": [
       {

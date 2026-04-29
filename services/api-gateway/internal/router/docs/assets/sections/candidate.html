@@ -2,7 +2,7 @@
 <section class="section" data-service="candidate">
     <div class="section-header">
         <h2>Exam Candidate & Sessions</h2>
-        <span class="section-count">27 endpoints</span>
+        <span class="section-count">30 endpoints</span>
     </div>
     <div class="endpoint-list">
         <!-- Candidates -->
@@ -49,8 +49,17 @@
             <span class="badge badge-admin">EnterpriseAdmin</span>
             <span class="badge badge-staff">EnterpriseStaff</span>
         </endpoint-item>
-        <endpoint-item method="POST" path="/enrollments/:enrollmentId/regenerate-token">
+        <endpoint-item method="POST" path="/exams/:examId/enrollments/notify">
             <span class="badge badge-admin">EnterpriseAdmin</span>
+            <span class="badge badge-staff">EnterpriseStaff</span>
+        </endpoint-item>
+        <endpoint-item method="POST" path="/enrollments/:enrollmentId/notify">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+            <span class="badge badge-staff">EnterpriseStaff</span>
+        </endpoint-item>
+        <endpoint-item method="GET" path="/enrollments/:enrollmentId/link">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+            <span class="badge badge-staff">EnterpriseStaff</span>
         </endpoint-item>
         <endpoint-item method="PATCH" path="/enrollments/:enrollmentId/revoke">
             <span class="badge badge-admin">EnterpriseAdmin</span>
@@ -62,6 +71,9 @@
         <!-- Access & Sessions -->
         <h3 class="endpoint-group-title">Access & Sessions</h3>
         <endpoint-item method="POST" path="/access/validate">
+            <span class="badge badge-public">Public</span>
+        </endpoint-item>
+        <endpoint-item method="POST" path="/access/redeem">
             <span class="badge badge-public">Public</span>
         </endpoint-item>
         <endpoint-item method="POST" path="/sessions/start">
