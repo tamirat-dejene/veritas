@@ -6,18 +6,15 @@ import (
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
-	"go.uber.org/zap"
 )
 
 type monitoringUseCase struct {
 	sessionRepo domain.SessionRepository
-	logger      *zap.Logger
 }
 
-func NewMonitoringUseCase(sRepo domain.SessionRepository, logger *zap.Logger) domain.MonitoringUseCase {
+func NewMonitoringUseCase(sRepo domain.SessionRepository) domain.MonitoringUseCase {
 	return &monitoringUseCase{
 		sessionRepo: sRepo,
-		logger:      logger,
 	}
 }
 
