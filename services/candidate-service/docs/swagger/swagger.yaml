@@ -206,12 +206,12 @@ definitions:
     type: object
   EnrollmentCreateResponse:
     properties:
+      enrollmentTokens:
+        additionalProperties:
+          type: string
+        type: object
       message:
         type: string
-      rawTokens:
-        items:
-          type: string
-        type: array
     type: object
   EnrollmentRequest:
     properties:

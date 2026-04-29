@@ -2014,14 +2014,14 @@ const docTemplate = `{
         "EnrollmentCreateResponse": {
             "type": "object",
             "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "rawTokens": {
-                    "type": "array",
-                    "items": {
+                "enrollmentTokens": {
+                    "type": "object",
+                    "additionalProperties": {
                         "type": "string"
                     }
+                },
+                "message": {
+                    "type": "string"
                 }
             }
         },
