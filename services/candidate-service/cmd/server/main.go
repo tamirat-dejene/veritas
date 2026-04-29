@@ -79,16 +79,16 @@ func main() {
 	// 6. Initialize UseCases
 	tokenService := token.NewTokenService(cfg.EnrollmentTokenSecret)
 
-	candidateUC := usecase.NewCandidateUseCase(pool, candidateRepo, log)
-	enrollmentUC := usecase.NewEnrollmentUseCase(pool, enrollmentRepo, tokenService, log)
-	sessionUC := usecase.NewSessionUseCase(pool, sessionRepo, enrollmentRepo, examClient, tokenService, log)
-	monitoringUC := usecase.NewMonitoringUseCase(sessionRepo, log)
+	candidateUC := usecase.NewCandidateUseCase(pool, candidateRepo)
+	enrollmentUC := usecase.NewEnrollmentUseCase(pool, enrollmentRepo, tokenService)
+	sessionUC := usecase.NewSessionUseCase(pool, sessionRepo, enrollmentRepo, examClient, tokenService)
+	monitoringUC := usecase.NewMonitoringUseCase(sessionRepo)
 
 	// 7. Initialize Handlers
-	candidateHandler := c_http.NewCandidateHandler(candidateUC, log)
-	enrollmentHandler := c_http.NewEnrollmentHandler(enrollmentUC, log)
-	sessionHandler := c_http.NewSessionHandler(sessionUC, log)
-	monitoringHandler := c_http.NewMonitoringHandler(monitoringUC, log)
+	candidateHandler := c_http.NewCandidateHandler(candidateUC)
+	enrollmentHandler := c_http.NewEnrollmentHandler(enrollmentUC)
+	sessionHandler := c_http.NewSessionHandler(sessionUC)
+	monitoringHandler := c_http.NewMonitoringHandler(monitoringUC)
 
 	// 8. Initialize Router
 	r := router.NewRouter(candidateHandler, enrollmentHandler, sessionHandler, monitoringHandler)
