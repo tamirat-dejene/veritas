@@ -36,4 +36,6 @@ type NotificationUsecase interface {
 	HandleExamScheduled(ctx context.Context, payload []byte) error
 	HandleExamPublished(ctx context.Context, payload []byte) error
 	HandleExamClosed(ctx context.Context, payload []byte) error
+
+	HandleCandidateEnrollmentInvited(ctx context.Context, payload []byte) error
 }

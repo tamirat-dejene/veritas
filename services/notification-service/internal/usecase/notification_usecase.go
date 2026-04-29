@@ -38,6 +38,7 @@ type notificationUsecase struct {
 	examPublishedCandidateTmpl *template.Template
 	examClosedAdminTmpl       *template.Template
 	examClosedCandidateTmpl   *template.Template
+	candidateInvitationTmpl   *template.Template
 }
 
 
@@ -83,6 +84,7 @@ func NewNotificationUsecase(mailer domain.Mailer, logger *zap.Logger) (domain.No
 	exPubCan, _ := parse("exam_published_candidate.html", emailtemplate.ExamPublishedCandidateEmail)
 	exCloAdm, _ := parse("exam_closed_admin.html", emailtemplate.ExamClosedAdminEmail)
 	exCloCan, _ := parse("exam_closed_candidate.html", emailtemplate.ExamClosedCandidateEmail)
+	candInv, _ := parse("candidate_invitation_email.html", emailtemplate.CandidateInvitationEmail)
 
 	return &notificationUsecase{
 		mailer:                mailer,
@@ -108,6 +110,7 @@ func NewNotificationUsecase(mailer domain.Mailer, logger *zap.Logger) (domain.No
 		examPublishedCandidateTmpl: exPubCan,
 		examClosedAdminTmpl:       exCloAdm,
 		examClosedCandidateTmpl:   exCloCan,
+		candidateInvitationTmpl:   candInv,
 	}, nil
 }
 
@@ -486,3 +489,54 @@ func (uc *notificationUsecase) HandleExamClosed(ctx context.Context, payload []b
 
 	return nil
 }
+
+type CandidateEnrollmentInvitedEvent struct {
+	EnrollmentID   uuid.UUID `json:"enrollment_id"`
+	CandidateID    uuid.UUID `json:"candidate_id"`
+	ExamID         uuid.UUID `json:"exam_id"`
+	EnterpriseID   uuid.UUID `json:"enterprise_id"`
+	CandidateName  string    `json:"candidate_name"`
+	CandidateEmail string    `json:"candidate_email"`
+	ExamTitle      string    `json:"exam_title"`
+	InvitationURL  string    `json:"invitation_url"`
+	ExpiresAt      time.Time `json:"expires_at"`
+	Timestamp      int64     `json:"timestamp"`
+}
+
+func (uc *notificationUsecase) HandleCandidateEnrollmentInvited(ctx context.Context, payload []byte) error {
+	var event CandidateEnrollmentInvitedEvent
+	if err := json.Unmarshal(payload, &event); err != nil {
+		uc.logger.Error("Failed to unmarshal CandidateEnrollmentInvitedEvent", zap.Error(err))
+		return err
+	}
+
+	uc.logger.Info("Processing candidate invitation email", zap.String("email", event.CandidateEmail))
+
+	var bodyBuffer bytes.Buffer
+	err := uc.candidateInvitationTmpl.Execute(&bodyBuffer, map[string]interface{}{
+		"Name":          event.CandidateName,
+		"ExamTitle":     event.ExamTitle,
+		"InvitationURL": event.InvitationURL,
+		"ExpiresAt":     event.ExpiresAt.Format("Jan 02, 2006 15:04 MST"),
+		"Year":          time.Now().Year(),
+	})
+	if err != nil {
+		uc.logger.Error("Failed to render candidate invitation email template", zap.Error(err))
+		return err
+	}
+
+	req := domain.EmailRequest{
+		To:      event.CandidateEmail,
+		Subject: fmt.Sprintf("Invitation to take exam: %s", event.ExamTitle),
+		Body:    bodyBuffer.String(),
+	}
+
+	if err := uc.mailer.SendEmail(ctx, req); err != nil {
+		uc.logger.Error("Failed to send candidate invitation email", zap.Error(err))
+		return err
+	}
+
+	uc.logger.Info("Successfully sent candidate invitation email", zap.String("email", event.CandidateEmail))
+	return nil
+}
+
