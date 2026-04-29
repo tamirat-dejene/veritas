@@ -6,12 +6,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
-	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
-	"go.uber.org/zap"
+	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/dto"
 )
 
 // HandleError centralizes domain error mapping to HTTP status codes.
-func HandleError(c *gin.Context, l *zap.Logger, err error) {
+func HandleError(c *gin.Context, err error) {
 	if err == nil {
 		return
 	}
@@ -29,7 +28,12 @@ func HandleError(c *gin.Context, l *zap.Logger, err error) {
 		message = err.Error()
 
 	case errors.Is(err, domain.ErrUnauthorizedCandidate),
-		errors.Is(err, domain.ErrInvalidAccessToken):
+		errors.Is(err, domain.ErrInvalidAccessToken),
+		errors.Is(err, domain.ErrEnterpriseIDMissing),
+		errors.Is(err, domain.ErrEnrollmentIDMissing),
+		errors.Is(err, domain.ErrCandidateIDMissing),
+		errors.Is(err, domain.ErrUnauthorizedContext),
+		errors.Is(err, domain.ErrInvalidToken):
 		statusCode = http.StatusUnauthorized
 		message = err.Error()
 
@@ -47,7 +51,11 @@ func HandleError(c *gin.Context, l *zap.Logger, err error) {
 		statusCode = http.StatusForbidden
 		message = err.Error()
 
-	case errors.Is(err, domain.ErrInvalidAnswerFormat):
+	case errors.Is(err, domain.ErrInvalidAnswerFormat),
+		errors.Is(err, domain.ErrInvalidIDFormat),
+		errors.Is(err, domain.ErrMissingFile),
+		errors.Is(err, domain.ErrNoValidCandidates),
+		errors.Is(err, domain.ErrNotAString):
 		statusCode = http.StatusBadRequest
 		message = err.Error()
 
@@ -55,13 +63,15 @@ func HandleError(c *gin.Context, l *zap.Logger, err error) {
 		errors.Is(err, domain.ErrSubmissionExists):
 		statusCode = http.StatusConflict
 		message = err.Error()
+
+	case errors.Is(err, domain.ErrFileTooLarge):
+		statusCode = http.StatusRequestEntityTooLarge
+		message = err.Error()
+
+	case errors.Is(err, domain.ErrNotSupported):
+		statusCode = http.StatusNotImplemented
+		message = err.Error()
 	}
 
-	if statusCode == http.StatusInternalServerError {
-		logger.WithContext(c.Request.Context(), l).Error("Unexpected error", zap.Error(err))
-	} else {
-		logger.WithContext(c.Request.Context(), l).Warn("Request failed", zap.Error(err), zap.Int("status", statusCode))
-	}
-
-	c.AbortWithStatusJSON(statusCode, gin.H{"error": message})
+	c.AbortWithStatusJSON(statusCode, dto.ErrorResponse{Error: message})
 }
