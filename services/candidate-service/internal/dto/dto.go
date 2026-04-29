@@ -48,9 +48,19 @@ type EnrollmentRequest struct {
 	TokenExpiresAt time.Time   `json:"tokenExpiresAt" binding:"required"`
 }
 
+// EnrollmentResultItem is per-candidate data returned on enrollment creation.
+// InvitationURL is an opaque-code URL safe for the admin to copy/distribute.
+// The raw JWT and raw opaque code are NEVER returned.
+type EnrollmentResultItem struct {
+	EnrollmentID  uuid.UUID `json:"enrollmentId"`
+	CandidateID   uuid.UUID `json:"candidateId"`
+	InvitationURL string    `json:"invitationUrl"`
+	Status        string    `json:"status"`
+}
+
 type EnrollmentCreateResponse struct {
-	Message          string              `json:"message"`
-	EnrollmentTokens map[uuid.UUID]string `json:"enrollmentTokens"`
+	Message string                 `json:"message"`
+	Results []EnrollmentResultItem `json:"results"`
 }
 
 type EnrollmentResponse struct {
@@ -61,9 +71,41 @@ type EnrollmentListResponse struct {
 	Data []*domain.ExamEnrollment `json:"data"`
 }
 
-type EnrollmentTokenResponse struct {
-	Message  string `json:"message"`
-	RawToken string `json:"rawToken"`
+// NotifyResultItem describes the outcome of a single notification attempt.
+type NotifyResultItem struct {
+	EnrollmentID uuid.UUID `json:"enrollmentId"`
+	CandidateID  uuid.UUID `json:"candidateId"`
+	// NotifyStatus: "sent" | "skipped_no_email"
+	NotifyStatus string `json:"notifyStatus"`
+}
+
+type NotifyResponse struct {
+	Message string             `json:"message"`
+	Results []NotifyResultItem `json:"results"`
+}
+
+// NotifySingleRequest optionally lets the caller specify enrollment IDs for bulk notify.
+type NotifyBulkRequest struct {
+	// EnrollmentIDs is optional; if empty, all Pending/Invited enrollments for the exam are notified.
+	EnrollmentIDs []uuid.UUID `json:"enrollmentIds"`
+}
+
+// RedeemRequest is the payload the candidate frontend sends to exchange an opaque code for a JWT.
+type RedeemRequest struct {
+	Code string `json:"code" binding:"required"`
+}
+
+// RedeemResponse carries the raw JWT in the response body (never in a URL).
+type RedeemResponse struct {
+	Token string `json:"token"`
+}
+
+// InvitationLinkResponse is returned when an admin requests a fresh link for a no-email candidate.
+type InvitationLinkResponse struct {
+	EnrollmentID  uuid.UUID `json:"enrollmentId"`
+	InvitationURL string    `json:"invitationUrl"`
+	Status        string    `json:"status"`
+	TokenExpiresAt time.Time `json:"tokenExpiresAt"`
 }
 
 type AccessValidateResponse struct {
