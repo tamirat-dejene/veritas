@@ -49,8 +49,8 @@ type EnrollmentRequest struct {
 }
 
 type EnrollmentCreateResponse struct {
-	Message   string   `json:"message"`
-	RawTokens []string `json:"rawTokens"`
+	Message          string              `json:"message"`
+	EnrollmentTokens map[uuid.UUID]string `json:"enrollmentTokens"`
 }
 
 type EnrollmentResponse struct {
@@ -127,4 +127,8 @@ type SubmitResponse struct {
 
 type ValidateAccessTokenResponse struct {
 	Data map[string]any `json:"data"`
+}
+
+type CandidateEmailsResponse struct {
+	Emails []string `json:"emails"`
 }
