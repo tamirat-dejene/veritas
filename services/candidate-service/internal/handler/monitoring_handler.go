@@ -6,21 +6,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
-	_ "github.com/tamirat-dejene/veritas/services/candidate-service/internal/dto"
-	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
+	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/dto"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
-	"go.uber.org/zap"
 )
 
 type MonitoringHandler struct {
-	uc     domain.MonitoringUseCase
-	logger *zap.Logger
+	uc domain.MonitoringUseCase
 }
 
-func NewMonitoringHandler(uc domain.MonitoringUseCase, logger *zap.Logger) *MonitoringHandler {
+func NewMonitoringHandler(uc domain.MonitoringUseCase) *MonitoringHandler {
 	return &MonitoringHandler{
-		uc:     uc,
-		logger: logger,
+		uc: uc,
 	}
 }
 
@@ -46,15 +42,14 @@ func NewMonitoringHandler(uc domain.MonitoringUseCase, logger *zap.Logger) *Moni
 func (h *MonitoringHandler) ListSessions(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		logger.WithContext(c.Request.Context(), h.logger).Warn("Enterprise ID missing in request", zap.String("ip", c.ClientIP()))
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
 	examIDParam := c.Param("examId")
 	examID, err := uuid.Parse(examIDParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid exam ID"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
@@ -74,7 +69,7 @@ func (h *MonitoringHandler) ListSessions(c *gin.Context) {
 	params := pagination.ParseGin(c)
 	list, total, err := h.uc.ListSessionsForExam(c.Request.Context(), examID, entID, status, candidateID, params)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
@@ -98,23 +93,23 @@ func (h *MonitoringHandler) ListSessions(c *gin.Context) {
 func (h *MonitoringHandler) GetSessionSummary(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
 	sessionID, err := uuid.Parse(c.Param("sessionId"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session ID"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
 	summary, err := h.uc.GetSessionSummary(c.Request.Context(), sessionID, entID)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": summary})
+	c.JSON(http.StatusOK, dto.SessionResponse{Data: summary})
 }
 
 // GetSubmissions lists submissions for an exam with pagination.
@@ -137,21 +132,21 @@ func (h *MonitoringHandler) GetSessionSummary(c *gin.Context) {
 func (h *MonitoringHandler) GetSubmissions(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
 	examIDParam := c.Param("examId")
 	examID, err := uuid.Parse(examIDParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid exam ID"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
 	params := pagination.ParseGin(c)
 	list, total, err := h.uc.GetSubmissions(c.Request.Context(), examID, entID, params)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
@@ -174,23 +169,23 @@ func (h *MonitoringHandler) GetSubmissions(c *gin.Context) {
 func (h *MonitoringHandler) GetSubmissionDetail(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
 	subID, err := uuid.Parse(c.Param("submissionId"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid submission ID"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
 	sub, err := h.uc.GetSubmissionDetail(c.Request.Context(), subID, entID)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": sub})
+	c.JSON(http.StatusOK, dto.SubmissionResponse{Data: sub})
 }
 
 // CandidateGetResult returns candidate-visible result for a submitted session.
@@ -210,21 +205,21 @@ func (h *MonitoringHandler) GetSubmissionDetail(c *gin.Context) {
 func (h *MonitoringHandler) CandidateGetResult(c *gin.Context) {
 	sessionID, err := uuid.Parse(c.Param("sessionId"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session ID format"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
 	candidateID, err := getCandidateID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing candidate mapping"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrCandidateIDMissing.Error()})
 		return
 	}
 
 	res, err := h.uc.CandidateGetResult(c.Request.Context(), sessionID, candidateID)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": res})
+	c.JSON(http.StatusOK, dto.SubmissionResponse{Data: res})
 }

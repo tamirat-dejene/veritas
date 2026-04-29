@@ -7,19 +7,15 @@ import (
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/dto"
-	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
-	"go.uber.org/zap"
 )
 
 type SessionHandler struct {
-	uc     domain.SessionUseCase
-	logger *zap.Logger
+	uc domain.SessionUseCase
 }
 
-func NewSessionHandler(uc domain.SessionUseCase, logger *zap.Logger) *SessionHandler {
+func NewSessionHandler(uc domain.SessionUseCase) *SessionHandler {
 	return &SessionHandler{
-		uc:     uc,
-		logger: logger,
+		uc: uc,
 	}
 }
 
@@ -39,23 +35,22 @@ func NewSessionHandler(uc domain.SessionUseCase, logger *zap.Logger) *SessionHan
 func (h *SessionHandler) ValidateAccess(c *gin.Context) {
 	eid, err := getEnrollmentID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enrollment ID mapping missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnrollmentIDMissing.Error()})
 		return
 	}
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
 	res, err := h.uc.ValidateAccessToken(c.Request.Context(), eid, entID)
 	if err != nil {
-		logger.WithContext(c.Request.Context(), h.logger).Warn("Token validation failed", zap.Error(err), zap.String("ip", c.ClientIP()))
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token mapping"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrInvalidToken.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": res})
+	c.JSON(http.StatusOK, dto.AccessValidateResponse{Data: res})
 }
 
 // StartSession starts a new exam session for a validated token.
@@ -73,12 +68,12 @@ func (h *SessionHandler) ValidateAccess(c *gin.Context) {
 func (h *SessionHandler) StartSession(c *gin.Context) {
 	eid, err := getEnrollmentID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enrollment ID mapping missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnrollmentIDMissing.Error()})
 		return
 	}
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
@@ -87,11 +82,11 @@ func (h *SessionHandler) StartSession(c *gin.Context) {
 
 	session, err := h.uc.StartSession(c.Request.Context(), eid, entID, clientIP, userAgent)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"data": session})
+	c.JSON(http.StatusCreated, dto.SessionResponse{Data: session})
 }
 
 // ResumeActive returns the caller candidate's currently active session.
@@ -109,18 +104,17 @@ func (h *SessionHandler) StartSession(c *gin.Context) {
 func (h *SessionHandler) ResumeActive(c *gin.Context) {
 	candidateID, err := getCandidateID(c)
 	if err != nil {
-		logger.WithContext(c.Request.Context(), h.logger).Warn("Candidate mapping missing in request", zap.String("ip", c.ClientIP()))
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Candidate mapping missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrCandidateIDMissing.Error()})
 		return
 	}
 
 	session, err := h.uc.ResumeActiveSession(c.Request.Context(), candidateID)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": session})
+	c.JSON(http.StatusOK, dto.SessionResponse{Data: session})
 }
 
 // GetDetails retrieves full session details.
@@ -140,7 +134,7 @@ func (h *SessionHandler) GetDetails(c *gin.Context) {
 	// Either candidate or Admin/Staff
 	sessionID, err := uuid.Parse(c.Param("sessionId"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session ID"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
@@ -148,11 +142,11 @@ func (h *SessionHandler) GetDetails(c *gin.Context) {
 
 	session, err := h.uc.GetSessionDetails(c.Request.Context(), sessionID, subID, "role_placeholder")
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": session})
+	c.JSON(http.StatusOK, dto.SessionResponse{Data: session})
 }
 
 // GetQuestions returns the frozen question snapshot for a session.
@@ -171,24 +165,23 @@ func (h *SessionHandler) GetDetails(c *gin.Context) {
 func (h *SessionHandler) GetQuestions(c *gin.Context) {
 	sessionID, err := uuid.Parse(c.Param("sessionId"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session ID"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
 	candidateID, err := getCandidateID(c)
 	if err != nil {
-		logger.WithContext(c.Request.Context(), h.logger).Warn("Unauthorized context in GetQuestions", zap.String("ip", c.ClientIP()))
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized context"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrUnauthorizedContext.Error()})
 		return
 	}
 
 	questions, err := h.uc.GetSessionQuestionsSnapshot(c.Request.Context(), sessionID, candidateID)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": questions})
+	c.JSON(http.StatusOK, dto.SessionQuestionListResponse{Data: questions})
 }
 
 // SaveAnswers upserts one answer for a session question.
@@ -209,30 +202,29 @@ func (h *SessionHandler) GetQuestions(c *gin.Context) {
 func (h *SessionHandler) SaveAnswers(c *gin.Context) {
 	sessionID, err := uuid.Parse(c.Param("sessionId"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session ID"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
 	candidateID, err := getCandidateID(c)
 	if err != nil {
-		logger.WithContext(c.Request.Context(), h.logger).Warn("Unauthorized context in SaveAnswers", zap.String("ip", c.ClientIP()))
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized context"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrUnauthorizedContext.Error()})
 		return
 	}
 
 	var req dto.SaveAnswerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	err = h.uc.SaveAnswers(c.Request.Context(), sessionID, candidateID, req.SessionQuestionID, req.AnswerData)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Answers saved"})
+	c.JSON(http.StatusOK, dto.MessageResponse{Message: "Answers saved"})
 }
 
 // GetMyAnswers returns the caller candidate's saved answers for the session.
@@ -251,23 +243,23 @@ func (h *SessionHandler) SaveAnswers(c *gin.Context) {
 func (h *SessionHandler) GetMyAnswers(c *gin.Context) {
 	sessionID, err := uuid.Parse(c.Param("sessionId"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session ID"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
 	candidateID, err := getCandidateID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized context"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrUnauthorizedContext.Error()})
 		return
 	}
 
 	ans, err := h.uc.GetMyAnswers(c.Request.Context(), sessionID, candidateID)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": ans})
+	c.JSON(http.StatusOK, dto.SessionAnswerListResponse{Data: ans})
 }
 
 // Submit submits a session for grading.
@@ -288,31 +280,30 @@ func (h *SessionHandler) GetMyAnswers(c *gin.Context) {
 func (h *SessionHandler) Submit(c *gin.Context) {
 	sessionID, err := uuid.Parse(c.Param("sessionId"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session ID"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
 	candidateID, err := getCandidateID(c)
 	if err != nil {
-		logger.WithContext(c.Request.Context(), h.logger).Warn("Unauthorized context in Submit", zap.String("ip", c.ClientIP()))
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized context"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrUnauthorizedContext.Error()})
 		return
 	}
 
 	var req dto.SubmitRequest
 	err = c.ShouldBindJSON(&req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	sub, err := h.uc.SubmitExam(c.Request.Context(), sessionID, candidateID, req.AutoSubmitted)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Exam submitted", "data": sub})
+	c.JSON(http.StatusCreated, dto.SubmitResponse{Message: "Exam submitted", Data: sub})
 }
 
 // TerminateWait terminates an active session with a reason.
@@ -333,28 +324,27 @@ func (h *SessionHandler) Submit(c *gin.Context) {
 func (h *SessionHandler) TerminateWait(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		logger.WithContext(c.Request.Context(), h.logger).Warn("Enterprise ID missing in request", zap.String("ip", c.ClientIP()))
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
 	sessionID, err := uuid.Parse(c.Param("sessionId"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session ID"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
 	var req dto.TerminateSessionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	if err := h.uc.TerminateSession(c.Request.Context(), sessionID, entID, req.Reason); err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Session terminated"})
+	c.JSON(http.StatusOK, dto.MessageResponse{Message: "Session terminated"})
 }
 
 // ForceExpire forcefully marks a session as expired.
@@ -373,20 +363,19 @@ func (h *SessionHandler) TerminateWait(c *gin.Context) {
 func (h *SessionHandler) ForceExpire(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		logger.WithContext(c.Request.Context(), h.logger).Warn("Enterprise ID missing in request", zap.String("ip", c.ClientIP()))
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
 	sessionID, err := uuid.Parse(c.Param("sessionId"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session ID"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
 	if err := h.uc.ForceExpireSession(c.Request.Context(), sessionID, entID); err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Session expired"})
+	c.JSON(http.StatusOK, dto.MessageResponse{Message: "Session expired"})
 }

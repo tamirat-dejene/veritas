@@ -7,20 +7,16 @@ import (
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/dto"
-	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
-	"go.uber.org/zap"
 )
 
 type EnrollmentHandler struct {
-	uc     domain.EnrollmentUseCase
-	logger *zap.Logger
+	uc domain.EnrollmentUseCase
 }
 
-func NewEnrollmentHandler(uc domain.EnrollmentUseCase, logger *zap.Logger) *EnrollmentHandler {
+func NewEnrollmentHandler(uc domain.EnrollmentUseCase) *EnrollmentHandler {
 	return &EnrollmentHandler{
-		uc:     uc,
-		logger: logger,
+		uc: uc,
 	}
 }
 
@@ -42,33 +38,31 @@ func NewEnrollmentHandler(uc domain.EnrollmentUseCase, logger *zap.Logger) *Enro
 func (h *EnrollmentHandler) Enroll(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		logger.WithContext(c.Request.Context(), h.logger).Warn("Enterprise ID missing in request", zap.String("ip", c.ClientIP()))
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
 	examIDParam := c.Param("examId")
 	examID, err := uuid.Parse(examIDParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid exam ID format"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
 	var req dto.EnrollmentRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.WithContext(c.Request.Context(), h.logger).Warn("Invalid enrollment request", zap.Error(err), zap.String("ip", c.ClientIP()))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	tokens, err := h.uc.EnrollCandidates(c.Request.Context(), entID, examID, req.CandidateIDs, req.MaxAttempts, req.TokenExpiresAt)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Enrolled successfully", "enrollmentTokens": tokens})
+	c.JSON(http.StatusCreated, dto.EnrollmentCreateResponse{Message: "Enrolled successfully", EnrollmentTokens: tokens})
 }
 
 // ListByExam lists enrollments for an exam with pagination.
@@ -91,21 +85,21 @@ func (h *EnrollmentHandler) Enroll(c *gin.Context) {
 func (h *EnrollmentHandler) ListByExam(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
 	examIDParam := c.Param("examId")
 	examID, err := uuid.Parse(examIDParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid exam ID format"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
 	params := pagination.ParseGin(c)
 	list, total, err := h.uc.GetEnrollmentsForExam(c.Request.Context(), examID, entID, params)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
@@ -129,24 +123,24 @@ func (h *EnrollmentHandler) ListByExam(c *gin.Context) {
 func (h *EnrollmentHandler) Get(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
 	idParam := c.Param("enrollmentId")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid enrollment ID format"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
 	enr, err := h.uc.GetEnrollment(c.Request.Context(), id, entID)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": enr})
+	c.JSON(http.StatusOK, dto.EnrollmentResponse{Data: enr})
 }
 
 // RegenerateToken rotates the enrollment access token.
@@ -166,24 +160,24 @@ func (h *EnrollmentHandler) Get(c *gin.Context) {
 func (h *EnrollmentHandler) RegenerateToken(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
 	idParam := c.Param("enrollmentId")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid enrollment ID format"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
 	newToken, err := h.uc.RegenerateToken(c.Request.Context(), id, entID)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Token regenerated", "rawToken": newToken})
+	c.JSON(http.StatusOK, dto.EnrollmentTokenResponse{Message: "Token regenerated", RawToken: newToken})
 }
 
 // Revoke revokes an enrollment.
@@ -203,23 +197,23 @@ func (h *EnrollmentHandler) RegenerateToken(c *gin.Context) {
 func (h *EnrollmentHandler) Revoke(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
 	idParam := c.Param("enrollmentId")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid enrollment ID format"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
 	if err := h.uc.RevokeEnrollment(c.Request.Context(), id, entID); err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Enrollment revoked"})
+	c.JSON(http.StatusOK, dto.MessageResponse{Message: "Enrollment revoked"})
 }
 
 // ResetAttempts resets enrollment attempt counters.
@@ -239,21 +233,21 @@ func (h *EnrollmentHandler) Revoke(c *gin.Context) {
 func (h *EnrollmentHandler) ResetAttempts(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
 	idParam := c.Param("enrollmentId")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid enrollment ID format"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
 	if err := h.uc.ResetAttempts(c.Request.Context(), id, entID); err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Enrollment attempts reset"})
+	c.JSON(http.StatusOK, dto.MessageResponse{Message: "Enrollment attempts reset"})
 }

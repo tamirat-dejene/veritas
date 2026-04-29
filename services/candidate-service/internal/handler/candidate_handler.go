@@ -8,20 +8,16 @@ import (
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/dto"
-	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
-	"go.uber.org/zap"
 )
 
 type CandidateHandler struct {
-	uc     domain.CandidateUseCase
-	logger *zap.Logger
+	uc domain.CandidateUseCase
 }
 
-func NewCandidateHandler(uc domain.CandidateUseCase, logger *zap.Logger) *CandidateHandler {
+func NewCandidateHandler(uc domain.CandidateUseCase) *CandidateHandler {
 	return &CandidateHandler{
-		uc:     uc,
-		logger: logger,
+		uc: uc,
 	}
 }
 
@@ -43,16 +39,14 @@ func NewCandidateHandler(uc domain.CandidateUseCase, logger *zap.Logger) *Candid
 func (h *CandidateHandler) Create(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		logger.WithContext(c.Request.Context(), h.logger).Warn("Enterprise ID missing in request", zap.String("ip", c.ClientIP()))
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
 	var req dto.CandidateCreateRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.WithContext(c.Request.Context(), h.logger).Warn("Invalid candidate creation request", zap.Error(err), zap.String("ip", c.ClientIP()))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -67,11 +61,11 @@ func (h *CandidateHandler) Create(c *gin.Context) {
 
 	created, err := h.uc.CreateCandidate(c.Request.Context(), candidate)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"data": created})
+	c.JSON(http.StatusCreated, dto.CandidateResponse{Data: created})
 }
 
 // BulkUpload handles CSV upload for candidates.
@@ -95,35 +89,35 @@ func (h *CandidateHandler) Create(c *gin.Context) {
 func (h *CandidateHandler) BulkUpload(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing 'file' field in multipart form"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrMissingFile.Error()})
 		return
 	}
 	defer file.Close()
 
 	if header.Size > 5*1024*1024 {
-		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "File size exceeds 5MB limit"})
+		c.JSON(http.StatusRequestEntityTooLarge, dto.ErrorResponse{Error: domain.ErrFileTooLarge.Error()})
 		return
 	}
 
 	csvData, err := io.ReadAll(file)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read file"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: domain.ErrReadFailed.Error()})
 		return
 	}
 
 	count, err := h.uc.BulkUpload(c.Request.Context(), entID, csvData)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Bulk upload successful", "count": count})
+	c.JSON(http.StatusCreated, dto.BulkUploadResponse{Message: "Bulk upload successful", Count: count})
 }
 
 // List returns a paginated list of candidates for the caller enterprise.
@@ -144,14 +138,14 @@ func (h *CandidateHandler) BulkUpload(c *gin.Context) {
 func (h *CandidateHandler) List(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
 	params := pagination.ParseGin(c)
 	list, total, err := h.uc.GetCandidates(c.Request.Context(), entID, params)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
@@ -175,24 +169,24 @@ func (h *CandidateHandler) List(c *gin.Context) {
 func (h *CandidateHandler) Get(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
 	idParam := c.Param("candidateId")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid candidate ID format"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
 	candidate, err := h.uc.GetCandidate(c.Request.Context(), id, entID)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": candidate})
+	c.JSON(http.StatusOK, dto.CandidateResponse{Data: candidate})
 }
 
 // Update modifies an existing candidate profile.
@@ -214,21 +208,21 @@ func (h *CandidateHandler) Get(c *gin.Context) {
 func (h *CandidateHandler) Update(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
 	idParam := c.Param("candidateId")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid candidate ID format"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
 	var req dto.CandidateUpdateRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -241,11 +235,11 @@ func (h *CandidateHandler) Update(c *gin.Context) {
 	}
 
 	if err := h.uc.UpdateCandidate(c.Request.Context(), candidate); err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Candidate updated"})
+	c.JSON(http.StatusOK, dto.MessageResponse{Message: "Candidate updated"})
 }
 
 // Deactivate disables a candidate profile.
@@ -268,23 +262,23 @@ func (h *CandidateHandler) Update(c *gin.Context) {
 func (h *CandidateHandler) Deactivate(c *gin.Context) {
 	entID, err := getEnterpriseID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Enterprise ID missing"})
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
 		return
 	}
 
 	idParam := c.Param("candidateId")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid candidate ID format"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
 		return
 	}
 
 	if err := h.uc.DeactivateCandidate(c.Request.Context(), id, entID); err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Candidate deactivated"})
+	c.JSON(http.StatusOK, dto.MessageResponse{Message: "Candidate deactivated"})
 }
 
 func (h *CandidateHandler) GetEmailsForExam(c *gin.Context) {
@@ -293,21 +287,21 @@ func (h *CandidateHandler) GetEmailsForExam(c *gin.Context) {
 
 	examID, err := uuid.Parse(examIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid exam_id"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid exam_id"})
 		return
 	}
 
 	enterpriseID, err := uuid.Parse(enterpriseIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid enterprise_id"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid enterprise_id"})
 		return
 	}
 
 	emails, err := h.uc.GetEmailsByExamID(c.Request.Context(), examID, enterpriseID)
 	if err != nil {
-		HandleError(c, h.logger, err)
+		HandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"emails": emails})
+	c.JSON(http.StatusOK, dto.CandidateEmailsResponse{Emails: emails})
 }
