@@ -14,7 +14,6 @@ import (
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/infrastructure/client"
 	sdomain "github.com/tamirat-dejene/veritas/shared/domain"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
-	"go.uber.org/zap"
 )
 
 type sessionUseCase struct {
@@ -23,17 +22,15 @@ type sessionUseCase struct {
 	enrollmentRepo domain.EnrollmentRepository
 	examClient     client.ExamServiceClient
 	tokenService   domain.EnrollmentTokenService
-	logger         *zap.Logger
 }
 
-func NewSessionUseCase(pool *pgxpool.Pool, sRepo domain.SessionRepository, eRepo domain.EnrollmentRepository, eClient client.ExamServiceClient, tokenService domain.EnrollmentTokenService, logger *zap.Logger) domain.SessionUseCase {
+func NewSessionUseCase(pool *pgxpool.Pool, sRepo domain.SessionRepository, eRepo domain.EnrollmentRepository, eClient client.ExamServiceClient, tokenService domain.EnrollmentTokenService) domain.SessionUseCase {
 	return &sessionUseCase{
 		pool:           pool,
 		sessionRepo:    sRepo,
 		enrollmentRepo: eRepo,
 		examClient:     eClient,
 		tokenService:   tokenService,
-		logger:         logger,
 	}
 }
 
@@ -173,11 +170,9 @@ func (uc *sessionUseCase) StartSession(ctx context.Context, enrollmentID, enterp
 	})
 
 	if err != nil {
-		uc.logger.Error("session start failed", zap.Error(err), zap.String("enrollmentID", e.ID.String()))
 		return nil, fmt.Errorf("StartSession transaction: %w", err)
 	}
 
-	uc.logger.Info("session started", zap.String("sessionID", session.ID.String()), zap.String("candidateID", session.CandidateID.String()), zap.String("examID", session.ExamID.String()))
 	return session, nil
 }
 
@@ -211,13 +206,11 @@ func (uc *sessionUseCase) SaveAnswers(ctx context.Context, sessionID uuid.UUID, 
 
 	if time.Now().After(session.ExpiresAt) {
 		_ = uc.sessionRepo.UpdateSessionStatus(ctx, sessionID, domain.SessionExpired, nil)
-		uc.logger.Info("session expired", zap.String("sessionID", sessionID.String()))
 		return domain.ErrSessionExpired
 	}
 
 	session_question, err := uc.sessionRepo.GetSessionQuestion(ctx, sessionID, questionID)
 	if err != nil {
-		uc.logger.Error("failed to get session question", zap.Error(err), zap.String("sessionID", sessionID.String()), zap.String("questionID", questionID.String()))
 		return err
 	}
 
@@ -350,6 +343,5 @@ func (uc *sessionUseCase) ForceExpireSession(ctx context.Context, sessionID uuid
 	if err := uc.sessionRepo.UpdateSessionStatus(ctx, sessionID, domain.SessionExpired, &msg); err != nil {
 		return err
 	}
-	uc.logger.Warn("session force-expired", zap.String("sessionID", sessionID.String()))
 	return nil
 }

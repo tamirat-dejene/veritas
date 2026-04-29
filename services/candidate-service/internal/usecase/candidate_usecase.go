@@ -11,29 +11,24 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
-	"go.uber.org/zap"
 )
 
 type candidateUseCase struct {
-	pool   *pgxpool.Pool
-	repo   domain.CandidateRepository
-	logger *zap.Logger
+	pool *pgxpool.Pool
+	repo domain.CandidateRepository
 }
 
-func NewCandidateUseCase(pool *pgxpool.Pool, repo domain.CandidateRepository, logger *zap.Logger) domain.CandidateUseCase {
+func NewCandidateUseCase(pool *pgxpool.Pool, repo domain.CandidateRepository) domain.CandidateUseCase {
 	return &candidateUseCase{
-		pool:   pool,
-		repo:   repo,
-		logger: logger,
+		pool: pool,
+		repo: repo,
 	}
 }
 
 func (uc *candidateUseCase) CreateCandidate(ctx context.Context, candidate *domain.CandidateProfile) (*domain.CandidateProfile, error) {
 	if err := uc.repo.Create(ctx, candidate); err != nil {
-		uc.logger.Error("failed to create candidate", zap.Error(err), zap.String("enterpriseID", candidate.EnterpriseID.String()), zap.String("externalID", candidate.ExternalID))
 		return nil, err
 	}
-	uc.logger.Info("candidate created", zap.String("candidateID", candidate.ID.String()), zap.String("enterpriseID", candidate.EnterpriseID.String()))
 	return candidate, nil
 }
 
@@ -52,9 +47,8 @@ func (uc *candidateUseCase) BulkUpload(ctx context.Context, enterpriseID uuid.UU
 	}
 
 	var candidates []*domain.CandidateProfile
-	for i, row := range records {
+	for _, row := range records {
 		if len(row) < 3 {
-			uc.logger.Warn("skipping invalid row", zap.Int("row", i+2))
 			continue
 		}
 
@@ -75,18 +69,16 @@ func (uc *candidateUseCase) BulkUpload(ctx context.Context, enterpriseID uuid.UU
 	}
 
 	if len(candidates) == 0 {
-		return 0, fmt.Errorf("no valid candidates found in CSV")
+		return 0, domain.ErrNoValidCandidates
 	}
 
 	err = RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		return uc.repo.WithTx(tx).CreateBulk(ctx, candidates)
 	})
 	if err != nil {
-		uc.logger.Error("bulk upload failed", zap.Error(err), zap.String("enterpriseID", enterpriseID.String()))
 		return 0, err
 	}
 
-	uc.logger.Info("bulk upload successful", zap.Int("count", len(candidates)), zap.String("enterpriseID", enterpriseID.String()))
 	return len(candidates), nil
 }
 
@@ -101,13 +93,10 @@ func (uc *candidateUseCase) GetCandidate(ctx context.Context, id uuid.UUID, ente
 func (uc *candidateUseCase) UpdateCandidate(ctx context.Context, candidate *domain.CandidateProfile) error {
 	existing, err := uc.repo.GetByID(ctx, candidate.ID, candidate.EnterpriseID)
 	if err != nil {
-		uc.logger.Error("failed to fetch existing candidate for update", zap.Error(err), zap.String("candidateID", candidate.ID.String()))
 		return err
 	}
 	if existing == nil {
-		err := fmt.Errorf("candidate not found")
-		uc.logger.Warn("candidate not found for update", zap.String("candidateID", candidate.ID.String()))
-		return err
+		return domain.ErrCandidateNotFound
 	}
 
 	existing.FirstName = candidate.FirstName
@@ -121,10 +110,8 @@ func (uc *candidateUseCase) UpdateCandidate(ctx context.Context, candidate *doma
 
 func (uc *candidateUseCase) DeactivateCandidate(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
 	if err := uc.repo.Deactivate(ctx, id, enterpriseID); err != nil {
-		uc.logger.Error("failed to deactivate candidate", zap.Error(err), zap.String("candidateID", id.String()))
 		return err
 	}
-	uc.logger.Info("candidate deactivated", zap.String("candidateID", id.String()), zap.String("enterpriseID", enterpriseID.String()))
 	return nil
 }
 

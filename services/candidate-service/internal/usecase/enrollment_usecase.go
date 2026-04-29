@@ -12,22 +12,19 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
-	"go.uber.org/zap"
 )
 
 type enrollmentUseCase struct {
 	pool         *pgxpool.Pool
 	repo         domain.EnrollmentRepository
 	tokenService domain.EnrollmentTokenService
-	logger       *zap.Logger
 }
 
-func NewEnrollmentUseCase(pool *pgxpool.Pool, repo domain.EnrollmentRepository, tokenService domain.EnrollmentTokenService, logger *zap.Logger) domain.EnrollmentUseCase {
+func NewEnrollmentUseCase(pool *pgxpool.Pool, repo domain.EnrollmentRepository, tokenService domain.EnrollmentTokenService) domain.EnrollmentUseCase {
 	return &enrollmentUseCase{
 		pool:         pool,
 		repo:         repo,
 		tokenService: tokenService,
-		logger:       logger,
 	}
 }
 
@@ -85,11 +82,9 @@ func (uc *enrollmentUseCase) EnrollCandidates(ctx context.Context, enterpriseID 
 	})
 
 	if err != nil {
-		uc.logger.Error("bulk enrollment failed", zap.Error(err), zap.String("examID", examID.String()))
 		return nil, err
 	}
 
-	uc.logger.Info("candidates enrolled", zap.Int("count", len(candidateIDs)), zap.String("examID", examID.String()))
 	return enrollmentMap, nil
 }
 
@@ -133,11 +128,9 @@ func (uc *enrollmentUseCase) RegenerateToken(ctx context.Context, id uuid.UUID, 
 	})
 
 	if err != nil {
-		uc.logger.Error("failed to regenerate token", zap.Error(err), zap.String("enrollmentID", id.String()))
 		return "", err
 	}
 
-	uc.logger.Info("enrollment token regenerated", zap.String("enrollmentID", id.String()))
 	return rawToken, nil
 }
 
@@ -148,10 +141,8 @@ func (uc *enrollmentUseCase) RevokeEnrollment(ctx context.Context, id uuid.UUID,
 	}
 	e.TokenExpiresAt = time.Now().Add(-1 * time.Hour)
 	if err := uc.repo.Update(ctx, e); err != nil {
-		uc.logger.Error("failed to revoke enrollment", zap.Error(err), zap.String("enrollmentID", id.String()))
 		return err
 	}
-	uc.logger.Info("enrollment revoked", zap.String("enrollmentID", id.String()))
 	return nil
 }
 
