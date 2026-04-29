@@ -39,3 +39,11 @@ const (
 	ExamPublished = "exam.exam.published"
 	ExamClosed    = "exam.exam.closed"
 )
+
+// Candidate-Service topics
+const (
+	// CandidateEnrollmentInvited is published when an enterprise admin triggers
+	// notification for one or more candidates. The notification-service consumes
+	// this topic and sends the branded invitation email.
+	CandidateEnrollmentInvited = "candidate.enrollment.invited"
+)
