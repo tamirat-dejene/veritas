@@ -42,11 +42,14 @@ type ExamEnrollment struct {
 // EnrollmentRepository is the persistence contract for exam enrollments.
 type EnrollmentRepository interface {
 	Create(ctx context.Context, enrollment *ExamEnrollment) error
+	CreateBulk(ctx context.Context, enrollments []*ExamEnrollment) error
 	GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*ExamEnrollment, error)
+	GetByIDs(ctx context.Context, ids []uuid.UUID, enterpriseID uuid.UUID) ([]*ExamEnrollment, error)
 	GetByExamAndCandidate(ctx context.Context, examID uuid.UUID, candidateID uuid.UUID) (*ExamEnrollment, error)
 	GetByInvitationCodeHash(ctx context.Context, codeHash string) (*ExamEnrollment, error)
 	ListByExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) ([]*ExamEnrollment, int64, error)
 	Update(ctx context.Context, enrollment *ExamEnrollment) error
+	UpdateInvitation(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID, codeHash string, invitedAt time.Time) error
 	UpdateStatus(ctx context.Context, id uuid.UUID, status EnrollmentStatus) error
 	IncrementAttempt(ctx context.Context, id uuid.UUID) error
 	WithTx(tx pgx.Tx) EnrollmentRepository

@@ -20,12 +20,14 @@ var (
 	ErrSessionAlreadyActive    = errors.New("an active session already exists for this enrollment")
 	ErrSessionExpired          = errors.New("session has expired")
 	ErrExamNotScheduled        = errors.New("exam is not currently within its scheduled window")
+	ErrInvalidExamStatus       = errors.New("exam should be Scheduled to enroll candidates")
 	ErrInvalidAccessToken      = errors.New("invalid or expired access token")
 	ErrQuestionNotFound        = errors.New("question not found in session snapshot")
 	ErrInvalidAnswerFormat     = errors.New("invalid answer format for question type")
 	ErrSubmissionExists        = errors.New("a submission already exists for this session")
 	ErrSubmissionNotFound      = errors.New("submission not found")
 	ErrUnauthorizedAccess      = errors.New("unauthorized to access this resource")
+	ErrInvalidEnrollmentTime   = errors.New("invalid enrollment time")
 
 	// Standardized System & Validation errors
 	ErrEnterpriseIDMissing = errors.New("enterprise ID missing")

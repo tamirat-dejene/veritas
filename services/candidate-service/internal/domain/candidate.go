@@ -24,6 +24,7 @@ type CandidateRepository interface {
 	Create(ctx context.Context, candidate *CandidateProfile) error
 	CreateBulk(ctx context.Context, candidates []*CandidateProfile) error
 	GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*CandidateProfile, error)
+	GetByIDs(ctx context.Context, ids []uuid.UUID, enterpriseID uuid.UUID) ([]*CandidateProfile, error)
 	GetByExternalID(ctx context.Context, externalID string, enterpriseID uuid.UUID) (*CandidateProfile, error)
 	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*CandidateProfile, int64, error)
 	Update(ctx context.Context, candidate *CandidateProfile) error
