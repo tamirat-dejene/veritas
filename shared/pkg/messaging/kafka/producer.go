@@ -13,8 +13,6 @@ type producer struct {
 }
 
 // NewProducer creates a new Publisher backed by a Kafka SyncProducer.
-// The SyncProducer blocks until the broker acknowledges delivery according
-// to the RequireAcks setting in Config (default: WaitForAll).
 func NewProducer(cfg Config) (messaging.Publisher, error) {
 	sc := saramaConfig(cfg)
 	sp, err := sarama.NewSyncProducer(cfg.Brokers, sc)
@@ -24,9 +22,35 @@ func NewProducer(cfg Config) (messaging.Publisher, error) {
 	return &producer{sp: sp}, nil
 }
 
-// Publish sends a message to the topic specified in msg.Topic.
-// It is safe to call from multiple goroutines concurrently.
+// Publish sends a message to the topic specified
 func (p *producer) Publish(_ context.Context, msg messaging.Message) error {
+	pm := p.toSaramaMessage(msg)
+	_, _, err := p.sp.SendMessage(pm)
+	if err != nil {
+		return fmt.Errorf("kafka: publish to %s: %w", msg.Topic, err)
+	}
+	return nil
+}
+
+// PublishBatch sends multiple messages in a single batch.
+func (p *producer) PublishBatch(_ context.Context, msgs []messaging.Message) error {
+	if len(msgs) == 0 {
+		return nil
+	}
+
+	pms := make([]*sarama.ProducerMessage, len(msgs))
+	for i, msg := range msgs {
+		pms[i] = p.toSaramaMessage(msg)
+	}
+
+	err := p.sp.SendMessages(pms)
+	if err != nil {
+		return fmt.Errorf("kafka: publish batch: %w", err)
+	}
+	return nil
+}
+
+func (p *producer) toSaramaMessage(msg messaging.Message) *sarama.ProducerMessage {
 	pm := &sarama.ProducerMessage{
 		Topic: msg.Topic,
 		Value: sarama.ByteEncoder(msg.Value),
@@ -42,12 +66,7 @@ func (p *producer) Publish(_ context.Context, msg messaging.Message) error {
 			Value: v,
 		})
 	}
-
-	_, _, err := p.sp.SendMessage(pm)
-	if err != nil {
-		return fmt.Errorf("kafka: publish to %s: %w", msg.Topic, err)
-	}
-	return nil
+	return pm
 }
 
 // Close flushes and closes the underlying SyncProducer.

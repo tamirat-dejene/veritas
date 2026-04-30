@@ -13,6 +13,7 @@ type Message struct {
 // Publisher publishes messages to a broker topic.
 type Publisher interface {
 	Publish(ctx context.Context, msg Message) error
+	PublishBatch(ctx context.Context, msgs []Message) error
 	Close() error
 }
 
