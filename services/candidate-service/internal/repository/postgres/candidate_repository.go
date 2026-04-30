@@ -134,6 +134,25 @@ func (r *candidateRepository) GetByID(ctx context.Context, id uuid.UUID, enterpr
 	return scanCandidate(r.db.QueryRow(ctx, query, id, enterpriseID))
 }
 
+func (r *candidateRepository) GetByIDs(ctx context.Context, ids []uuid.UUID, enterpriseID uuid.UUID) ([]*domain.CandidateProfile, error) {
+	query := fmt.Sprintf("SELECT %s FROM candidate_profiles WHERE id = ANY($1) AND enterprise_id = $2", candidateFields)
+	rows, err := r.db.Query(ctx, query, ids, enterpriseID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []*domain.CandidateProfile
+	for rows.Next() {
+		c, err := scanCandidate(rows)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, c)
+	}
+	return list, nil
+}
+
 func (r *candidateRepository) GetByExternalID(ctx context.Context, externalID string, enterpriseID uuid.UUID) (*domain.CandidateProfile, error) {
 	query := fmt.Sprintf("SELECT %s FROM candidate_profiles WHERE external_id = $1 AND enterprise_id = $2 LIMIT 1", candidateFields)
 	return scanCandidate(r.db.QueryRow(ctx, query, externalID, enterpriseID))

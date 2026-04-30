@@ -85,9 +85,75 @@ func (r *enrollmentRepository) Create(ctx context.Context, e *domain.ExamEnrollm
 	return err
 }
 
+func (r *enrollmentRepository) CreateBulk(ctx context.Context, enrollments []*domain.ExamEnrollment) error {
+	if len(enrollments) == 0 {
+		return nil
+	}
+
+	cols := []string{
+		"id", "enterprise_id", "exam_id", "candidate_id",
+		"access_token_hash", "invitation_code_hash",
+		"token_expires_at", "max_attempts", "attempts_used",
+		"status", "invitation_sent_at", "created_at",
+	}
+	rows := make([][]any, 0, len(enrollments))
+
+	for _, e := range enrollments {
+		if e.ID == uuid.Nil {
+			e.ID = uuid.New()
+		}
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = time.Now()
+		}
+		if e.Status == "" {
+			e.Status = domain.StatusPending
+		}
+		rows = append(rows, []any{
+			e.ID, e.EnterpriseID, e.ExamID, e.CandidateID,
+			e.AccessTokenHash, e.InvitationCodeHash,
+			e.TokenExpiresAt, e.MaxAttempts, e.AttemptsUsed,
+			e.Status, e.InvitationSentAt, e.CreatedAt,
+		})
+	}
+
+	conn, ok := r.db.(interface {
+		CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error)
+	})
+	if !ok {
+		return domain.ErrNotSupported
+	}
+
+	_, err := conn.CopyFrom(
+		ctx,
+		pgx.Identifier{"exam_enrollments"},
+		cols,
+		pgx.CopyFromRows(rows),
+	)
+	return err
+}
+
 func (r *enrollmentRepository) GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*domain.ExamEnrollment, error) {
 	query := fmt.Sprintf("SELECT %s FROM exam_enrollments WHERE id = $1 AND enterprise_id = $2 LIMIT 1", enrollmentFields)
 	return scanEnrollment(r.db.QueryRow(ctx, query, id, enterpriseID))
+}
+
+func (r *enrollmentRepository) GetByIDs(ctx context.Context, ids []uuid.UUID, enterpriseID uuid.UUID) ([]*domain.ExamEnrollment, error) {
+	query := fmt.Sprintf("SELECT %s FROM exam_enrollments WHERE id = ANY($1) AND enterprise_id = $2", enrollmentFields)
+	rows, err := r.db.Query(ctx, query, ids, enterpriseID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []*domain.ExamEnrollment
+	for rows.Next() {
+		e, err := scanEnrollment(rows)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, e)
+	}
+	return list, nil
 }
 
 func (r *enrollmentRepository) GetByExamAndCandidate(ctx context.Context, examID uuid.UUID, candidateID uuid.UUID) (*domain.ExamEnrollment, error) {
@@ -148,6 +214,24 @@ func (r *enrollmentRepository) Update(ctx context.Context, e *domain.ExamEnrollm
 		e.TokenExpiresAt, e.MaxAttempts,
 		e.Status, e.InvitationSentAt,
 	)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrEnrollmentNotFound
+	}
+	return nil
+}
+
+func (r *enrollmentRepository) UpdateInvitation(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID, codeHash string, invitedAt time.Time) error {
+	const q = `
+		UPDATE exam_enrollments 
+		SET invitation_code_hash = $3, 
+		    status = $4, 
+		    invitation_sent_at = $5 
+		WHERE id = $1 AND enterprise_id = $2
+	`
+	tag, err := r.db.Exec(ctx, q, id, enterpriseID, codeHash, domain.StatusInvited, invitedAt)
 	if err != nil {
 		return err
 	}
