@@ -1,5 +1,26 @@
 [
   {
+    "date": "2026-04-30",
+    "changes": [
+      {
+        "type": "breaking",
+        "service": "candidate",
+        "summary": "Removal of cheating score from exam sessions",
+        "description": "The cheating_score column has been removed from the exam_sessions table. Ownership of cheating/proctoring scores has been moved to the proctoring-service to ensure better separation of concerns. This field is no longer returned in session details or list responses.",
+        "endpoints": [
+          "GET /sessions/:sessionId",
+          "GET /exams/:examId/sessions"
+        ],
+        "migration": [
+          {
+            "before": "Exam sessions included a 'cheatingScore' field populated by the candidate service.",
+            "after": "Cheating scores are now managed exclusively by the proctoring-service."
+          }
+        ]
+      }
+    ]
+  },
+  {
     "date": "2026-04-29",
     "changes": [
       {

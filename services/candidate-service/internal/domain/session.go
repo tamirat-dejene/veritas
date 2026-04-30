@@ -71,7 +71,6 @@ type ExamSession struct {
 	ClientIP          *string       `db:"client_ip" json:"clientIp,omitempty"`
 	UserAgent         *string       `db:"user_agent" json:"userAgent,omitempty"`
 	FaceRegisteredURL *string       `db:"face_registered_url" json:"faceRegisteredUrl,omitempty"`
-	CheatingScore     *float64      `db:"cheating_score" json:"cheatingScore,omitempty"`
 	CreatedAt         time.Time     `db:"created_at" json:"createdAt"`
 
 	// Relations

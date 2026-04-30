@@ -80,8 +80,6 @@ definitions:
         type: array
       candidateId:
         type: string
-      cheatingScore:
-        type: number
       clientIp:
         type: string
       createdAt:

@@ -52,7 +52,7 @@ func NewSessionRepository(db DBTX) domain.SessionRepository {
 const sessionFields = `
 	id, enterprise_id, exam_id, candidate_id, enrollment_id, status,
 	started_at, expires_at, submitted_at, terminated_at, termination_reason,
-	client_ip::text, user_agent, face_registered_url, cheating_score, created_at
+	client_ip::text, user_agent, face_registered_url, created_at
 `
 
 func scanSession(row pgx.Row) (*domain.ExamSession, error) {
@@ -60,7 +60,7 @@ func scanSession(row pgx.Row) (*domain.ExamSession, error) {
 	err := row.Scan(
 		&s.ID, &s.EnterpriseID, &s.ExamID, &s.CandidateID, &s.EnrollmentID, &s.Status,
 		&s.StartedAt, &s.ExpiresAt, &s.SubmittedAt, &s.TerminatedAt, &s.TerminationReason,
-		&s.ClientIP, &s.UserAgent, &s.FaceRegisteredURL, &s.CheatingScore, &s.CreatedAt,
+		&s.ClientIP, &s.UserAgent, &s.FaceRegisteredURL, &s.CreatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

@@ -1990,9 +1990,6 @@ const docTemplate = `{
                 "candidateId": {
                     "type": "string"
                 },
-                "cheatingScore": {
-                    "type": "number"
-                },
                 "clientIp": {
                     "type": "string"
                 },
