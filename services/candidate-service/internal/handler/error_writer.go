@@ -47,7 +47,9 @@ func HandleError(c *gin.Context, err error) {
 		errors.Is(err, domain.ErrSessionAlreadySubmitted),
 		errors.Is(err, domain.ErrSessionAlreadyActive),
 		errors.Is(err, domain.ErrSessionExpired),
-		errors.Is(err, domain.ErrExamNotScheduled):
+		errors.Is(err, domain.ErrExamNotScheduled),
+		errors.Is(err, domain.ErrInvalidExamStatus),
+		errors.Is(err, domain.ErrInvalidEnrollmentTime):
 		statusCode = http.StatusForbidden
 		message = err.Error()
 

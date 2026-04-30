@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,6 +18,8 @@ import (
 	"github.com/tamirat-dejene/veritas/shared/pkg/messaging"
 	"github.com/tamirat-dejene/veritas/shared/pkg/messaging/topics"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
+	"golang.org/x/sync/errgroup"
+	sdomain "github.com/tamirat-dejene/veritas/shared/domain"
 )
 
 type enrollmentUseCase struct {
@@ -51,9 +54,8 @@ func NewEnrollmentUseCase(
 
 // hashSHA256 returns the hex-encoded SHA-256 digest of s.
 func hashSHA256(s string) string {
-	h := sha256.New()
-	h.Write([]byte(s))
-	return hex.EncodeToString(h.Sum(nil))
+	h := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(h[:])
 }
 
 // HashToken is kept as an exported alias used by the session usecase.
@@ -89,61 +91,89 @@ func (uc *enrollmentUseCase) EnrollCandidates(
 	maxAttempts int,
 	expiresAt time.Time,
 ) ([]*domain.EnrollmentResult, error) {
+	// Validate exam status: must be Scheduled to allow enrollment
+	exam, err := uc.examClient.GetExamMetadata(ctx, examID)
+	if err != nil {
+		return nil, fmt.Errorf("fetch exam metadata for enrollment: %w", err)
+	}
+	if exam.Status != sdomain.ExamScheduled {
+		return nil, domain.ErrInvalidExamStatus
+	}
+
+	// Validate expiration time
+	if expiresAt.Before(time.Now()) || expiresAt.After(*exam.ScheduledEnd) {
+		return nil, domain.ErrInvalidEnrollmentTime
+	}
+
+	const batchSize = 100
 	results := make([]*domain.EnrollmentResult, 0, len(candidateIDs))
 
-	err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
-		for _, cid := range candidateIDs {
-			enrollmentID := uuid.New()
+	for i := 0; i < len(candidateIDs); i += batchSize {
+		end := min(i + batchSize, len(candidateIDs))
 
-			// Generate the JWT that the candidate will use to authenticate.
-			claims := domain.EnrollmentClaims{
-				EnrollmentID: enrollmentID,
-				CandidateID:  cid,
-				ExamID:       examID,
-				EnterpriseID: enterpriseID,
-				Role:         domain.RoleExamCandidate,
-				ExpiresAt:    expiresAt,
-			}
-			rawToken, err := uc.tokenService.GenerateToken(ctx, claims)
-			if err != nil {
-				return fmt.Errorf("generate enrollment token for candidate %s: %w", cid, err)
+		batchIDs := candidateIDs[i:end]
+		batchEnrollments := make([]*domain.ExamEnrollment, 0, len(batchIDs))
+		batchResults := make([]*domain.EnrollmentResult, 0, len(batchIDs))
+
+		err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+			for _, cid := range batchIDs {
+				enrollmentID := uuid.New()
+
+				// Generate the JWT that the candidate will use to authenticate.
+				claims := domain.EnrollmentClaims{
+					EnrollmentID: enrollmentID,
+					CandidateID:  cid,
+					ExamID:       examID,
+					EnterpriseID: enterpriseID,
+					Role:         domain.RoleExamCandidate,
+					ExpiresAt:    expiresAt,
+				}
+				rawToken, err := uc.tokenService.GenerateToken(ctx, claims)
+				if err != nil {
+					return fmt.Errorf("generate enrollment token for candidate %s: %w", cid, err)
+				}
+
+				// Generate the opaque invitation code (goes in the URL, never the JWT).
+				opaqueCode, err := generateOpaqueCode()
+				if err != nil {
+					return fmt.Errorf("generate opaque code for candidate %s: %w", cid, err)
+				}
+
+				enrollment := &domain.ExamEnrollment{
+					ID:                 enrollmentID,
+					EnterpriseID:       enterpriseID,
+					ExamID:             examID,
+					CandidateID:        cid,
+					AccessTokenHash:    hashSHA256(rawToken),
+					InvitationCodeHash: hashSHA256(opaqueCode),
+					TokenExpiresAt:     expiresAt,
+					MaxAttempts:        maxAttempts,
+					AttemptsUsed:       0,
+					Status:             domain.StatusPending,
+					CreatedAt:          time.Now(),
+				}
+
+				batchEnrollments = append(batchEnrollments, enrollment)
+				batchResults = append(batchResults, &domain.EnrollmentResult{
+					EnrollmentID:  enrollmentID,
+					CandidateID:   cid,
+					InvitationURL: uc.buildInvitationURL(opaqueCode),
+					Status:        domain.StatusPending,
+				})
 			}
 
-			// Generate the opaque invitation code (goes in the URL, never the JWT).
-			opaqueCode, err := generateOpaqueCode()
-			if err != nil {
-				return fmt.Errorf("generate opaque code for candidate %s: %w", cid, err)
+			if err := uc.repo.WithTx(tx).CreateBulk(ctx, batchEnrollments); err != nil {
+				return fmt.Errorf("bulk create enrollments: %w", err)
 			}
+			return nil
+		})
 
-			enrollment := &domain.ExamEnrollment{
-				ID:                 enrollmentID,
-				EnterpriseID:       enterpriseID,
-				ExamID:             examID,
-				CandidateID:        cid,
-				AccessTokenHash:    hashSHA256(rawToken),
-				InvitationCodeHash: hashSHA256(opaqueCode),
-				TokenExpiresAt:     expiresAt,
-				MaxAttempts:        maxAttempts,
-				AttemptsUsed:       0,
-				Status:             domain.StatusPending,
-			}
-
-			if err := uc.repo.WithTx(tx).Create(ctx, enrollment); err != nil {
-				return fmt.Errorf("create enrollment for candidate %s: %w", cid, err)
-			}
-
-			results = append(results, &domain.EnrollmentResult{
-				EnrollmentID:  enrollmentID,
-				CandidateID:   cid,
-				InvitationURL: uc.buildInvitationURL(opaqueCode),
-				Status:        domain.StatusPending,
-			})
+		if err != nil {
+			return nil, err
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
+		results = append(results, batchResults...)
 	}
+
 	return results, nil
 }
 
@@ -159,14 +189,137 @@ func (uc *enrollmentUseCase) NotifyCandidates(
 	enterpriseID uuid.UUID,
 	enrollmentIDs []uuid.UUID,
 ) ([]*domain.NotifyResult, error) {
-	results := make([]*domain.NotifyResult, 0, len(enrollmentIDs))
-	for _, eid := range enrollmentIDs {
-		r, err := uc.NotifyCandidate(ctx, eid, enterpriseID)
-		if err != nil {
-			return nil, fmt.Errorf("notify enrollment %s: %w", eid, err)
-		}
-		results = append(results, r)
+	if len(enrollmentIDs) == 0 {
+		return nil, nil
 	}
+
+	// 1. Fetch data upfront
+	exam, err := uc.examClient.GetExamMetadata(ctx, examID)
+	if err != nil {
+		return nil, fmt.Errorf("fetch exam metadata: %w", err)
+	}
+
+	enrollments, err := uc.repo.GetByIDs(ctx, enrollmentIDs, enterpriseID)
+	if err != nil {
+		return nil, fmt.Errorf("fetch enrollments: %w", err)
+	}
+
+	candidateIDs := make([]uuid.UUID, 0, len(enrollments))
+	enrollmentMap := make(map[uuid.UUID]*domain.ExamEnrollment)
+	for _, e := range enrollments {
+		candidateIDs = append(candidateIDs, e.CandidateID)
+		enrollmentMap[e.ID] = e
+	}
+
+	candidates, err := uc.candidateRepo.GetByIDs(ctx, candidateIDs, enterpriseID)
+	if err != nil {
+		return nil, fmt.Errorf("fetch candidates: %w", err)
+	}
+
+	candidateMap := make(map[uuid.UUID]*domain.CandidateProfile)
+	for _, c := range candidates {
+		candidateMap[c.ID] = c
+	}
+
+	// 2. Process with bounded concurrency
+	results := make([]*domain.NotifyResult, len(enrollmentIDs))
+	events := make([]messaging.Message, 0, len(enrollmentIDs))
+	var eventMu sync.Mutex
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(5) // Bounded concurrency
+
+	for i, eid := range enrollmentIDs {
+		g.Go(func() error {
+			e, ok := enrollmentMap[eid]
+			if !ok {
+				results[i] = &domain.NotifyResult{
+					EnrollmentID: eid,
+					NotifyStatus: "failed_not_found",
+				}
+				return nil
+			}
+
+			if e.Status == domain.StatusRevoked {
+				results[i] = &domain.NotifyResult{
+					EnrollmentID: eid,
+					NotifyStatus: "failed_revoked",
+				}
+				return nil
+			}
+
+			candidate, ok := candidateMap[e.CandidateID]
+			if !ok || candidate.Email == nil {
+				results[i] = &domain.NotifyResult{
+					EnrollmentID: eid,
+					CandidateID:  e.CandidateID,
+					NotifyStatus: "skipped_no_email",
+				}
+				return nil
+			}
+
+			opaqueCode, err := generateOpaqueCode()
+			if err != nil {
+				return err
+			}
+
+			now := time.Now()
+			codeHash := hashSHA256(opaqueCode)
+
+			// Partial update: only invitation hash and status
+			if err := uc.repo.UpdateInvitation(ctx, e.ID, enterpriseID, codeHash, now); err != nil {
+				return fmt.Errorf("update enrollment %s: %w", e.ID, err)
+			}
+
+			invitationURL := uc.buildInvitationURL(opaqueCode)
+			candidateName := candidate.FirstName + " " + candidate.LastName
+
+			event := domain.CandidateEnrollmentInvitedEvent{
+				EnrollmentID:   e.ID,
+				CandidateID:    e.CandidateID,
+				ExamID:         e.ExamID,
+				EnterpriseID:   e.EnterpriseID,
+				CandidateName:  candidateName,
+				CandidateEmail: *candidate.Email,
+				ExamTitle:      exam.Title,
+				InvitationURL:  invitationURL,
+				ExpiresAt:      e.TokenExpiresAt,
+				Timestamp:      now.UnixMilli(),
+			}
+
+			payload, err := json.Marshal(event)
+			if err != nil {
+				return fmt.Errorf("marshal event for %s: %w", e.ID, err)
+			}
+
+			eventMu.Lock()
+			events = append(events, messaging.Message{
+				Topic: topics.CandidateEnrollmentInvited,
+				Key:   []byte(e.ID.String()),
+				Value: payload,
+			})
+			eventMu.Unlock()
+
+			results[i] = &domain.NotifyResult{
+				EnrollmentID: e.ID,
+				CandidateID:  e.CandidateID,
+				NotifyStatus: "sent",
+			}
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	// 3. Batch publish Kafka events
+	if len(events) > 0 {
+		if err := uc.publisher.PublishBatch(ctx, events); err != nil {
+			return nil, fmt.Errorf("publish batch events: %w", err)
+		}
+	}
+
 	return results, nil
 }
 
@@ -175,84 +328,25 @@ func (uc *enrollmentUseCase) NotifyCandidate(
 	id uuid.UUID,
 	enterpriseID uuid.UUID,
 ) (*domain.NotifyResult, error) {
+	// Re-use batch logic for single notification if possible, or keep simple
+	results, err := uc.NotifyCandidates(ctx, uuid.Nil, enterpriseID, []uuid.UUID{id})
+	if err != nil {
+		return nil, err
+	}
+	if len(results) == 0 {
+		return nil, domain.ErrEnrollmentNotFound
+	}
+
 	e, err := uc.repo.GetByID(ctx, id, enterpriseID)
 	if err != nil {
 		return nil, err
 	}
-	if e.Status == domain.StatusRevoked {
-		return nil, domain.ErrInvalidAccessToken
-	}
-
-	// Fetch candidate profile for email and name.
-	candidate, err := uc.candidateRepo.GetByID(ctx, e.CandidateID, enterpriseID)
-	if err != nil {
-		return nil, fmt.Errorf("fetch candidate for notification: %w", err)
-	}
-
-	if candidate.Email == nil {
-		return &domain.NotifyResult{
-			EnrollmentID: e.ID,
-			CandidateID:  e.CandidateID,
-			NotifyStatus: "skipped_no_email",
-		}, nil
-	}
-
-	// Fetch exam metadata for the exam title.
-	exam, err := uc.examClient.GetExamMetadata(ctx, e.ExamID)
-	if err != nil {
-		return nil, fmt.Errorf("fetch exam metadata: %w", err)
-	}
-
-	// Rotate the opaque code on every notify to invalidate any previously
-	// copied but undelivered URLs.
-	opaqueCode, err := generateOpaqueCode()
+	
+	results, err = uc.NotifyCandidates(ctx, e.ExamID, enterpriseID, []uuid.UUID{id})
 	if err != nil {
 		return nil, err
 	}
-
-	now := time.Now()
-	e.InvitationCodeHash = hashSHA256(opaqueCode)
-	e.Status = domain.StatusInvited
-	e.InvitationSentAt = &now
-
-	if err := uc.repo.Update(ctx, e); err != nil {
-		return nil, fmt.Errorf("update enrollment on notify: %w", err)
-	}
-
-	invitationURL := uc.buildInvitationURL(opaqueCode)
-	candidateName := candidate.FirstName + " " + candidate.LastName
-
-	event := domain.CandidateEnrollmentInvitedEvent{
-		EnrollmentID:   e.ID,
-		CandidateID:    e.CandidateID,
-		ExamID:         e.ExamID,
-		EnterpriseID:   e.EnterpriseID,
-		CandidateName:  candidateName,
-		CandidateEmail: *candidate.Email,
-		ExamTitle:      exam.Title,
-		InvitationURL:  invitationURL,
-		ExpiresAt:      e.TokenExpiresAt,
-		Timestamp:      now.UnixMilli(),
-	}
-
-	payload, err := json.Marshal(event)
-	if err != nil {
-		return nil, fmt.Errorf("marshal invitation event: %w", err)
-	}
-
-	if err := uc.publisher.Publish(ctx, messaging.Message{
-		Topic: topics.CandidateEnrollmentInvited,
-		Key:   []byte(e.ID.String()),
-		Value: payload,
-	}); err != nil {
-		return nil, fmt.Errorf("publish invitation event: %w", err)
-	}
-
-	return &domain.NotifyResult{
-		EnrollmentID: e.ID,
-		CandidateID:  e.CandidateID,
-		NotifyStatus: "sent",
-	}, nil
+	return results[0], nil
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
