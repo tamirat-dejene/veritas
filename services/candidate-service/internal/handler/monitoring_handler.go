@@ -187,39 +187,3 @@ func (h *MonitoringHandler) GetSubmissionDetail(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.SubmissionResponse{Data: sub})
 }
-
-// CandidateGetResult returns candidate-visible result for a submitted session.
-//
-//	@Summary		Get candidate result
-//	@Description	Return candidate result if release policy allows it.
-//	@Tags			monitoring
-//	@Produce		json
-//	@Param			X-Subject-Id	header	string	true	"Candidate ID"
-//	@Param			sessionId		path	string	true	"Session ID (UUID)"
-//	@Success		200			{object}	dto.SubmissionResponse
-//	@Failure		400			{object}	dto.ErrorResponse
-//	@Failure		401			{object}	dto.ErrorResponse
-//	@Failure		403			{object}	dto.ErrorResponse
-//	@Failure		500			{object}	dto.ErrorResponse
-//	@Router			/sessions/{sessionId}/result [get]
-func (h *MonitoringHandler) CandidateGetResult(c *gin.Context) {
-	sessionID, err := uuid.Parse(c.Param("sessionId"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
-		return
-	}
-
-	candidateID, err := getCandidateID(c)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrCandidateIDMissing.Error()})
-		return
-	}
-
-	res, err := h.uc.CandidateGetResult(c.Request.Context(), sessionID, candidateID)
-	if err != nil {
-		HandleError(c, err)
-		return
-	}
-
-	c.JSON(http.StatusOK, dto.SubmissionResponse{Data: res})
-}

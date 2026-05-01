@@ -1574,66 +1574,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/sessions/{sessionId}/result": {
-            "get": {
-                "description": "Return candidate result if release policy allows it.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "monitoring"
-                ],
-                "summary": "Get candidate result",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Candidate ID",
-                        "name": "X-Subject-Id",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Session ID (UUID)",
-                        "name": "sessionId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/SubmissionResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/sessions/{sessionId}/submit": {
             "post": {
                 "description": "Submit candidate exam session and create a submission record.",
@@ -2053,9 +1993,6 @@ const docTemplate = `{
                 "createdAt": {
                     "type": "string"
                 },
-                "gradingStatus": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "string"
                 },
@@ -2064,9 +2001,6 @@ const docTemplate = `{
                 },
                 "submittedAt": {
                     "type": "string"
-                },
-                "totalScore": {
-                    "type": "number"
                 }
             }
         },

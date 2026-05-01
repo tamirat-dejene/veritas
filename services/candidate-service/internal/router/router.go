@@ -91,7 +91,6 @@ func NewRouter(
 		sessions.POST("/:sessionId/expire", sh.ForceExpire)
 
 		sessions.GET("/:sessionId/summary", mh.GetSessionSummary)
-		sessions.GET("/:sessionId/result", mh.CandidateGetResult)
 	}
 
 	// ── Submission monitoring ─────────────────────────────────────────────────

@@ -122,16 +122,12 @@ definitions:
         type: boolean
       createdAt:
         type: string
-      gradingStatus:
-        type: string
       id:
         type: string
       sessionId:
         type: string
       submittedAt:
         type: string
-      totalScore:
-        type: number
     type: object
   SessionAnswer:
     properties:
@@ -1449,46 +1445,6 @@ paths:
       summary: Get session questions
       tags:
       - session
-  /sessions/{sessionId}/result:
-    get:
-      description: Return candidate result if release policy allows it.
-      parameters:
-      - description: Candidate ID
-        in: header
-        name: X-Subject-Id
-        required: true
-        type: string
-      - description: Session ID (UUID)
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SubmissionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Get candidate result
-      tags:
-      - monitoring
   /sessions/{sessionId}/submit:
     post:
       consumes:
