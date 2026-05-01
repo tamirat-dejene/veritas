@@ -22,6 +22,7 @@ const (
 	UserActivated                    = "enterprise.user.activated"
 	UserPasswordChanged              = "enterprise.user.password.changed"
 	UserPasswordResetAdmin           = "enterprise.user.password.reset.admin"
+	UserDeleted                      = "enterprise.user.deleted"
 )
 
 // Payment-Service topics
