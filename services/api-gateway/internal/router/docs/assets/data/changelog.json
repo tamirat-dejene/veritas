@@ -1,5 +1,27 @@
 [
   {
+    "date": "2026-05-01",
+    "changes": [
+      {
+        "type": "breaking",
+        "service": "candidate",
+        "summary": "Decoupling of grading and score data",
+        "description": "The total_score and grading_status columns have been removed from the exam_submissions table. Ownership of these fields has been moved to the grading-service to ensure better separation of concerns. Related result endpoints have been removed from the candidate-service.",
+        "endpoints": [
+          "GET /sessions/:sessionId/result (REMOVED)",
+          "GET /exams/:examId/submissions (UPDATED: removed score/status)",
+          "GET /submissions/:submissionId (UPDATED: removed score/status)"
+        ],
+        "migration": [
+          {
+            "before": "Exam submissions included 'totalScore' and 'gradingStatus' fields.",
+            "after": "Grading data is now managed exclusively by the grading-service."
+          }
+        ]
+      }
+    ]
+  },
+  {
     "date": "2026-04-30",
     "changes": [
       {
