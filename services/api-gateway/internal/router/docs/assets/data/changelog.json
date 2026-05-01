@@ -30,6 +30,22 @@
         "service": "notification",
         "summary": "Exam submitted confirmation emails",
         "description": "Implemented automated email notifications for exam submissions. The notification service now consumes candidate.exam.submitted events and delivers a branded HTML confirmation email to the candidate, detailing the exam title and submission time."
+      },
+      {
+        "type": "new",
+        "service": "payment",
+        "summary": "Automated Stripe Price Management",
+        "description": "Subscription plan management now handles Stripe Price lifecycle automatically. The service programmatically creates Stripe Products and Prices when a new plan is registered and deactivates them upon plan deactivation.",
+        "endpoints": [
+          "POST /admin/plans (UPDATED: stripe_price_id is now optional)",
+          "DELETE /admin/plans/:planId (UPDATED: deactivates Stripe Price)"
+        ],
+        "migration": [
+          {
+            "before": "System admins were required to manually create prices in Stripe and provide the ID during plan creation.",
+            "after": "The backend handles Stripe synchronization automatically if the ID is not provided."
+          }
+        ]
       }
     ]
   },

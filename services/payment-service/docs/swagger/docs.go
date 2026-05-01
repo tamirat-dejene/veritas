@@ -1305,8 +1305,7 @@ const docTemplate = `{
                 "currency",
                 "name",
                 "price",
-                "slug",
-                "stripe_price_id"
+                "slug"
             ],
             "properties": {
                 "billing_cycle": {
