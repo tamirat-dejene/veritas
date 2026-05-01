@@ -172,7 +172,6 @@ func (g *RouterGroup) RegisterCandidateRoutes(proxy http.Handler) {
 	g.register("POST", "/sessions/:sessionId/terminate", proxy, adminRole...)
 	g.register("POST", "/sessions/:sessionId/expire", proxy, adminOrAuto...)
 	g.register("GET", "/sessions/:sessionId/summary", proxy, adminRole...)
-	g.register("GET", "/sessions/:sessionId/result", proxy, candidateRole...)
 
 	// Submissions
 	g.register("GET", "/submissions/:submissionId", proxy, adminRole...)
