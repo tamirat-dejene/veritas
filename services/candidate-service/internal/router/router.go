@@ -105,6 +105,7 @@ func NewRouter(
 	internal := engine.Group("/internal")
 	{
 		internal.GET("/candidates/emails", ch.GetEmailsForExam)
+		internal.GET("/enterprises/:enterpriseId/counts", mh.GetCounts)
 	}
 
 	// Swagger UI — available at /swagger/index.html

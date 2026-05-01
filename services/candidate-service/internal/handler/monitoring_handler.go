@@ -187,3 +187,21 @@ func (h *MonitoringHandler) GetSubmissionDetail(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.SubmissionResponse{Data: sub})
 }
+
+// GetCounts returns counts of sessions for an enterprise.
+func (h *MonitoringHandler) GetCounts(c *gin.Context) {
+	enterpriseIDStr := c.Param("enterpriseId")
+	enterpriseID, err := uuid.Parse(enterpriseIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
+		return
+	}
+
+	count, err := h.uc.GetActiveSessionsCount(c.Request.Context(), enterpriseID)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"active_session_count": count})
+}

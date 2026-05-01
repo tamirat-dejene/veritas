@@ -33,3 +33,8 @@ func (uc *monitoringUseCase) GetSubmissions(ctx context.Context, examID uuid.UUI
 func (uc *monitoringUseCase) GetSubmissionDetail(ctx context.Context, submissionID uuid.UUID, enterpriseID uuid.UUID) (*domain.ExamSubmission, error) {
 	return uc.sessionRepo.GetSubmissionByID(ctx, submissionID, enterpriseID)
 }
+
+func (uc *monitoringUseCase) GetActiveSessionsCount(ctx context.Context, enterpriseID uuid.UUID) (int, error) {
+	return uc.sessionRepo.CountSessionsByEnterpriseAndStatus(ctx, enterpriseID, domain.SessionActive)
+}
+

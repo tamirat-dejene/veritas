@@ -401,6 +401,14 @@ func (r *sessionRepository) GetSubmissionsByExam(ctx context.Context, examID uui
 	return list, total, nil
 }
 
+func (r *sessionRepository) CountSessionsByEnterpriseAndStatus(ctx context.Context, enterpriseID uuid.UUID, status domain.SessionStatus) (int, error) {
+	var count int
+	query := "SELECT count(*) FROM exam_sessions WHERE enterprise_id = $1 AND status = $2"
+	err := r.db.QueryRow(ctx, query, enterpriseID, status).Scan(&count)
+	return count, err
+}
+
+
 func (r *sessionRepository) WithTx(tx pgx.Tx) domain.SessionRepository {
 	return &sessionRepository{db: tx}
 }

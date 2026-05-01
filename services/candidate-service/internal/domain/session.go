@@ -102,6 +102,7 @@ type SessionRepository interface {
 	GetSubmissionsByExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) ([]*ExamSubmission, int64, error)
 	GetSubmissionByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*ExamSubmission, error)
 	GetSessionByEnrollment(ctx context.Context, enrollmentID uuid.UUID) (*ExamSession, error)
+	CountSessionsByEnterpriseAndStatus(ctx context.Context, enterpriseID uuid.UUID, status SessionStatus) (int, error)
 	WithTx(tx pgx.Tx) SessionRepository
 }
 
@@ -124,6 +125,7 @@ type MonitoringUseCase interface {
 	GetSessionSummary(ctx context.Context, sessionID uuid.UUID, enterpriseID uuid.UUID) (*ExamSession, error)
 	GetSubmissions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) ([]*ExamSubmission, int64, error)
 	GetSubmissionDetail(ctx context.Context, submissionID uuid.UUID, enterpriseID uuid.UUID) (*ExamSubmission, error)
+	GetActiveSessionsCount(ctx context.Context, enterpriseID uuid.UUID) (int, error)
 }
 
 // CandidateExamSubmittedEvent is the Kafka payload published on topic candidate.exam.submitted
