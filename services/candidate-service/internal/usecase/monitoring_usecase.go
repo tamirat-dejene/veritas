@@ -33,28 +33,3 @@ func (uc *monitoringUseCase) GetSubmissions(ctx context.Context, examID uuid.UUI
 func (uc *monitoringUseCase) GetSubmissionDetail(ctx context.Context, submissionID uuid.UUID, enterpriseID uuid.UUID) (*domain.ExamSubmission, error) {
 	return uc.sessionRepo.GetSubmissionByID(ctx, submissionID, enterpriseID)
 }
-
-func (uc *monitoringUseCase) CandidateGetResult(ctx context.Context, sessionID uuid.UUID, candidateID uuid.UUID) (*domain.ExamSubmission, error) {
-	// 1. Fetch session to verify ownership and get enterpriseID
-	session, err := uc.sessionRepo.GetSessionByID(ctx, sessionID, uuid.Nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if session.CandidateID != candidateID {
-		return nil, domain.ErrUnauthorizedAccess
-	}
-
-	// 2. Fetch submission
-	sub, err := uc.sessionRepo.GetSubmissionBySession(ctx, sessionID, session.EnterpriseID)
-	if err != nil {
-		return nil, err
-	}
-
-	// 3. Check grading status release policy
-	if sub.GradingStatus != "Released" {
-		return nil, domain.ErrUnauthorizedAccess
-	}
-
-	return sub, nil
-}

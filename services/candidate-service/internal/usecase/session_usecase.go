@@ -293,6 +293,7 @@ func (uc *sessionUseCase) SubmitExam(ctx context.Context, sessionID uuid.UUID, c
 		return nil, domain.ErrSessionNotActive
 	}
 
+	var submission *domain.ExamSubmission
 	err = RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		// 1. Mark term reason
 		reason := "Manual Submission"
@@ -305,11 +306,10 @@ func (uc *sessionUseCase) SubmitExam(ctx context.Context, sessionID uuid.UUID, c
 		}
 
 		// 3. Create Submission
-		submission := &domain.ExamSubmission{
+		submission = &domain.ExamSubmission{
 			SessionID:     sessionID,
 			SubmittedAt:   time.Now(),
 			AutoSubmitted: autoSubmitted,
-			GradingStatus: "Pending", // Or 'ReadyForGrading'
 		}
 
 		if err := uc.sessionRepo.WithTx(tx).CreateSubmission(ctx, submission); err != nil {
@@ -322,13 +322,7 @@ func (uc *sessionUseCase) SubmitExam(ctx context.Context, sessionID uuid.UUID, c
 		return nil, fmt.Errorf("SubmitExam transaction: %w", err)
 	}
 
-	// Fetch the created submission to return it (or we could just use the one we built if we assigned an ID)
-	sub, err := uc.sessionRepo.GetSubmissionBySession(ctx, sessionID, session.EnterpriseID)
-	if err != nil {
-		return nil, fmt.Errorf("fetch created submission: %w", err)
-	}
-
-	return sub, nil
+	return submission, nil
 }
 
 func (uc *sessionUseCase) TerminateSession(ctx context.Context, sessionID uuid.UUID, enterpriseID uuid.UUID, reason string) error {
