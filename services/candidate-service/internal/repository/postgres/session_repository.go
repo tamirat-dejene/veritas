@@ -289,8 +289,8 @@ func (r *sessionRepository) GetSessionAnswers(ctx context.Context, sessionID uui
 
 func (r *sessionRepository) CreateSubmission(ctx context.Context, sub *domain.ExamSubmission) error {
 	const insertQuery = `
-		INSERT INTO exam_submissions (id, session_id, submitted_at, auto_submitted, total_score, grading_status, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO exam_submissions (id, session_id, submitted_at, auto_submitted, created_at)
+		VALUES ($1, $2, $3, $4, $5)
 	`
 	if sub.ID == uuid.Nil {
 		sub.ID = uuid.New()
@@ -299,7 +299,7 @@ func (r *sessionRepository) CreateSubmission(ctx context.Context, sub *domain.Ex
 		sub.CreatedAt = time.Now()
 	}
 
-	_, err := r.db.Exec(ctx, insertQuery, sub.ID, sub.SessionID, sub.SubmittedAt, sub.AutoSubmitted, sub.TotalScore, sub.GradingStatus, sub.CreatedAt)
+	_, err := r.db.Exec(ctx, insertQuery, sub.ID, sub.SessionID, sub.SubmittedAt, sub.AutoSubmitted, sub.CreatedAt)
 	if err != nil {
 		if err.Error() == "ERROR: duplicate key value violates unique constraint \"exam_submissions_session_id_key\" (SQLSTATE 23505)" {
 			return domain.ErrSubmissionExists
@@ -318,7 +318,7 @@ func (r *sessionRepository) GetSubmissionBySession(ctx context.Context, sessionI
 	}
 
 	query := fmt.Sprintf(`
-		SELECT es.id, es.session_id, es.submitted_at, es.auto_submitted, es.total_score, es.grading_status, es.created_at
+		SELECT es.id, es.session_id, es.submitted_at, es.auto_submitted, es.created_at
 		FROM exam_submissions es
 		JOIN exam_sessions s ON es.session_id = s.id
 		WHERE %s LIMIT 1
@@ -326,7 +326,7 @@ func (r *sessionRepository) GetSubmissionBySession(ctx context.Context, sessionI
 
 	var s domain.ExamSubmission
 	err := r.db.QueryRow(ctx, query, args...).Scan(
-		&s.ID, &s.SessionID, &s.SubmittedAt, &s.AutoSubmitted, &s.TotalScore, &s.GradingStatus, &s.CreatedAt,
+		&s.ID, &s.SessionID, &s.SubmittedAt, &s.AutoSubmitted, &s.CreatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -346,7 +346,7 @@ func (r *sessionRepository) GetSubmissionByID(ctx context.Context, id uuid.UUID,
 	}
 
 	query := fmt.Sprintf(`
-		SELECT es.id, es.session_id, es.submitted_at, es.auto_submitted, es.total_score, es.grading_status, es.created_at
+		SELECT es.id, es.session_id, es.submitted_at, es.auto_submitted, es.created_at
 		FROM exam_submissions es
 		JOIN exam_sessions s ON es.session_id = s.id
 		WHERE %s LIMIT 1
@@ -354,7 +354,7 @@ func (r *sessionRepository) GetSubmissionByID(ctx context.Context, id uuid.UUID,
 
 	var s domain.ExamSubmission
 	err := r.db.QueryRow(ctx, query, args...).Scan(
-		&s.ID, &s.SessionID, &s.SubmittedAt, &s.AutoSubmitted, &s.TotalScore, &s.GradingStatus, &s.CreatedAt,
+		&s.ID, &s.SessionID, &s.SubmittedAt, &s.AutoSubmitted, &s.CreatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -381,7 +381,7 @@ func (r *sessionRepository) GetSubmissionsByExam(ctx context.Context, examID uui
 	// Data query with pagination
 	sortCol := safeSubmissionSortField(params.GetSort())
 	query := fmt.Sprintf(
-		`SELECT es.id, es.session_id, es.submitted_at, es.auto_submitted, es.total_score, es.grading_status, es.created_at %s ORDER BY es.%s %s LIMIT $3 OFFSET $4`,
+		`SELECT es.id, es.session_id, es.submitted_at, es.auto_submitted, es.created_at %s ORDER BY es.%s %s LIMIT $3 OFFSET $4`,
 		baseJoin, sortCol, params.GetSortDir(),
 	)
 	rows, err := r.db.Query(ctx, query, examID, enterpriseID, params.GetLimit(), params.GetOffset())
@@ -393,7 +393,7 @@ func (r *sessionRepository) GetSubmissionsByExam(ctx context.Context, examID uui
 	var list []*domain.ExamSubmission
 	for rows.Next() {
 		var s domain.ExamSubmission
-		if err := rows.Scan(&s.ID, &s.SessionID, &s.SubmittedAt, &s.AutoSubmitted, &s.TotalScore, &s.GradingStatus, &s.CreatedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.SessionID, &s.SubmittedAt, &s.AutoSubmitted, &s.CreatedAt); err != nil {
 			return nil, 0, err
 		}
 		list = append(list, &s)
