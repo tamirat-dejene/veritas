@@ -281,6 +281,82 @@ func (h *CandidateHandler) Deactivate(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.MessageResponse{Message: "Candidate deactivated"})
 }
 
+// Activate enables a candidate profile.
+//
+//	@Summary		Activate candidate
+//	@Description	Activate a candidate profile by ID.
+//	@Tags			candidate
+//	@Produce		json
+//	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
+//	@Param			candidateId		path	string	true	"Candidate ID (UUID)"
+//	@Success		200				{object}	dto.MessageResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		403				{object}	dto.ErrorResponse
+//	@Failure		404				{object}	dto.ErrorResponse
+//	@Failure		409				{object}	dto.ErrorResponse
+//	@Failure		413				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
+//	@Router			/candidates/{candidateId}/activate [patch]
+func (h *CandidateHandler) Activate(c *gin.Context) {
+	entID, err := getEnterpriseID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
+		return
+	}
+
+	idParam := c.Param("candidateId")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
+		return
+	}
+
+	if err := h.uc.ActivateCandidate(c.Request.Context(), id, entID); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.MessageResponse{Message: "Candidate activated"})
+}
+
+// Delete permanently removes a candidate profile and all cascading data.
+//
+//	@Summary		Delete candidate
+//	@Description	Permanently delete a candidate profile by ID and all associated enrollments/sessions.
+//	@Tags			candidate
+//	@Produce		json
+//	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID (fallback if middleware context is absent)"
+//	@Param			candidateId		path	string	true	"Candidate ID (UUID)"
+//	@Success		200				{object}	dto.MessageResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		403				{object}	dto.ErrorResponse
+//	@Failure		404				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
+//	@Router			/candidates/{candidateId} [delete]
+func (h *CandidateHandler) Delete(c *gin.Context) {
+	entID, err := getEnterpriseID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
+		return
+	}
+
+	idParam := c.Param("candidateId")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
+		return
+	}
+
+	if err := h.uc.DeleteCandidate(c.Request.Context(), id, entID); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.MessageResponse{Message: "Candidate deleted"})
+}
+
 func (h *CandidateHandler) GetEmailsForExam(c *gin.Context) {
 	examIDStr := c.Query("exam_id")
 	enterpriseIDStr := c.Query("enterprise_id")

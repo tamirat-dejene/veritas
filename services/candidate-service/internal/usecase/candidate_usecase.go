@@ -115,6 +115,20 @@ func (uc *candidateUseCase) DeactivateCandidate(ctx context.Context, id uuid.UUI
 	return nil
 }
 
+func (uc *candidateUseCase) ActivateCandidate(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
+	if err := uc.repo.Activate(ctx, id, enterpriseID); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (uc *candidateUseCase) DeleteCandidate(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
+	if err := uc.repo.Delete(ctx, id, enterpriseID); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (uc *candidateUseCase) GetEmailsByExamID(ctx context.Context, examID, enterpriseID uuid.UUID) ([]string, error) {
 	return uc.repo.GetEmailsByExamID(ctx, examID, enterpriseID)
 }

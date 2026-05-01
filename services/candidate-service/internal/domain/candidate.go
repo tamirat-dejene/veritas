@@ -29,6 +29,8 @@ type CandidateRepository interface {
 	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*CandidateProfile, int64, error)
 	Update(ctx context.Context, candidate *CandidateProfile) error
 	Deactivate(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
+	Activate(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
+	Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	GetEmailsByExamID(ctx context.Context, examID, enterpriseID uuid.UUID) ([]string, error)
 	WithTx(tx pgx.Tx) CandidateRepository
 }
@@ -40,5 +42,7 @@ type CandidateUseCase interface {
 	GetCandidate(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*CandidateProfile, error)
 	UpdateCandidate(ctx context.Context, candidate *CandidateProfile) error
 	DeactivateCandidate(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
+	ActivateCandidate(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
+	DeleteCandidate(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	GetEmailsByExamID(ctx context.Context, examID, enterpriseID uuid.UUID) ([]string, error)
 }

@@ -222,6 +222,37 @@ func (r *candidateRepository) Deactivate(ctx context.Context, id uuid.UUID, ente
 	return nil
 }
 
+func (r *candidateRepository) Activate(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
+	const updateQuery = `
+		UPDATE candidate_profiles
+		SET is_active = true
+		WHERE id = $1 AND enterprise_id = $2
+	`
+	tag, err := r.db.Exec(ctx, updateQuery, id, enterpriseID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrCandidateNotFound
+	}
+	return nil
+}
+
+func (r *candidateRepository) Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
+	const deleteQuery = `
+		DELETE FROM candidate_profiles
+		WHERE id = $1 AND enterprise_id = $2
+	`
+	tag, err := r.db.Exec(ctx, deleteQuery, id, enterpriseID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrCandidateNotFound
+	}
+	return nil
+}
+
 func (r *candidateRepository) WithTx(tx pgx.Tx) domain.CandidateRepository {
 	return &candidateRepository{db: tx}
 }

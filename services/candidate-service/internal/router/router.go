@@ -34,6 +34,8 @@ func NewRouter(
 		candidates.GET("/:candidateId", ch.Get)
 		candidates.PATCH("/:candidateId", ch.Update)
 		candidates.PATCH("/:candidateId/deactivate", ch.Deactivate)
+		candidates.PATCH("/:candidateId/activate", ch.Activate)
+		candidates.DELETE("/:candidateId", ch.Delete)
 	}
 
 	// ── Exam-scoped enrollment operations ─────────────────────────────────────
