@@ -33,6 +33,7 @@ const (
 	EventDomainValidated       AuditEvent = "enterprise.domain_validated"
 	EventUserForgotPassword    AuditEvent = "user.forgot_password"
 	EventUserPasswordResetViaToken AuditEvent = "user.password_reset_via_token"
+	EventUserDeleted           AuditEvent = "user.deleted"
 )
 
 // AuditLog records a single auditable action on an enterprise.

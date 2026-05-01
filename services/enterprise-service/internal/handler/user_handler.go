@@ -245,6 +245,39 @@ func (h *UserHandler) ActivateUser(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// DeleteUser permanently (soft) deletes an enterprise user account.
+//
+//	@Summary		Delete enterprise user
+//	@Description	Soft delete user account. Only admins can delete users.
+//	@Tags			user
+//	@Param			enterpriseId	path	string	true	"Enterprise ID (UUID)"
+//	@Param			userId			path	string	true	"User ID (UUID)"
+//	@Param			X-User-ID	header	string	false	"Actor user ID (UUID)"
+//	@Success		204			{string}	string	"No Content"
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		404			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/enterprises/{enterpriseId}/users/{userId} [delete]
+func (h *UserHandler) DeleteUser(c *gin.Context) {
+	enterpriseID, ok := ParseEnterpriseID(c)
+	if !ok {
+		writeError(c, http.StatusBadRequest, "invalid enterprise ID")
+		return
+	}
+	userID, ok := ParseUserID(c)
+	if !ok {
+		writeError(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+	callerID, _ := GetCallerID(c)
+	if err := h.usecase.DeleteEnterpriseUser(c.Request.Context(), enterpriseID, userID, callerID); err != nil {
+		h.handleErr(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+
 // ResetPassword resets an enterprise user's password and returns a temporary password.
 //
 //	@Summary		Reset user password

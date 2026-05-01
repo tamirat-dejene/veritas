@@ -67,6 +67,7 @@ func NewRouter(
 		enterprises.PATCH("/:enterpriseId/users/:userId", uh.UpdateUser)
 		enterprises.PATCH("/:enterpriseId/users/:userId/deactivate", uh.DeactivateUser)
 		enterprises.PATCH("/:enterpriseId/users/:userId/activate", uh.ActivateUser)
+		enterprises.DELETE("/:enterpriseId/users/:userId", uh.DeleteUser)
 		enterprises.POST("/:enterpriseId/users/:userId/reset-password", uh.ResetPassword)
 		enterprises.POST("/:enterpriseId/users/:userId/change-password", uh.ChangePassword)
 	}

@@ -91,6 +91,7 @@ type UserUsecase interface {
 	UpdateEnterpriseUser(ctx context.Context, enterpriseID, userID uuid.UUID, req UpdateUserRequest, adminID uuid.UUID) error
 	DeactivateEnterpriseUser(ctx context.Context, enterpriseID, userID, adminID uuid.UUID) error
 	ActivateEnterpriseUser(ctx context.Context, enterpriseID, userID, adminID uuid.UUID) error
+	DeleteEnterpriseUser(ctx context.Context, enterpriseID, userID, adminID uuid.UUID) error
 	ResetUserPassword(ctx context.Context, enterpriseID, userID, adminID uuid.UUID) (string, error)
 	ChangePassword(ctx context.Context, userID uuid.UUID, req ChangePasswordRequest) error
 	ForgotPassword(ctx context.Context, email string) error
@@ -113,6 +114,7 @@ type EventPublisher interface {
 	PublishPasswordResetRequested(ctx context.Context, userID uuid.UUID, email, name, resetLink string) error
 	PublishUserDeactivated(ctx context.Context, userID uuid.UUID, email, name, enterpriseName string) error
 	PublishUserActivated(ctx context.Context, userID uuid.UUID, email, name, enterpriseName string) error
+	PublishUserDeleted(ctx context.Context, userID uuid.UUID, email, name, enterpriseName string) error
 	PublishUserPasswordChanged(ctx context.Context, userID uuid.UUID, email, name, enterpriseName string) error
 	PublishUserPasswordResetAdmin(ctx context.Context, userID uuid.UUID, email, name, tempPassword, enterpriseName string) error
 }

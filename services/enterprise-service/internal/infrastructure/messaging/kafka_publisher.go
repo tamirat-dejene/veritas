@@ -252,6 +252,17 @@ func (p *kafkaPublisher) PublishUserActivated(ctx context.Context, userID uuid.U
 	return p.publishUserLifecycleEvent(ctx, topics.UserActivated, userID, event)
 }
 
+func (p *kafkaPublisher) PublishUserDeleted(ctx context.Context, userID uuid.UUID, email, name, enterpriseName string) error {
+	event := UserLifecycleEvent{
+		UserID:         userID,
+		Email:          email,
+		Name:           name,
+		EnterpriseName: enterpriseName,
+		Timestamp:      time.Now().Unix(),
+	}
+	return p.publishUserLifecycleEvent(ctx, topics.UserDeleted, userID, event)
+}
+
 func (p *kafkaPublisher) PublishUserPasswordChanged(ctx context.Context, userID uuid.UUID, email, name, enterpriseName string) error {
 	event := UserLifecycleEvent{
 		UserID:         userID,

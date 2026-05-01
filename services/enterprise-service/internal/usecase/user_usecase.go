@@ -255,9 +255,41 @@ func (uc *userUsecase) ActivateEnterpriseUser(ctx context.Context, enterpriseID,
 	if uc.eventPublisher != nil {
 		_ = uc.eventPublisher.PublishUserActivated(context.Background(), u.ID, u.Email, name, entName)
 	}
+	return nil
+}
+
+func (uc *userUsecase) DeleteEnterpriseUser(ctx context.Context, enterpriseID, userID, adminID uuid.UUID) error {
+	u, err := uc.userRepo.FindByEnterpriseAndID(ctx, enterpriseID, userID)
+	if err != nil {
+		return err
+	}
+
+	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		if err := uc.userRepo.WithTx(tx).Delete(ctx, userID); err != nil {
+			return err
+		}
+		uc.emitUser(ctx, tx, enterpriseID, adminID, string(domain.RoleEnterpriseAdmin), domain.EventUserDeleted,
+			map[string]interface{}{"user_id": userID.String()})
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	name := "User"
+	if u.FirstName != nil {
+		name = *u.FirstName
+	}
+	entName := ""
+	if ent, _ := uc.enterpriseRepo.FindByID(context.Background(), enterpriseID); ent != nil {
+		entName = ent.LegalName
+	}
+	if uc.eventPublisher != nil {
+		_ = uc.eventPublisher.PublishUserDeleted(context.Background(), u.ID, u.Email, name, entName)
+	}
 
 	return nil
 }
+
 
 
 func (uc *userUsecase) ResetUserPassword(ctx context.Context, enterpriseID, userID, adminID uuid.UUID) (string, error) {
