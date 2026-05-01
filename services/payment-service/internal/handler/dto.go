@@ -41,7 +41,7 @@ type CreatePlanRequest struct {
 	Currency      string         `json:"currency" binding:"required"`
 	BillingCycle  string         `json:"billing_cycle" binding:"required"`
 	Features      map[string]any `json:"features"`
-	StripePriceID string         `json:"stripe_price_id" binding:"required"`
+	StripePriceID string         `json:"stripe_price_id"`
 	IsActive      bool           `json:"is_active"`
 }
 

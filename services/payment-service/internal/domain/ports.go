@@ -48,6 +48,8 @@ type PaymentProvider interface {
 	ConstructEvent(payload []byte, sigHeader string) (any, error)
 	CancelStripeSubscription(ctx context.Context, stripeSubscriptionID string, cancelAtPeriodEnd bool) error
 	ReactivateStripeSubscription(ctx context.Context, stripeSubscriptionID string) error
+	SyncPlanToStripe(ctx context.Context, plan *SubscriptionPlan) (string, error)
+	DeactivateStripePrice(ctx context.Context, stripePriceID string) error
 	RefundStripePayment(ctx context.Context, stripePaymentID string, amount float64) error
 }
 

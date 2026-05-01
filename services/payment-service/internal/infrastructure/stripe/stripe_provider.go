@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	stripego "github.com/stripe/stripe-go/v74"
 	"github.com/stripe/stripe-go/v74/checkout/session"
+	"github.com/stripe/stripe-go/v74/price"
 	"github.com/stripe/stripe-go/v74/refund"
 	stripesubscription "github.com/stripe/stripe-go/v74/subscription"
 	"github.com/stripe/stripe-go/v74/webhook"
@@ -115,5 +116,41 @@ func (p *stripeProvider) RefundStripePayment(_ context.Context, stripePaymentID 
 		return fmt.Errorf("stripe: refund payment: %w", err)
 	}
 
+	return nil
+}
+
+func (p *stripeProvider) SyncPlanToStripe(_ context.Context, plan *domain.SubscriptionPlan) (string, error) {
+	unitAmount := int64(plan.Price * 100)
+
+	params := &stripego.PriceParams{
+		UnitAmount: stripego.Int64(unitAmount),
+		Currency:   stripego.String(string(plan.Currency)),
+		Recurring: &stripego.PriceRecurringParams{
+			Interval: stripego.String(string(plan.BillingCycle)),
+		},
+		ProductData: &stripego.PriceProductDataParams{
+			Name: stripego.String(plan.Name),
+			Metadata: map[string]string{
+				"plan_slug": plan.Slug,
+			},
+		},
+	}
+
+	newPrice, err := price.New(params)
+	if err != nil {
+		return "", fmt.Errorf("failed to create stripe price: %w", err)
+	}
+
+	return newPrice.ID, nil
+}
+
+func (p *stripeProvider) DeactivateStripePrice(_ context.Context, stripePriceID string) error {
+	params := &stripego.PriceParams{
+		Active: stripego.Bool(false),
+	}
+	_, err := price.Update(stripePriceID, params)
+	if err != nil {
+		return fmt.Errorf("failed to deactivate stripe price: %w", err)
+	}
 	return nil
 }

@@ -61,6 +61,13 @@ func (u *paymentUsecase) GetPlanByID(ctx context.Context, id uuid.UUID) (*domain
 }
 
 func (u *paymentUsecase) CreatePlan(ctx context.Context, plan *domain.SubscriptionPlan) error {
+	if plan.StripePriceID == "" {
+		stripeID, err := u.payProvider.SyncPlanToStripe(ctx, plan)
+		if err != nil {
+			return fmt.Errorf("sync plan to stripe: %w", err)
+		}
+		plan.StripePriceID = stripeID
+	}
 	return u.subRepo.CreatePlan(ctx, plan)
 }
 
@@ -74,6 +81,17 @@ func (u *paymentUsecase) DeactivatePlan(ctx context.Context, planID uuid.UUID) e
 		return err
 	}
 	plan.IsActive = false
+
+	if plan.StripePriceID != "" {
+		if err := u.payProvider.DeactivateStripePrice(ctx, plan.StripePriceID); err != nil {
+			zap.L().Warn("failed to deactivate stripe price during plan deactivation",
+				zap.String("plan_id", planID.String()),
+				zap.String("stripe_price_id", plan.StripePriceID),
+				zap.Error(err),
+			)
+		}
+	}
+
 	return u.subRepo.UpdatePlan(ctx, plan)
 }
 
@@ -88,8 +106,6 @@ func (u *paymentUsecase) UpgradeSubscription(ctx context.Context, enterpriseID u
 	if err != nil {
 		return "", err
 	}
-	// Reuse existing Stripe Customer ID if the enterprise already has a subscription,
-	// preventing the creation of duplicate Stripe customer records on each upgrade.
 	var stripeCustomerID *string
 	if sub, err := u.subRepo.GetSubscriptionByEnterpriseID(ctx, enterpriseID); err == nil && sub != nil {
 		stripeCustomerID = sub.StripeCustomerID
