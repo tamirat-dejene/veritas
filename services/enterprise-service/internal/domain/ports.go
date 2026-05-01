@@ -123,3 +123,11 @@ type PaymentClient interface {
 	// Used to fetch live subscription state for status/summary endpoints.
 	GetActiveSubscription(ctx context.Context, enterpriseID uuid.UUID) (*SubscriptionSnapshot, error)
 }
+
+type ExamClient interface {
+	GetActiveExamsCount(ctx context.Context, enterpriseID uuid.UUID) (int, error)
+}
+
+type CandidateClient interface {
+	GetActiveSessionsCount(ctx context.Context, enterpriseID uuid.UUID) (int, error)
+}

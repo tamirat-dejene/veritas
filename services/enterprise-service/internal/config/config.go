@@ -15,9 +15,12 @@ type Config struct {
 	DBName            string
 	DSN               string
 	KafkaBrokers      []string
-	PaymentServiceURL string
-	FrontendBaseURL   string
+	PaymentServiceURL   string
+	ExamServiceURL      string
+	CandidateServiceURL string
+	FrontendBaseURL     string
 }
+
 
 func Load() *Config {
 	cfg := &Config{
@@ -29,8 +32,11 @@ func Load() *Config {
 		DBName:       getEnv("PG_VERITAS_CORE_DB", "veritas_core"),
 		KafkaBrokers:      getEnvList("KAFKA_BROKERS", ","),
 		PaymentServiceURL: getEnv("PAYMENT_SERVICE_URL", "http://payment-service:8080"),
+		ExamServiceURL:      getEnv("EXAM_SERVICE_URL", "http://exam-service:8080"),
+		CandidateServiceURL: getEnv("CANDIDATE_SERVICE_URL", "http://candidate-service:8080"),
 		FrontendBaseURL:   getEnv("FRONTEND_BASE_URL", "https://app.veritas.io"),
 	}
+
 
 	cfg.DSN = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		cfg.DBUser, cfg.DBPass, cfg.DBHost, cfg.DBPort, cfg.DBName)

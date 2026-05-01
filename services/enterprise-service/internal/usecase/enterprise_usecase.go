@@ -24,6 +24,8 @@ type enterpriseUsecase struct {
 	auditRepo      domain.AuditRepository
 	eventPublisher domain.EventPublisher
 	paymentClient  domain.PaymentClient
+	examClient     domain.ExamClient
+	candidateClient domain.CandidateClient
 }
 
 func NewEnterpriseUsecase(
@@ -33,6 +35,8 @@ func NewEnterpriseUsecase(
 	auditRepo domain.AuditRepository,
 	eventPublisher domain.EventPublisher,
 	paymentClient domain.PaymentClient,
+	examClient domain.ExamClient,
+	candidateClient domain.CandidateClient,
 ) domain.EnterpriseUsecase {
 	return &enterpriseUsecase{
 		pool:           pool,
@@ -41,6 +45,8 @@ func NewEnterpriseUsecase(
 		auditRepo:      auditRepo,
 		eventPublisher: eventPublisher,
 		paymentClient:  paymentClient,
+		examClient:     examClient,
+		candidateClient: candidateClient,
 	}
 }
 
@@ -446,8 +452,19 @@ func (uc *enterpriseUsecase) GetEnterpriseSummary(ctx context.Context, id uuid.U
 		DisplayName:        e.DisplayName,
 		Status:             e.Status,
 		UserCount:          userCount,
-		ActiveExamCount:    -1, 
-		ActiveSessionCount: -1,
+		ActiveExamCount:    0,
+		ActiveSessionCount: 0,
+	}
+
+	if uc.examClient != nil {
+		if count, err := uc.examClient.GetActiveExamsCount(ctx, id); err == nil {
+			summary.ActiveExamCount = count
+		}
+	}
+	if uc.candidateClient != nil {
+		if count, err := uc.candidateClient.GetActiveSessionsCount(ctx, id); err == nil {
+			summary.ActiveSessionCount = count
+		}
 	}
 
 	sub, err := uc.paymentClient.GetActiveSubscription(ctx, id)

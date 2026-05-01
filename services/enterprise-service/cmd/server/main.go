@@ -88,11 +88,13 @@ func main() {
 	defer kafkaProducer.Close()
 	eventPublisher := messaging.NewKafkaPublisher(kafkaProducer)
 
-	// 6. Payment-service HTTP client (for live subscription enrichment)
+	// 6. HTTP clients for service-to-service communication
 	payClient := client.NewPaymentClient(cfg.PaymentServiceURL)
+	examClient := client.NewExamClient(cfg.ExamServiceURL)
+	candidateClient := client.NewCandidateClient(cfg.CandidateServiceURL)
 
 	// 7. Initialize Usecases
-	enterpriseUC := usecase.NewEnterpriseUsecase(pool, userRepo, enterpriseRepo, auditRepo, eventPublisher, payClient)
+	enterpriseUC := usecase.NewEnterpriseUsecase(pool, userRepo, enterpriseRepo, auditRepo, eventPublisher, payClient, examClient, candidateClient)
 	userUC := usecase.NewUserUsecase(pool, userRepo, enterpriseRepo, auditRepo, eventPublisher, passwordResetRepo, cfg.FrontendBaseURL)
 
 	// 8. Initialize Handlers
