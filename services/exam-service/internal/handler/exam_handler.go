@@ -629,3 +629,22 @@ func (h *ExamHandler) UpdateExamQuestion(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// GetCounts returns counts of exams for an enterprise.
+func (h *ExamHandler) GetCounts(c *gin.Context) {
+	enterpriseIDStr := c.Param("enterpriseId")
+	enterpriseID, err := uuid.Parse(enterpriseIDStr)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid enterprise ID")
+		return
+	}
+
+	count, err := h.usecase.GetActiveExamsCount(c.Request.Context(), enterpriseID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"active_exam_count": count})
+}
+
+

@@ -16,6 +16,7 @@ type ExamRepository interface {
 	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*sdomain.Exam], error)
 	Update(ctx context.Context, exam *sdomain.Exam) error
 	Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
+	CountByEnterpriseAndStatus(ctx context.Context, enterpriseID uuid.UUID, status sdomain.ExamStatus) (int, error)
 
 	AddQuestions(ctx context.Context, examID uuid.UUID, eqs []*sdomain.ExamQuestion) error
 	GetExamQuestions(ctx context.Context, examID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*sdomain.ExamQuestion], error)
@@ -35,6 +36,7 @@ type ExamUsecase interface {
 	PublishExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	CloseExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	DeleteExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
+	GetActiveExamsCount(ctx context.Context, enterpriseID uuid.UUID) (int, error)
 
 	AddQuestionsToExam(ctx context.Context, enterpriseID, examID uuid.UUID, inputs []sdomain.ExamQuestionInput) ([]*sdomain.ExamQuestion, error)
 	GetExamQuestions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params, withCorrectAnswer bool) (pagination.PaginatedResponse[*sdomain.ExamQuestion], error)

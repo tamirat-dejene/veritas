@@ -49,6 +49,11 @@ func NewRouter(qh *handler.QuestionHandler, eh *handler.ExamHandler) *gin.Engine
 
 	}
 
+	internal := engine.Group("/internal")
+	{
+		internal.GET("/enterprises/:enterpriseId/counts", eh.GetCounts)
+	}
+
 	// Swagger UI — available at /swagger/index.html
 	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

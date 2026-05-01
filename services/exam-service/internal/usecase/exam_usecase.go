@@ -289,6 +289,11 @@ func (uc *examUsecase) DeleteExam(ctx context.Context, id uuid.UUID, enterpriseI
 	})
 }
 
+func (uc *examUsecase) GetActiveExamsCount(ctx context.Context, enterpriseID uuid.UUID) (int, error) {
+	return uc.examRepo.CountByEnterpriseAndStatus(ctx, enterpriseID, sdomain.ExamActive)
+}
+
+
 func (uc *examUsecase) AddQuestionsToExam(ctx context.Context, enterpriseID, examID uuid.UUID, inputs []sdomain.ExamQuestionInput) ([]*sdomain.ExamQuestion, error) {
 	var eqs []*sdomain.ExamQuestion
 	err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {

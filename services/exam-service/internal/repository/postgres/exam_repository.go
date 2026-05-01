@@ -206,6 +206,14 @@ func (r *examRepository) Delete(ctx context.Context, id uuid.UUID, enterpriseID 
 	return nil
 }
 
+func (r *examRepository) CountByEnterpriseAndStatus(ctx context.Context, enterpriseID uuid.UUID, status sdomain.ExamStatus) (int, error) {
+	var count int
+	query := "SELECT count(*) FROM veritas_exams WHERE enterprise_id = $1 AND status = $2"
+	err := r.db.QueryRow(ctx, query, enterpriseID, status).Scan(&count)
+	return count, err
+}
+
+
 func (r *examRepository) AddQuestions(ctx context.Context, examID uuid.UUID, eqs []*sdomain.ExamQuestion) error {
 	const insertEq = `
 		INSERT INTO veritas_exam_questions (id, exam_id, question_id, points_override, order_index)
