@@ -18,6 +18,18 @@
             "after": "Grading data is now managed exclusively by the grading-service."
           }
         ]
+      },
+      {
+        "type": "new",
+        "service": "candidate",
+        "summary": "Exam submitted event publishing",
+        "description": "The candidate service now publishes a candidate.exam.submitted Kafka event upon successful exam submission, including both manual submissions and automatic timer expirations. This event contains candidate details and exam metadata for downstream processing."
+      },
+      {
+        "type": "new",
+        "service": "notification",
+        "summary": "Exam submitted confirmation emails",
+        "description": "Implemented automated email notifications for exam submissions. The notification service now consumes candidate.exam.submitted events and delivers a branded HTML confirmation email to the candidate, detailing the exam title and submission time."
       }
     ]
   },

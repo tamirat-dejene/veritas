@@ -66,10 +66,13 @@
             Notifies all stakeholders when an examination window officially concludes.
         </event-item>
 
-        <h3 class="endpoint-group-title" style="margin-top: 16px;">Candidate Enrollment Events (Kafka)</h3>
+        <h3 class="endpoint-group-title" style="margin-top: 16px;">Candidate Events (Kafka)</h3>
 
         <event-item topic="candidate.enrollment.invited">
             Triggered when an administrator sends an invitation link to a candidate. Delivers a branded HTML email with a secure, unique invitation link.
+        </event-item>
+        <event-item topic="candidate.exam.submitted">
+            Triggered when a candidate submits their exam session. Delivers a confirmation email detailing the exam title and submission time.
         </event-item>
     </div>
 
