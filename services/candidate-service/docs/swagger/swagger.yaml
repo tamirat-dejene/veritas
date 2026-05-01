@@ -614,6 +614,49 @@ paths:
       tags:
       - candidate
   /candidates/{candidateId}:
+    delete:
+      description: Permanently delete a candidate profile by ID and all associated
+        enrollments/sessions.
+      parameters:
+      - description: Enterprise ID (fallback if middleware context is absent)
+        in: header
+        name: X-Enterprise-Id
+        type: string
+      - description: Candidate ID (UUID)
+        in: path
+        name: candidateId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Delete candidate
+      tags:
+      - candidate
     get:
       description: Get one candidate profile by ID for the caller enterprise.
       parameters:
@@ -696,6 +739,57 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
       summary: Update candidate
+      tags:
+      - candidate
+  /candidates/{candidateId}/activate:
+    patch:
+      description: Activate a candidate profile by ID.
+      parameters:
+      - description: Enterprise ID (fallback if middleware context is absent)
+        in: header
+        name: X-Enterprise-Id
+        type: string
+      - description: Candidate ID (UUID)
+        in: path
+        name: candidateId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Activate candidate
       tags:
       - candidate
   /candidates/{candidateId}/deactivate:
