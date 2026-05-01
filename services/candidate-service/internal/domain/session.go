@@ -125,3 +125,17 @@ type MonitoringUseCase interface {
 	GetSubmissions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) ([]*ExamSubmission, int64, error)
 	GetSubmissionDetail(ctx context.Context, submissionID uuid.UUID, enterpriseID uuid.UUID) (*ExamSubmission, error)
 }
+
+// CandidateExamSubmittedEvent is the Kafka payload published on topic candidate.exam.submitted
+type CandidateExamSubmittedEvent struct {
+	SessionID      uuid.UUID `json:"session_id"`
+	CandidateID    uuid.UUID `json:"candidate_id"`
+	ExamID         uuid.UUID `json:"exam_id"`
+	EnterpriseID   uuid.UUID `json:"enterprise_id"`
+	CandidateName  string    `json:"candidate_name"`
+	CandidateEmail string    `json:"candidate_email"`
+	ExamTitle      string    `json:"exam_title"`
+	SubmittedAt    time.Time `json:"submitted_at"`
+	AutoSubmitted  bool      `json:"auto_submitted"`
+	Timestamp      int64     `json:"timestamp"`
+}

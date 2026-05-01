@@ -101,7 +101,7 @@ func main() {
 		publisher,
 		cfg.CandidatePortalBaseURL,
 	)
-	sessionUC := usecase.NewSessionUseCase(pool, sessionRepo, enrollmentRepo, examClient, tokenService)
+	sessionUC := usecase.NewSessionUseCase(pool, sessionRepo, enrollmentRepo, candidateRepo, examClient, tokenService, publisher)
 	monitoringUC := usecase.NewMonitoringUseCase(sessionRepo)
 
 	// 9. Initialize Handlers

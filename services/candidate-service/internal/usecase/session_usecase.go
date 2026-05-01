@@ -12,6 +12,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/infrastructure/client"
+	"github.com/tamirat-dejene/veritas/shared/pkg/messaging"
+	"github.com/tamirat-dejene/veritas/shared/pkg/messaging/topics"
 	sdomain "github.com/tamirat-dejene/veritas/shared/domain"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 )
@@ -20,17 +22,29 @@ type sessionUseCase struct {
 	pool           *pgxpool.Pool
 	sessionRepo    domain.SessionRepository
 	enrollmentRepo domain.EnrollmentRepository
+	candidateRepo  domain.CandidateRepository
 	examClient     client.ExamServiceClient
 	tokenService   domain.EnrollmentTokenService
+	publisher      messaging.Publisher
 }
 
-func NewSessionUseCase(pool *pgxpool.Pool, sRepo domain.SessionRepository, eRepo domain.EnrollmentRepository, eClient client.ExamServiceClient, tokenService domain.EnrollmentTokenService) domain.SessionUseCase {
+func NewSessionUseCase(
+	pool *pgxpool.Pool,
+	sRepo domain.SessionRepository,
+	eRepo domain.EnrollmentRepository,
+	candidateRepo domain.CandidateRepository,
+	eClient client.ExamServiceClient,
+	tokenService domain.EnrollmentTokenService,
+	publisher messaging.Publisher,
+) domain.SessionUseCase {
 	return &sessionUseCase{
 		pool:           pool,
 		sessionRepo:    sRepo,
 		enrollmentRepo: eRepo,
+		candidateRepo:  candidateRepo,
 		examClient:     eClient,
 		tokenService:   tokenService,
+		publisher:      publisher,
 	}
 }
 
@@ -320,6 +334,50 @@ func (uc *sessionUseCase) SubmitExam(ctx context.Context, sessionID uuid.UUID, c
 
 	if err != nil {
 		return nil, fmt.Errorf("SubmitExam transaction: %w", err)
+	}
+
+	// Fetch candidate and exam info outside tx to avoid holding locks
+	candidate, err := uc.candidateRepo.GetByID(ctx, session.CandidateID, session.EnterpriseID)
+	if err != nil {
+		// Log error but don't fail submission
+		fmt.Printf("failed to fetch candidate for submission event: %v\n", err)
+	}
+	
+	examCtx := logger.SetEnterpriseID(ctx, session.EnterpriseID.String())
+	examMeta, err := uc.examClient.GetExamMetadata(examCtx, session.ExamID)
+	if err != nil {
+		fmt.Printf("failed to fetch exam metadata for submission event: %v\n", err)
+	}
+
+	// Publish event if we have candidate email
+	if candidate != nil && candidate.Email != nil && examMeta != nil {
+		candidateName := candidate.FirstName + " " + candidate.LastName
+		event := domain.CandidateExamSubmittedEvent{
+			SessionID:      sessionID,
+			CandidateID:    session.CandidateID,
+			ExamID:         session.ExamID,
+			EnterpriseID:   session.EnterpriseID,
+			CandidateName:  candidateName,
+			CandidateEmail: *candidate.Email,
+			ExamTitle:      examMeta.Title,
+			SubmittedAt:    submission.SubmittedAt,
+			AutoSubmitted:  autoSubmitted,
+			Timestamp:      time.Now().UnixMilli(),
+		}
+
+		payload, err := json.Marshal(event)
+		if err == nil {
+			msg := messaging.Message{
+				Topic: topics.CandidateExamSubmitted,
+				Key:   []byte(sessionID.String()),
+				Value: payload,
+			}
+			if err := uc.publisher.Publish(ctx, msg); err != nil {
+				fmt.Printf("failed to publish submission event: %v\n", err)
+			}
+		} else {
+			fmt.Printf("failed to marshal submission event: %v\n", err)
+		}
 	}
 
 	return submission, nil
