@@ -46,4 +46,8 @@ const (
 	// notification for one or more candidates. The notification-service consumes
 	// this topic and sends the branded invitation email.
 	CandidateEnrollmentInvited = "candidate.enrollment.invited"
+
+	// CandidateExamSubmitted is published when a candidate submits their exam session.
+	// The notification-service consumes this topic and sends a confirmation email.
+	CandidateExamSubmitted = "candidate.exam.submitted"
 )
