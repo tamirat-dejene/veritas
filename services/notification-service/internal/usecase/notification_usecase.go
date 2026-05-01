@@ -39,6 +39,7 @@ type notificationUsecase struct {
 	examClosedAdminTmpl       *template.Template
 	examClosedCandidateTmpl   *template.Template
 	candidateInvitationTmpl   *template.Template
+	examSubmittedConfirmationTmpl *template.Template
 }
 
 
@@ -85,6 +86,7 @@ func NewNotificationUsecase(mailer domain.Mailer, logger *zap.Logger) (domain.No
 	exCloAdm, _ := parse("exam_closed_admin.html", emailtemplate.ExamClosedAdminEmail)
 	exCloCan, _ := parse("exam_closed_candidate.html", emailtemplate.ExamClosedCandidateEmail)
 	candInv, _ := parse("candidate_invitation_email.html", emailtemplate.CandidateInvitationEmail)
+	examSubConf, _ := parse("exam_submitted_confirmation.html", emailtemplate.ExamSubmittedConfirmationEmail)
 
 	return &notificationUsecase{
 		mailer:                mailer,
@@ -111,6 +113,7 @@ func NewNotificationUsecase(mailer domain.Mailer, logger *zap.Logger) (domain.No
 		examClosedAdminTmpl:       exCloAdm,
 		examClosedCandidateTmpl:   exCloCan,
 		candidateInvitationTmpl:   candInv,
+		examSubmittedConfirmationTmpl: examSubConf,
 	}, nil
 }
 
@@ -537,6 +540,55 @@ func (uc *notificationUsecase) HandleCandidateEnrollmentInvited(ctx context.Cont
 	}
 
 	uc.logger.Info("Successfully sent candidate invitation email", zap.String("email", event.CandidateEmail))
+	return nil
+}
+
+type CandidateExamSubmittedEvent struct {
+	SessionID      uuid.UUID `json:"session_id"`
+	CandidateID    uuid.UUID `json:"candidate_id"`
+	ExamID         uuid.UUID `json:"exam_id"`
+	EnterpriseID   uuid.UUID `json:"enterprise_id"`
+	CandidateName  string    `json:"candidate_name"`
+	CandidateEmail string    `json:"candidate_email"`
+	ExamTitle      string    `json:"exam_title"`
+	SubmittedAt    time.Time `json:"submitted_at"`
+	AutoSubmitted  bool      `json:"auto_submitted"`
+	Timestamp      int64     `json:"timestamp"`
+}
+
+func (uc *notificationUsecase) HandleCandidateExamSubmitted(ctx context.Context, payload []byte) error {
+	var event CandidateExamSubmittedEvent
+	if err := json.Unmarshal(payload, &event); err != nil {
+		uc.logger.Error("Failed to unmarshal CandidateExamSubmittedEvent", zap.Error(err))
+		return err
+	}
+
+	uc.logger.Info("Processing exam submitted confirmation email", zap.String("email", event.CandidateEmail))
+
+	var bodyBuffer bytes.Buffer
+	err := uc.examSubmittedConfirmationTmpl.Execute(&bodyBuffer, map[string]interface{}{
+		"CandidateName": event.CandidateName,
+		"ExamTitle":     event.ExamTitle,
+		"SubmittedAt":   event.SubmittedAt.Format("Jan 02, 2006 15:04 MST"),
+		"AutoSubmitted": event.AutoSubmitted,
+	})
+	if err != nil {
+		uc.logger.Error("Failed to render exam submitted confirmation template", zap.Error(err))
+		return err
+	}
+
+	req := domain.EmailRequest{
+		To:      event.CandidateEmail,
+		Subject: fmt.Sprintf("Exam Submitted: %s", event.ExamTitle),
+		Body:    bodyBuffer.String(),
+	}
+
+	if err := uc.mailer.SendEmail(ctx, req); err != nil {
+		uc.logger.Error("Failed to send exam submitted confirmation email", zap.Error(err))
+		return err
+	}
+
+	uc.logger.Info("Successfully sent exam submitted confirmation email", zap.String("email", event.CandidateEmail))
 	return nil
 }
 

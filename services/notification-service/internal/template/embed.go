@@ -66,3 +66,6 @@ var ExamClosedCandidateEmail string
 
 //go:embed candidate_invitation_email.html
 var CandidateInvitationEmail string
+
+//go:embed exam_submitted_confirmation.html
+var ExamSubmittedConfirmationEmail string
