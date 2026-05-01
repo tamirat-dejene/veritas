@@ -2,7 +2,7 @@
 <section class="section" data-service="candidate">
     <div class="section-header">
         <h2>Exam Candidate & Sessions</h2>
-        <span class="section-count">29 endpoints</span>
+        <span class="section-count">31 endpoints</span>
     </div>
     <div class="endpoint-list">
         <!-- Candidates -->
@@ -26,6 +26,12 @@
             <span class="badge badge-admin">EnterpriseAdmin</span>
         </endpoint-item>
         <endpoint-item method="PATCH" path="/candidates/:candidateId/deactivate">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+        </endpoint-item>
+        <endpoint-item method="PATCH" path="/candidates/:candidateId/activate">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+        </endpoint-item>
+        <endpoint-item method="DELETE" path="/candidates/:candidateId">
             <span class="badge badge-admin">EnterpriseAdmin</span>
         </endpoint-item>
 

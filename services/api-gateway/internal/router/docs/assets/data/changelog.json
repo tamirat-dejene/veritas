@@ -46,6 +46,16 @@
             "after": "The backend handles Stripe synchronization automatically if the ID is not provided."
           }
         ]
+      },
+      {
+        "type": "new",
+        "service": "candidate",
+        "summary": "Candidate activation and deletion endpoints",
+        "description": "Added new endpoints to fully manage candidate lifecycle. The activate endpoint restores access for deactivated candidates. The delete endpoint performs a permanent hard deletion, cascading to all associated enrollments, sessions, answers, and submissions.",
+        "endpoints": [
+          "PATCH /candidates/:candidateId/activate",
+          "DELETE /candidates/:candidateId"
+        ]
       }
     ]
   },

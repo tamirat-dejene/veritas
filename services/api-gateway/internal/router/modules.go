@@ -146,6 +146,8 @@ func (g *RouterGroup) RegisterCandidateRoutes(proxy http.Handler) {
 	g.register("GET", "/candidates/:candidateId", proxy, staffOrAdmin...)
 	g.register("PATCH", "/candidates/:candidateId", proxy, adminRole...)
 	g.register("PATCH", "/candidates/:candidateId/deactivate", proxy, adminRole...)
+	g.register("PATCH", "/candidates/:candidateId/activate", proxy, adminRole...)
+	g.register("DELETE", "/candidates/:candidateId", proxy, adminRole...)
 
 	// Enrollments
 	g.register("POST", "/exams/:examId/enrollments", proxy, staffOrAdmin...)
