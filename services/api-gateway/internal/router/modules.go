@@ -62,6 +62,7 @@ func (g *RouterGroup) RegisterEnterpriseRoutes(proxy http.Handler) {
 	g.register("PATCH", "/enterprises/:enterpriseId/users/:userId", proxy, allAuth...)
 	g.register("PATCH", "/enterprises/:enterpriseId/users/:userId/deactivate", proxy, entAdmin...)
 	g.register("PATCH", "/enterprises/:enterpriseId/users/:userId/activate", proxy, entAdmin...)
+	g.register("DELETE", "/enterprises/:enterpriseId/users/:userId", proxy, entAdmin...)
 	g.register("POST", "/enterprises/:enterpriseId/users/:userId/reset-password", proxy, entAdmin...)
 	g.register("POST", "/enterprises/:enterpriseId/users/:userId/change-password", proxy, allAuth...)
 }

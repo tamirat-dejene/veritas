@@ -56,6 +56,15 @@
           "PATCH /candidates/:candidateId/activate",
           "DELETE /candidates/:candidateId"
         ]
+      },
+      {
+        "type": "new",
+        "service": "enterprise",
+        "summary": "Enterprise staff deletion",
+        "description": "Enterprise admins can now permanently remove staff members. This operation is implemented as a soft-delete, preserving historical data for audit purposes while revoking all access.",
+        "endpoints": [
+          "DELETE /enterprises/:enterpriseId/users/:userId"
+        ]
       }
     ]
   },
