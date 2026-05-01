@@ -25,6 +25,7 @@ definitions:
     - enterprise.domain_validated
     - user.forgot_password
     - user.password_reset_via_token
+    - user.deleted
     type: string
     x-enum-varnames:
     - EventEnterpriseCreated
@@ -50,6 +51,7 @@ definitions:
     - EventDomainValidated
     - EventUserForgotPassword
     - EventUserPasswordResetViaToken
+    - EventUserDeleted
   AuditLog:
     properties:
       actor_id:
@@ -1159,6 +1161,43 @@ paths:
       tags:
       - user
   /enterprises/{enterpriseId}/users/{userId}:
+    delete:
+      description: Soft delete user account. Only admins can delete users.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: User ID (UUID)
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Delete enterprise user
+      tags:
+      - user
     get:
       description: Get a specific enterprise user by user ID.
       parameters:

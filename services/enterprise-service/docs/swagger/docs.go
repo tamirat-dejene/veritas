@@ -1276,6 +1276,61 @@ const docTemplate = `{
                     }
                 }
             },
+            "delete": {
+                "description": "Soft delete user account. Only admins can delete users.",
+                "tags": [
+                    "user"
+                ],
+                "summary": "Delete enterprise user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Enterprise ID (UUID)",
+                        "name": "enterpriseId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID (UUID)",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Actor user ID (UUID)",
+                        "name": "X-User-ID",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
             "patch": {
                 "description": "Update profile fields for an enterprise user. Admins can update any user and change roles. Non-admins can only update their own profile and cannot change their role.",
                 "consumes": [
@@ -1737,7 +1792,8 @@ const docTemplate = `{
                 "user.password_changed",
                 "enterprise.domain_validated",
                 "user.forgot_password",
-                "user.password_reset_via_token"
+                "user.password_reset_via_token",
+                "user.deleted"
             ],
             "x-enum-varnames": [
                 "EventEnterpriseCreated",
@@ -1762,7 +1818,8 @@ const docTemplate = `{
                 "EventUserPasswordChanged",
                 "EventDomainValidated",
                 "EventUserForgotPassword",
-                "EventUserPasswordResetViaToken"
+                "EventUserPasswordResetViaToken",
+                "EventUserDeleted"
             ]
         },
         "AuditLog": {
