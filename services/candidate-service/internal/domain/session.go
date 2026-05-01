@@ -51,8 +51,6 @@ type ExamSubmission struct {
 	SessionID     uuid.UUID `db:"session_id" json:"sessionId"`
 	SubmittedAt   time.Time `db:"submitted_at" json:"submittedAt"`
 	AutoSubmitted bool      `db:"auto_submitted" json:"autoSubmitted"`
-	TotalScore    *float64  `db:"total_score" json:"totalScore,omitempty"`
-	GradingStatus string    `db:"grading_status" json:"gradingStatus"`
 	CreatedAt     time.Time `db:"created_at" json:"createdAt"`
 }
 
@@ -126,5 +124,4 @@ type MonitoringUseCase interface {
 	GetSessionSummary(ctx context.Context, sessionID uuid.UUID, enterpriseID uuid.UUID) (*ExamSession, error)
 	GetSubmissions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) ([]*ExamSubmission, int64, error)
 	GetSubmissionDetail(ctx context.Context, submissionID uuid.UUID, enterpriseID uuid.UUID) (*ExamSubmission, error)
-	CandidateGetResult(ctx context.Context, sessionID uuid.UUID, candidateID uuid.UUID) (*ExamSubmission, error) // Returns only if grading rules allow
 }
