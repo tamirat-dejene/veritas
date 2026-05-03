@@ -30,15 +30,15 @@ type LoginOutput struct {
 
 // LoginUseCase orchestrates user authentication with security auditing.
 type LoginUseCase struct {
-	pool             *pgxpool.Pool
-	enterpriseServiceClient  domain.EnterpriseServiceClient
-	refreshTokenRepo domain.RefreshTokenRepository
-	jwtService       domain.TokenService
-	refreshService   domain.TokenService
-	accessTokenTTL   time.Duration
-	refreshTokenTTL  time.Duration
-	eventPublisher   domain.EventPublisher
-	log              *zap.Logger
+	pool                    *pgxpool.Pool
+	enterpriseServiceClient domain.EnterpriseServiceClient
+	refreshTokenRepo        domain.RefreshTokenRepository
+	jwtService              domain.TokenService
+	refreshService          domain.TokenService
+	accessTokenTTL          time.Duration
+	refreshTokenTTL         time.Duration
+	eventPublisher          domain.EventPublisher
+	log                     *zap.Logger
 }
 
 // NewLoginUseCase creates a new LoginUseCase.
@@ -54,15 +54,15 @@ func NewLoginUseCase(
 	log *zap.Logger,
 ) *LoginUseCase {
 	return &LoginUseCase{
-		pool:             pool,
-		enterpriseServiceClient:  enterpriseServiceClient,
-		refreshTokenRepo: refreshTokenRepo,
-		jwtService:       jwtService,
-		refreshService:   refreshService,
-		accessTokenTTL:   accessTokenTTL,
-		refreshTokenTTL:  refreshTokenTTL,
-		eventPublisher:   eventPublisher,
-		log:              log,
+		pool:                    pool,
+		enterpriseServiceClient: enterpriseServiceClient,
+		refreshTokenRepo:        refreshTokenRepo,
+		jwtService:              jwtService,
+		refreshService:          refreshService,
+		accessTokenTTL:          accessTokenTTL,
+		refreshTokenTTL:         refreshTokenTTL,
+		eventPublisher:          eventPublisher,
+		log:                     log,
 	}
 }
 
@@ -105,7 +105,6 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
 		l.Warn("invalid password attempt", zap.String("userId", user.ID.String()))
 
-		// Handle Login Failure (increment count, potentially lock)
 		var lockUntil *time.Time
 		if user.FailedLoginAttempts+1 >= 5 {
 			lockTime := time.Now().Add(15 * time.Minute)
@@ -114,9 +113,11 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 		}
 
 		user.FailedLoginAttempts += 1
-		if errUpdate := uc.enterpriseServiceClient.UpdateLoginFailure(ctx, user.ID, lockUntil, user.FailedLoginAttempts); errUpdate != nil {
-			l.Error("failed to update login failure stats", zap.Error(errUpdate))
-		}
+		go func() {
+			if errUpdate := uc.enterpriseServiceClient.UpdateLoginFailure(context.Background(), user.ID, lockUntil, user.FailedLoginAttempts); errUpdate != nil {
+				l.Error("failed to update login failure stats", zap.Error(errUpdate))
+			}
+		}()
 
 		return nil, domain.ErrInvalidCredentials
 	}
@@ -133,17 +134,11 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 		return nil, fmt.Errorf("LoginUseCase.Execute: GenerateRefreshToken: %w", err)
 	}
 
-	// 8 & 9 are combined into a transaction for ATOMICITY.
+	// 8. Persist refresh token hash.
 	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
-		// 8. Persist refresh token hash.
 		rt := domain.NewRefreshToken(user.ID, tokenHash, uc.refreshTokenTTL)
 		if err := uc.refreshTokenRepo.WithTx(tx).Create(ctx, rt); err != nil {
 			return fmt.Errorf("create refresh token: %w", err)
-		}
-
-		// 9. Update Login Audit Stats.
-		if err := uc.enterpriseServiceClient.UpdateLoginSuccess(ctx, user.ID, input.IP, input.UserAgent); err != nil {
-			return fmt.Errorf("update login success stats: %w", err)
 		}
 		return nil
 	}); err != nil {
@@ -153,8 +148,12 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 
 	l.Info("user logged in successfully", zap.String("userId", user.ID.String()))
 
-	// 10. Publish Login Event (Fire and Forget or handle as secondary)
+	// 9. Update Login Audit Stats & Publish Login Event
 	go func() {
+		if err := uc.enterpriseServiceClient.UpdateLoginSuccess(context.Background(), user.ID, input.IP, input.UserAgent); err != nil {
+			l.Error("failed to update login success stats", zap.Error(err))
+		}
+
 		if err := uc.eventPublisher.PublishLogin(context.Background(), user.ID, user.Email); err != nil {
 			l.Error("failed to publish login event", zap.Error(err))
 		}
