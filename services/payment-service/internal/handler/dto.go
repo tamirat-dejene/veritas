@@ -1,6 +1,10 @@
 package handler
 
-import "time"
+import (
+	"time"
+
+	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
+)
 
 // ErrorResponse is the standard error payload for this service.
 type ErrorResponse struct {
@@ -34,27 +38,27 @@ type AdminSetSubscriptionRequest struct {
 }
 
 type CreatePlanRequest struct {
-	Name          string         `json:"name" binding:"required"`
-	Slug          string         `json:"slug" binding:"required"`
-	Description   string         `json:"description"`
-	Price         float64        `json:"price" binding:"required"`
-	Currency      string         `json:"currency" binding:"required"`
-	BillingCycle  string         `json:"billing_cycle" binding:"required"`
-	Features      map[string]any `json:"features"`
-	StripePriceID string         `json:"stripe_price_id"`
-	IsActive      bool           `json:"is_active"`
+	Name          string              `json:"name" binding:"required"`
+	Slug          string              `json:"slug" binding:"required"`
+	Description   string              `json:"description"`
+	Price         float64             `json:"price" binding:"required"`
+	Currency      string              `json:"currency" binding:"required"`
+	BillingCycle  domain.BillingCycle `json:"billing_cycle" binding:"required"`
+	Features      map[string]any      `json:"features"`
+	StripePriceID string              `json:"stripe_price_id"`
+	IsActive      bool                `json:"is_active"`
 }
 
 type UpdatePlanRequest struct {
-	Name          *string         `json:"name"`
-	Slug          *string         `json:"slug"`
-	Description   *string         `json:"description"`
-	Price         *float64        `json:"price"`
-	Currency      *string         `json:"currency"`
-	BillingCycle  *string         `json:"billing_cycle"`
-	Features      map[string]any  `json:"features"`
-	StripePriceID *string         `json:"stripe_price_id"`
-	IsActive      *bool           `json:"is_active"`
+	Name          *string              `json:"name"`
+	Slug          *string              `json:"slug"`
+	Description   *string              `json:"description"`
+	Price         *float64             `json:"price"`
+	Currency      *string              `json:"currency"`
+	BillingCycle  *domain.BillingCycle `json:"billing_cycle"`
+	Features      map[string]any       `json:"features"`
+	StripePriceID *string              `json:"stripe_price_id"`
+	IsActive      *bool                `json:"is_active"`
 }
 
 // RefundRequest is the request body for refunding an invoice.

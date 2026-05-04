@@ -9,8 +9,8 @@ import (
 type BillingCycle string
 
 const (
-	BillingCycleMonthly BillingCycle = "monthly"
-	BillingCycleYearly  BillingCycle = "yearly"
+	BillingCycleMonthly BillingCycle = "month"
+	BillingCycleYearly  BillingCycle = "year"
 )
 
 type Currency string

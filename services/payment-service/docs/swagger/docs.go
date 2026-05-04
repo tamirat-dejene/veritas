@@ -985,8 +985,8 @@ const docTemplate = `{
         "BillingCycle": {
             "type": "string",
             "enum": [
-                "monthly",
-                "yearly"
+                "month",
+                "year"
             ],
             "x-enum-varnames": [
                 "BillingCycleMonthly",
@@ -1309,7 +1309,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "billing_cycle": {
-                    "type": "string"
+                    "$ref": "#/definitions/BillingCycle"
                 },
                 "currency": {
                     "type": "string"
@@ -1379,7 +1379,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "billing_cycle": {
-                    "type": "string"
+                    "$ref": "#/definitions/BillingCycle"
                 },
                 "currency": {
                     "type": "string"

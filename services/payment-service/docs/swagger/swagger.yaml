@@ -2,8 +2,8 @@ basePath: /
 definitions:
   BillingCycle:
     enum:
-    - monthly
-    - yearly
+    - month
+    - year
     type: string
     x-enum-varnames:
     - BillingCycleMonthly
@@ -224,7 +224,7 @@ definitions:
   CreatePlanRequest:
     properties:
       billing_cycle:
-        type: string
+        $ref: '#/definitions/BillingCycle'
       currency:
         type: string
       description:
@@ -276,7 +276,7 @@ definitions:
   UpdatePlanRequest:
     properties:
       billing_cycle:
-        type: string
+        $ref: '#/definitions/BillingCycle'
       currency:
         type: string
       description:
