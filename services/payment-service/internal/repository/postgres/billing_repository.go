@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
@@ -45,7 +46,14 @@ func (r *billingRepository) CreateInvoice(ctx context.Context, i *domain.Invoice
 		i.AmountRemaining, i.Currency, i.DueDate, i.PaidAt, i.HostedInvoiceURL,
 		i.InvoicePDFURL, i.CreatedAt, i.UpdatedAt,
 	)
-	return err
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return domain.ErrInvoiceAlreadyExists
+		}
+		return err
+	}
+	return nil
 }
 
 func (r *billingRepository) GetInvoiceByID(ctx context.Context, id uuid.UUID) (*domain.Invoice, error) {
@@ -121,10 +129,16 @@ func (r *billingRepository) UpdateInvoice(ctx context.Context, i *domain.Invoice
 		WHERE id = $6
 	`
 	i.UpdatedAt = time.Now()
-	_, err := r.db.Exec(ctx, query,
+	cmd, err := r.db.Exec(ctx, query,
 		i.Status, i.AmountPaid, i.AmountRemaining, i.PaidAt, i.UpdatedAt, i.ID,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+	if cmd.RowsAffected() == 0 {
+		return domain.ErrInvoiceNotFound
+	}
+	return nil
 }
 
 func (r *billingRepository) WithTx(tx pgx.Tx) domain.BillingRepository {
@@ -149,7 +163,14 @@ func (r *billingRepository) CreatePayment(ctx context.Context, p *domain.Payment
 		p.ID, p.EnterpriseID, p.InvoiceID, p.Amount, p.Currency, p.Status, p.PaymentMethodType,
 		p.Provider, p.ProviderPaymentID, p.ProviderErrorCode, p.ProviderErrorMessage, p.Notes, p.CreatedAt,
 	)
-	return err
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return domain.ErrPaymentAlreadyExists
+		}
+		return err
+	}
+	return nil
 }
 
 func (r *billingRepository) GetPaymentByInvoiceID(ctx context.Context, invoiceID uuid.UUID) (*domain.Payment, error) {

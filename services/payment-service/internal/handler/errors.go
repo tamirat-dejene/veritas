@@ -19,14 +19,22 @@ func mapDomainError(err error) httpError {
 	switch {
 	case errors.Is(err, domain.ErrPlanNotFound):
 		return httpError{http.StatusNotFound, "subscription plan not found"}
+	case errors.Is(err, domain.ErrPlanAlreadyExists):
+		return httpError{http.StatusConflict, "subscription plan with this name or slug already exists"}
 	case errors.Is(err, domain.ErrSubscriptionNotFound):
 		return httpError{http.StatusNotFound, "subscription not found"}
+	case errors.Is(err, domain.ErrSubscriptionAlreadyExists):
+		return httpError{http.StatusConflict, "subscription for this enterprise already exists"}
 	case errors.Is(err, domain.ErrSubscriptionAlreadyCanceled):
 		return httpError{http.StatusConflict, "subscription is already canceled"}
 	case errors.Is(err, domain.ErrInvoiceNotFound):
 		return httpError{http.StatusNotFound, "invoice not found"}
+	case errors.Is(err, domain.ErrInvoiceAlreadyExists):
+		return httpError{http.StatusConflict, "invoice with this number already exists"}
 	case errors.Is(err, domain.ErrPaymentNotFound):
 		return httpError{http.StatusNotFound, "payment not found"}
+	case errors.Is(err, domain.ErrPaymentAlreadyExists):
+		return httpError{http.StatusConflict, "payment with this provider ID already exists"}
 	case errors.Is(err, domain.ErrPaymentFailed):
 		return httpError{http.StatusPaymentRequired, "payment processing failed"}
 	case errors.Is(err, domain.ErrInvalidInput):

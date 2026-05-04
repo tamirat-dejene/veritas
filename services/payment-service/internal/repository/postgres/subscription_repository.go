@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
@@ -175,7 +176,14 @@ func (r *subscriptionRepository) CreateSubscription(ctx context.Context, s *doma
 		s.CancelAtPeriodEnd, s.CanceledAt, s.EndedAt, s.StripeCustomerID, s.StripeSubscriptionID,
 		s.CreatedAt, s.UpdatedAt,
 	)
-	return err
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return domain.ErrSubscriptionAlreadyExists
+		}
+		return err
+	}
+	return nil
 }
 
 func (r *subscriptionRepository) UpdateSubscription(ctx context.Context, s *domain.EnterpriseSubscription) error {
@@ -187,12 +195,18 @@ func (r *subscriptionRepository) UpdateSubscription(ctx context.Context, s *doma
 		WHERE id = $11
 	`
 	s.UpdatedAt = time.Now()
-	_, err := r.db.Exec(ctx, query,
+	cmd, err := r.db.Exec(ctx, query,
 		s.PlanID, s.Status, s.CurrentPeriodStart, s.CurrentPeriodEnd,
 		s.CancelAtPeriodEnd, s.CanceledAt, s.EndedAt,
 		s.StripeCustomerID, s.StripeSubscriptionID, s.UpdatedAt, s.ID,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+	if cmd.RowsAffected() == 0 {
+		return domain.ErrSubscriptionNotFound
+	}
+	return nil
 }
 
 func (r *subscriptionRepository) CreatePlan(ctx context.Context, p *domain.SubscriptionPlan) error {
@@ -211,7 +225,14 @@ func (r *subscriptionRepository) CreatePlan(ctx context.Context, p *domain.Subsc
 	_, err := r.db.Exec(ctx, query,
 		p.ID, p.Name, p.Slug, p.Description, p.Price, p.Currency, p.BillingCycle, p.Features, p.StripePriceID, p.IsActive, p.CreatedAt, p.UpdatedAt,
 	)
-	return err
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return domain.ErrPlanAlreadyExists
+		}
+		return err
+	}
+	return nil
 }
 
 func (r *subscriptionRepository) UpdatePlan(ctx context.Context, p *domain.SubscriptionPlan) error {
@@ -222,10 +243,20 @@ func (r *subscriptionRepository) UpdatePlan(ctx context.Context, p *domain.Subsc
 		WHERE id = $11
 	`
 	p.UpdatedAt = time.Now()
-	_, err := r.db.Exec(ctx, query,
+	cmd, err := r.db.Exec(ctx, query,
 		p.Name, p.Slug, p.Description, p.Price, p.Currency, p.BillingCycle, p.Features, p.StripePriceID, p.IsActive, p.UpdatedAt, p.ID,
 	)
-	return err
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return domain.ErrPlanAlreadyExists
+		}
+		return err
+	}
+	if cmd.RowsAffected() == 0 {
+		return domain.ErrPlanNotFound
+	}
+	return nil
 }
 
 func (r *subscriptionRepository) WithTx(tx pgx.Tx) domain.SubscriptionRepository {
