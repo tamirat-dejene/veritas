@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stripe/stripe-go/v74"
+	"github.com/stripe/stripe-go/v85"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 	"go.uber.org/zap"
@@ -610,7 +610,7 @@ func (u *paymentUsecase) RefundPayment(ctx context.Context, invoiceID uuid.UUID,
 
 		refundPayment := &domain.Payment{
 			ID:                uuid.New(),
-			EnterpriseID:     inv.EnterpriseID,
+			EnterpriseID:      inv.EnterpriseID,
 			InvoiceID:         &inv.ID,
 			Amount:            -amount,
 			Currency:          inv.Currency,
@@ -655,7 +655,7 @@ func (u *paymentUsecase) GetBillingSummary(ctx context.Context, enterpriseID uui
 		if !sub.CurrentPeriodEnd.IsZero() {
 			summary.NextBillingDate = &sub.CurrentPeriodEnd
 		}
-		
+
 		plan, err := u.subRepo.GetPlanByID(ctx, sub.PlanID)
 		if err == nil && plan != nil {
 			summary.ActivePlanName = plan.Name
