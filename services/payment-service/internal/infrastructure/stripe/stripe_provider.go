@@ -5,26 +5,21 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	stripego "github.com/stripe/stripe-go/v74"
-	"github.com/stripe/stripe-go/v74/checkout/session"
-	"github.com/stripe/stripe-go/v74/price"
-	"github.com/stripe/stripe-go/v74/refund"
-	stripesubscription "github.com/stripe/stripe-go/v74/subscription"
-	"github.com/stripe/stripe-go/v74/webhook"
+	stripego "github.com/stripe/stripe-go/v85"
+	"github.com/stripe/stripe-go/v85/webhook"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
 )
 
 type stripeProvider struct {
-	secretKey     string
+	client        *stripego.Client
 	webhookSecret string
 	successURL    string
 	cancelURL     string
 }
 
 func NewStripeProvider(secretKey, webhookSecret, successURL, cancelURL string) domain.PaymentProvider {
-	stripego.Key = secretKey
 	return &stripeProvider{
-		secretKey:     secretKey,
+		client:        stripego.NewClient(secretKey),
 		webhookSecret: webhookSecret,
 		successURL:    successURL,
 		cancelURL:     cancelURL,
@@ -32,11 +27,11 @@ func NewStripeProvider(secretKey, webhookSecret, successURL, cancelURL string) d
 }
 
 func (p *stripeProvider) CreateCheckoutSession(ctx context.Context, enterpriseID uuid.UUID, plan *domain.SubscriptionPlan, stripeCustomerID *string) (string, error) {
-	params := &stripego.CheckoutSessionParams{
+	params := &stripego.CheckoutSessionCreateParams{
 		SuccessURL: stripego.String(p.successURL),
 		CancelURL:  stripego.String(p.cancelURL),
 		Mode:       stripego.String(string(stripego.CheckoutSessionModeSubscription)),
-		LineItems: []*stripego.CheckoutSessionLineItemParams{
+		LineItems: []*stripego.CheckoutSessionCreateLineItemParams{
 			{
 				Price:    stripego.String(plan.StripePriceID),
 				Quantity: stripego.Int64(1),
@@ -53,7 +48,7 @@ func (p *stripeProvider) CreateCheckoutSession(ctx context.Context, enterpriseID
 		params.Customer = stripego.String(*stripeCustomerID)
 	}
 
-	s, err := session.New(params)
+	s, err := p.client.V1CheckoutSessions.Create(ctx, params)
 	if err != nil {
 		return "", fmt.Errorf("failed to create stripe session: %w", err)
 	}
@@ -71,18 +66,18 @@ func (p *stripeProvider) ConstructEvent(payload []byte, sigHeader string) (any, 
 
 // CancelStripeSubscription cancels a Stripe subscription.
 // When cancelAtPeriodEnd is true, the subscription stays active until billing period ends.
-func (p *stripeProvider) CancelStripeSubscription(_ context.Context, stripeSubscriptionID string, cancelAtPeriodEnd bool) error {
+func (p *stripeProvider) CancelStripeSubscription(ctx context.Context, stripeSubscriptionID string, cancelAtPeriodEnd bool) error {
 	if cancelAtPeriodEnd {
-		params := &stripego.SubscriptionParams{
+		params := &stripego.SubscriptionUpdateParams{
 			CancelAtPeriodEnd: stripego.Bool(true),
 		}
-		_, err := stripesubscription.Update(stripeSubscriptionID, params)
+		_, err := p.client.V1Subscriptions.Update(ctx, stripeSubscriptionID, params)
 		if err != nil {
 			return fmt.Errorf("stripe: schedule cancel at period end: %w", err)
 		}
 		return nil
 	}
-	_, err := stripesubscription.Cancel(stripeSubscriptionID, nil)
+	_, err := p.client.V1Subscriptions.Cancel(ctx, stripeSubscriptionID, nil)
 	if err != nil {
 		return fmt.Errorf("stripe: cancel subscription: %w", err)
 	}
@@ -90,11 +85,11 @@ func (p *stripeProvider) CancelStripeSubscription(_ context.Context, stripeSubsc
 }
 
 // ReactivateStripeSubscription removes a pending period-end cancellation.
-func (p *stripeProvider) ReactivateStripeSubscription(_ context.Context, stripeSubscriptionID string) error {
-	params := &stripego.SubscriptionParams{
+func (p *stripeProvider) ReactivateStripeSubscription(ctx context.Context, stripeSubscriptionID string) error {
+	params := &stripego.SubscriptionUpdateParams{
 		CancelAtPeriodEnd: stripego.Bool(false),
 	}
-	_, err := stripesubscription.Update(stripeSubscriptionID, params)
+	_, err := p.client.V1Subscriptions.Update(ctx, stripeSubscriptionID, params)
 	if err != nil {
 		return fmt.Errorf("stripe: reactivate subscription: %w", err)
 	}
@@ -102,16 +97,16 @@ func (p *stripeProvider) ReactivateStripeSubscription(_ context.Context, stripeS
 }
 
 // RefundStripePayment refunds a Stripe payment (Charge or PaymentIntent).
-func (p *stripeProvider) RefundStripePayment(_ context.Context, stripePaymentID string, amount float64) error {
+func (p *stripeProvider) RefundStripePayment(ctx context.Context, stripePaymentID string, amount float64) error {
 	// Stripe expects the refund amount in cents
 	amountCents := int64(amount * 100)
 
-	params := &stripego.RefundParams{
+	params := &stripego.RefundCreateParams{
 		PaymentIntent: stripego.String(stripePaymentID),
 		Amount:        stripego.Int64(amountCents),
 	}
 
-	_, err := refund.New(params)
+	_, err := p.client.V1Refunds.Create(ctx, params)
 	if err != nil {
 		return fmt.Errorf("stripe: refund payment: %w", err)
 	}
@@ -119,16 +114,16 @@ func (p *stripeProvider) RefundStripePayment(_ context.Context, stripePaymentID 
 	return nil
 }
 
-func (p *stripeProvider) SyncPlanToStripe(_ context.Context, plan *domain.SubscriptionPlan) (string, error) {
+func (p *stripeProvider) SyncPlanToStripe(ctx context.Context, plan *domain.SubscriptionPlan) (string, error) {
 	unitAmount := int64(plan.Price * 100)
 
-	params := &stripego.PriceParams{
+	params := &stripego.PriceCreateParams{
 		UnitAmount: stripego.Int64(unitAmount),
 		Currency:   stripego.String(string(plan.Currency)),
-		Recurring: &stripego.PriceRecurringParams{
+		Recurring: &stripego.PriceCreateRecurringParams{
 			Interval: stripego.String(string(plan.BillingCycle)),
 		},
-		ProductData: &stripego.PriceProductDataParams{
+		ProductData: &stripego.PriceCreateProductDataParams{
 			Name: stripego.String(plan.Name),
 			Metadata: map[string]string{
 				"plan_slug": plan.Slug,
@@ -136,7 +131,7 @@ func (p *stripeProvider) SyncPlanToStripe(_ context.Context, plan *domain.Subscr
 		},
 	}
 
-	newPrice, err := price.New(params)
+	newPrice, err := p.client.V1Prices.Create(ctx, params)
 	if err != nil {
 		return "", fmt.Errorf("failed to create stripe price: %w", err)
 	}
@@ -144,11 +139,11 @@ func (p *stripeProvider) SyncPlanToStripe(_ context.Context, plan *domain.Subscr
 	return newPrice.ID, nil
 }
 
-func (p *stripeProvider) DeactivateStripePrice(_ context.Context, stripePriceID string) error {
-	params := &stripego.PriceParams{
+func (p *stripeProvider) DeactivateStripePrice(ctx context.Context, stripePriceID string) error {
+	params := &stripego.PriceUpdateParams{
 		Active: stripego.Bool(false),
 	}
-	_, err := price.Update(stripePriceID, params)
+	_, err := p.client.V1Prices.Update(ctx, stripePriceID, params)
 	if err != nil {
 		return fmt.Errorf("failed to deactivate stripe price: %w", err)
 	}
