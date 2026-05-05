@@ -115,7 +115,7 @@ func (uc *sessionUseCase) StartSession(ctx context.Context, enrollmentID, enterp
 	}
 
 	// 2. Snapshot questions
-	questionsMeta, err := uc.examClient.GetExamQuestions(examCtx, e.ExamID)
+	questionsMeta, err := uc.examClient.GetExamQuestions(examCtx, e.ExamID, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch question snapshot: %v", err)
 	}
@@ -160,9 +160,7 @@ func (uc *sessionUseCase) StartSession(ctx context.Context, enrollmentID, enterp
 
 			points := 0
 			negativePoints := 0.0
-			if eq.PointsOverride != nil {
-				points = *eq.PointsOverride
-			} else if eq.Question != nil {
+			if eq.Question != nil {
 				points = eq.Question.Points
 				negativePoints = eq.Question.NegativePoints
 			}
@@ -380,12 +378,21 @@ func (uc *sessionUseCase) SubmitExam(ctx context.Context, sessionID uuid.UUID, c
 		}
 	}
 
+	// Publish ready for grading event asynchronously to avoid blocking
+	go uc.publishReadyForGradingEvent(context.Background(), session)
+
 	return submission, nil
 }
 
 func (uc *sessionUseCase) TerminateSession(ctx context.Context, sessionID uuid.UUID, enterpriseID uuid.UUID, reason string) error {
 	if err := uc.sessionRepo.UpdateSessionStatus(ctx, sessionID, domain.SessionTerminated, &reason); err != nil {
 		return err
+	}
+	
+	// Fetch session to publish the event
+	session, err := uc.sessionRepo.GetSessionByID(ctx, sessionID, enterpriseID)
+	if err == nil {
+		go uc.publishReadyForGradingEvent(context.Background(), session)
 	}
 	return nil
 }
@@ -396,4 +403,128 @@ func (uc *sessionUseCase) ForceExpireSession(ctx context.Context, sessionID uuid
 		return err
 	}
 	return nil
+}
+
+func (uc *sessionUseCase) publishReadyForGradingEvent(ctx context.Context, session *domain.ExamSession) {
+	// 1. Fetch Master Questions from Exam Service (with true evaluation criteria)
+	examCtx := logger.SetEnterpriseID(ctx, session.EnterpriseID.String())
+	masterQuestions, err := uc.examClient.GetExamQuestions(examCtx, session.ExamID, true)
+	if err != nil {
+		fmt.Printf("failed to fetch master questions for grading event: %v\n", err)
+		return
+	}
+
+	masterQMap := make(map[uuid.UUID]sdomain.ExamQuestion)
+	for _, q := range masterQuestions {
+		masterQMap[q.QuestionID] = q
+	}
+
+	// 2. Fetch Session Questions (to link SessionQuestionID to QuestionID and get runtime points)
+	sessionQuestions, err := uc.sessionRepo.GetSessionQuestions(ctx, session.ID)
+	if err != nil {
+		fmt.Printf("failed to fetch session questions for grading event: %v\n", err)
+		return
+	}
+
+	// 3. Fetch Candidate Answers
+	answers, err := uc.sessionRepo.GetSessionAnswers(ctx, session.ID)
+	if err != nil {
+		fmt.Printf("failed to fetch answers for grading event: %v\n", err)
+		return
+	}
+
+	answerMap := make(map[uuid.UUID]domain.SessionAnswer)
+	for _, a := range answers {
+		answerMap[a.SessionQuestionID] = a
+	}
+
+	// 4. Construct Grading Items
+	gradingItems := make([]domain.GradingItem, 0, len(sessionQuestions))
+	for _, sq := range sessionQuestions {
+		mq, ok := masterQMap[sq.QuestionID]
+		if !ok || mq.Question == nil {
+			fmt.Printf("warning: master question not found for session question %s\n", sq.ID)
+			continue
+		}
+		item := domain.GradingItem{
+			QuestionID:         sq.QuestionID,
+			SessionQuestionID:  sq.ID,
+			QuestionType:       string(mq.Question.Type),
+			Content:            mq.Question.Content,
+			Title:              mq.Question.Title,
+			Topic:              mq.Question.Topic,
+			MediaURL:           mq.Question.MediaURL,
+			Points:             sq.Points,
+			NegativePoints:     sq.NegativePoints,
+			ExpectedAnswer:     mq.Question.ExpectedAnswer,
+			EvaluationCriteria: mq.Question.EvaluationCriteria,
+		}
+
+		// Extract correct option IDs if applicable
+		var correctOptionIDs []uuid.UUID
+		for _, opt := range mq.Question.Options {
+			if opt.IsCorrect {
+				correctOptionIDs = append(correctOptionIDs, opt.ID)
+			}
+		}
+		if len(correctOptionIDs) > 0 {
+			item.CorrectOptionIDs = correctOptionIDs
+		}
+
+		// Attach candidate answer
+		if a, hasAns := answerMap[sq.ID]; hasAns {
+			item.HasAnswer = true
+			var ansData domain.CandidateAnswerData
+			if err := json.Unmarshal(a.AnswerData, &ansData); err == nil {
+				item.CandidateAnswer = &ansData
+			} else {
+				fmt.Printf("warning: failed to unmarshal answer data for session question %s: %v\n", sq.ID, err)
+			}
+		} else {
+			item.HasAnswer = false
+		}
+
+		gradingItems = append(gradingItems, item)
+	}
+
+	// Retrieve auto-submitted flag if submission exists
+	autoSubmitted := false
+	sub, err := uc.sessionRepo.GetSubmissionBySession(ctx, session.ID, session.EnterpriseID)
+	if err == nil && sub != nil {
+		autoSubmitted = sub.AutoSubmitted
+	}
+
+	// 5. Construct Event
+	event := domain.ExamReadyForGradingEvent{
+		EventID:           uuid.New(),
+		EventType:         "exam.session.ready_for_grading",
+		Version:           "2.0",
+		Timestamp:         time.Now(),
+		EnterpriseID:      session.EnterpriseID,
+		ExamID:            session.ExamID,
+		SessionID:         session.ID,
+		CandidateID:       session.CandidateID,
+		EnrollmentID:      session.EnrollmentID,
+		Status:            string(session.Status),
+		StartedAt:         session.StartedAt,
+		SubmittedAt:       session.SubmittedAt,
+		TerminatedAt:      session.TerminatedAt,
+		AutoSubmitted:     autoSubmitted,
+		TerminationReason: session.TerminationReason,
+		Items:             gradingItems,
+	}
+
+	payload, err := json.Marshal(event)
+	if err == nil {
+		msg := messaging.Message{
+			Topic: topics.CandidateExamReadyForGrading,
+			Key:   []byte(session.ID.String()),
+			Value: payload,
+		}
+		if err := uc.publisher.Publish(ctx, msg); err != nil {
+			fmt.Printf("failed to publish grading event: %v\n", err)
+		}
+	} else {
+		fmt.Printf("failed to marshal grading event: %v\n", err)
+	}
 }
