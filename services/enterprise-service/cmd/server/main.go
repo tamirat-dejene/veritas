@@ -41,6 +41,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/tamirat-dejene/veritas/shared/pkg/storage/cloudinary"
+
 	// Import generated swagger docs so the spec is registered at startup.
 	_ "github.com/tamirat-dejene/veritas/services/enterprise-service/docs/swagger"
 )
@@ -92,9 +94,18 @@ func main() {
 	payClient := client.NewPaymentClient(cfg.PaymentServiceURL)
 	examClient := client.NewExamClient(cfg.ExamServiceURL)
 	candidateClient := client.NewCandidateClient(cfg.CandidateServiceURL)
+	logoStorage, err := cloudinary.NewCloudinaryStorage(
+		cfg.CloudinaryCloudName,
+		cfg.CloudinaryAPIKey,
+		cfg.CloudinaryAPISecret,
+		cfg.CloudinaryLogosFolder,
+	)
+	if err != nil {
+		log.Fatal("failed to initialize cloudinary storage", zap.Error(err))
+	}
 
 	// 7. Initialize Usecases
-	enterpriseUC := usecase.NewEnterpriseUsecase(pool, userRepo, enterpriseRepo, auditRepo, eventPublisher, payClient, examClient, candidateClient)
+	enterpriseUC := usecase.NewEnterpriseUsecase(pool, userRepo, enterpriseRepo, auditRepo, eventPublisher, payClient, examClient, candidateClient, logoStorage)
 	userUC := usecase.NewUserUsecase(pool, userRepo, enterpriseRepo, auditRepo, eventPublisher, passwordResetRepo, cfg.FrontendBaseURL)
 
 	// 8. Initialize Handlers
