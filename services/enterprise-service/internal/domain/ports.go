@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"io"
 	"time"
 
 	"github.com/google/uuid"
@@ -69,6 +70,7 @@ type EnterpriseUsecase interface {
 
 	// Branding & Settings
 	UpdateBranding(ctx context.Context, id uuid.UUID, req UpdateBrandingRequest, adminID uuid.UUID) error
+	UploadLogo(ctx context.Context, id uuid.UUID, fileName string, content io.Reader, adminID uuid.UUID) (string, error)
 	UpdateSettings(ctx context.Context, id uuid.UUID, patch map[string]interface{}, adminID uuid.UUID) error
 
 	// Lifecycle & Governance
@@ -130,4 +132,9 @@ type ExamClient interface {
 
 type CandidateClient interface {
 	GetActiveSessionsCount(ctx context.Context, enterpriseID uuid.UUID) (int, error)
+}
+
+type FileStorage interface {
+	Upload(ctx context.Context, fileName string, content io.Reader) (string, error)
+	Delete(ctx context.Context, fileID string) error
 }

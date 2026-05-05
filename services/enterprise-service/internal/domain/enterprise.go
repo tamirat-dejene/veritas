@@ -16,7 +16,6 @@ type EnterpriseFilter struct {
 
 // UpdateBrandingRequest carries the allowed branding fields.
 type UpdateBrandingRequest struct {
-	LogoURL        *string `json:"logo_url"`
 	PrimaryColor   *string `json:"primary_color"`
 	SecondaryColor *string `json:"secondary_color"`
 }
