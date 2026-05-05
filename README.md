@@ -18,7 +18,6 @@ The system consists of the following microservices:
 - **Proctoring Service**: AI-based monitoring (FastAPI).
 - **Grading Service**: Automated grading using ML.
 - **Reporting Service**: Dashboard and analytics generation.
-- **Face Verification Service**: Auxiliary identity verification.
 
 ## Getting Started
 
@@ -66,7 +65,6 @@ Notes:
 | Proctoring Service | 8086 |
 | Grading Service | 8087 |
 | Reporting Service | 8088 |
-| Face Verification | 8089 |
 | Prometheus | 9090 |
 | Grafana | 3000 |
 

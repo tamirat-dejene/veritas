@@ -21,8 +21,7 @@ This hybrid approach supports independent service evolution, resilience under lo
 
 ### AI/analytics and monitoring services
 
-- **face-verification-service**: enrollment and identity verification signals.
-- **proctoring-service**: suspicious behavior detection and proctoring events.
+- **proctoring-service**: suspicious behavior detection, face verification (identity signals), and proctoring events.
 - **grading-service**: scoring pipelines, grading completion, and final result publishing.
 - **reporting-service**: aggregated operational/assessment reporting from event streams.
 
@@ -58,7 +57,6 @@ flowchart LR
 	CandidateService["candidate-service"]
 	PaymentService["payment-service"]
 
-	FaceService["face-verification-service"]
 	ProctoringService["proctoring-service"]
 	GradingService["grading-service"]
 	ReportingService["reporting-service"]
@@ -73,14 +71,12 @@ flowchart LR
 
 	%% Event Publishing
 	CandidateService -->|SESSION_STARTED SESSION_SUBMITTED SESSION_TERMINATED| Kafka
-	FaceService -->|FACE_REGISTERED IDENTITY_VERIFIED| Kafka
-	ProctoringService -->|PROCTORING_EVENT_DETECTED| Kafka
+	ProctoringService -->|FACE_REGISTERED IDENTITY_VERIFIED PROCTORING_EVENT_DETECTED| Kafka
 	GradingService -->|EXAM_GRADED RESULT_READY| Kafka
 	PaymentService -->|SUBSCRIPTION_UPDATED PAYMENT_FAILED| Kafka
 	EnterpriseService -->|ENTERPRISE_SUSPENDED ENTERPRISE_DELETED| Kafka
 
 	%% Event Consumers
-	Kafka --> FaceService
 	Kafka --> ProctoringService
 	Kafka --> GradingService
 	Kafka --> ReportingService
@@ -88,7 +84,6 @@ flowchart LR
 	Kafka --> EnterpriseService
 
 	%% Cross Domain Reactions
-	FaceService -->|CHEATING_SCORE_UPDATED| Kafka
 	ProctoringService -->|CHEATING_SCORE_UPDATED| Kafka
 	GradingService -->|FINAL_RESULT_PUBLISHED| Kafka
 

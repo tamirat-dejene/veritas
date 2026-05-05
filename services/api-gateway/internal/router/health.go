@@ -72,7 +72,6 @@ func (g *RouterGroup) handleHealthDetail(c *gin.Context, cfg *config.Config) {
 				Type string
 			}{
 				{"Proctoring Service", cfg.ProctoringServiceURL, "http"},
-				{"Face Verification Service", cfg.FaceVerificationServiceURL, "http"},
 				{"Grading Service", cfg.GradingServiceURL, "http"},
 				{"Reporting Service", cfg.ReportingServiceURL, "http"},
 			},
@@ -84,7 +83,6 @@ func (g *RouterGroup) handleHealthDetail(c *gin.Context, cfg *config.Config) {
 				URL  string
 				Type string
 			}{
-				// BUG-09 FIX: Redact DB credentials before exposing in the health page.
 				{"PostgreSQL Database", redactDatabaseURL(cfg.DatabaseURL), "postgres"},
 				{"Redis Cache", cfg.RedisHost + ":" + strconv.Itoa(cfg.RedisPort), "redis"},
 				{"Kafka Broker", func() string {

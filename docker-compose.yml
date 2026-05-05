@@ -233,21 +233,6 @@ services:
     env_file:
       - .env.dev
 
-  face-verification-service:
-    build:
-      context: ./services/face-verification-service
-      dockerfile: ../../infra/docker/dev/python-service.Dockerfile
-      args:
-        SERVICE_NAME: face-verification-service
-    ports:
-      - "8089:8000"
-    volumes:
-      - ./.env.dev:/app/.env.dev
-      - ./services/face-verification-service:/app
-      - ./shared:/app/shared:ro
-    env_file:
-      - .env.dev
-
 volumes:
   postgres_data:
   redis_data:

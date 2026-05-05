@@ -9,7 +9,7 @@ const backToHome = document.getElementById('backToHome');
 
 const serviceGroups = {
     go: ['auth', 'enterprise', 'payment', 'exam', 'candidate', 'notification'],
-    python: ['proctoring', 'face', 'grading', 'reporting'],
+    python: ['proctoring', 'grading', 'reporting'],
     monitoring: ['monitoring'],
 };
 
@@ -21,8 +21,7 @@ const serviceDetails = {
     payment: { description: 'Payment processing service for transactions and subscriptions.', swagger: '/swagger/payment/index.html' },
     exam: { description: 'Core exam engine for creating and managing assessments.', swagger: '/swagger/exam/index.html' },
     candidate: { description: 'Service for managing candidates and their exam schedules.', swagger: '/swagger/candidate/index.html' },
-    proctoring: { description: 'Remote proctoring service for monitoring exam integrity.', swagger: '/swagger/proctoring/index.html' },
-    face: { description: 'Biometric face recognition service for candidate verification.', swagger: '/swagger/face/index.html' },
+    proctoring: { description: 'Remote proctoring and biometric identity verification service.', swagger: '/swagger/proctoring/index.html' },
     grading: { description: 'Automated grading service for exam responses.', swagger: '/swagger/grading/index.html' },
     reporting: { description: 'Analytics and reporting service for exam results.', swagger: '/swagger/reporting/index.html' },
     monitoring: { description: 'Real-time system monitoring and alerting service.', swagger: '/swagger/monitoring/index.html' },

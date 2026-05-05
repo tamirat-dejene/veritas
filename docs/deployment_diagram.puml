@@ -55,10 +55,6 @@ node "Cloud / On-Premise Infrastructure" {
             [Reporting Service] as ReportingService
             database "Reporting DB (PostgreSQL)" as ReportingDB
         }
-        node "Face Verification Node" {
-            [Face Verification Service] as FaceService
-            database "Face DB (PostgreSQL)" as FaceDB
-        }
     }
 }
 
@@ -80,7 +76,6 @@ PaymentService -- PaymentDB
 ProctoringService -- ProctoringDB
 GradingService -- GradingDB
 ReportingService -- ReportingDB
-FaceService -- FaceDB
 
 ' Inter-service comms (Sync)
 AuthService --> EnterpriseService : HTTP
@@ -90,13 +85,11 @@ EnterpriseService --> PaymentService : HTTP
 
 ' Event-Driven (Async via Kafka)
 CandidateService ..> Kafka : publish SESSION events
-FaceService ..> Kafka : publish IDENTITY events
 ProctoringService ..> Kafka : publish PROCTORING events
 GradingService ..> Kafka : publish GRADING events
 PaymentService ..> Kafka : publish PAYMENT events
 EnterpriseService ..> Kafka : publish ENT events
 
-Kafka ..> FaceService : consume
 Kafka ..> ProctoringService : consume
 Kafka ..> GradingService : consume
 Kafka ..> ReportingService : consume

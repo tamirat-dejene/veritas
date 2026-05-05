@@ -185,15 +185,11 @@ func (g *RouterGroup) RegisterCandidateRoutes(proxy http.Handler) {
 // RegisterProctoringRoutes attaches Proctoring Service proxy routes
 func (g *RouterGroup) RegisterProctoringRoutes(proxy http.Handler) {
 	candidateRole := g.candidateAuthChain()
-	g.register("POST", "/proctoring/events", proxy, candidateRole...)
-	g.register("GET", "/proctoring/sessions/:sessionId/events", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
-}
-
-// RegisterFaceVerificationRoutes attaches Face Verification Service proxy routes
-func (g *RouterGroup) RegisterFaceVerificationRoutes(proxy http.Handler) {
 	premiumCandidateBlock := append(g.candidateAuthChain(), middleware.RequireTier(domain.TierEnterprise))
 	g.register("POST", "/face/register", proxy, premiumCandidateBlock...)
 	g.register("POST", "/face/verify", proxy, premiumCandidateBlock...)
+	g.register("POST", "/proctoring/events", proxy, candidateRole...)
+	g.register("GET", "/proctoring/sessions/:sessionId/events", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
 }
 
 // RegisterGradingRoutes attaches Grading Service proxy routes

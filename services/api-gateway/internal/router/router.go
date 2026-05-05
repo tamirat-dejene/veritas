@@ -61,7 +61,6 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 	examCB := infrastructure.NewCircuitBreaker("exam-service", cbSettings)
 	candidateCB := infrastructure.NewCircuitBreaker("candidate-service", cbSettings)
 	proctoringCB := infrastructure.NewCircuitBreaker("proctoring-service", cbSettings)
-	faceCB := infrastructure.NewCircuitBreaker("face-verification-service", cbSettings)
 	gradingCB := infrastructure.NewCircuitBreaker("grading-service", cbSettings)
 	reportingCB := infrastructure.NewCircuitBreaker("reporting-service", cbSettings)
 
@@ -87,10 +86,6 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 		return nil, err
 	}
 	proctoringProxy, err := proxy.NewProxy(cfg.ProctoringServiceURL, proctoringCB, "proctoring-service")
-	if err != nil {
-		return nil, err
-	}
-	faceProxy, err := proxy.NewProxy(cfg.FaceVerificationServiceURL, faceCB, "face-verification-service")
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +118,6 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 	routerGroup.RegisterExamRoutes(examProxy)
 	routerGroup.RegisterCandidateRoutes(candidateProxy)
 	routerGroup.RegisterProctoringRoutes(proctoringProxy)
-	routerGroup.RegisterFaceVerificationRoutes(faceProxy)
 	routerGroup.RegisterGradingRoutes(gradingProxy)
 	routerGroup.RegisterReportingRoutes(reportingProxy)
 

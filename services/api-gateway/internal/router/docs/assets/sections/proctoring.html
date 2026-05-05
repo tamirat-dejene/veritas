@@ -1,8 +1,7 @@
-<!-- Proctoring -->
 <section class="section" data-service="proctoring">
     <div class="section-header">
         <h2>Proctoring</h2>
-        <span class="section-count">2 endpoints</span>
+        <span class="section-count">4 endpoints</span>
     </div>
     <div class="endpoint-list">
         <h3 class="endpoint-group-title">Session Events</h3>
@@ -11,6 +10,16 @@
         </endpoint-item>
         <endpoint-item method="GET" path="/proctoring/sessions/:sessionId/events">
             <span class="badge badge-admin">EnterpriseAdmin</span>
+        </endpoint-item>
+
+        <h3 class="endpoint-group-title">Biometric Operations</h3>
+        <endpoint-item method="POST" path="/face/register">
+            <span class="badge badge-candidate">ExamCandidate</span>
+            <span class="badge badge-premium">Premium</span>
+        </endpoint-item>
+        <endpoint-item method="POST" path="/face/verify">
+            <span class="badge badge-candidate">ExamCandidate</span>
+            <span class="badge badge-premium">Premium</span>
         </endpoint-item>
     </div>
 </section>
