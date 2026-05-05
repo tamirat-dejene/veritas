@@ -72,10 +72,11 @@ func (h *QuestionHandler) CreateQuestion(c *gin.Context) {
 		Title:          req.Title,
 		Content:        req.Content,
 		MediaURL:       req.MediaURL,
-		Points:         req.Points,
-		NegativePoints: req.NegativePoints,
-		Metadata:       req.Metadata,
-		IsActive:       req.IsActive,
+		Points:             req.Points,
+		NegativePoints:     req.NegativePoints,
+		ExpectedAnswer:     req.ExpectedAnswer,
+		EvaluationCriteria: req.EvaluationCriteria,
+		IsActive:           req.IsActive,
 		Options:        options,
 	}
 
@@ -222,10 +223,11 @@ func (h *QuestionHandler) UpdateQuestion(c *gin.Context) {
 		Title:          req.Title,
 		Content:        req.Content,
 		MediaURL:       req.MediaURL,
-		Points:         req.Points,
-		NegativePoints: req.NegativePoints,
-		Metadata:       req.Metadata,
-		IsActive:       req.IsActive,
+		Points:             req.Points,
+		NegativePoints:     req.NegativePoints,
+		ExpectedAnswer:     req.ExpectedAnswer,
+		EvaluationCriteria: req.EvaluationCriteria,
+		IsActive:           req.IsActive,
 		Options:        options,
 	}
 

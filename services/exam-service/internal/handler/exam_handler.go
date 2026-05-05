@@ -482,7 +482,7 @@ func (h *ExamHandler) DeleteExam(c *gin.Context) {
 // AddQuestionsToExam maps multiple questions into an exam.
 //
 //	@Summary		Add questions to exam
-//	@Description	Attach multiple questions to an exam with optional override points and order indices.
+//	@Description	Attach multiple questions to an exam with optional order indices.
 //	@Tags			exam
 //	@Accept			json
 //	@Produce		json
@@ -523,7 +523,6 @@ func (h *ExamHandler) AddQuestionsToExam(c *gin.Context) {
 		}
 		inputs = append(inputs, sdomain.ExamQuestionInput{
 			QuestionID:     qID,
-			PointsOverride: qReq.PointsOverride,
 			OrderIndex:     qReq.OrderIndex,
 		})
 	}
@@ -582,7 +581,7 @@ func (h *ExamHandler) RemoveQuestionFromExam(c *gin.Context) {
 // UpdateExamQuestion updates exam-question mapping details.
 //
 //	@Summary		Update exam question mapping
-//	@Description	Update points override or order index for an exam question mapping.
+//	@Description	Update order index for an exam question mapping.
 //	@Tags			exam
 //	@Accept			json
 //	@Param			X-Enterprise-ID	header	string					true	"Enterprise ID (UUID)"
@@ -621,7 +620,7 @@ func (h *ExamHandler) UpdateExamQuestion(c *gin.Context) {
 		return
 	}
 
-	if err := h.usecase.UpdateExamQuestion(c.Request.Context(), enterpriseID, examID, questionID, req.PointsOverride, req.OrderIndex); err != nil {
+	if err := h.usecase.UpdateExamQuestion(c.Request.Context(), enterpriseID, examID, questionID, req.OrderIndex); err != nil {
 		handleError(c, err)
 		return
 	}
