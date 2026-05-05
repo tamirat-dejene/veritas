@@ -46,7 +46,7 @@ func scanExam(row pgx.Row) (*sdomain.Exam, error) {
 
 func scanExamQuestion(row pgx.Row) (*sdomain.ExamQuestion, error) {
 	var eq sdomain.ExamQuestion
-	err := row.Scan(&eq.ID, &eq.ExamID, &eq.QuestionID, &eq.PointsOverride, &eq.OrderIndex)
+	err := row.Scan(&eq.ID, &eq.ExamID, &eq.QuestionID, &eq.OrderIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -92,8 +92,8 @@ func (r *examRepository) Create(ctx context.Context, e *sdomain.Exam) error {
 			e.Questions[i].ID = uuid.New()
 		}
 		e.Questions[i].ExamID = e.ID
-		_, optErr := r.db.Exec(ctx, `INSERT INTO veritas_exam_questions (id, exam_id, question_id, points_override, order_index) VALUES ($1, $2, $3, $4, $5)`,
-			e.Questions[i].ID, e.Questions[i].ExamID, e.Questions[i].QuestionID, e.Questions[i].PointsOverride, e.Questions[i].OrderIndex)
+		_, optErr := r.db.Exec(ctx, `INSERT INTO veritas_exam_questions (id, exam_id, question_id, order_index) VALUES ($1, $2, $3, $4)`,
+			e.Questions[i].ID, e.Questions[i].ExamID, e.Questions[i].QuestionID, e.Questions[i].OrderIndex)
 		if optErr != nil {
 			return fmt.Errorf("%w: exam question: %v", domain.ErrInternal, optErr)
 		}
@@ -111,7 +111,7 @@ func (r *examRepository) GetByID(ctx context.Context, id uuid.UUID, enterpriseID
 	}
 
 	// Get associated Questions Mapping
-	qRows, err := r.db.Query(ctx, "SELECT id, exam_id, question_id, points_override, order_index FROM veritas_exam_questions WHERE exam_id = $1", id)
+	qRows, err := r.db.Query(ctx, "SELECT id, exam_id, question_id, order_index FROM veritas_exam_questions WHERE exam_id = $1", id)
 	if err == nil {
 		defer qRows.Close()
 		for qRows.Next() {
@@ -216,15 +216,15 @@ func (r *examRepository) CountByEnterpriseAndStatus(ctx context.Context, enterpr
 
 func (r *examRepository) AddQuestions(ctx context.Context, examID uuid.UUID, eqs []*sdomain.ExamQuestion) error {
 	const insertEq = `
-		INSERT INTO veritas_exam_questions (id, exam_id, question_id, points_override, order_index)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO veritas_exam_questions (id, exam_id, question_id, order_index)
+		VALUES ($1, $2, $3, $4)
 	`
 	for _, eq := range eqs {
 		if eq.ID == uuid.Nil {
 			eq.ID = uuid.New()
 		}
 		eq.ExamID = examID
-		_, err := r.db.Exec(ctx, insertEq, eq.ID, eq.ExamID, eq.QuestionID, eq.PointsOverride, eq.OrderIndex)
+		_, err := r.db.Exec(ctx, insertEq, eq.ID, eq.ExamID, eq.QuestionID, eq.OrderIndex)
 		if err != nil {
 			return err
 		}
@@ -241,11 +241,9 @@ func (r *examRepository) GetExamQuestions(ctx context.Context, examID uuid.UUID,
 
 	sortField := params.GetSort()
 	// Map allowed columns for sorting safely
-	if sortField != "points_override" {
-		sortField = "order_index"
-	}
+	sortField = "order_index"
 
-	query := fmt.Sprintf("SELECT id, exam_id, question_id, points_override, order_index FROM veritas_exam_questions WHERE exam_id = $1 ORDER BY %s %s NULLS LAST LIMIT $2 OFFSET $3", sortField, params.GetSortDir())
+	query := fmt.Sprintf("SELECT id, exam_id, question_id, order_index FROM veritas_exam_questions WHERE exam_id = $1 ORDER BY %s %s NULLS LAST LIMIT $2 OFFSET $3", sortField, params.GetSortDir())
 	rows, err := r.db.Query(ctx, query, examID, params.GetLimit(), params.GetOffset())
 	if err != nil {
 		return pagination.PaginatedResponse[*sdomain.ExamQuestion]{}, err
@@ -255,7 +253,7 @@ func (r *examRepository) GetExamQuestions(ctx context.Context, examID uuid.UUID,
 	var eqs []*sdomain.ExamQuestion
 	for rows.Next() {
 		var eq sdomain.ExamQuestion
-		if err := rows.Scan(&eq.ID, &eq.ExamID, &eq.QuestionID, &eq.PointsOverride, &eq.OrderIndex); err != nil {
+		if err := rows.Scan(&eq.ID, &eq.ExamID, &eq.QuestionID, &eq.OrderIndex); err != nil {
 			return pagination.PaginatedResponse[*sdomain.ExamQuestion]{}, err
 		}
 		eqs = append(eqs, &eq)
@@ -279,10 +277,10 @@ func (r *examRepository) RemoveQuestion(ctx context.Context, examID uuid.UUID, q
 func (r *examRepository) UpdateQuestionMapping(ctx context.Context, examID uuid.UUID, eq *sdomain.ExamQuestion) error {
 	const updateEq = `
 		UPDATE veritas_exam_questions
-		SET points_override = $3, order_index = $4
+		SET order_index = $3
 		WHERE exam_id = $1 AND question_id = $2
 	`
-	tag, err := r.db.Exec(ctx, updateEq, examID, eq.QuestionID, eq.PointsOverride, eq.OrderIndex)
+	tag, err := r.db.Exec(ctx, updateEq, examID, eq.QuestionID, eq.OrderIndex)
 	if err != nil {
 		return err
 	}

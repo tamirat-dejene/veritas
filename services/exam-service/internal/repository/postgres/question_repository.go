@@ -25,14 +25,14 @@ func NewQuestionRepository(db DBTX) domain.QuestionRepository {
 
 const questionFields = `
 	id, enterprise_id, type, topic, difficulty, title, content, media_url,
-	points, negative_points, metadata, is_active, created_by, created_at, updated_at
+	points, negative_points, expected_answer, evaluation_criteria, is_active, created_by, created_at, updated_at
 `
 
 func scanQuestion(row pgx.Row) (*sdomain.Question, error) {
 	var q sdomain.Question
 	err := row.Scan(
 		&q.ID, &q.EnterpriseID, &q.Type, &q.Topic, &q.Difficulty, &q.Title, &q.Content, &q.MediaURL,
-		&q.Points, &q.NegativePoints, &q.Metadata, &q.IsActive, &q.CreatedBy, &q.CreatedAt, &q.UpdatedAt,
+		&q.Points, &q.NegativePoints, &q.ExpectedAnswer, &q.EvaluationCriteria, &q.IsActive, &q.CreatedBy, &q.CreatedAt, &q.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -56,17 +56,17 @@ func (r *questionRepository) Create(ctx context.Context, q *sdomain.Question) er
 	const insertQuestion = `
 		INSERT INTO veritas_questions (
 			id, enterprise_id, type, topic, difficulty, title, content, media_url,
-			points, negative_points, metadata, is_active, created_by, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+			points, negative_points, expected_answer, evaluation_criteria, is_active, created_by, created_at, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 	`
 	const insertOption = `
 		INSERT INTO veritas_question_options (id, question_id, content, is_correct)
 		VALUES ($1, $2, $3, $4)
 	`
 
-	metadataJson, err := json.Marshal(q.Metadata)
+	evaluationCriteriaJson, err := json.Marshal(q.EvaluationCriteria)
 	if err != nil {
-		return fmt.Errorf("%w: metadata: %v", domain.ErrMarshalFailed, err)
+		return fmt.Errorf("%w: evaluation criteria: %v", domain.ErrMarshalFailed, err)
 	}
 
 	if q.ID == uuid.Nil {
@@ -85,7 +85,7 @@ func (r *questionRepository) Create(ctx context.Context, q *sdomain.Question) er
 	// Ideally we would want a transaction block here. Let's just execute separately for now.
 	_, err = r.db.Exec(ctx, insertQuestion,
 		q.ID, q.EnterpriseID, q.Type, q.Topic, q.Difficulty, q.Title, q.Content, q.MediaURL,
-		q.Points, q.NegativePoints, string(metadataJson), q.IsActive, q.CreatedBy, q.CreatedAt, q.UpdatedAt,
+		q.Points, q.NegativePoints, q.ExpectedAnswer, string(evaluationCriteriaJson), q.IsActive, q.CreatedBy, q.CreatedAt, q.UpdatedAt,
 	)
 	if err != nil {
 		return err
@@ -109,7 +109,8 @@ func (r *questionRepository) Create(ctx context.Context, q *sdomain.Question) er
 func (r *questionRepository) GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID, withCorrectAnswer bool) (*sdomain.Question, error) {
 	fields := questionFields
 	if !withCorrectAnswer {
-		fields = strings.Replace(fields, "metadata", "null AS metadata", 1)
+		fields = strings.Replace(fields, "expected_answer", "null AS expected_answer", 1)
+		fields = strings.Replace(fields, "evaluation_criteria", "null AS evaluation_criteria", 1)
 	}
 	query := fmt.Sprintf("SELECT %s FROM veritas_questions WHERE id = $1 AND enterprise_id = $2 LIMIT 1", fields)
 	q, err := scanQuestion(r.db.QueryRow(ctx, query, id, enterpriseID))
@@ -162,7 +163,8 @@ func (r *questionRepository) ListByEnterprise(ctx context.Context, enterpriseID 
 
 	fields := questionFields
 	if !withCorrectAnswer {
-		fields = strings.Replace(fields, "metadata", "null AS metadata", 1)
+		fields = strings.Replace(fields, "expected_answer", "null AS expected_answer", 1)
+		fields = strings.Replace(fields, "evaluation_criteria", "null AS evaluation_criteria", 1)
 	}
 
 	query := fmt.Sprintf("SELECT %s FROM veritas_questions WHERE enterprise_id = $1 AND is_active = true ORDER BY %s %s LIMIT $2 OFFSET $3", fields, sortField, params.GetSortDir())
@@ -218,16 +220,16 @@ func (r *questionRepository) Update(ctx context.Context, q *sdomain.Question) er
 	const updateQuestion = `
 		UPDATE veritas_questions
 		SET type = $3, topic = $4, difficulty = $5, title = $6, content = $7, media_url = $8,
-		    points = $9, negative_points = $10, metadata = $11, is_active = $12, updated_at = NOW()
+		    points = $9, negative_points = $10, expected_answer = $11, evaluation_criteria = $12, is_active = $13, updated_at = NOW()
 		WHERE id = $1 AND enterprise_id = $2
 	`
-	jsonMeta, err := json.Marshal(q.Metadata)
+	jsonEvalCriteria, err := json.Marshal(q.EvaluationCriteria)
 	if err != nil {
-		return fmt.Errorf("%w: metadata: %v", domain.ErrMarshalFailed, err)
+		return fmt.Errorf("%w: evaluation criteria: %v", domain.ErrMarshalFailed, err)
 	}
 	_, err = r.db.Exec(ctx, updateQuestion,
 		q.ID, q.EnterpriseID, q.Type, q.Topic, q.Difficulty, q.Title, q.Content, q.MediaURL,
-		q.Points, q.NegativePoints, jsonMeta, q.IsActive,
+		q.Points, q.NegativePoints, q.ExpectedAnswer, string(jsonEvalCriteria), q.IsActive,
 	)
 	if err != nil {
 		return err
