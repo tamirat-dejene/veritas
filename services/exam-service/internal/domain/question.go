@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"io"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -24,4 +25,10 @@ type QuestionUsecase interface {
 	GetQuestion(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID, withCorrectAnswer bool) (*sdomain.Question, error)
 	UpdateQuestion(ctx context.Context, q *sdomain.Question, userID uuid.UUID) error
 	DeleteQuestion(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
+	UploadMedia(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID, fileName string, content io.Reader) (string, error)
+}
+
+type FileStorage interface {
+	Upload(ctx context.Context, fileName string, content io.Reader) (string, error)
+	Delete(ctx context.Context, fileName string) error
 }
