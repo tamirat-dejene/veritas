@@ -19,6 +19,10 @@ type Config struct {
 	ExamServiceURL      string
 	CandidateServiceURL string
 	FrontendBaseURL     string
+	CloudinaryCloudName string
+	CloudinaryAPIKey    string
+	CloudinaryAPISecret string
+	CloudinaryLogosFolder    string
 }
 
 
@@ -35,8 +39,11 @@ func Load() *Config {
 		ExamServiceURL:      getEnv("EXAM_SERVICE_URL", "http://exam-service:8080"),
 		CandidateServiceURL: getEnv("CANDIDATE_SERVICE_URL", "http://candidate-service:8080"),
 		FrontendBaseURL:   getEnv("FRONTEND_BASE_URL", "https://app.veritas.io"),
+		CloudinaryCloudName: getEnv("CLOUDINARY_CLOUD_NAME", ""),
+		CloudinaryAPIKey:    getEnv("CLOUDINARY_API_KEY", ""),
+		CloudinaryAPISecret: getEnv("CLOUDINARY_API_SECRET", ""),
+		CloudinaryLogosFolder:    getEnv("CLOUDINARY_LOGOS_FOLDER", "veritas/logos"),
 	}
-
 
 	cfg.DSN = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		cfg.DBUser, cfg.DBPass, cfg.DBHost, cfg.DBPort, cfg.DBName)
