@@ -1,5 +1,16 @@
 [
   {
+    "date": "2026-05-06",
+    "changes": [
+      {
+        "type": "new",
+        "service": "candidate",
+        "summary": "Fat Event payload for Exam Grading",
+        "description": "Designed the exam.session.ready_for_grading Kafka event. The event is now published as a 'Fat Event' containing a unified GradingItem structure. This includes the true expected answers and evaluation criteria securely fetched from the Exam Service, paired directly with the candidate's structured answers."
+      }
+    ]
+  },
+  {
     "date": "2026-05-05",
     "changes": [
       {
