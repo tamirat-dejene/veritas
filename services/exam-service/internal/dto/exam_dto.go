@@ -41,7 +41,6 @@ type CloneExamRequest struct {
 // AddExamQuestionRequest is the request body for adding a question to an exam.
 type AddExamQuestionRequest struct {
 	QuestionID     string `json:"questionId" binding:"required"`
-	PointsOverride *int   `json:"pointsOverride,omitempty"`
 	OrderIndex     *int   `json:"orderIndex,omitempty"`
 }
 
@@ -50,9 +49,7 @@ type AddExamQuestionsBulkRequest struct {
 	Questions []AddExamQuestionRequest `json:"questions" binding:"required,min=1,dive"`
 }
 
-// UpdateExamQuestionRequest is the request body for updating exam-question mapping.
 type UpdateExamQuestionRequest struct {
-	PointsOverride *int `json:"pointsOverride,omitempty"`
 	OrderIndex     *int `json:"orderIndex,omitempty"`
 }
 

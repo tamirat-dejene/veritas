@@ -18,10 +18,11 @@ type CreateQuestionRequest struct {
 	Title          string                  `json:"title" binding:"required"`
 	Content        string                  `json:"content" binding:"required"`
 	MediaURL       *string                 `json:"mediaUrl,omitempty"`
-	Points         int                     `json:"points" binding:"required"`
-	NegativePoints float64                 `json:"negativePoints"`
-	Metadata       map[string]any          `json:"metadata,omitempty"`
-	IsActive       bool                    `json:"isActive"`
+	Points             int                     `json:"points" binding:"required"`
+	NegativePoints     float64                 `json:"negativePoints"`
+	ExpectedAnswer     *string                 `json:"expectedAnswer,omitempty"`
+	EvaluationCriteria map[string]any          `json:"evaluationCriteria,omitempty"`
+	IsActive           bool                    `json:"isActive"`
 	Options        []QuestionOptionDTO     `json:"options,omitempty"`
 }
 
@@ -33,10 +34,11 @@ type UpdateQuestionRequest struct {
 	Title          string                  `json:"title"`
 	Content        string                  `json:"content"`
 	MediaURL       *string                 `json:"mediaUrl,omitempty"`
-	Points         int                     `json:"points"`
-	NegativePoints float64                 `json:"negativePoints"`
-	Metadata       map[string]any          `json:"metadata,omitempty"`
-	IsActive       bool                    `json:"isActive"`
+	Points             int                     `json:"points"`
+	NegativePoints     float64                 `json:"negativePoints"`
+	ExpectedAnswer     *string                 `json:"expectedAnswer,omitempty"`
+	EvaluationCriteria map[string]any          `json:"evaluationCriteria,omitempty"`
+	IsActive           bool                    `json:"isActive"`
 	Options        []QuestionOptionDTO     `json:"options,omitempty"`
 }
 
