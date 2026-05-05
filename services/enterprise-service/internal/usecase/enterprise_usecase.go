@@ -3,7 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
-	"log"
+	"io"
 	"net"
 	"strings"
 	"time"
@@ -18,14 +18,15 @@ import (
 )
 
 type enterpriseUsecase struct {
-	pool           *pgxpool.Pool
-	userRepo       domain.UserRepository
-	enterpriseRepo domain.EnterpriseRepository
-	auditRepo      domain.AuditRepository
-	eventPublisher domain.EventPublisher
-	paymentClient  domain.PaymentClient
-	examClient     domain.ExamClient
+	pool            *pgxpool.Pool
+	userRepo        domain.UserRepository
+	enterpriseRepo  domain.EnterpriseRepository
+	auditRepo       domain.AuditRepository
+	eventPublisher  domain.EventPublisher
+	paymentClient   domain.PaymentClient
+	examClient      domain.ExamClient
 	candidateClient domain.CandidateClient
+	logoStorage     domain.FileStorage
 }
 
 func NewEnterpriseUsecase(
@@ -37,16 +38,18 @@ func NewEnterpriseUsecase(
 	paymentClient domain.PaymentClient,
 	examClient domain.ExamClient,
 	candidateClient domain.CandidateClient,
+	logoStorage domain.FileStorage,
 ) domain.EnterpriseUsecase {
 	return &enterpriseUsecase{
-		pool:           pool,
-		userRepo:       userRepo,
-		enterpriseRepo: enterpriseRepo,
-		auditRepo:      auditRepo,
-		eventPublisher: eventPublisher,
-		paymentClient:  paymentClient,
-		examClient:     examClient,
+		pool:            pool,
+		userRepo:        userRepo,
+		enterpriseRepo:  enterpriseRepo,
+		auditRepo:       auditRepo,
+		eventPublisher:  eventPublisher,
+		paymentClient:   paymentClient,
+		examClient:      examClient,
 		candidateClient: candidateClient,
+		logoStorage:     logoStorage,
 	}
 }
 
@@ -248,10 +251,6 @@ func (uc *enterpriseUsecase) UpdateBranding(ctx context.Context, id uuid.UUID, r
 	if err != nil {
 		return err
 	}
-	log.Printf("Updating branding for enterprise: %v", e)
-	if req.LogoURL != nil {
-		e.LogoURL = req.LogoURL
-	}
 	if req.PrimaryColor != nil {
 		e.PrimaryColor = req.PrimaryColor
 	}
@@ -267,6 +266,36 @@ func (uc *enterpriseUsecase) UpdateBranding(ctx context.Context, id uuid.UUID, r
 		uc.emit(ctx, tx, id, adminID, string(domain.RoleEnterpriseAdmin), domain.EventBrandingUpdated, nil)
 		return nil
 	})
+}
+
+func (uc *enterpriseUsecase) UploadLogo(ctx context.Context, id uuid.UUID, fileName string, content io.Reader, adminID uuid.UUID) (string, error) {
+	e, err := uc.enterpriseRepo.FindByID(ctx, id)
+	if err != nil {
+		return "", err
+	}
+
+	// 1. Upload to storage
+	logoURL, err := uc.logoStorage.Upload(ctx, fileName, content)
+	if err != nil {
+		return "", fmt.Errorf("failed to upload logo: %w", err)
+	}
+
+	// 2. Update enterprise record
+	e.LogoURL = &logoURL
+	e.UpdatedAt = time.Now()
+	e.UpdatedBy = adminID
+
+	if err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		if err := uc.enterpriseRepo.WithTx(tx).Update(ctx, e); err != nil {
+			return err
+		}
+		uc.emit(ctx, tx, id, adminID, string(domain.RoleEnterpriseAdmin), domain.EventBrandingUpdated, map[string]any{"action": "logo_upload"})
+		return nil
+	}); err != nil {
+		return "", err
+	}
+
+	return logoURL, nil
 }
 
 func (uc *enterpriseUsecase) UpdateSettings(ctx context.Context, id uuid.UUID, patch map[string]interface{}, adminID uuid.UUID) error {
