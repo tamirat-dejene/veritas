@@ -16,6 +16,10 @@ type Config struct {
 	KafkaBrokers        []string
 	EnterpriseServiceURL string
 	CandidateServiceURL  string
+	CloudinaryCloudName   string
+	CloudinaryAPIKey      string
+	CloudinaryAPISecret   string
+	CloudinaryQuestionsFolder string
 }
 
 func Load() *Config {
@@ -34,6 +38,11 @@ func Load() *Config {
 	cfg.KafkaBrokers = []string{getEnv("KAFKA_BROKERS", "localhost:9092")}
 	cfg.EnterpriseServiceURL = getEnv("ENTERPRISE_SERVICE_URL", "http://localhost:8081")
 	cfg.CandidateServiceURL = getEnv("CANDIDATE_SERVICE_URL", "http://localhost:8082")
+
+	cfg.CloudinaryCloudName = getEnv("CLOUDINARY_CLOUD_NAME", "")
+	cfg.CloudinaryAPIKey = getEnv("CLOUDINARY_API_KEY", "")
+	cfg.CloudinaryAPISecret = getEnv("CLOUDINARY_API_SECRET", "")
+	cfg.CloudinaryQuestionsFolder = getEnv("CLOUDINARY_QUESTIONS_FOLDER", "veritas/questions")
 
 	return cfg
 }
