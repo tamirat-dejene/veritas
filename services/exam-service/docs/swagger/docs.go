@@ -630,7 +630,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Attach multiple questions to an exam with optional override points and order indices.",
+                "description": "Attach multiple questions to an exam with optional order indices.",
                 "consumes": [
                     "application/json"
                 ],
@@ -755,7 +755,7 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "Update points override or order index for an exam question mapping.",
+                "description": "Update order index for an exam question mapping.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1331,9 +1331,6 @@ const docTemplate = `{
                 "orderIndex": {
                     "type": "integer"
                 },
-                "pointsOverride": {
-                    "type": "integer"
-                },
                 "questionId": {
                     "type": "string"
                 }
@@ -1417,15 +1414,18 @@ const docTemplate = `{
                 "difficulty": {
                     "$ref": "#/definitions/DifficultyLevel"
                 },
+                "evaluationCriteria": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "expectedAnswer": {
+                    "type": "string"
+                },
                 "isActive": {
                     "type": "boolean"
                 },
                 "mediaUrl": {
                     "type": "string"
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": {}
                 },
                 "negativePoints": {
                     "type": "number"
@@ -1494,9 +1494,6 @@ const docTemplate = `{
             "properties": {
                 "orderIndex": {
                     "type": "integer"
-                },
-                "pointsOverride": {
-                    "type": "integer"
                 }
             }
         },
@@ -1536,15 +1533,18 @@ const docTemplate = `{
                 "difficulty": {
                     "$ref": "#/definitions/DifficultyLevel"
                 },
+                "evaluationCriteria": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "expectedAnswer": {
+                    "type": "string"
+                },
                 "isActive": {
                     "type": "boolean"
                 },
                 "mediaUrl": {
                     "type": "string"
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": {}
                 },
                 "negativePoints": {
                     "type": "number"
@@ -1727,9 +1727,6 @@ const docTemplate = `{
                 "orderIndex": {
                     "type": "integer"
                 },
-                "pointsOverride": {
-                    "type": "integer"
-                },
                 "question": {
                     "$ref": "#/definitions/Question"
                 },
@@ -1773,6 +1770,13 @@ const docTemplate = `{
                 "enterpriseId": {
                     "type": "string"
                 },
+                "evaluationCriteria": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "expectedAnswer": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -1781,10 +1785,6 @@ const docTemplate = `{
                 },
                 "mediaUrl": {
                     "type": "string"
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": {}
                 },
                 "negativePoints": {
                     "type": "number"

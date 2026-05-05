@@ -627,7 +627,7 @@
                 }
             },
             "post": {
-                "description": "Attach multiple questions to an exam with optional override points and order indices.",
+                "description": "Attach multiple questions to an exam with optional order indices.",
                 "consumes": [
                     "application/json"
                 ],
@@ -752,7 +752,7 @@
                 }
             },
             "patch": {
-                "description": "Update points override or order index for an exam question mapping.",
+                "description": "Update order index for an exam question mapping.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1328,9 +1328,6 @@
                 "orderIndex": {
                     "type": "integer"
                 },
-                "pointsOverride": {
-                    "type": "integer"
-                },
                 "questionId": {
                     "type": "string"
                 }
@@ -1414,15 +1411,18 @@
                 "difficulty": {
                     "$ref": "#/definitions/DifficultyLevel"
                 },
+                "evaluationCriteria": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "expectedAnswer": {
+                    "type": "string"
+                },
                 "isActive": {
                     "type": "boolean"
                 },
                 "mediaUrl": {
                     "type": "string"
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": {}
                 },
                 "negativePoints": {
                     "type": "number"
@@ -1491,9 +1491,6 @@
             "properties": {
                 "orderIndex": {
                     "type": "integer"
-                },
-                "pointsOverride": {
-                    "type": "integer"
                 }
             }
         },
@@ -1533,15 +1530,18 @@
                 "difficulty": {
                     "$ref": "#/definitions/DifficultyLevel"
                 },
+                "evaluationCriteria": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "expectedAnswer": {
+                    "type": "string"
+                },
                 "isActive": {
                     "type": "boolean"
                 },
                 "mediaUrl": {
                     "type": "string"
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": {}
                 },
                 "negativePoints": {
                     "type": "number"
@@ -1724,9 +1724,6 @@
                 "orderIndex": {
                     "type": "integer"
                 },
-                "pointsOverride": {
-                    "type": "integer"
-                },
                 "question": {
                     "$ref": "#/definitions/Question"
                 },
@@ -1770,6 +1767,13 @@
                 "enterpriseId": {
                     "type": "string"
                 },
+                "evaluationCriteria": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "expectedAnswer": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -1778,10 +1782,6 @@
                 },
                 "mediaUrl": {
                     "type": "string"
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": {}
                 },
                 "negativePoints": {
                     "type": "number"

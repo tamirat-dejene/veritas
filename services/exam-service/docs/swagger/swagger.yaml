@@ -4,8 +4,6 @@ definitions:
     properties:
       orderIndex:
         type: integer
-      pointsOverride:
-        type: integer
       questionId:
         type: string
     required:
@@ -58,13 +56,15 @@ definitions:
         type: string
       difficulty:
         $ref: '#/definitions/DifficultyLevel'
+      evaluationCriteria:
+        additionalProperties: {}
+        type: object
+      expectedAnswer:
+        type: string
       isActive:
         type: boolean
       mediaUrl:
         type: string
-      metadata:
-        additionalProperties: {}
-        type: object
       negativePoints:
         type: number
       options:
@@ -117,8 +117,6 @@ definitions:
     properties:
       orderIndex:
         type: integer
-      pointsOverride:
-        type: integer
     type: object
   UpdateExamRequest:
     properties:
@@ -144,13 +142,15 @@ definitions:
         type: string
       difficulty:
         $ref: '#/definitions/DifficultyLevel'
+      evaluationCriteria:
+        additionalProperties: {}
+        type: object
+      expectedAnswer:
+        type: string
       isActive:
         type: boolean
       mediaUrl:
         type: string
-      metadata:
-        additionalProperties: {}
-        type: object
       negativePoints:
         type: number
       options:
@@ -271,8 +271,6 @@ definitions:
         type: string
       orderIndex:
         type: integer
-      pointsOverride:
-        type: integer
       question:
         $ref: '#/definitions/Question'
       questionId:
@@ -304,15 +302,17 @@ definitions:
         $ref: '#/definitions/DifficultyLevel'
       enterpriseId:
         type: string
+      evaluationCriteria:
+        additionalProperties: {}
+        type: object
+      expectedAnswer:
+        type: string
       id:
         type: string
       isActive:
         type: boolean
       mediaUrl:
         type: string
-      metadata:
-        additionalProperties: {}
-        type: object
       negativePoints:
         type: number
       options:
@@ -777,8 +777,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Attach multiple questions to an exam with optional override points
-        and order indices.
+      description: Attach multiple questions to an exam with optional order indices.
       parameters:
       - description: Enterprise ID (UUID)
         in: header
@@ -862,7 +861,7 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Update points override or order index for an exam question mapping.
+      description: Update order index for an exam question mapping.
       parameters:
       - description: Enterprise ID (UUID)
         in: header
