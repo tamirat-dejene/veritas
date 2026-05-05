@@ -3,6 +3,24 @@
     "date": "2026-05-05",
     "changes": [
       {
+        "type": "breaking",
+        "service": "exam",
+        "summary": "Updated Question Schema: removed points override and metadata",
+        "description": "Removed the points_override field from exam questions mapping. Added an expected_answer field for short answer and essay questions, and renamed the metadata field to evaluation_criteria.",
+        "endpoints": [
+          "POST /exams/:examId/questions (UPDATED: pointsOverride removed)",
+          "PATCH /exams/:examId/questions/:questionId (UPDATED: pointsOverride removed)",
+          "POST /questions (UPDATED: added expectedAnswer, renamed metadata to evaluationCriteria)",
+          "PATCH /questions/:questionId (UPDATED: added expectedAnswer, renamed metadata to evaluationCriteria)"
+        ],
+        "migration": [
+          {
+            "before": "Exam questions could be added with a pointsOverride. Questions used a metadata field.",
+            "after": "pointsOverride is no longer supported. The metadata field has been replaced by evaluationCriteria and expectedAnswer."
+          }
+        ]
+      },
+      {
         "type": "new",
         "service": "enterprise",
         "summary": "Managed Enterprise Logo Storage",
