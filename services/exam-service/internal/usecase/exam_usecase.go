@@ -314,7 +314,6 @@ func (uc *examUsecase) AddQuestionsToExam(ctx context.Context, enterpriseID, exa
 			eq := &sdomain.ExamQuestion{
 				ExamID:         examID,
 				QuestionID:     input.QuestionID,
-				PointsOverride: input.PointsOverride,
 				OrderIndex:     input.OrderIndex,
 			}
 			eqs = append(eqs, eq)
@@ -381,7 +380,7 @@ func (uc *examUsecase) RemoveQuestionFromExam(ctx context.Context, enterpriseID,
 	})
 }
 
-func (uc *examUsecase) UpdateExamQuestion(ctx context.Context, enterpriseID, examID, questionID uuid.UUID, pointsOverride *int, orderIndex *int) error {
+func (uc *examUsecase) UpdateExamQuestion(ctx context.Context, enterpriseID, examID, questionID uuid.UUID, orderIndex *int) error {
 	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
 		exam, err := uc.examRepo.WithTx(tx).GetByID(ctx, examID, enterpriseID)
 		if err != nil {
@@ -440,7 +439,6 @@ func (uc *examUsecase) UpdateExamQuestion(ctx context.Context, enterpriseID, exa
 		eq := &sdomain.ExamQuestion{
 			ExamID:         examID,
 			QuestionID:     questionID,
-			PointsOverride: pointsOverride,
 			OrderIndex:     orderIndex,
 		}
 
