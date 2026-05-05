@@ -141,3 +141,58 @@ type CandidateExamSubmittedEvent struct {
 	AutoSubmitted  bool      `json:"auto_submitted"`
 	Timestamp      int64     `json:"timestamp"`
 }
+
+type CandidateAnswerData struct {
+	SelectedOptionIDs []uuid.UUID `json:"selectedOptionIds,omitempty"`
+	Text              *string     `json:"text,omitempty"`
+}
+
+// GradingItem unifies the true evaluation criteria and the candidate's actual answer
+type GradingItem struct {
+	QuestionID        uuid.UUID `json:"question_id"`
+	SessionQuestionID uuid.UUID `json:"session_question_id"`
+	QuestionType      string    `json:"question_type"`
+	Content           string    `json:"content"`
+	Title             string    `json:"title"`
+	Topic             string    `json:"topic"`
+	MediaURL          *string   `json:"media_url,omitempty"`
+	// Scoring
+	Points         int     `json:"points"`
+	NegativePoints float64 `json:"negative_points"`
+
+	// True Evaluation Criteria (from Exam Service)
+	ExpectedAnswer     *string        `json:"expected_answer,omitempty"`
+	EvaluationCriteria map[string]any `json:"evaluation_criteria,omitempty"`
+	CorrectOptionIDs   []uuid.UUID    `json:"correct_option_ids,omitempty"`
+
+	// Candidate's Actual Answer (from Candidate Service)
+	HasAnswer       bool                 `json:"has_answer"`
+	CandidateAnswer *CandidateAnswerData `json:"candidate_answer,omitempty"`
+}
+
+// ExamReadyForGradingEvent is the Kafka payload published on topic candidate.exam.ready_for_grading
+type ExamReadyForGradingEvent struct {
+	EventID   uuid.UUID `json:"event_id"`
+	EventType string    `json:"event_type"`
+	Version   string    `json:"version"`
+	Timestamp time.Time `json:"timestamp"`
+	TraceID   string    `json:"trace_id,omitempty"`
+
+	// Context
+	EnterpriseID uuid.UUID `json:"enterprise_id"`
+	ExamID       uuid.UUID `json:"exam_id"`
+	SessionID    uuid.UUID `json:"session_id"`
+	CandidateID  uuid.UUID `json:"candidate_id"`
+	EnrollmentID uuid.UUID `json:"enrollment_id"`
+
+	// Metadata
+	Status            string     `json:"status"`
+	StartedAt         time.Time  `json:"started_at"`
+	SubmittedAt       *time.Time `json:"submitted_at,omitempty"`
+	TerminatedAt      *time.Time `json:"terminated_at,omitempty"`
+	AutoSubmitted     bool       `json:"auto_submitted"`
+	TerminationReason *string    `json:"termination_reason,omitempty"`
+
+	// Payload
+	Items []GradingItem `json:"items"`
+}
