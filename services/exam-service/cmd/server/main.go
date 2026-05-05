@@ -41,6 +41,7 @@ import (
 
 	// Import generated swagger docs so the spec is registered at startup.
 	_ "github.com/tamirat-dejene/veritas/services/exam-service/docs/swagger"
+	"github.com/tamirat-dejene/veritas/shared/pkg/storage/cloudinary"
 )
 
 func main() {
@@ -81,8 +82,19 @@ func main() {
 	entClient := client.NewEnterpriseClient(cfg.EnterpriseServiceURL)
 	candClient := client.NewCandidateClient(cfg.CandidateServiceURL)
 
-	// 7. Initialize Usecases
-	questionUC := usecase.NewQuestionUsecase(pool, questionRepo)
+	// 7. Initialize Storage
+	questionStorage, err := cloudinary.NewCloudinaryStorage(
+		cfg.CloudinaryCloudName,
+		cfg.CloudinaryAPIKey,
+		cfg.CloudinaryAPISecret,
+		cfg.CloudinaryQuestionsFolder,
+	)
+	if err != nil {
+		log.Fatal("failed to initialize question storage", zap.Error(err))
+	}
+
+	// 8. Initialize Usecases
+	questionUC := usecase.NewQuestionUsecase(pool, questionRepo, questionStorage)
 	examUC := usecase.NewExamUsecase(pool, examRepo, questionRepo, eventPublisher, entClient, candClient, log)
 
 	// 6. Initialize Handlers

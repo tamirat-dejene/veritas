@@ -27,6 +27,7 @@ func NewRouter(qh *handler.QuestionHandler, eh *handler.ExamHandler) *gin.Engine
 		questions.GET("/:questionId", qh.GetQuestion)
 		questions.PATCH("/:questionId", qh.UpdateQuestion)
 		questions.DELETE("/:questionId", qh.DeleteQuestion)
+		questions.POST("/:questionId/media", qh.UploadMedia)
 	}
 
 	exams := engine.Group("/exams")
