@@ -114,6 +114,7 @@ func (g *RouterGroup) RegisterExamRoutes(proxy http.Handler) {
 	g.register("GET", "/questions/:questionId", proxy, staffOrAdmin...)
 	g.register("PATCH", "/questions/:questionId", proxy, staffOrAdmin...)
 	g.register("DELETE", "/questions/:questionId", proxy, staffOrAdmin...)
+	g.register("POST", "/questions/:questionId/media", proxy, staffOrAdmin...)
 
 	// Exams Lifecycle
 	g.register("POST", "/exams", proxy, adminRole...)
