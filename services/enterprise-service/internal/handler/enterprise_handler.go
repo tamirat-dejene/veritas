@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -295,7 +296,7 @@ func (h *EnterpriseHandler) GetMe(c *gin.Context) {
 // UpdateBranding updates enterprise branding attributes.
 //
 //	@Summary		Update branding
-//	@Description	Update logo and brand color values.
+//	@Description	Update brand color values (logo updation is moved to an independent endpoint).
 //	@Tags			enterprise
 //	@Accept			json
 //	@Param			enterpriseId	path	string					true	"Enterprise ID (UUID)"
@@ -327,6 +328,78 @@ func (h *EnterpriseHandler) UpdateBranding(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNoContent)
+}
+
+// UploadLogo uploads a new enterprise logo.
+//
+//	@Summary		Upload logo
+//	@Description	Upload a new enterprise logo image. The logo should be in png, jpg, or jpeg format and the file size should not exceed 3MB.
+//	@Tags			enterprise
+//	@Accept			multipart/form-data
+//	@Param			enterpriseId	path	string	true	"Enterprise ID (UUID)"
+//	@Param			X-User-ID	header	string	false	"Actor user ID (UUID)"
+//	@Param			logo			formData	file	true	"Logo file (png, jpg, jpeg)"
+//	@Success		200			{object}	UploadLogoResponse
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
+//	@Router			/enterprises/{enterpriseId}/logo [post]
+func (h *EnterpriseHandler) UploadLogo(c *gin.Context) {
+	id, ok := ParseEnterpriseID(c)
+	if !ok {
+		writeError(c, http.StatusBadRequest, "invalid enterprise ID")
+		return
+	}
+
+	// 1. Limit file size (e.g., 3MB)
+	const maxFileSize = 3 * 1024 * 1024
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxFileSize)
+
+	file, _, err := c.Request.FormFile("logo")
+	if err != nil {
+		if err.Error() == "http: request body too large" {
+			writeError(c, http.StatusRequestEntityTooLarge, "file too large (max 3MB)")
+		} else {
+			writeError(c, http.StatusBadRequest, "no logo file provided")
+		}
+		return
+	}
+	defer file.Close()
+
+	// 2. Validate file type
+	buff := make([]byte, 512)
+	if _, err := file.Read(buff); err != nil {
+		writeError(c, http.StatusInternalServerError, "failed to read file header")
+		return
+	}
+	if _, err := file.Seek(0, 0); err != nil {
+		writeError(c, http.StatusInternalServerError, "failed to reset file pointer")
+		return
+	}
+
+	contentType := http.DetectContentType(buff)
+	allowedTypes := map[string]bool{
+		"image/jpeg": true,
+		"image/jpg":  true,
+		"image/png":  true,
+	}
+
+	if !allowedTypes[contentType] {
+		writeError(c, http.StatusBadRequest, "invalid file type (png, jpg, jpeg only)")
+		return
+	}
+
+	callerID, _ := GetCallerID(c)
+	// Use a standard filename based on enterprise ID to ensure overwriting of existing logos
+	logoFileName := fmt.Sprintf("logo_%s", id.String())
+	url, err := h.usecase.UploadLogo(c.Request.Context(), id, logoFileName, file, callerID)
+
+	if err != nil {
+		zap.L().Error("failed to upload logo", zap.Error(err))
+		h.handleEnterpriseError(c, err)
+		return
+	}
+
+	writeJSON(c, http.StatusOK, UploadLogoResponse{LogoURL: url})
 }
 
 // UpdateSettings partially updates enterprise settings.

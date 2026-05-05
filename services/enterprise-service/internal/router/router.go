@@ -52,6 +52,7 @@ func NewRouter(
 
 		// ── Self-Service Branding & Settings ──────────────────────────────────
 		enterprises.PATCH("/:enterpriseId/branding", eh.UpdateBranding)
+		enterprises.POST("/:enterpriseId/logo", eh.UploadLogo)
 		enterprises.PATCH("/:enterpriseId/settings", eh.UpdateSettings)
 
 		// ── Status, Domain, Audit ─────────────────────────────────────────────

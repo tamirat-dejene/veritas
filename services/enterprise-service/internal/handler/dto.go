@@ -47,3 +47,8 @@ type AuditLogListResponse struct {
 type ResetPasswordResponse struct {
 	TemporaryPassword string `json:"temporary_password"`
 }
+
+// UploadLogoResponse represents the response body containing the logo URL.
+type UploadLogoResponse struct {
+	LogoURL string `json:"logo_url"`
+}
