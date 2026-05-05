@@ -265,8 +265,6 @@ definitions:
     type: object
   UpdateBrandingRequest:
     properties:
-      logo_url:
-        type: string
       primary_color:
         type: string
       secondary_color:
@@ -368,6 +366,11 @@ definitions:
   ResetPasswordResponse:
     properties:
       temporary_password:
+        type: string
+    type: object
+  UploadLogoResponse:
+    properties:
+      logo_url:
         type: string
     type: object
   Metadata:
@@ -735,7 +738,8 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Update logo and brand color values.
+      description: Update brand color values (logo updation is moved to an independent
+        endpoint).
       parameters:
       - description: Enterprise ID (UUID)
         in: path
@@ -782,6 +786,43 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
       summary: Update branding
+      tags:
+      - enterprise
+  /enterprises/{enterpriseId}/logo:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a new enterprise logo image. The logo should be in png,
+        jpg, or jpeg format and the file size should not exceed 3MB.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: path
+        name: enterpriseId
+        required: true
+        type: string
+      - description: Actor user ID (UUID)
+        in: header
+        name: X-User-ID
+        type: string
+      - description: Logo file (png, jpg, jpeg)
+        in: formData
+        name: logo
+        required: true
+        type: file
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/UploadLogoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Upload logo
       tags:
       - enterprise
   /enterprises/{enterpriseId}/permanent:

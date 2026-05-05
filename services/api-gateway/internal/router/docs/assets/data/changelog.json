@@ -1,5 +1,35 @@
 [
   {
+    "date": "2026-05-05",
+    "changes": [
+      {
+        "type": "new",
+        "service": "enterprise",
+        "summary": "Managed Enterprise Logo Storage",
+        "description": "Implemented a managed logo storage system. Enterprise logos are now handled as file uploads instead of static URL references.",
+        "endpoints": [
+          "POST /enterprises/:enterpriseId/logo"
+        ]
+      },
+      {
+        "type": "breaking",
+        "service": "enterprise",
+        "summary": "Refactored branding update endpoint",
+        "description": "The branding update endpoint no longer accepts a 'logo_url' field. Logo management has been moved to a dedicated multipart/form-data upload endpoint to support managed storage. Color updates remain supported via this endpoint.",
+        "endpoints": [
+          "PATCH /enterprises/:enterpriseId/branding (UPDATED: logo_url removed)"
+        ],
+        "migration": [
+          {
+            "before": "Logo URLs were manually provided as strings via the branding update endpoint.",
+            "after": "Logos must be uploaded as files via the new /logo endpoint."
+          }
+        ]
+      }
+    ]
+  },
+
+  {
     "date": "2026-05-01",
     "changes": [
       {

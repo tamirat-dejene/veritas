@@ -574,7 +574,7 @@
         },
         "/enterprises/{enterpriseId}/branding": {
             "patch": {
-                "description": "Update logo and brand color values.",
+                "description": "Update brand color values (logo updation is moved to an independent endpoint).",
                 "consumes": [
                     "application/json"
                 ],
@@ -639,6 +639,60 @@
                     },
                     "422": {
                         "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/enterprises/{enterpriseId}/logo": {
+            "post": {
+                "description": "Upload a new enterprise logo image. The logo should be in png, jpg, or jpeg format and the file size should not exceed 3MB.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "enterprise"
+                ],
+                "summary": "Upload logo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Enterprise ID (UUID)",
+                        "name": "enterpriseId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Actor user ID (UUID)",
+                        "name": "X-User-ID",
+                        "in": "header"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Logo file (png, jpg, jpeg)",
+                        "name": "logo",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/UploadLogoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -2132,9 +2186,6 @@
         "UpdateBrandingRequest": {
             "type": "object",
             "properties": {
-                "logo_url": {
-                    "type": "string"
-                },
                 "primary_color": {
                     "type": "string"
                 },
@@ -2286,6 +2337,14 @@
             "type": "object",
             "properties": {
                 "temporary_password": {
+                    "type": "string"
+                }
+            }
+        },
+        "UploadLogoResponse": {
+            "type": "object",
+            "properties": {
+                "logo_url": {
                     "type": "string"
                 }
             }
