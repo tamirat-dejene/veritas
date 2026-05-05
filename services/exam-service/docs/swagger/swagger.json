@@ -1255,6 +1255,67 @@
                     }
                 }
             }
+        },
+        "/questions/{questionId}/media": {
+            "post": {
+                "description": "Upload media (image, video, PDF) for a question. Max size 5MB.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "question"
+                ],
+                "summary": "Upload media",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Enterprise ID (UUID)",
+                        "name": "X-Enterprise-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Question ID (UUID)",
+                        "name": "questionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Media file",
+                        "name": "media",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/UploadMediaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1502,6 +1563,14 @@
                 },
                 "type": {
                     "$ref": "#/definitions/QuestionType"
+                }
+            }
+        },
+        "UploadMediaResponse": {
+            "type": "object",
+            "properties": {
+                "mediaUrl": {
+                    "type": "string"
                 }
             }
         },

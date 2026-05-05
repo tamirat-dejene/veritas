@@ -166,6 +166,11 @@ definitions:
       type:
         $ref: '#/definitions/QuestionType'
     type: object
+  UploadMediaResponse:
+    properties:
+      mediaUrl:
+        type: string
+    type: object
   Metadata:
     properties:
       current_page:
@@ -1192,6 +1197,47 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
       summary: Update question
+      tags:
+      - question
+  /questions/{questionId}/media:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload media (image, video, PDF) for a question. Max size 5MB.
+      parameters:
+      - description: Enterprise ID (UUID)
+        in: header
+        name: X-Enterprise-ID
+        required: true
+        type: string
+      - description: Question ID (UUID)
+        in: path
+        name: questionId
+        required: true
+        type: string
+      - description: Media file
+        in: formData
+        name: media
+        required: true
+        type: file
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/UploadMediaResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Upload media
       tags:
       - question
 schemes:

@@ -2,7 +2,7 @@
 <section class="section" data-service="exam">
     <div class="section-header">
         <h2>Exam Management</h2>
-        <span class="section-count">18 endpoints</span>
+        <span class="section-count">19 endpoints</span>
     </div>
     <div class="endpoint-list">
         <!-- Questions -->
@@ -24,6 +24,10 @@
             <span class="badge badge-staff">EnterpriseStaff</span>
         </endpoint-item>
         <endpoint-item method="DELETE" path="/questions/:questionId">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+            <span class="badge badge-staff">EnterpriseStaff</span>
+        </endpoint-item>
+        <endpoint-item method="POST" path="/questions/:questionId/media">
             <span class="badge badge-admin">EnterpriseAdmin</span>
             <span class="badge badge-staff">EnterpriseStaff</span>
         </endpoint-item>

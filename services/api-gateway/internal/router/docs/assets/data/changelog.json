@@ -25,6 +25,15 @@
             "after": "Logos must be uploaded as files via the new /logo endpoint."
           }
         ]
+      },
+      {
+        "type": "new",
+        "service": "exam",
+        "summary": "Support for storing Question Media",
+        "description": "Implemented a managed media storage system for exam questions. Question media (images/videos/pdfs) are now handled as direct file uploads.",
+        "endpoints": [
+          "POST /questions/:questionId/media (NEW)"
+        ]
       }
     ]
   },
