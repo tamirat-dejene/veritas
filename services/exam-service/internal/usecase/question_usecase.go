@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"context"
+	"fmt"
+	"io"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -12,14 +14,16 @@ import (
 )
 
 type questionUsecase struct {
-	pool *pgxpool.Pool
-	repo domain.QuestionRepository
+	pool    *pgxpool.Pool
+	repo    domain.QuestionRepository
+	storage domain.FileStorage
 }
 
-func NewQuestionUsecase(pool *pgxpool.Pool, repo domain.QuestionRepository) domain.QuestionUsecase {
+func NewQuestionUsecase(pool *pgxpool.Pool, repo domain.QuestionRepository, storage domain.FileStorage) domain.QuestionUsecase {
 	return &questionUsecase{
-		pool: pool,
-		repo: repo,
+		pool:    pool,
+		repo:    repo,
+		storage: storage,
 	}
 }
 
@@ -66,5 +70,42 @@ func (uc *questionUsecase) UpdateQuestion(ctx context.Context, q *sdomain.Questi
 }
 
 func (uc *questionUsecase) DeleteQuestion(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
+	// 1. Fetch existing question to check for media
+	q, err := uc.repo.GetByID(ctx, id, enterpriseID, false)
+	if err != nil {
+		return err
+	}
+
+	// 2. If it has a MediaURL, delete it from Cloudinary
+	if q.MediaURL != nil && *q.MediaURL != "" {
+		// Use predictable naming: q_{questionID}
+		fileName := fmt.Sprintf("q_%s", id.String())
+		_ = uc.storage.Delete(ctx, fileName) // non-critical failure
+	}
+
+	// 3. Perform hard delete in repository
 	return uc.repo.Delete(ctx, id, enterpriseID)
+}
+
+func (uc *questionUsecase) UploadMedia(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID, fileName string, content io.Reader) (string, error) {
+	// 1. Verify question exists and belongs to enterprise
+	q, err := uc.repo.GetByID(ctx, id, enterpriseID, false)
+	if err != nil {
+		return "", err
+	}
+
+	// 2. Upload to storage
+	mediaURL, err := uc.storage.Upload(ctx, fileName, content)
+	if err != nil {
+		return "", err
+	}
+
+
+	// 3. Update database
+	q.MediaURL = &mediaURL
+	if err := uc.repo.Update(ctx, q); err != nil {
+		return "", err
+	}
+
+	return mediaURL, nil
 }
