@@ -39,3 +39,8 @@ type UpdateQuestionRequest struct {
 	IsActive       bool                    `json:"isActive"`
 	Options        []QuestionOptionDTO     `json:"options,omitempty"`
 }
+
+// UploadMediaResponse represents the response body containing the media URL.
+type UploadMediaResponse struct {
+	MediaURL string `json:"mediaUrl"`
+}

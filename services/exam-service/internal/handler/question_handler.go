@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -9,6 +11,7 @@ import (
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/dto"
 	sdomain "github.com/tamirat-dejene/veritas/shared/domain"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
+	"go.uber.org/zap"
 )
 
 type QuestionHandler struct {
@@ -267,4 +270,87 @@ func (h *QuestionHandler) DeleteQuestion(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+// UploadMedia uploads a media file for a question.
+//
+//	@Summary		Upload media
+//	@Description	Upload media (image, video, PDF) for a question. Max size 5MB.
+//	@Tags			question
+//	@Accept			multipart/form-data
+//	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
+//	@Param			questionId		path	string	true	"Question ID (UUID)"
+//	@Param			media			formData	file	true	"Media file"
+//	@Success		200			{object}	dto.UploadMediaResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		413			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
+//	@Router			/questions/{questionId}/media [post]
+func (h *QuestionHandler) UploadMedia(c *gin.Context) {
+	enterpriseID, ok := getEnterpriseID(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "missing enterprise ID")
+		return
+	}
+
+	questionIDStr := c.Param("questionId")
+	questionID, err := uuid.Parse(questionIDStr)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid question ID")
+		return
+	}
+
+	// 1. Limit file size (5MB)
+	const maxFileSize = 5 * 1024 * 1024
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxFileSize)
+
+	file, _, err := c.Request.FormFile("media")
+	if err != nil {
+		if err.Error() == "http: request body too large" {
+			writeError(c, http.StatusRequestEntityTooLarge, "file too large (max 5MB)")
+		} else {
+			writeError(c, http.StatusBadRequest, "no media file provided")
+		}
+		return
+	}
+	defer file.Close()
+
+	// 2. Validate media type
+	buff := make([]byte, 512)
+	if _, err := file.Read(buff); err != nil {
+		writeError(c, http.StatusInternalServerError, "failed to read file header")
+		return
+	}
+	if _, err := file.Seek(0, 0); err != nil {
+		writeError(c, http.StatusInternalServerError, "failed to reset file pointer")
+		return
+	}
+
+	contentType := http.DetectContentType(buff)
+	isAllowed := false
+	allowedPrefixes := []string{"image/", "video/", "application/pdf"}
+
+	for _, prefix := range allowedPrefixes {
+		if strings.HasPrefix(contentType, prefix) {
+			isAllowed = true
+			break
+		}
+	}
+
+	if !isAllowed {
+		writeError(c, http.StatusBadRequest, "invalid media type (images, videos, PDFs only)")
+		return
+	}
+
+	// 3. Predictable filename
+	mediaFileName := fmt.Sprintf("q_%s", questionID.String())
+
+	url, err := h.usecase.UploadMedia(c.Request.Context(), questionID, enterpriseID, mediaFileName, file)
+	if err != nil {
+		zap.L().Error("failed to upload question media", zap.Error(err))
+		handleError(c, err)
+		return
+	}
+
+	writeJSON(c, http.StatusOK, dto.UploadMediaResponse{MediaURL: url})
 }
