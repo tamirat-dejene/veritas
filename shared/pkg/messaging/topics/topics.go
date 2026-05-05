@@ -51,4 +51,8 @@ const (
 	// CandidateExamSubmitted is published when a candidate submits their exam session.
 	// The notification-service consumes this topic and sends a confirmation email.
 	CandidateExamSubmitted = "candidate.exam.submitted"
+
+	// CandidateExamReadyForGrading is published when a session is submitted or terminated.
+	// The grading-service consumes this fat event containing all answers and questions.
+	CandidateExamReadyForGrading = "candidate.exam.ready_for_grading"
 )
