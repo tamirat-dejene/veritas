@@ -48,6 +48,7 @@ func (g *RouterGroup) RegisterEnterpriseRoutes(proxy http.Handler) {
 	// Self-service branding & settings (owner-scoped)
 	g.register("PATCH", "/enterprises/:enterpriseId/branding", proxy, entAdmin...)
 	g.register("PATCH", "/enterprises/:enterpriseId/settings", proxy, entAdmin...)
+	g.register("POST", "/enterprises/:enterpriseId/logo", proxy, entAdmin...)
 
 	// Status, domain validation, audit
 	g.register("GET", "/enterprises/:enterpriseId/status", proxy, sysOrEntAdmin...)
