@@ -5,8 +5,31 @@
 class EventItem extends HTMLElement {
     connectedCallback() {
         const topic = this.getAttribute('topic') || 'unknown.topic';
+        const payload = this.getAttribute('payload');
         const description = this.innerHTML.trim();
         
+        let payloadHtml = '';
+        if (payload) {
+            try {
+                // Try to format if it's JSON
+                const formatted = JSON.stringify(JSON.parse(payload), null, 2);
+                payloadHtml = `
+                    <div class="event-payload-container">
+                        <div class="event-payload-header">Event Payload Structure</div>
+                        <pre class="event-payload-code"><code>${this.escapeHtml(formatted)}</code></pre>
+                    </div>
+                `;
+            } catch (e) {
+                // Fallback for non-JSON or already stringified
+                payloadHtml = `
+                    <div class="event-payload-container">
+                        <div class="event-payload-header">Event Payload Structure</div>
+                        <pre class="event-payload-code"><code>${this.escapeHtml(payload)}</code></pre>
+                    </div>
+                `;
+            }
+        }
+
         this.innerHTML = `
             <div class="event-item">
                 <div class="event-topic-wrapper">
@@ -18,6 +41,7 @@ class EventItem extends HTMLElement {
                     <code class="event-topic">${this.escapeHtml(topic)}</code>
                 </div>
                 <p class="event-description">${description}</p>
+                ${payloadHtml}
             </div>
         `;
     }

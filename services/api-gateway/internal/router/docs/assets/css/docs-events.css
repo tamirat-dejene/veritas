@@ -143,3 +143,39 @@
 .tech-stack strong {
     color: var(--text-primary);
 }
+
+/* ================================
+   EVENT PAYLOAD
+================================ */
+.event-payload-container {
+    margin-top: 14px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.event-payload-header {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    background: var(--bg-tertiary);
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.event-payload-code {
+    margin: 0;
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--accent);
+    overflow-x: auto;
+}
+
+.event-payload-code code {
+    white-space: pre;
+}
