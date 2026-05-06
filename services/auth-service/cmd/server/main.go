@@ -35,6 +35,8 @@ import (
 	pgRepo "github.com/tamirat-dejene/veritas/services/auth-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/usecase"
+	infrasched "github.com/tamirat-dejene/veritas/services/auth-service/internal/infrastructure/scheduler"
+	"github.com/tamirat-dejene/veritas/shared/pkg/cronjob"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"github.com/tamirat-dejene/veritas/shared/pkg/messaging/kafka"
 	"go.uber.org/zap"
@@ -116,6 +118,12 @@ func main() {
 		log,
 	)
 	logoutUC := usecase.NewLogoutUseCase(pool, refreshTokenRepo, log)
+
+	// --- Background Jobs: Cron ---
+	cron := cronjob.NewScheduler(log)
+	infrasched.RegisterAuthJobs(cron, refreshUC)
+	cron.Start(context.Background())
+	defer cron.Stop()
 
 	// --- HTTP Layer ---
 	authHandler := handler.NewAuthHandler(loginUC, refreshUC, logoutUC, log)
