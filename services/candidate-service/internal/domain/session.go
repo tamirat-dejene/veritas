@@ -103,6 +103,7 @@ type SessionRepository interface {
 	GetSubmissionByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*ExamSubmission, error)
 	GetSessionByEnrollment(ctx context.Context, enrollmentID uuid.UUID) (*ExamSession, error)
 	CountSessionsByEnterpriseAndStatus(ctx context.Context, enterpriseID uuid.UUID, status SessionStatus) (int, error)
+	GetExpiredActiveSessions(ctx context.Context, limit int) ([]*ExamSession, error)
 	WithTx(tx pgx.Tx) SessionRepository
 }
 

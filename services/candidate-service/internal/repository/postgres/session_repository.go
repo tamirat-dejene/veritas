@@ -408,6 +408,30 @@ func (r *sessionRepository) CountSessionsByEnterpriseAndStatus(ctx context.Conte
 	return count, err
 }
 
+func (r *sessionRepository) GetExpiredActiveSessions(ctx context.Context, limit int) ([]*domain.ExamSession, error) {
+	query := fmt.Sprintf(`
+		SELECT %s FROM exam_sessions
+		WHERE status = 'Active' AND expires_at <= NOW()
+		ORDER BY expires_at ASC
+		LIMIT $1
+	`, sessionFields)
+
+	rows, err := r.db.Query(ctx, query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []*domain.ExamSession
+	for rows.Next() {
+		s, err := scanSession(rows)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, s)
+	}
+	return list, nil
+}
 
 func (r *sessionRepository) WithTx(tx pgx.Tx) domain.SessionRepository {
 	return &sessionRepository{db: tx}

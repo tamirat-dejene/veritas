@@ -265,6 +265,31 @@ func (r *enrollmentRepository) IncrementAttempt(ctx context.Context, id uuid.UUI
 	return nil
 }
 
+func (r *enrollmentRepository) GetExpiredPendingEnrollments(ctx context.Context, limit int) ([]*domain.ExamEnrollment, error) {
+	query := fmt.Sprintf(`
+		SELECT %s FROM exam_enrollments
+		WHERE status IN ('Pending', 'Invited', 'Opened') AND token_expires_at <= NOW()
+		ORDER BY token_expires_at ASC
+		LIMIT $1
+	`, enrollmentFields)
+
+	rows, err := r.db.Query(ctx, query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []*domain.ExamEnrollment
+	for rows.Next() {
+		e, err := scanEnrollment(rows)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, e)
+	}
+	return list, nil
+}
+
 func (r *enrollmentRepository) WithTx(tx pgx.Tx) domain.EnrollmentRepository {
 	return &enrollmentRepository{db: tx}
 }

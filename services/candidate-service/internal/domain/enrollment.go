@@ -30,7 +30,7 @@ type ExamEnrollment struct {
 	ExamID             uuid.UUID        `db:"exam_id"              json:"examId"`
 	CandidateID        uuid.UUID        `db:"candidate_id"         json:"candidateId"`
 	AccessTokenHash    string           `db:"access_token_hash"    json:"-"` // never serialised
-	InvitationCodeHash string           `db:"invitation_code_hash" json:"-"` // never serialised
+	InvitationCodeHash *string          `db:"invitation_code_hash" json:"-"` // never serialised
 	TokenExpiresAt     time.Time        `db:"token_expires_at"     json:"tokenExpiresAt"`
 	MaxAttempts        int              `db:"max_attempts"         json:"maxAttempts"`
 	AttemptsUsed       int              `db:"attempts_used"        json:"attemptsUsed"`
@@ -52,6 +52,7 @@ type EnrollmentRepository interface {
 	UpdateInvitation(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID, codeHash string, invitedAt time.Time) error
 	UpdateStatus(ctx context.Context, id uuid.UUID, status EnrollmentStatus) error
 	IncrementAttempt(ctx context.Context, id uuid.UUID) error
+	GetExpiredPendingEnrollments(ctx context.Context, limit int) ([]*ExamEnrollment, error)
 	WithTx(tx pgx.Tx) EnrollmentRepository
 }
 
