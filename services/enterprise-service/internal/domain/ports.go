@@ -23,6 +23,7 @@ type UserRepository interface {
 	CountByEnterprise(ctx context.Context, enterpriseID uuid.UUID) (int, error)
 	UpdateLoginSuccess(ctx context.Context, userID uuid.UUID, ip, userAgent string) error
 	UpdateLoginFailure(ctx context.Context, userID uuid.UUID, lockUntil *time.Time, failedLoginAttempts int) error
+	ResetExpiredLocks(ctx context.Context) (int64, error)
 	WithTx(tx pgx.Tx) UserRepository
 }
 
@@ -31,6 +32,7 @@ type PasswordResetRepository interface {
 	FindByTokenHash(ctx context.Context, tokenHash string) (*PasswordResetToken, error)
 	InvalidatePreviousTokens(ctx context.Context, userID uuid.UUID) error
 	MarkUsed(ctx context.Context, tokenID uuid.UUID) error
+	DeleteExpiredTokens(ctx context.Context) (int64, error)
 	WithTx(tx pgx.Tx) PasswordResetRepository
 }
 
@@ -43,12 +45,14 @@ type EnterpriseRepository interface {
 	List(ctx context.Context, filter map[string]interface{}) ([]*Enterprise, error)
 	ListPaginated(ctx context.Context, filter EnterpriseFilter) ([]*Enterprise, int, error)
 	HardDelete(ctx context.Context, id uuid.UUID) error
+	GetExpiredDeletedEnterprises(ctx context.Context, limit int) ([]*Enterprise, error)
 	WithTx(tx pgx.Tx) EnterpriseRepository
 }
 
 type AuditRepository interface {
 	Create(ctx context.Context, log *AuditLog) error
 	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*AuditLog, int, error)
+	DeleteOlderThan(ctx context.Context, cutoff time.Time) (int64, error)
 	WithTx(tx pgx.Tx) AuditRepository
 }
 
