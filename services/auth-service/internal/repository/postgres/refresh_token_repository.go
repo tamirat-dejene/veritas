@@ -131,16 +131,51 @@ func (r *refreshTokenRepository) Revoke(ctx context.Context, tokenID uuid.UUID) 
 	return nil
 }
 
-// DeleteExpiredByUserID removes all expired tokens for a user (housekeeping).
-func (r *refreshTokenRepository) DeleteExpiredByUserID(ctx context.Context, userID uuid.UUID, before time.Time) error {
-	const query = `DELETE FROM refresh_tokens WHERE user_id = $1 AND expires_at < $2`
+// DeleteExpired removes all tokens that have expired before the given time.
+func (r *refreshTokenRepository) DeleteExpired(ctx context.Context, before time.Time) (int64, error) {
+	const query = `DELETE FROM refresh_tokens WHERE expires_at < $1`
 
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second) // Cleanup can take longer
 	defer cancel()
 
-	_, err := r.db.Exec(ctx, query, userID, before)
+	commandTag, err := r.db.Exec(ctx, query, before)
 	if err != nil {
-		return fmt.Errorf("refreshTokenRepository.DeleteExpiredByUserID: %w", err)
+		return 0, fmt.Errorf("refreshTokenRepository.DeleteExpired: %w", err)
 	}
-	return nil
+	return commandTag.RowsAffected(), nil
+}
+
+// FindUsersWithExcessiveSessions identifies users with more than 'threshold' active refresh tokens.
+func (r *refreshTokenRepository) FindUsersWithExcessiveSessions(ctx context.Context, threshold int) ([]uuid.UUID, error) {
+	const query = `
+		SELECT user_id
+		FROM refresh_tokens
+		WHERE revoked = false AND expires_at > NOW()
+		GROUP BY user_id
+		HAVING COUNT(*) > $1
+	`
+
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	rows, err := r.db.Query(ctx, query, threshold)
+	if err != nil {
+		return nil, fmt.Errorf("refreshTokenRepository.FindUsersWithExcessiveSessions: %w", err)
+	}
+	defer rows.Close()
+
+	var userIDs []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("scan user_id: %w", err)
+		}
+		userIDs = append(userIDs, id)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return userIDs, nil
 }

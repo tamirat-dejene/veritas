@@ -22,7 +22,8 @@ type RefreshTokenRepository interface {
 	FindByHash(ctx context.Context, tokenHash string) (*RefreshToken, error)
 	FindByHashForUpdate(ctx context.Context, tokenHash string) (*RefreshToken, error)
 	Revoke(ctx context.Context, tokenID uuid.UUID) error
-	DeleteExpiredByUserID(ctx context.Context, userID uuid.UUID, before time.Time) error
+	DeleteExpired(ctx context.Context, before time.Time) (int64, error)
+	FindUsersWithExcessiveSessions(ctx context.Context, threshold int) ([]uuid.UUID, error)
 	WithTx(tx pgx.Tx) RefreshTokenRepository
 }
 
