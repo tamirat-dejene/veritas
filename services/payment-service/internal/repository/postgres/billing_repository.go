@@ -281,3 +281,39 @@ func (r *billingRepository) HasEventBeenProcessed(ctx context.Context, eventID s
 	err := r.db.QueryRow(ctx, query, eventID).Scan(&exists)
 	return exists, err
 }
+
+func (r *billingRepository) GetOverdueInvoices(ctx context.Context, graceDays int, limit int) ([]*domain.Invoice, error) {
+	query := fmt.Sprintf(`
+		SELECT %s FROM veritas_invoices
+		WHERE status = 'Open' AND due_date <= NOW() - INTERVAL '%d days'
+		LIMIT $1
+	`, invoiceFields, graceDays)
+	rows, err := r.db.Query(ctx, query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var invoices []*domain.Invoice
+	for rows.Next() {
+		var i domain.Invoice
+		if err := rows.Scan(
+			&i.ID, &i.EnterpriseID, &i.SubscriptionID, &i.Number, &i.Status, &i.AmountDue,
+			&i.AmountPaid, &i.AmountRemaining, &i.Currency, &i.DueDate, &i.PaidAt,
+			&i.HostedInvoiceURL, &i.InvoicePDFURL, &i.CreatedAt, &i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		invoices = append(invoices, &i)
+	}
+	return invoices, nil
+}
+
+func (r *billingRepository) PurgeOldWebhookEvents(ctx context.Context, cutoff time.Time) (int64, error) {
+	const query = `DELETE FROM veritas_processed_webhook_events WHERE processed_at < $1`
+	tag, err := r.db.Exec(ctx, query, cutoff)
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
+}

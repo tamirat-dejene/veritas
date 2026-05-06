@@ -259,6 +259,64 @@ func (r *subscriptionRepository) UpdatePlan(ctx context.Context, p *domain.Subsc
 	return nil
 }
 
+func (r *subscriptionRepository) GetLapsedSubscriptions(ctx context.Context, limit int) ([]*domain.EnterpriseSubscription, error) {
+	query := fmt.Sprintf(`
+		SELECT %s FROM veritas_enterprise_subscriptions
+		WHERE status IN ('Active', 'Trial')
+		  AND current_period_end <= NOW()
+		  AND cancel_at_period_end = true
+		LIMIT $1
+	`, subFields)
+	rows, err := r.db.Query(ctx, query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var subs []*domain.EnterpriseSubscription
+	for rows.Next() {
+		var s domain.EnterpriseSubscription
+		if err := rows.Scan(
+			&s.ID, &s.EnterpriseID, &s.PlanID, &s.Status, &s.CurrentPeriodStart, &s.CurrentPeriodEnd,
+			&s.CancelAtPeriodEnd, &s.CanceledAt, &s.EndedAt, &s.StripeCustomerID, &s.StripeSubscriptionID,
+			&s.CreatedAt, &s.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		subs = append(subs, &s)
+	}
+	return subs, nil
+}
+
+func (r *subscriptionRepository) GetPastDueCandidates(ctx context.Context, limit int) ([]*domain.EnterpriseSubscription, error) {
+	query := fmt.Sprintf(`
+		SELECT %s FROM veritas_enterprise_subscriptions
+		WHERE status IN ('Active', 'Trial')
+		  AND current_period_end <= NOW()
+		  AND cancel_at_period_end = false
+		LIMIT $1
+	`, subFields)
+	rows, err := r.db.Query(ctx, query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var subs []*domain.EnterpriseSubscription
+	for rows.Next() {
+		var s domain.EnterpriseSubscription
+		if err := rows.Scan(
+			&s.ID, &s.EnterpriseID, &s.PlanID, &s.Status, &s.CurrentPeriodStart, &s.CurrentPeriodEnd,
+			&s.CancelAtPeriodEnd, &s.CanceledAt, &s.EndedAt, &s.StripeCustomerID, &s.StripeSubscriptionID,
+			&s.CreatedAt, &s.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		subs = append(subs, &s)
+	}
+	return subs, nil
+}
+
 func (r *subscriptionRepository) WithTx(tx pgx.Tx) domain.SubscriptionRepository {
 	return &subscriptionRepository{db: tx}
 }
