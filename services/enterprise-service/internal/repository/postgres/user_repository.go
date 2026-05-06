@@ -223,3 +223,16 @@ func (r *userRepository) UpdateLoginFailure(ctx context.Context, userID uuid.UUI
 	}
 	return nil
 }
+
+func (r *userRepository) ResetExpiredLocks(ctx context.Context) (int64, error) {
+	const query = `
+		UPDATE veritas_users
+		SET failed_login_attempts = 0, locked_until = NULL, updated_at = NOW()
+		WHERE locked_until <= NOW()
+	`
+	commandTag, err := r.db.Exec(ctx, query)
+	if err != nil {
+		return 0, err
+	}
+	return commandTag.RowsAffected(), nil
+}

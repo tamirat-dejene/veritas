@@ -73,3 +73,12 @@ func (r *passwordResetRepository) MarkUsed(ctx context.Context, tokenID uuid.UUI
 	_, err := r.db.Exec(ctx, query, tokenID)
 	return err
 }
+
+func (r *passwordResetRepository) DeleteExpiredTokens(ctx context.Context) (int64, error) {
+	const query = `DELETE FROM password_reset_tokens WHERE expires_at <= NOW() OR used = true`
+	tag, err := r.db.Exec(ctx, query)
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
+}

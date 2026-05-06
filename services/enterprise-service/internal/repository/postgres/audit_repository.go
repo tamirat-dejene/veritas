@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -89,4 +90,13 @@ func (r *auditRepository) ListByEnterprise(ctx context.Context, enterpriseID uui
 		logs = append(logs, &l)
 	}
 	return logs, total, rows.Err()
+}
+
+func (r *auditRepository) DeleteOlderThan(ctx context.Context, cutoff time.Time) (int64, error) {
+	const query = `DELETE FROM veritas_enterprise_audit_logs WHERE created_at < $1`
+	tag, err := r.db.Exec(ctx, query, cutoff)
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
 }

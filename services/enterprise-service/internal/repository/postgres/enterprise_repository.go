@@ -225,3 +225,27 @@ func (r *enterpriseRepository) ListPaginated(ctx context.Context, f domain.Enter
 	}
 	return enterprises, total, rows.Err()
 }
+
+func (r *enterpriseRepository) GetExpiredDeletedEnterprises(ctx context.Context, limit int) ([]*domain.Enterprise, error) {
+	query := fmt.Sprintf(`
+		SELECT %s FROM veritas_enterprise
+		WHERE status = 'Deleted' AND retention_until <= NOW()
+		LIMIT $1
+	`, enterpriseFields)
+	
+	rows, err := r.db.Query(ctx, query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var enterprises []*domain.Enterprise
+	for rows.Next() {
+		e, err := scanEnterprise(rows)
+		if err != nil {
+			return nil, err
+		}
+		enterprises = append(enterprises, e)
+	}
+	return enterprises, nil
+}
