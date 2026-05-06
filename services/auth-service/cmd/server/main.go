@@ -120,7 +120,7 @@ func main() {
 	logoutUC := usecase.NewLogoutUseCase(pool, refreshTokenRepo, log)
 
 	// --- Background Jobs: Cron ---
-	cron := cronjob.NewScheduler(log)
+	cron := cronjob.NewScheduler(log.Named("scheduler"))
 	infrasched.RegisterAuthJobs(cron, refreshUC)
 	cron.Start(context.Background())
 	defer cron.Stop()
