@@ -10,6 +10,7 @@ import (
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
+
 type ExamRepository interface {
 	Create(ctx context.Context, exam *sdomain.Exam) error
 	GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*sdomain.Exam, error)
@@ -17,6 +18,9 @@ type ExamRepository interface {
 	Update(ctx context.Context, exam *sdomain.Exam) error
 	Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	CountByEnterpriseAndStatus(ctx context.Context, enterpriseID uuid.UUID, status sdomain.ExamStatus) (int, error)
+	GetScheduledExamsDue(ctx context.Context, limit int) ([]*sdomain.Exam, error)
+	GetActiveExamsPastEnd(ctx context.Context, limit int) ([]*sdomain.Exam, error)
+	GetStaleClosedExams(ctx context.Context, cutoff time.Time, limit int) ([]*sdomain.Exam, error)
 
 	AddQuestions(ctx context.Context, examID uuid.UUID, eqs []*sdomain.ExamQuestion) error
 	GetExamQuestions(ctx context.Context, examID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*sdomain.ExamQuestion], error)
@@ -35,6 +39,7 @@ type ExamUsecase interface {
 	CloneExam(ctx context.Context, sourceID uuid.UUID, enterpriseID uuid.UUID, cloneTitle string, userID uuid.UUID) (*sdomain.Exam, error)
 	PublishExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	CloseExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
+	ArchiveExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	DeleteExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	GetActiveExamsCount(ctx context.Context, enterpriseID uuid.UUID) (int, error)
 
