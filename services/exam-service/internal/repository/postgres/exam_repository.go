@@ -291,6 +291,75 @@ func (r *examRepository) UpdateQuestionMapping(ctx context.Context, examID uuid.
 }
 
 
+func (r *examRepository) GetScheduledExamsDue(ctx context.Context, limit int) ([]*sdomain.Exam, error) {
+	query := fmt.Sprintf(`
+		SELECT %s FROM veritas_exams
+		WHERE status = 'Scheduled' AND scheduled_start <= NOW()
+		LIMIT $1
+	`, examFields)
+	rows, err := r.db.Query(ctx, query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var exams []*sdomain.Exam
+	for rows.Next() {
+		e, err := scanExam(rows)
+		if err != nil {
+			return nil, err
+		}
+		exams = append(exams, e)
+	}
+	return exams, nil
+}
+
+func (r *examRepository) GetActiveExamsPastEnd(ctx context.Context, limit int) ([]*sdomain.Exam, error) {
+	query := fmt.Sprintf(`
+		SELECT %s FROM veritas_exams
+		WHERE status = 'Active' AND scheduled_end <= NOW()
+		LIMIT $1
+	`, examFields)
+	rows, err := r.db.Query(ctx, query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var exams []*sdomain.Exam
+	for rows.Next() {
+		e, err := scanExam(rows)
+		if err != nil {
+			return nil, err
+		}
+		exams = append(exams, e)
+	}
+	return exams, nil
+}
+
+func (r *examRepository) GetStaleClosedExams(ctx context.Context, cutoff time.Time, limit int) ([]*sdomain.Exam, error) {
+	query := fmt.Sprintf(`
+		SELECT %s FROM veritas_exams
+		WHERE status = 'Closed' AND updated_at < $1
+		LIMIT $2
+	`, examFields)
+	rows, err := r.db.Query(ctx, query, cutoff, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var exams []*sdomain.Exam
+	for rows.Next() {
+		e, err := scanExam(rows)
+		if err != nil {
+			return nil, err
+		}
+		exams = append(exams, e)
+	}
+	return exams, nil
+}
+
 func (r *examRepository) WithTx(tx pgx.Tx) domain.ExamRepository {
 	return &examRepository{db: tx}
 }
