@@ -35,10 +35,12 @@ import (
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/handler"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/messaging"
+	"github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/scheduler"
 	stripeprovider "github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/stripe"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/usecase"
+	"github.com/tamirat-dejene/veritas/shared/pkg/cronjob"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"github.com/tamirat-dejene/veritas/shared/pkg/messaging/kafka"
 	"go.uber.org/zap"
@@ -81,12 +83,17 @@ func main() {
 
 	// 6. Wire usecase and handler
 	payUsecase := usecase.NewPaymentUsecase(pool, subRepo, billingRepo, payProvider, eventPublisher)
+	maintenanceUC := usecase.NewMaintenanceUseCase(subRepo, billingRepo, eventPublisher, log)
 	payHandler := handler.NewPaymentHandler(payUsecase)
 
-	// 7. Build router
-	r := router.NewRouter(payHandler)
+	// 7. Initialize Scheduler & Register Background Jobs
+	cronScheduler := cronjob.NewScheduler(log.Named("scheduler"))
+	scheduler.RegisterPaymentJobs(cronScheduler, maintenanceUC)
+	cronScheduler.Start(context.Background())
+	defer cronScheduler.Stop()
 
-	// 8. Start HTTP server
+	// 8. Build router and start HTTP server
+	r := router.NewRouter(payHandler)
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,
 		Handler: r,
