@@ -293,6 +293,21 @@ func (uc *examUsecase) GetActiveExamsCount(ctx context.Context, enterpriseID uui
 	return uc.examRepo.CountByEnterpriseAndStatus(ctx, enterpriseID, sdomain.ExamActive)
 }
 
+func (uc *examUsecase) ArchiveExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
+	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		exam, err := uc.examRepo.WithTx(tx).GetByID(ctx, id, enterpriseID)
+		if err != nil {
+			return err
+		}
+
+		if exam.Status != sdomain.ExamClosed {
+			return domain.ErrInvalidStatus
+		}
+
+		exam.Status = sdomain.ExamArchived
+		return uc.examRepo.WithTx(tx).Update(ctx, exam)
+	})
+}
 
 func (uc *examUsecase) AddQuestionsToExam(ctx context.Context, enterpriseID, examID uuid.UUID, inputs []sdomain.ExamQuestionInput) ([]*sdomain.ExamQuestion, error) {
 	var eqs []*sdomain.ExamQuestion
