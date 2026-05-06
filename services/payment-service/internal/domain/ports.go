@@ -2,10 +2,11 @@ package domain
 
 import (
 	"context"
+	"time"
 
-	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 )
 
 type SubscriptionRepository interface {
@@ -20,6 +21,8 @@ type SubscriptionRepository interface {
 	UpdateSubscription(ctx context.Context, sub *EnterpriseSubscription) error
 	CreatePlan(ctx context.Context, plan *SubscriptionPlan) error
 	UpdatePlan(ctx context.Context, plan *SubscriptionPlan) error
+	GetLapsedSubscriptions(ctx context.Context, limit int) ([]*EnterpriseSubscription, error)
+	GetPastDueCandidates(ctx context.Context, limit int) ([]*EnterpriseSubscription, error)
 	WithTx(tx pgx.Tx) SubscriptionRepository
 }
 
@@ -39,6 +42,8 @@ type BillingRepository interface {
 	HasEventBeenProcessed(ctx context.Context, eventID string) (bool, error)
 
 	GetBillingAggregates(ctx context.Context, enterpriseID uuid.UUID) (float64, float64, *Payment, error)
+	GetOverdueInvoices(ctx context.Context, graceDays int, limit int) ([]*Invoice, error)
+	PurgeOldWebhookEvents(ctx context.Context, cutoff time.Time) (int64, error)
 
 	WithTx(tx pgx.Tx) BillingRepository
 }
