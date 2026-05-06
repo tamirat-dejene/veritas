@@ -139,14 +139,15 @@ func (uc *enrollmentUseCase) EnrollCandidates(
 					return fmt.Errorf("generate opaque code for candidate %s: %w", cid, err)
 				}
 
-				enrollment := &domain.ExamEnrollment{
-					ID:                 enrollmentID,
-					EnterpriseID:       enterpriseID,
-					ExamID:             examID,
-					CandidateID:        cid,
-					AccessTokenHash:    hashSHA256(rawToken),
-					InvitationCodeHash: hashSHA256(opaqueCode),
-					TokenExpiresAt:     expiresAt,
+					h := hashSHA256(opaqueCode)
+					enrollment := &domain.ExamEnrollment{
+						ID:                 enrollmentID,
+						EnterpriseID:       enterpriseID,
+						ExamID:             examID,
+						CandidateID:        cid,
+						AccessTokenHash:    hashSHA256(rawToken),
+						InvitationCodeHash: &h,
+						TokenExpiresAt:     expiresAt,
 					MaxAttempts:        maxAttempts,
 					AttemptsUsed:       0,
 					Status:             domain.StatusPending,
@@ -418,7 +419,8 @@ func (uc *enrollmentUseCase) GetInvitationLink(ctx context.Context, id uuid.UUID
 	if err != nil {
 		return "", err
 	}
-	e.InvitationCodeHash = hashSHA256(opaqueCode)
+	h := hashSHA256(opaqueCode)
+	e.InvitationCodeHash = &h
 	if err := uc.repo.Update(ctx, e); err != nil {
 		return "", err
 	}
