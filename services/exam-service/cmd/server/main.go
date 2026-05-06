@@ -32,9 +32,11 @@ import (
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/handler"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/infrastructure/client"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/infrastructure/messaging"
+	"github.com/tamirat-dejene/veritas/services/exam-service/internal/infrastructure/scheduler"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/usecase"
+	"github.com/tamirat-dejene/veritas/shared/pkg/cronjob"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"github.com/tamirat-dejene/veritas/shared/pkg/messaging/kafka"
 	"go.uber.org/zap"
@@ -96,15 +98,20 @@ func main() {
 	// 8. Initialize Usecases
 	questionUC := usecase.NewQuestionUsecase(pool, questionRepo, questionStorage)
 	examUC := usecase.NewExamUsecase(pool, examRepo, questionRepo, eventPublisher, entClient, candClient, log)
+	maintenanceUC := usecase.NewMaintenanceUseCase(examRepo, examUC, log)
 
-	// 6. Initialize Handlers
+	// 9. Initialize Scheduler & Register Background Jobs
+	cronScheduler := cronjob.NewScheduler(log)
+	scheduler.RegisterExamJobs(cronScheduler, maintenanceUC)
+	cronScheduler.Start(context.Background())
+	defer cronScheduler.Stop()
+
+	// 10. Initialize Handlers and Router
 	questionHandler := handler.NewQuestionHandler(questionUC)
 	examHandler := handler.NewExamHandler(examUC)
-
-	// 7. Initialize Router
 	r := router.NewRouter(questionHandler, examHandler)
 
-	// 8. Start HTTP Server
+	// Start HTTP Server
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,
 		Handler: r,
