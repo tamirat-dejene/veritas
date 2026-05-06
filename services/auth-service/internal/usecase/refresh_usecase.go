@@ -163,3 +163,41 @@ func (uc *RefreshUseCase) Execute(ctx context.Context, input RefreshInput) (*Ref
 		ExpiresIn:    int64(uc.accessTokenTTL.Seconds()),
 	}, nil
 }
+
+// PurgeExpiredTokens removes tokens that are past their expiration date.
+func (uc *RefreshUseCase) PurgeExpiredTokens(ctx context.Context) error {
+	l := logger.WithContext(ctx, uc.log)
+	
+	count, err := uc.refreshTokenRepo.DeleteExpired(ctx, time.Now().UTC())
+	if err != nil {
+		return fmt.Errorf("purge expired tokens: %w", err)
+	}
+
+	if count > 0 {
+		l.Info("purged expired refresh tokens", zap.Int64("count", count))
+	}
+	
+	return nil
+}
+
+// AuditSessionIntegrity checks for users with an excessive number of active sessions.
+func (uc *RefreshUseCase) AuditSessionIntegrity(ctx context.Context) error {
+	l := logger.WithContext(ctx, uc.log)
+	const threshold = 50
+
+	userIDs, err := uc.refreshTokenRepo.FindUsersWithExcessiveSessions(ctx, threshold)
+	if err != nil {
+		return fmt.Errorf("audit session integrity: %w", err)
+	}
+
+	if len(userIDs) > 0 {
+		l.Warn("found users with excessive active sessions", 
+			zap.Int("user_count", len(userIDs)),
+			zap.Int("threshold", threshold),
+			zap.Any("user_ids", userIDs),
+		)
+	}
+
+	return nil
+}
+
