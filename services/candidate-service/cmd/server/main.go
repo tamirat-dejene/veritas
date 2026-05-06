@@ -40,6 +40,8 @@ import (
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/usecase"
+	infrasched "github.com/tamirat-dejene/veritas/services/candidate-service/internal/infrastructure/scheduler"
+	"github.com/tamirat-dejene/veritas/shared/pkg/cronjob"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"github.com/tamirat-dejene/veritas/shared/pkg/messaging/kafka"
 	"go.uber.org/zap"
@@ -103,6 +105,7 @@ func main() {
 	)
 	sessionUC := usecase.NewSessionUseCase(pool, sessionRepo, enrollmentRepo, candidateRepo, examClient, tokenService, publisher)
 	monitoringUC := usecase.NewMonitoringUseCase(sessionRepo)
+	maintenanceUC := usecase.NewMaintenanceUseCase(sessionRepo, sessionUC, enrollmentRepo, log)
 
 	// 9. Initialize Handlers
 	candidateHandler := c_http.NewCandidateHandler(candidateUC)
@@ -113,7 +116,13 @@ func main() {
 	// 10. Initialize Router
 	r := router.NewRouter(candidateHandler, enrollmentHandler, sessionHandler, monitoringHandler)
 
-	// 11. Start HTTP Server
+	// 11. Initialize Background Tasks
+	scheduler := cronjob.NewScheduler(log.Named("scheduler"))
+	infrasched.RegisterCandidateJobs(scheduler, maintenanceUC)
+	scheduler.Start(context.Background())
+	defer scheduler.Stop()
+
+	// 12. Start HTTP Server
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,
 		Handler: r,
@@ -133,7 +142,7 @@ func main() {
 
 	log.Info("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
