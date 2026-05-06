@@ -31,9 +31,11 @@ import (
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/handler"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/infrastructure/messaging"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/infrastructure/client"
+	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/infrastructure/scheduler"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/usecase"
+	"github.com/tamirat-dejene/veritas/shared/pkg/cronjob"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"github.com/tamirat-dejene/veritas/shared/pkg/messaging/kafka"
 	"go.uber.org/zap"
@@ -107,12 +109,17 @@ func main() {
 	// 7. Initialize Usecases
 	enterpriseUC := usecase.NewEnterpriseUsecase(pool, userRepo, enterpriseRepo, auditRepo, eventPublisher, payClient, examClient, candidateClient, logoStorage)
 	userUC := usecase.NewUserUsecase(pool, userRepo, enterpriseRepo, auditRepo, eventPublisher, passwordResetRepo, cfg.FrontendBaseURL)
+	maintenanceUC := usecase.NewMaintenanceUseCase(userRepo, passwordResetRepo, enterpriseRepo, enterpriseUC, auditRepo, log)
 
-	// 8. Initialize Handlers
+	// 8. Initialize Scheduler & Register Background Jobs
+	cronScheduler := cronjob.NewScheduler(log)
+	scheduler.RegisterEnterpriseJobs(cronScheduler, maintenanceUC)
+	cronScheduler.Start(context.Background())
+	defer cronScheduler.Stop()
+
+	// 9. Initialize Handlers and router
 	enterpriseHandler := handler.NewEnterpriseHandler(enterpriseUC)
 	userHandler := handler.NewUserHandler(userUC)
-
-	// 9. Initialize Router
 	r := router.NewRouter(enterpriseHandler, userHandler)
 
 	// 10. Start HTTP Server
