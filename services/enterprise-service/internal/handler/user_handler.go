@@ -455,6 +455,22 @@ func (h *UserHandler) GetByEmail(c *gin.Context) {
 	writeJSON(c, http.StatusOK, user)
 }
 
+func (h *UserHandler) ListUserIDsByEnterprise(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid enterprise ID")
+		return
+	}
+	userIDs, err := h.usecase.ListAllUserIDsByEnterprise(c.Request.Context(), id)
+	if err != nil {
+		h.handleErr(c, err)
+		return
+	}
+
+	writeJSON(c, http.StatusOK, userIDs)
+}
+
 func (h *UserHandler) GetByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)

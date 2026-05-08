@@ -83,6 +83,10 @@ func NewRouter(
 			users.POST("/:id/login-success", uh.RecordLoginSuccess)
 			users.POST("/:id/login-failure", uh.RecordLoginFailure)
 		}
+		enterprises := internal.Group("/enterprises")
+		{
+			enterprises.GET("/:id/users", uh.ListUserIDsByEnterprise)
+		}
 	}
 
 	// Swagger UI — available at /swagger/index.html

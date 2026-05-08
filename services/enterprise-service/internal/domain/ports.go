@@ -21,6 +21,7 @@ type UserRepository interface {
 	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) ([]*User, int, error)
 	FindByEnterpriseAndID(ctx context.Context, enterpriseID, userID uuid.UUID) (*User, error)
 	CountByEnterprise(ctx context.Context, enterpriseID uuid.UUID) (int, error)
+	ListAllUserIDsByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]uuid.UUID, error)
 	UpdateLoginSuccess(ctx context.Context, userID uuid.UUID, ip, userAgent string) error
 	UpdateLoginFailure(ctx context.Context, userID uuid.UUID, lockUntil *time.Time, failedLoginAttempts int) error
 	ResetExpiredLocks(ctx context.Context) (int64, error)
@@ -106,6 +107,7 @@ type UserUsecase interface {
 	RecordLoginFailure(ctx context.Context, userID uuid.UUID, lockUntil *time.Time, failedLoginAttempts int) error
 	GetByEmail(ctx context.Context, email string) (*User, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*User, error)
+	ListAllUserIDsByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]uuid.UUID, error)
 }
 
 type EventPublisher interface {

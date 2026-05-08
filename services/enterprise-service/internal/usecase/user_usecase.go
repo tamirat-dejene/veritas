@@ -151,6 +151,13 @@ func (uc *userUsecase) ListEnterpriseUsers(ctx context.Context, enterpriseID uui
 	return uc.userRepo.ListByEnterprise(ctx, enterpriseID, params)
 }
 
+func (uc *userUsecase) ListAllUserIDsByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]uuid.UUID, error) {
+	if _, err := uc.enterpriseRepo.FindByID(ctx, enterpriseID); err != nil {
+		return nil, err
+	}
+	return uc.userRepo.ListAllUserIDsByEnterprise(ctx, enterpriseID)
+}
+
 func (uc *userUsecase) GetEnterpriseUser(ctx context.Context, enterpriseID, userID uuid.UUID) (*domain.User, error) {
 	return uc.userRepo.FindByEnterpriseAndID(ctx, enterpriseID, userID)
 }

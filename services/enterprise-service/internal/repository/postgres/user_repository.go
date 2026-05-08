@@ -160,6 +160,26 @@ func (r *userRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid
 	return users, total, rows.Err()
 }
 
+// ListAllUserIDsByEnterprise returns all user IDs for an enterprise (not paginated).
+func (r *userRepository) ListAllUserIDsByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]uuid.UUID, error) {
+	query := "SELECT id FROM veritas_users WHERE enterprise_id = $1"
+	rows, err := r.db.Query(ctx, query, enterpriseID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var userIDs []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		userIDs = append(userIDs, id)
+	}
+	return userIDs, rows.Err()
+}
+
 // FindByEnterpriseAndID fetches a user scoped to an enterprise.
 func (r *userRepository) FindByEnterpriseAndID(ctx context.Context, enterpriseID, userID uuid.UUID) (*domain.User, error) {
 	query := fmt.Sprintf(
