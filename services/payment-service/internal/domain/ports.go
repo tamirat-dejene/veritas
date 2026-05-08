@@ -44,7 +44,7 @@ type BillingRepository interface {
 	GetBillingAggregates(ctx context.Context, enterpriseID uuid.UUID) (float64, float64, *Payment, error)
 	GetOverdueInvoices(ctx context.Context, graceDays int, limit int) ([]*Invoice, error)
 	PurgeOldWebhookEvents(ctx context.Context, cutoff time.Time) (int64, error)
-
+	VoidOpenInvoices(ctx context.Context, enterpriseID uuid.UUID) (int64, error)
 	WithTx(tx pgx.Tx) BillingRepository
 }
 
