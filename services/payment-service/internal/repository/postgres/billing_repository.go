@@ -317,3 +317,17 @@ func (r *billingRepository) PurgeOldWebhookEvents(ctx context.Context, cutoff ti
 	}
 	return tag.RowsAffected(), nil
 }
+
+
+func (r *billingRepository) VoidOpenInvoices(ctx context.Context, enterpriseID uuid.UUID) (int64, error) {
+	const query = `
+		UPDATE veritas_invoices
+		SET status = $2, amount_remaining = 0, updated_at = NOW()
+		WHERE enterprise_id = $1 AND status = 'Open'
+	`
+	tag, err := r.db.Exec(ctx, query, enterpriseID, domain.InvoiceStatusVoid)
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
+}
