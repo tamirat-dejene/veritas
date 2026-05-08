@@ -21,7 +21,7 @@ type ExamRepository interface {
 	GetScheduledExamsDue(ctx context.Context, limit int) ([]*sdomain.Exam, error)
 	GetActiveExamsPastEnd(ctx context.Context, limit int) ([]*sdomain.Exam, error)
 	GetStaleClosedExams(ctx context.Context, cutoff time.Time, limit int) ([]*sdomain.Exam, error)
-
+	GetByEnterpriseAndStatuses(ctx context.Context, enterpriseID uuid.UUID, statuses []sdomain.ExamStatus) ([]*sdomain.Exam, error)
 	AddQuestions(ctx context.Context, examID uuid.UUID, eqs []*sdomain.ExamQuestion) error
 	GetExamQuestions(ctx context.Context, examID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*sdomain.ExamQuestion], error)
 	RemoveQuestion(ctx context.Context, examID uuid.UUID, questionID uuid.UUID) error
