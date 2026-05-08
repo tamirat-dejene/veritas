@@ -80,6 +80,17 @@ func main() {
 	defer kafkaProducer.Close()
 	eventPublisher := messaging.NewKafkaPublisher(kafkaProducer)
 
+	// 5b. Messaging: Kafka subscriber (consistency consumer)
+	kafkaSubscriber, err := kafka.NewSubscriber(kafka.Config{
+		Brokers:       cfg.KafkaBrokers,
+		ConsumerGroup: "exam-service-group",
+	})
+	if err != nil {
+		log.Error("failed to initialize kafka subscriber — consistency events will not be processed", zap.Error(err))
+	} else {
+		defer kafkaSubscriber.Close()
+	}
+
 	// 6. Internal Clients
 	entClient := client.NewEnterpriseClient(cfg.EnterpriseServiceURL)
 	candClient := client.NewCandidateClient(cfg.CandidateServiceURL)
@@ -99,12 +110,44 @@ func main() {
 	questionUC := usecase.NewQuestionUsecase(pool, questionRepo, questionStorage)
 	examUC := usecase.NewExamUsecase(pool, examRepo, questionRepo, eventPublisher, entClient, candClient, log)
 	maintenanceUC := usecase.NewMaintenanceUseCase(examRepo, examUC, log)
+	consistencyUC := usecase.NewConsistencyUseCase(examRepo, eventPublisher, log)
 
 	// 9. Initialize Scheduler & Register Background Jobs
 	cronScheduler := cronjob.NewScheduler(log)
 	scheduler.RegisterExamJobs(cronScheduler, maintenanceUC)
 	cronScheduler.Start(context.Background())
 	defer cronScheduler.Stop()
+
+	// 9b. Start Kafka consistency consumer goroutine
+	if kafkaSubscriber != nil {
+		eventConsumer := messaging.NewEventConsumer(consistencyUC, log)
+		consumerCtx, consumerCancel := context.WithCancel(context.Background())
+		defer consumerCancel()
+		go func() {
+			log.Info("kafka consistency subscriber started", zap.Strings("topics", eventConsumer.Topics()))
+			for {
+				select {
+				case <-consumerCtx.Done():
+					return
+				default:
+				}
+
+				if err := kafkaSubscriber.Subscribe(consumerCtx, eventConsumer.Topics(), eventConsumer.Handle); err != nil {
+					if consumerCtx.Err() != nil {
+						return
+					}
+					log.Error("kafka consistency subscriber exited, retrying in 5s...", zap.Error(err))
+					select {
+					case <-time.After(5 * time.Second):
+					case <-consumerCtx.Done():
+						return
+					}
+					continue
+				}
+				break
+			}
+		}()
+	}
 
 	// 10. Initialize Handlers and Router
 	questionHandler := handler.NewQuestionHandler(questionUC)
