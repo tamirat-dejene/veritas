@@ -26,7 +26,10 @@ func NewSubscriptionRouter(usecase domain.EnterpriseUsecase, logger *zap.Logger)
 		return usecase.SuspendForPayment(ctx, evt.EnterpriseID)
 	})
 
-	// We will add more topic handlers here as the service grows...
+	messaging.RegisterJSONHandler(router, topics.SubscriptionCanceled, func(ctx context.Context, evt paymentFailedEvent) error {
+		return usecase.SuspendForPayment(ctx, evt.EnterpriseID)
+	})
+
 	return router
 }
 

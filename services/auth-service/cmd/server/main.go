@@ -92,7 +92,7 @@ func main() {
 	eventPublisher := inframsg.NewKafkaPublisher(kafkaProducer)
 	kafkaSubscriber, err := kafka.NewSubscriber(kafka.Config{
 		Brokers:       cfg.KafkaBrokers,
-		ConsumerGroup: "auth-service",
+		ConsumerGroup: "auth-service-group",
 	})
 	if err != nil {
 		log.Error("failed to initialize kafka subscriber", zap.Error(err))
