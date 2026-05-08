@@ -53,6 +53,8 @@ type EnrollmentRepository interface {
 	UpdateStatus(ctx context.Context, id uuid.UUID, status EnrollmentStatus) error
 	IncrementAttempt(ctx context.Context, id uuid.UUID) error
 	GetExpiredPendingEnrollments(ctx context.Context, limit int) ([]*ExamEnrollment, error)
+	RevokeByEnterprise(ctx context.Context, enterpriseID uuid.UUID) error
+	RevokeByExam(ctx context.Context, examID uuid.UUID) error
 	WithTx(tx pgx.Tx) EnrollmentRepository
 }
 

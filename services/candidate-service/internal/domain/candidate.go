@@ -32,6 +32,7 @@ type CandidateRepository interface {
 	Activate(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	GetEmailsByExamID(ctx context.Context, examID, enterpriseID uuid.UUID) ([]string, error)
+	DeactivateByEnterprise(ctx context.Context, enterpriseID uuid.UUID) error
 	WithTx(tx pgx.Tx) CandidateRepository
 }
 

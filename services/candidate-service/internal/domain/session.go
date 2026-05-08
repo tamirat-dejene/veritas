@@ -104,6 +104,8 @@ type SessionRepository interface {
 	GetSessionByEnrollment(ctx context.Context, enrollmentID uuid.UUID) (*ExamSession, error)
 	CountSessionsByEnterpriseAndStatus(ctx context.Context, enterpriseID uuid.UUID, status SessionStatus) (int, error)
 	GetExpiredActiveSessions(ctx context.Context, limit int) ([]*ExamSession, error)
+	TerminateActiveSessionsByEnterprise(ctx context.Context, enterpriseID uuid.UUID, reason string) error
+	TerminateActiveSessionsByExam(ctx context.Context, examID uuid.UUID, reason string) error
 	WithTx(tx pgx.Tx) SessionRepository
 }
 
