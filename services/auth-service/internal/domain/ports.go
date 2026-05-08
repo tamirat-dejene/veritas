@@ -12,6 +12,7 @@ import (
 type EnterpriseServiceClient interface {
 	FindByEmail(ctx context.Context, email string) (*User, error)
 	FindByID(ctx context.Context, id uuid.UUID) (*User, error)
+	ListUsersByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]uuid.UUID, error)
 	UpdateLoginSuccess(ctx context.Context, userID uuid.UUID, ip, userAgent string) error
 	UpdateLoginFailure(ctx context.Context, userID uuid.UUID, lockUntil *time.Time, failedLoginAttempts int) error
 }
@@ -23,6 +24,7 @@ type RefreshTokenRepository interface {
 	FindByHashForUpdate(ctx context.Context, tokenHash string) (*RefreshToken, error)
 	Revoke(ctx context.Context, tokenID uuid.UUID) error
 	DeleteExpired(ctx context.Context, before time.Time) (int64, error)
+	DeleteAllForUser(ctx context.Context, userID uuid.UUID) error
 	FindUsersWithExcessiveSessions(ctx context.Context, threshold int) ([]uuid.UUID, error)
 	WithTx(tx pgx.Tx) RefreshTokenRepository
 }
@@ -35,5 +37,6 @@ type TokenService interface {
 
 // EventPublisher is the port for publishing domain events.
 type EventPublisher interface {
-	PublishLogin(ctx context.Context, userID uuid.UUID, email string) error
+	RevokeUserSessions(ctx context.Context, userID uuid.UUID) error
+	RevokeEnterpriseSessions(ctx context.Context, enterpriseID uuid.UUID) error
 }

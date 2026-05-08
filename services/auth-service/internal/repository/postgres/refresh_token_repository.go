@@ -145,6 +145,20 @@ func (r *refreshTokenRepository) DeleteExpired(ctx context.Context, before time.
 	return commandTag.RowsAffected(), nil
 }
 
+// DeleteAllForUser removes all refresh tokens for a specific user.
+func (r *refreshTokenRepository) DeleteAllForUser(ctx context.Context, userID uuid.UUID) error {
+	const query = `DELETE FROM refresh_tokens WHERE user_id = $1`
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	_, err := r.db.Exec(ctx, query, userID)
+	if err != nil {
+		return fmt.Errorf("refreshTokenRepository.DeleteAllForUser: %w", err)
+	}
+	return nil
+}
+
 // FindUsersWithExcessiveSessions identifies users with more than 'threshold' active refresh tokens.
 func (r *refreshTokenRepository) FindUsersWithExcessiveSessions(ctx context.Context, threshold int) ([]uuid.UUID, error) {
 	const query = `

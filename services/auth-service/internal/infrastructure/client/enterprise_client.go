@@ -67,6 +67,26 @@ func (c *userClient) FindByID(ctx context.Context, id uuid.UUID) (*domain.User, 
 	return &user, nil
 }
 
+func (c *userClient) ListUsersByEnterprise(ctx context.Context, enterpriseID uuid.UUID) ([]uuid.UUID, error) {
+	path := fmt.Sprintf("/internal/enterprises/%s/users", enterpriseID.String())
+
+	resp, err := c.client.Get(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := resp.Error(); err != nil {
+		return nil, mapError(err)
+	}
+
+	var userIDs []uuid.UUID
+	if err := resp.Decode(&userIDs); err != nil {
+		return nil, err
+	}
+
+	return userIDs, nil
+}
+
 func (c *userClient) UpdateLoginSuccess(ctx context.Context, userID uuid.UUID, ip, userAgent string) error {
 	path := fmt.Sprintf("/internal/users/%s/login-success", userID.String())
 	body := map[string]string{
