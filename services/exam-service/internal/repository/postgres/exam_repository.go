@@ -360,6 +360,44 @@ func (r *examRepository) GetStaleClosedExams(ctx context.Context, cutoff time.Ti
 	return exams, nil
 }
 
+// GetByEnterpriseAndStatuses returns all exams for an enterprise whose status
+// is contained in the provided statuses slice. This is intentionally unbounded
+// (no LIMIT) so that consistency operations process every affected exam.
+func (r *examRepository) GetByEnterpriseAndStatuses(ctx context.Context, enterpriseID uuid.UUID, statuses []sdomain.ExamStatus) ([]*sdomain.Exam, error) {
+	if len(statuses) == 0 {
+		return nil, nil
+	}
+
+	// Convert []sdomain.ExamStatus to []string for pgx ANY() binding.
+	statusStrings := make([]string, len(statuses))
+	for i, s := range statuses {
+		statusStrings[i] = string(s)
+	}
+
+	query := fmt.Sprintf(`
+		SELECT %s FROM veritas_exams
+		WHERE enterprise_id = $1 AND status = ANY($2)
+		ORDER BY created_at ASC
+	`, examFields)
+
+	rows, err := r.db.Query(ctx, query, enterpriseID, statusStrings)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var exams []*sdomain.Exam
+	for rows.Next() {
+		e, err := scanExam(rows)
+		if err != nil {
+			return nil, err
+		}
+		exams = append(exams, e)
+	}
+	return exams, nil
+}
+
 func (r *examRepository) WithTx(tx pgx.Tx) domain.ExamRepository {
 	return &examRepository{db: tx}
 }
+
