@@ -44,6 +44,7 @@ import (
 	"github.com/tamirat-dejene/veritas/shared/pkg/cronjob"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"github.com/tamirat-dejene/veritas/shared/pkg/messaging/kafka"
+	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/infrastructure/messaging"
 	"go.uber.org/zap"
 
 	// Import generated swagger docs so the spec is registered at startup.
@@ -94,18 +95,22 @@ func main() {
 
 	// 8. Initialize UseCases
 	candidateUC := usecase.NewCandidateUseCase(pool, candidateRepo)
-	enrollmentUC := usecase.NewEnrollmentUseCase(
-		pool,
-		enrollmentRepo,
-		candidateRepo,
-		tokenService,
-		examClient,
-		publisher,
-		cfg.CandidatePortalBaseURL,
-	)
+	enrollmentUC := usecase.NewEnrollmentUseCase(pool, enrollmentRepo, candidateRepo, tokenService, examClient, publisher, cfg.CandidatePortalBaseURL)
 	sessionUC := usecase.NewSessionUseCase(pool, sessionRepo, enrollmentRepo, candidateRepo, examClient, tokenService, publisher)
 	monitoringUC := usecase.NewMonitoringUseCase(sessionRepo)
 	maintenanceUC := usecase.NewMaintenanceUseCase(sessionRepo, sessionUC, enrollmentRepo, log)
+	consistencyUC := usecase.NewConsistencyUseCase(sessionRepo, enrollmentRepo, candidateRepo, log)
+
+	// 8.5 Initialize Kafka Event Consumer
+	eventConsumer := messaging.NewEventConsumer(consistencyUC, log.Named("event_consumer"))
+	subscriber, err := kafka.NewSubscriber(kafka.Config{
+		Brokers:       kafkaBrokers,
+		ConsumerGroup: "candidate-service-group",
+	})
+	if err != nil {
+		log.Fatal("failed to create Kafka consumer", zap.Error(err))
+	}
+	defer func() { _ = subscriber.Close() }()
 
 	// 9. Initialize Handlers
 	candidateHandler := c_http.NewCandidateHandler(candidateUC)
@@ -121,6 +126,36 @@ func main() {
 	infrasched.RegisterCandidateJobs(scheduler, maintenanceUC)
 	scheduler.Start(context.Background())
 	defer scheduler.Stop()
+
+	// 11.5 Start Event Consumer
+	if subscriber != nil {
+		consumerCtx, consumerCancel := context.WithCancel(context.Background())
+		defer consumerCancel()
+		go func() {
+			log.Info("kafka subscriber started", zap.Strings("topics", eventConsumer.Topics()))
+			for {
+				select {
+				case <-consumerCtx.Done():
+					return
+				default:
+				}
+
+				if err := subscriber.Subscribe(consumerCtx, eventConsumer.Topics(), eventConsumer.Handle); err != nil {
+					if consumerCtx.Err() != nil {
+						return
+					}
+					log.Error("Kafka consumer stopped, retrying in 5s...", zap.Error(err))
+					select {
+					case <-time.After(5 * time.Second):
+					case <-consumerCtx.Done():
+						return
+					}
+					continue
+				}
+				break
+			}
+		}()
+	}
 
 	// 12. Start HTTP Server
 	server := &http.Server{
