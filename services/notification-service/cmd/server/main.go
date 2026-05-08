@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/tamirat-dejene/veritas/services/notification-service/internal/config"
 	"github.com/tamirat-dejene/veritas/services/notification-service/internal/infrastructure/mailer"
@@ -53,13 +54,27 @@ func main() {
 	defer consumerCancel()
 
 	go func() {
-		log.Info("notification-service starting to consume Kafka messages...", zap.Strings("topics", subRouter.Topics()))
-		if err := kafkaSubscriber.Subscribe(
-			consumerCtx,
-			subRouter.Topics(),
-			subRouter.Handle,
-		); err != nil {
-			log.Error("kafka subscriber exited with error", zap.Error(err))
+		log.Info("starting to consume Kafka messages...", zap.Strings("topics", subRouter.Topics()))
+		for {
+			select {
+			case <-consumerCtx.Done():
+				log.Info("consumer context cancelled, stopping retry loop")
+				return
+			default:
+			}
+
+			if err := kafkaSubscriber.Subscribe(consumerCtx, subRouter.Topics(), subRouter.Handle); err != nil {
+				if consumerCtx.Err() != nil {
+					log.Info("Kafka subscriber stopped due to context cancellation")
+					return
+				}
+				log.Error("Kafka subscribe failed, retrying in 5s", zap.Error(err))
+				select {
+				case <-time.After(5 * time.Second):
+				case <-consumerCtx.Done():
+					return
+				}
+			}
 		}
 	}()
 
