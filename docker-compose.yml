@@ -91,6 +91,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   enterprise-service:
     build:
@@ -147,6 +149,8 @@ services:
       - .env.dev
     depends_on:
       postgres:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
 
   notification-service:

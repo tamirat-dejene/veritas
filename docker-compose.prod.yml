@@ -135,6 +135,8 @@ services:
         condition: service_healthy
       exam-service:
         condition: service_started
+      kafka:
+        condition: service_healthy
     networks:
       - backend
 
