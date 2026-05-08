@@ -81,9 +81,21 @@ func main() {
 		log.Info("kafka producer initialized")
 	}
 
+	// 5b. Kafka subscriber (consistency consumer — graceful degradation)
+	kafkaSubscriber, subErr := kafka.NewSubscriber(kafka.Config{
+		Brokers:       cfg.KafkaBrokers,
+		ConsumerGroup: "payment-service-group",
+	})
+	if subErr != nil {
+		log.Error("failed to initialize kafka subscriber — consistency events will not be processed", zap.Error(subErr))
+	} else {
+		defer kafkaSubscriber.Close()
+	}
+
 	// 6. Wire usecase and handler
 	payUsecase := usecase.NewPaymentUsecase(pool, subRepo, billingRepo, payProvider, eventPublisher)
 	maintenanceUC := usecase.NewMaintenanceUseCase(subRepo, billingRepo, eventPublisher, log)
+	consistencyUC := usecase.NewConsistencyUseCase(subRepo, billingRepo, log)
 	payHandler := handler.NewPaymentHandler(payUsecase)
 
 	// 7. Initialize Scheduler & Register Background Jobs
@@ -91,6 +103,36 @@ func main() {
 	scheduler.RegisterPaymentJobs(cronScheduler, maintenanceUC)
 	cronScheduler.Start(context.Background())
 	defer cronScheduler.Stop()
+
+	// 7b. Start Kafka consistency consumer goroutine
+	if kafkaSubscriber != nil {
+		eventConsumer := messaging.NewEventConsumer(consistencyUC, log)
+		consumerCtx, consumerCancel := context.WithCancel(context.Background())
+		defer consumerCancel()
+		go func() {
+			log.Info("kafka subscriber started", zap.Strings("topics", eventConsumer.Topics()))
+			for {
+				select {
+				case <-consumerCtx.Done():
+					return
+				default:
+				}
+				if err := kafkaSubscriber.Subscribe(consumerCtx, eventConsumer.Topics(), eventConsumer.Handle); err != nil {
+					if consumerCtx.Err() != nil {
+						return
+					}
+					log.Error("kafka subscriber exited, retrying in 5s...", zap.Error(err))
+					select {
+					case <-time.After(5 * time.Second):
+					case <-consumerCtx.Done():
+						return
+					}
+					continue
+				}
+				break
+			}
+		}()
+	}
 
 	// 8. Build router and start HTTP server
 	r := router.NewRouter(payHandler)
