@@ -112,6 +112,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   exam-service:
     build:
@@ -130,6 +132,8 @@ services:
       - .env.dev
     depends_on:
       postgres:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
 
   candidate-service:
@@ -189,6 +193,8 @@ services:
       - .env.dev
     depends_on:
       postgres:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
 
   # --- Python Services ---
