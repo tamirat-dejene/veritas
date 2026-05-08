@@ -116,11 +116,29 @@ func main() {
 		consumerCtx, consumerCancel := context.WithCancel(context.Background())
 		defer consumerCancel()
 		go func() {
-			if err := kafkaSubscriber.Subscribe(consumerCtx, eventConsumer.Topics(), eventConsumer.Handle); err != nil {
-				log.Error("kafka subscriber exited", zap.Error(err))
+			log.Info("kafka subscriber started", zap.Strings("topics", eventConsumer.Topics()))
+			for {
+				select {
+				case <-consumerCtx.Done():
+					return
+				default:
+				}
+
+				if err := kafkaSubscriber.Subscribe(consumerCtx, eventConsumer.Topics(), eventConsumer.Handle); err != nil {
+					if consumerCtx.Err() != nil {
+						return
+					}
+					log.Error("kafka subscriber exited, retrying in 5s...", zap.Error(err))
+					select {
+					case <-time.After(5 * time.Second):
+					case <-consumerCtx.Done():
+						return
+					}
+					continue
+				}
+				break
 			}
 		}()
-		log.Info("kafka subscriber started", zap.Strings("topics", eventConsumer.Topics()))
 	}
 
 	// --- Background Jobs: Cron ---
