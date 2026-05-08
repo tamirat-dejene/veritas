@@ -37,6 +37,11 @@ type TokenService interface {
 
 // EventPublisher is the port for publishing domain events.
 type EventPublisher interface {
+	PublishLogin(ctx context.Context, userID uuid.UUID, email string) error
+}
+
+// ConsistencyUseCase is the port for asynchronous data consistency operations.
+type ConsistencyUseCase interface {
 	RevokeUserSessions(ctx context.Context, userID uuid.UUID) error
 	RevokeEnterpriseSessions(ctx context.Context, enterpriseID uuid.UUID) error
 }
