@@ -31,11 +31,11 @@ import (
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/handler"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/infrastructure/client"
 	inframsg "github.com/tamirat-dejene/veritas/services/auth-service/internal/infrastructure/messaging"
+	infrasched "github.com/tamirat-dejene/veritas/services/auth-service/internal/infrastructure/scheduler"
 	infratoken "github.com/tamirat-dejene/veritas/services/auth-service/internal/infrastructure/token"
 	pgRepo "github.com/tamirat-dejene/veritas/services/auth-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/router"
 	"github.com/tamirat-dejene/veritas/services/auth-service/internal/usecase"
-	infrasched "github.com/tamirat-dejene/veritas/services/auth-service/internal/infrastructure/scheduler"
 	"github.com/tamirat-dejene/veritas/shared/pkg/cronjob"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"github.com/tamirat-dejene/veritas/shared/pkg/messaging/kafka"
@@ -90,34 +90,38 @@ func main() {
 	defer kafkaProducer.Close()
 
 	eventPublisher := inframsg.NewKafkaPublisher(kafkaProducer)
+	kafkaSubscriber, err := kafka.NewSubscriber(kafka.Config{
+		Brokers:       cfg.KafkaBrokers,
+		ConsumerGroup: "auth-service",
+	})
+	if err != nil {
+		log.Error("failed to initialize kafka subscriber", zap.Error(err))
+	} else {
+		defer kafkaSubscriber.Close()
+	}
 
 	// --- Repositories ---
 	enterpriseServiceClient := client.NewEnterpriseServiceClient(cfg.EnterpriseServiceURL, 10*time.Second)
 	refreshTokenRepo := pgRepo.NewRefreshTokenRepository(pool)
 
 	// --- Use Cases ---
-	loginUC := usecase.NewLoginUseCase(
-		pool,
-		enterpriseServiceClient,
-		refreshTokenRepo,
-		jwtService,
-		refreshService,
-		cfg.AccessTokenTTL,
-		cfg.RefreshTokenTTL,
-		eventPublisher,
-		log,
-	)
-	refreshUC := usecase.NewRefreshUseCase(
-		pool,
-		enterpriseServiceClient,
-		refreshTokenRepo,
-		jwtService,
-		refreshService,
-		cfg.AccessTokenTTL,
-		cfg.RefreshTokenTTL,
-		log,
-	)
+	loginUC := usecase.NewLoginUseCase(pool, enterpriseServiceClient, refreshTokenRepo, jwtService, refreshService, cfg.AccessTokenTTL, cfg.RefreshTokenTTL, eventPublisher, log)
+	refreshUC := usecase.NewRefreshUseCase(pool, enterpriseServiceClient, refreshTokenRepo, jwtService, refreshService, cfg.AccessTokenTTL, cfg.RefreshTokenTTL, log)
 	logoutUC := usecase.NewLogoutUseCase(pool, refreshTokenRepo, log)
+	consistencyUC := usecase.NewConsistencyUseCase(refreshTokenRepo, enterpriseServiceClient, log)
+
+	// --- Messaging: Consumer ---
+	if kafkaSubscriber != nil {
+		eventConsumer := inframsg.NewEventConsumer(consistencyUC, log)
+		consumerCtx, consumerCancel := context.WithCancel(context.Background())
+		defer consumerCancel()
+		go func() {
+			if err := kafkaSubscriber.Subscribe(consumerCtx, eventConsumer.Topics(), eventConsumer.Handle); err != nil {
+				log.Error("kafka subscriber exited", zap.Error(err))
+			}
+		}()
+		log.Info("kafka subscriber started", zap.Strings("topics", eventConsumer.Topics()))
+	}
 
 	// --- Background Jobs: Cron ---
 	cron := cronjob.NewScheduler(log.Named("scheduler"))
