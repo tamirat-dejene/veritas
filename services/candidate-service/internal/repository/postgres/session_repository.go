@@ -176,6 +176,30 @@ func (r *sessionRepository) UpdateSessionStatus(ctx context.Context, id uuid.UUI
 	return nil
 }
 
+func (r *sessionRepository) TerminateActiveSessionsByEnterprise(ctx context.Context, enterpriseID uuid.UUID, reason string) error {
+	const updateQuery = `
+		UPDATE exam_sessions
+		SET status = 'Terminated'::session_status, 
+		    termination_reason = $2, 
+		    terminated_at = NOW()
+		WHERE enterprise_id = $1 AND status = 'Active'::session_status
+	`
+	_, err := r.db.Exec(ctx, updateQuery, enterpriseID, reason)
+	return err
+}
+
+func (r *sessionRepository) TerminateActiveSessionsByExam(ctx context.Context, examID uuid.UUID, reason string) error {
+	const updateQuery = `
+		UPDATE exam_sessions
+		SET status = 'Terminated'::session_status, 
+		    termination_reason = $2, 
+		    terminated_at = NOW()
+		WHERE exam_id = $1 AND status = 'Active'::session_status
+	`
+	_, err := r.db.Exec(ctx, updateQuery, examID, reason)
+	return err
+}
+
 // ---------------------------------------------------------
 // Session Questions (Snapshots)
 // ---------------------------------------------------------

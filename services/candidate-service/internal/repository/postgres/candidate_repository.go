@@ -257,6 +257,16 @@ func (r *candidateRepository) WithTx(tx pgx.Tx) domain.CandidateRepository {
 	return &candidateRepository{db: tx}
 }
 
+func (r *candidateRepository) DeactivateByEnterprise(ctx context.Context, enterpriseID uuid.UUID) error {
+	const updateQuery = `
+		UPDATE candidate_profiles
+		SET is_active = false
+		WHERE enterprise_id = $1 AND is_active = true
+	`
+	_, err := r.db.Exec(ctx, updateQuery, enterpriseID)
+	return err
+}
+
 func (r *candidateRepository) GetEmailsByExamID(ctx context.Context, examID, enterpriseID uuid.UUID) ([]string, error) {
 	const query = `
 		SELECT cp.email

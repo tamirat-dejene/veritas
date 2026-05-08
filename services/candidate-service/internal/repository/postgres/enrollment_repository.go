@@ -290,6 +290,26 @@ func (r *enrollmentRepository) GetExpiredPendingEnrollments(ctx context.Context,
 	return list, nil
 }
 
+func (r *enrollmentRepository) RevokeByEnterprise(ctx context.Context, enterpriseID uuid.UUID) error {
+	const q = `
+		UPDATE exam_enrollments 
+		SET status = 'Revoked' 
+		WHERE enterprise_id = $1 AND status IN ('Pending', 'Invited', 'Opened')
+	`
+	_, err := r.db.Exec(ctx, q, enterpriseID)
+	return err
+}
+
+func (r *enrollmentRepository) RevokeByExam(ctx context.Context, examID uuid.UUID) error {
+	const q = `
+		UPDATE exam_enrollments 
+		SET status = 'Revoked' 
+		WHERE exam_id = $1 AND status IN ('Pending', 'Invited', 'Opened')
+	`
+	_, err := r.db.Exec(ctx, q, examID)
+	return err
+}
+
 func (r *enrollmentRepository) WithTx(tx pgx.Tx) domain.EnrollmentRepository {
 	return &enrollmentRepository{db: tx}
 }
