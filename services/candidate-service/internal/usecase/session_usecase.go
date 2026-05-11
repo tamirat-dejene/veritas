@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,6 +15,7 @@ import (
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/infrastructure/client"
 	"github.com/tamirat-dejene/veritas/shared/pkg/messaging"
 	"github.com/tamirat-dejene/veritas/shared/pkg/messaging/topics"
+	"github.com/tamirat-dejene/veritas/shared/pkg/storage"
 	sdomain "github.com/tamirat-dejene/veritas/shared/domain"
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 )
@@ -26,6 +28,7 @@ type sessionUseCase struct {
 	examClient     client.ExamServiceClient
 	tokenService   domain.EnrollmentTokenService
 	publisher      messaging.Publisher
+	storage        storage.FileStorage
 }
 
 func NewSessionUseCase(
@@ -36,6 +39,7 @@ func NewSessionUseCase(
 	eClient client.ExamServiceClient,
 	tokenService domain.EnrollmentTokenService,
 	publisher messaging.Publisher,
+	storage storage.FileStorage,
 ) domain.SessionUseCase {
 	return &sessionUseCase{
 		pool:           pool,
@@ -45,6 +49,7 @@ func NewSessionUseCase(
 		examClient:     eClient,
 		tokenService:   tokenService,
 		publisher:      publisher,
+		storage:        storage,
 	}
 }
 
@@ -62,7 +67,7 @@ func (uc *sessionUseCase) ValidateAccessToken(ctx context.Context, enrollmentID,
 	}, nil
 }
 
-func (uc *sessionUseCase) StartSession(ctx context.Context, enrollmentID, enterpriseID uuid.UUID, clientIP, userAgent string) (*domain.ExamSession, error) {
+func (uc *sessionUseCase) StartSession(ctx context.Context, enrollmentID, enterpriseID uuid.UUID, clientIP, userAgent string, faceImage io.Reader) (*domain.ExamSession, error) {
 	e, err := uc.enrollmentRepo.GetByID(ctx, enrollmentID, enterpriseID)
 	if err != nil {
 		return nil, err
@@ -120,19 +125,31 @@ func (uc *sessionUseCase) StartSession(ctx context.Context, enrollmentID, enterp
 		return nil, fmt.Errorf("failed to fetch question snapshot: %v", err)
 	}
 
+	// 2.5 Handle Face Image Registration
+	var faceURL *string
+	if faceImage != nil {
+		fileName := fmt.Sprintf("reg_%s_%s", e.ID.String(), uuid.New().String())
+		url, err := uc.storage.Upload(ctx, fileName, faceImage)
+		if err != nil {
+			return nil, fmt.Errorf("failed to upload face registration image: %w", err)
+		}
+		faceURL = &url
+	}
+
 	// 3. Create Session and Save Question Snapshots in a transaction
 	sessionID := uuid.New()
 	session = &domain.ExamSession{
-		ID:           sessionID,
-		EnterpriseID: e.EnterpriseID,
-		ExamID:       e.ExamID,
-		CandidateID:  e.CandidateID,
-		EnrollmentID: e.ID,
-		Status:       domain.SessionActive,
-		StartedAt:    now,
-		ExpiresAt:    now.Add(time.Duration(examMeta.DurationMinutes) * time.Minute),
-		ClientIP:     &clientIP,
-		UserAgent:    &userAgent,
+		ID:                sessionID,
+		EnterpriseID:      e.EnterpriseID,
+		ExamID:            e.ExamID,
+		CandidateID:       e.CandidateID,
+		EnrollmentID:      e.ID,
+		Status:            domain.SessionActive,
+		StartedAt:         now,
+		ExpiresAt:         now.Add(time.Duration(examMeta.DurationMinutes) * time.Minute),
+		ClientIP:          &clientIP,
+		UserAgent:         &userAgent,
+		FaceRegisteredURL: faceURL,
 	}
 
 	err = RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
