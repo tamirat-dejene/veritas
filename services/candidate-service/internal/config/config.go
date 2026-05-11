@@ -6,22 +6,23 @@ import (
 )
 
 type Config struct {
-	Port                  string
-	DBUser                string
-	DBPass                string
-	DBHost                string
-	DBPort                string
-	DBName                string
-	DSN                   string
-	ExamServiceURL        string
-	EnrollmentTokenSecret string
-	// CandidatePortalBaseURL is prepended to /exam/start?code=<opaque> to build
-	// invitation URLs that are emailed to candidates or returned to the admin.
-	// Example: https://app.veritas.io
+	Port                   string
+	DBUser                 string
+	DBPass                 string
+	DBHost                 string
+	DBPort                 string
+	DBName                 string
+	DSN                    string
+	ExamServiceURL         string
+	EnrollmentTokenSecret  string
 	CandidatePortalBaseURL string
-	// KafkaBrokers is a comma-separated list of Kafka broker addresses.
-	// Example: kafka:9092
-	KafkaBrokers string
+	KafkaBrokers           string
+
+	// Cloudinary configuration
+	CloudinaryCloudName        string
+	CloudinaryAPIKey           string
+	CloudinaryAPISecret        string
+	CloudinaryFaceUploadFolder string
 }
 
 func Load() *Config {
@@ -36,6 +37,11 @@ func Load() *Config {
 		EnrollmentTokenSecret:  getEnv("ENROLLMENT_TOKEN_SECRET", "super-secret-enrollment-key"),
 		CandidatePortalBaseURL: getEnv("FRONTEND_BASE_URL", "http://localhost:3000"),
 		KafkaBrokers:           getEnv("KAFKA_BROKERS", "localhost:9092"),
+
+		CloudinaryCloudName:        getEnv("CLOUDINARY_CLOUD_NAME", ""),
+		CloudinaryAPIKey:           getEnv("CLOUDINARY_API_KEY", ""),
+		CloudinaryAPISecret:        getEnv("CLOUDINARY_API_SECRET", ""),
+		CloudinaryFaceUploadFolder: getEnv("CLOUDINARY_FACE_UPLOADFOLDER", "veritas/face_registrations"),
 	}
 
 	cfg.DSN = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
