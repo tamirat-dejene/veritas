@@ -1,5 +1,26 @@
 [
   {
+    "date": "2026-05-12",
+    "changes": [
+      {
+        "type": "breaking",
+        "service": "candidate",
+        "summary": "Mandatory Face Registration for Exam Sessions",
+        "description": "The session start process now requires a face registration image. This image is securely uploaded to Cloudinary and stored as a reference for proctoring. The /sessions/start endpoint has been updated to accept multipart/form-data. Validation added for file size (max 5MB) and formats (JPEG, PNG, WEBP).",
+        "endpoints": [
+          "POST /sessions/start (UPDATED: requires face_image file, uses multipart/form-data)"
+        ],
+        "migration": [
+          {
+            "before": "Exam sessions could be started without face registration via a simple JSON POST.",
+            "after": "Exam sessions must be started with a multipart/form-data request containing the 'face_image' file (JPEG/PNG/WEBP, < 5MB)."
+          }
+        ]
+      }
+    ]
+  },
+
+  {
     "date": "2026-05-06",
     "changes": [
       {

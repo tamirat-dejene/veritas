@@ -1699,8 +1699,10 @@ paths:
   /sessions/start:
     post:
       consumes:
-      - application/json
-      description: Create and initialize a candidate exam session.
+      - multipart/form-data
+      description: |-
+        Create and initialize a candidate exam session with face registration.
+        The face_image must be a JPEG, PNG, or WEBP file, maximum 5MB.
       parameters:
       - description: Enrollment ID
         in: header
@@ -1712,6 +1714,11 @@ paths:
         name: X-Enterprise-Id
         required: true
         type: string
+      - description: Face registration image (JPEG/PNG/WEBP, max 5MB)
+        in: formData
+        name: face_image
+        required: true
+        type: file
       produces:
       - application/json
       responses:
@@ -1721,6 +1728,14 @@ paths:
             $ref: '#/definitions/SessionResponse'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "415":
+          description: Unsupported Media Type
           schema:
             $ref: '#/definitions/ErrorResponse'
       summary: Start session

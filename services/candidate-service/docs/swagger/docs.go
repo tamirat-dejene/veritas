@@ -1391,9 +1391,9 @@ const docTemplate = `{
         },
         "/sessions/start": {
             "post": {
-                "description": "Create and initialize a candidate exam session.",
+                "description": "Create and initialize a candidate exam session with face registration.\nThe face_image must be a JPEG, PNG, or WEBP file, maximum 5MB.",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -1416,6 +1416,13 @@ const docTemplate = `{
                         "name": "X-Enterprise-Id",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Face registration image (JPEG/PNG/WEBP, max 5MB)",
+                        "name": "face_image",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1427,6 +1434,18 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
