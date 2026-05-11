@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"time"
 
 	"github.com/google/uuid"
@@ -112,7 +113,7 @@ type SessionRepository interface {
 // SessionUseCase covers Candidate Access Flow
 type SessionUseCase interface {
 	ValidateAccessToken(ctx context.Context, enrollmentID, enterpriseID uuid.UUID) (*ValidateAccessTokenResponse, error)
-	StartSession(ctx context.Context, enrollmentID, enterpriseID uuid.UUID, clientIP, userAgent string) (*ExamSession, error)
+	StartSession(ctx context.Context, enrollmentID, enterpriseID uuid.UUID, clientIP, userAgent string, faceImage io.Reader) (*ExamSession, error)
 	ResumeActiveSession(ctx context.Context, candidateID uuid.UUID) (*ExamSession, error)
 	GetSessionDetails(ctx context.Context, sessionID uuid.UUID, requestingUserID uuid.UUID, role string) (*ExamSession, error)
 	GetSessionQuestionsSnapshot(ctx context.Context, sessionID uuid.UUID, candidateID uuid.UUID) ([]SessionQuestion, error)

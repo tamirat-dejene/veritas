@@ -43,4 +43,5 @@ var (
 	ErrInvalidToken        = errors.New("invalid token")
 	ErrNotAString          = errors.New("value is not a string")
 	ErrNotSupported        = errors.New("operation not supported")
+	ErrInvalidFileType     = errors.New("invalid file type, supported formats: JPEG, PNG, WEBP")
 )
