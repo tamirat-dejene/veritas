@@ -56,14 +56,18 @@ func (h *SessionHandler) ValidateAccess(c *gin.Context) {
 // StartSession starts a new exam session for a validated token.
 //
 //	@Summary		Start session
-//	@Description	Create and initialize a candidate exam session.
+//	@Description	Create and initialize a candidate exam session with face registration.
+//	@Description	The face_image must be a JPEG, PNG, or WEBP file, maximum 5MB.
 //	@Tags			session
-//	@Accept			json
+//	@Accept			multipart/form-data
 //	@Produce		json
 //	@Param			X-Enrollment-Id	header		string					true	"Enrollment ID"
 //	@Param			X-Enterprise-Id	header		string					true	"Enterprise ID"
+//	@Param			face_image		formData	file					true	"Face registration image (JPEG/PNG/WEBP, max 5MB)"
 //	@Success		201				{object}	dto.SessionResponse
 //	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		413				{object}	dto.ErrorResponse
+//	@Failure		415				{object}	dto.ErrorResponse
 //	@Router			/sessions/start [post]
 func (h *SessionHandler) StartSession(c *gin.Context) {
 	eid, err := getEnrollmentID(c)
@@ -77,10 +81,45 @@ func (h *SessionHandler) StartSession(c *gin.Context) {
 		return
 	}
 
+	// Handle face image from multipart form
+	file, header, err := c.Request.FormFile("face_image")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "face_image is required"})
+		return
+	}
+	defer file.Close()
+
+	// 1. Validate Size (Max 5MB)
+	if header.Size > 5*1024*1024 {
+		c.JSON(http.StatusRequestEntityTooLarge, dto.ErrorResponse{Error: domain.ErrFileTooLarge.Error()})
+		return
+	}
+
+	// 2. Validate Format
+	contentType := header.Header.Get("Content-Type")
+	allowedTypes := map[string]bool{
+		"image/jpeg": true,
+		"image/jpg":  true,
+		"image/png":  true,
+		"image/webp": true,
+	}
+
+	if !allowedTypes[contentType] {
+		c.JSON(http.StatusUnsupportedMediaType, dto.ErrorResponse{Error: domain.ErrInvalidFileType.Error()})
+		return
+	}
+
+	faceImageReader, err := header.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to process image"})
+		return
+	}
+	defer faceImageReader.Close()
+
 	clientIP := c.ClientIP()
 	userAgent := c.Request.UserAgent()
 
-	session, err := h.uc.StartSession(c.Request.Context(), eid, entID, clientIP, userAgent)
+	session, err := h.uc.StartSession(c.Request.Context(), eid, entID, clientIP, userAgent, faceImageReader)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -88,6 +127,7 @@ func (h *SessionHandler) StartSession(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, dto.SessionResponse{Data: session})
 }
+
 
 // ResumeActive returns the caller candidate's currently active session.
 //
