@@ -45,6 +45,7 @@ import (
 	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"github.com/tamirat-dejene/veritas/shared/pkg/messaging/kafka"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/infrastructure/messaging"
+	"github.com/tamirat-dejene/veritas/shared/pkg/storage/cloudinary"
 	"go.uber.org/zap"
 
 	// Import generated swagger docs so the spec is registered at startup.
@@ -93,10 +94,21 @@ func main() {
 	// 7. Initialize Token Service
 	tokenService := token.NewTokenService(cfg.EnrollmentTokenSecret)
 
+	// 7.5 Initialize Storage
+	fileStorage, err := cloudinary.NewCloudinaryStorage(
+		cfg.CloudinaryCloudName,
+		cfg.CloudinaryAPIKey,
+		cfg.CloudinaryAPISecret,
+		cfg.CloudinaryFaceUploadFolder,
+	)
+	if err != nil {
+		log.Fatal("failed to initialize storage", zap.Error(err))
+	}
+
 	// 8. Initialize UseCases
 	candidateUC := usecase.NewCandidateUseCase(pool, candidateRepo)
 	enrollmentUC := usecase.NewEnrollmentUseCase(pool, enrollmentRepo, candidateRepo, tokenService, examClient, publisher, cfg.CandidatePortalBaseURL)
-	sessionUC := usecase.NewSessionUseCase(pool, sessionRepo, enrollmentRepo, candidateRepo, examClient, tokenService, publisher)
+	sessionUC := usecase.NewSessionUseCase(pool, sessionRepo, enrollmentRepo, candidateRepo, examClient, tokenService, publisher, fileStorage)
 	monitoringUC := usecase.NewMonitoringUseCase(sessionRepo)
 	maintenanceUC := usecase.NewMaintenanceUseCase(sessionRepo, sessionUC, enrollmentRepo, log)
 	consistencyUC := usecase.NewConsistencyUseCase(sessionRepo, enrollmentRepo, candidateRepo, log)
