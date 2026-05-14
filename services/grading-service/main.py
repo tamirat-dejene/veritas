@@ -1,14 +1,16 @@
-from fastapi import FastAPI
-import os
+"""
+Grading Service entrypoint.
+"""
+import uvicorn
+from app.config import settings
+from app.router import create_app
 
-app = FastAPI()
+app = create_app()
 
-@app.get("/health")
-def health_check():
-    return {"status": "OK"}
-
-@app.get("/")
-def read_root():
-    service_name = os.getenv("SERVICE_NAME", os.getenv("HOSTNAME", "unknown-service"))
-    return {"message": f"Hello from {service_name}"}
-
+if __name__ == "__main__":
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=settings.PY_PORT,
+        reload=False,
+    )
