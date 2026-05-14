@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     DEEPFACE_DEV_MODEL: str = "Facenet512"       # Facenet, Facenet512, Dlib, OpenFace, SFace
     DEEPFACE_DEV_DETECTOR: str = "retinaface"    # retinaface, opencv, mtcnn, yolov8
 
-    model_config = SettingsConfigDict(env_file=".env.dev", extra="ignore")
+    model_config = SettingsConfigDict(extra="ignore")
 
     @property
     def DATABASE_URL(self) -> str:
