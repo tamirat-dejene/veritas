@@ -62,7 +62,6 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 	candidateCB := infrastructure.NewCircuitBreaker("candidate-service", cbSettings)
 	proctoringCB := infrastructure.NewCircuitBreaker("proctoring-service", cbSettings)
 	gradingCB := infrastructure.NewCircuitBreaker("grading-service", cbSettings)
-	reportingCB := infrastructure.NewCircuitBreaker("reporting-service", cbSettings)
 
 	// --- Service Proxies ---
 	authProxy, err := proxy.NewProxy(cfg.AuthServiceURL, authCB, "auth-service")
@@ -93,10 +92,6 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 	if err != nil {
 		return nil, err
 	}
-	reportingProxy, err := proxy.NewProxy(cfg.ReportingServiceURL, reportingCB, "reporting-service")
-	if err != nil {
-		return nil, err
-	}
 
 	// --- Route Attachments ---
 
@@ -119,7 +114,6 @@ func NewRouter(cfg *config.Config, rateLimiter domain.RateLimiter) (http.Handler
 	routerGroup.RegisterCandidateRoutes(candidateProxy)
 	routerGroup.RegisterProctoringRoutes(proctoringProxy)
 	routerGroup.RegisterGradingRoutes(gradingProxy)
-	routerGroup.RegisterReportingRoutes(reportingProxy)
 
 	return engine, nil
 }

@@ -17,7 +17,6 @@ type Config struct {
 	CandidateServiceURL        string
 	ProctoringServiceURL       string
 	GradingServiceURL          string
-	ReportingServiceURL        string
 	JWTSecret                  string
 	EnrollmentTokenSecret      string
 	RedisHost                  string
@@ -55,7 +54,6 @@ func Load() *Config {
 		CandidateServiceURL:        getEnv("CANDIDATE_SERVICE_URL", "http://localhost:8085"),
 		ProctoringServiceURL:       getEnv("PROCTORING_SERVICE_URL", "http://localhost:8086"),
 		GradingServiceURL:          getEnv("GRADING_SERVICE_URL", "http://localhost:8088"),
-		ReportingServiceURL:        getEnv("REPORTING_SERVICE_URL", "http://localhost:8089"),
 		JWTSecret:                  jwtSecret,
 		EnrollmentTokenSecret:      enrollmentSecret,
 		RedisHost:                  getEnv("REDIS_HOST", "redis"),

@@ -73,7 +73,6 @@ func (g *RouterGroup) handleHealthDetail(c *gin.Context, cfg *config.Config) {
 			}{
 				{"Proctoring Service", cfg.ProctoringServiceURL, "http"},
 				{"Grading Service", cfg.GradingServiceURL, "http"},
-				{"Reporting Service", cfg.ReportingServiceURL, "http"},
 			},
 		},
 		{

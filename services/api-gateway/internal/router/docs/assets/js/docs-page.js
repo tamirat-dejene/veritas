@@ -9,7 +9,7 @@ const backToHome = document.getElementById('backToHome');
 
 const serviceGroups = {
     go: ['auth', 'enterprise', 'payment', 'exam', 'candidate', 'notification'],
-    python: ['proctoring', 'grading', 'reporting'],
+    python: ['proctoring', 'grading'],
     monitoring: ['monitoring'],
 };
 
@@ -23,7 +23,6 @@ const serviceDetails = {
     candidate: { description: 'Service for managing candidates and their exam schedules.', swagger: '/swagger/candidate/index.html' },
     proctoring: { description: 'Remote proctoring and biometric identity verification service.', swagger: '/swagger/proctoring/index.html' },
     grading: { description: 'Automated grading service for exam responses.', swagger: '/swagger/grading/index.html' },
-    reporting: { description: 'Analytics and reporting service for exam results.', swagger: '/swagger/reporting/index.html' },
     monitoring: { description: 'Real-time system monitoring and alerting service.', swagger: '/swagger/monitoring/index.html' },
     notification: { description: 'Event-driven notification and mailing service for system alerts and user communications.', swagger: '' },
 };

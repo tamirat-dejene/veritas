@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/domain"
-	"github.com/tamirat-dejene/veritas/services/api-gateway/internal/middleware"
 )
 
 // RegisterAuthRoutes attaches Auth Service proxy routes
@@ -185,11 +184,17 @@ func (g *RouterGroup) RegisterCandidateRoutes(proxy http.Handler) {
 // RegisterProctoringRoutes attaches Proctoring Service proxy routes
 func (g *RouterGroup) RegisterProctoringRoutes(proxy http.Handler) {
 	candidateRole := g.candidateAuthChain()
-	premiumCandidateBlock := append(g.candidateAuthChain(), middleware.RequireTier(domain.TierEnterprise))
-	g.register("POST", "/face/register", proxy, premiumCandidateBlock...)
-	g.register("POST", "/face/verify", proxy, premiumCandidateBlock...)
+	adminRole := g.authWithRoles(domain.RoleEnterpriseAdmin)
+
+	// Periodic face identity check — Premium+ candidates only
+	g.register("POST", "/face/verify", proxy, candidateRole...)
+
+	// Behavioral event ingestion — any authenticated candidate
 	g.register("POST", "/proctoring/events", proxy, candidateRole...)
-	g.register("GET", "/proctoring/sessions/:sessionId/events", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
+
+	// Admin monitoring views
+	g.register("GET", "/proctoring/sessions/:sessionId/events", proxy, adminRole...)
+	g.register("GET", "/proctoring/sessions/:sessionId/score", proxy, adminRole...)
 }
 
 // RegisterGradingRoutes attaches Grading Service proxy routes
@@ -198,15 +203,4 @@ func (g *RouterGroup) RegisterGradingRoutes(proxy http.Handler) {
 	g.register("POST", "/grading/manual", proxy, g.authWithRoles(domain.RoleEnterpriseStaff)...)
 	g.register("GET", "/results/:examId", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
 	g.register("GET", "/certificates/:certificateId", proxy, g.candidateAuthChain()...)
-}
-
-// RegisterReportingRoutes attaches Reporting Service proxy routes
-func (g *RouterGroup) RegisterReportingRoutes(proxy http.Handler) {
-	auditRole := g.authWithRoles(domain.RoleSystemAdmin, domain.RoleEnterpriseAdmin)
-
-	g.register("GET", "/dashboard/metrics", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin, domain.RoleEnterpriseStaff)...)
-	g.register("GET", "/monitoring/exams/:examId", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
-	g.register("POST", "/reports", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
-	g.register("GET", "/reports/:reportId/export", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
-	g.register("GET", "/audit/logs", proxy, auditRole...)
 }
