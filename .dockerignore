@@ -1,27 +1,37 @@
+# --- Git ---
 .git
 .gitignore
+
+# --- IDEs ---
 .idea
 .vscode
 
+# --- Environments & Caches ---
 .env
 .env.*
 !.env.example
 !.env.production.template
 
 **/.env
+**/.venv
+**/venv
+**/env
 **/__pycache__/
 **/.pytest_cache/
 **/.mypy_cache/
-**/*.pyc
+**/*.py[cod]
 **/*.pyo
 **/*.pyd
 
+# --- Go Specific ---
+**/vendor/
+**/bin/
+
+# --- Project Artifacts ---
 docs/
 scripts/
-
 infra/docker/dev/
-
 docker-compose.yml
 docker-compose*.override.yml
-
 README.md
+tmp/
