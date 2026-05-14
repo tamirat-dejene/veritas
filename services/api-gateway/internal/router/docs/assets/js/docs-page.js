@@ -21,9 +21,8 @@ const serviceDetails = {
     payment: { description: 'Payment processing service for transactions and subscriptions.', swagger: '/swagger/payment/index.html' },
     exam: { description: 'Core exam engine for creating and managing assessments.', swagger: '/swagger/exam/index.html' },
     candidate: { description: 'Service for managing candidates and their exam schedules.', swagger: '/swagger/candidate/index.html' },
-    proctoring: { description: 'Remote proctoring and biometric identity verification service.', swagger: '/swagger/proctoring/index.html' },
-    grading: { description: 'Automated grading service for exam responses.', swagger: '/swagger/grading/index.html' },
-    monitoring: { description: 'Real-time system monitoring and alerting service.', swagger: '/swagger/monitoring/index.html' },
+    proctoring: { description: 'Remote proctoring and biometric identity verification service.', swagger: '/swagger/proctoring' },
+    grading: { description: 'Automated grading service for exam responses.', swagger: '/swagger/grading' },
     notification: { description: 'Event-driven notification and mailing service for system alerts and user communications.', swagger: '' },
 };
 
