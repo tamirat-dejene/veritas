@@ -57,9 +57,13 @@ UP_DIRS=(
   "services/exam-service/migrations"
   "services/candidate-service/migrations"
   "services/payment-service/migrations"
+  "services/proctoring-service/migrations"
+  "services/grading-service/migrations"
 )
 
 DOWN_DIRS=(
+  "services/grading-service/migrations"
+  "services/proctoring-service/migrations"
   "services/payment-service/migrations"
   "services/candidate-service/migrations"
   "services/exam-service/migrations"

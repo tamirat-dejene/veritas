@@ -69,9 +69,13 @@ UP_DIRS=(
   "services/exam-service/migrations"
   "services/candidate-service/migrations"
   "services/payment-service/migrations"
+  "services/proctoring-service/migrations"
+  "services/grading-service/migrations"
 )
 
 DOWN_DIRS=(
+  "services/grading-service/migrations"
+  "services/proctoring-service/migrations"
   "services/payment-service/migrations"
   "services/candidate-service/migrations"
   "services/exam-service/migrations"
@@ -84,9 +88,9 @@ usage() {
 Run database migrations for all Veritas Go services.
 
 Usage:
-  scripts/migrate.sh up       # apply all *.up.sql files
-  scripts/migrate.sh down     # apply all *.down.sql files (reverse order)
-  scripts/migrate.sh reset    # down then up
+  scripts/migrate.prod.sh up       # apply all *.up.sql files
+  scripts/migrate.prod.sh down     # apply all *.down.sql files (reverse order)
+  scripts/migrate.prod.sh reset    # down then up
 
 Notes:
   - Uses docker-compose.prod.yml and .env.production.
