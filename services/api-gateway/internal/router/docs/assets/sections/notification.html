@@ -172,6 +172,18 @@
 }'>
             Published when an exam session is ready for evaluation. This is a <strong>Fat Event</strong> containing the master grading criteria merged with the candidate's answers.
         </event-item>
+
+        <h3 class="endpoint-group-title" style="margin-top: 16px;">Proctoring Events (Kafka)</h3>
+
+        <event-item topic="proctoring.event.detected">
+            Triggered for every behavioral anomaly detected during a session (tab switching, face absence, etc.).
+        </event-item>
+        <event-item topic="proctoring.cheating_score.updated">
+            Published when a session's cheating probability score is recomputed. Triggers real-time dashboard updates.
+        </event-item>
+        <event-item topic="proctoring.identity.verified">
+            Published after periodic biometric identity checks. Notifies administrators of identity mismatches.
+        </event-item>
     </div>
 
     <div class="tech-stack" style="margin-top: 32px;">
