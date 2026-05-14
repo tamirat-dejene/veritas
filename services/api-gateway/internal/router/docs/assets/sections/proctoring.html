@@ -4,22 +4,31 @@
         <span class="section-count">4 endpoints</span>
     </div>
     <div class="endpoint-list">
-        <h3 class="endpoint-group-title">Session Events</h3>
+        <h3 class="endpoint-group-title">Session Events & Monitoring</h3>
         <endpoint-item method="POST" path="/proctoring/events">
             <span class="badge badge-candidate">ExamCandidate</span>
         </endpoint-item>
         <endpoint-item method="GET" path="/proctoring/sessions/:sessionId/events">
             <span class="badge badge-admin">EnterpriseAdmin</span>
         </endpoint-item>
+        <endpoint-item method="GET" path="/proctoring/sessions/:sessionId/score">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+        </endpoint-item>
 
         <h3 class="endpoint-group-title">Biometric Operations</h3>
-        <endpoint-item method="POST" path="/face/register">
-            <span class="badge badge-candidate">ExamCandidate</span>
-            <span class="badge badge-premium">Premium</span>
-        </endpoint-item>
         <endpoint-item method="POST" path="/face/verify">
             <span class="badge badge-candidate">ExamCandidate</span>
-            <span class="badge badge-premium">Premium</span>
         </endpoint-item>
+    </div>
+
+    <div class="tech-stack" style="margin-top: 32px;">
+        <h3 class="endpoint-group-title">Tech Stack</h3>
+        <ul style="color: var(--text-secondary); font-size: 0.9rem;">
+            <li><strong>Language:</strong> Python 3.12</li>
+            <li><strong>Framework:</strong> FastAPI</li>
+            <li><strong>AI/Biometrics:</strong> DeepFace (VGG-Face / Facenet)</li>
+            <li><strong>Communication:</strong> Kafka (aiokafka)</li>
+            <li><strong>Database:</strong> PostgreSQL (asyncpg)</li>
+        </ul>
     </div>
 </section>
