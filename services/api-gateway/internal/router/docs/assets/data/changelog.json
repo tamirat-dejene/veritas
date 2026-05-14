@@ -1,5 +1,28 @@
 [
   {
+    "date": "2026-05-14",
+    "changes": [
+      {
+        "type": "new",
+        "service": "proctoring",
+        "summary": "Implementation of AI-powered Proctoring Service",
+        "description": "Introduced the Proctoring Service for real-time monitoring of candidate behavior. The service supports ingestion of behavioral events (tab switching, inactivity), cheating probability scoring, and periodic biometric identity verification using DeepFace. Face verification is now available for all candidates during exam sessions.",
+        "endpoints": [
+          "POST /proctoring/events (NEW: ingest behavioral events)",
+          "GET /proctoring/sessions/:sessionId/events (NEW: list session events)",
+          "GET /proctoring/sessions/:sessionId/score (NEW: retrieve cheating score)",
+          "POST /face/verify (NEW: periodic biometric identity check)"
+        ]
+      },
+      {
+        "type": "new",
+        "service": "notification",
+        "summary": "Proctoring Event Integration",
+        "description": "Updated documentation to include new proctoring-related Kafka events: proctoring.event.detected, proctoring.cheating_score.updated, and proctoring.identity.verified."
+      }
+    ]
+  },
+  {
     "date": "2026-05-12",
     "changes": [
       {
