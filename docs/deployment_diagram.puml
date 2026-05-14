@@ -51,10 +51,6 @@ node "Cloud / On-Premise Infrastructure" {
             [Grading Service] as GradingService
             database "Grading DB (PostgreSQL)" as GradingDB
         }
-        node "Reporting Service Node" {
-            [Reporting Service] as ReportingService
-            database "Reporting DB (PostgreSQL)" as ReportingDB
-        }
     }
 }
 
@@ -75,7 +71,6 @@ CandidateService -- CandidateDB
 PaymentService -- PaymentDB
 ProctoringService -- ProctoringDB
 GradingService -- GradingDB
-ReportingService -- ReportingDB
 
 ' Inter-service comms (Sync)
 AuthService --> EnterpriseService : HTTP
@@ -92,7 +87,6 @@ EnterpriseService ..> Kafka : publish ENT events
 
 Kafka ..> ProctoringService : consume
 Kafka ..> GradingService : consume
-Kafka ..> ReportingService : consume
 Kafka ..> CandidateService : consume
 Kafka ..> EnterpriseService : consume
 

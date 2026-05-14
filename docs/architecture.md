@@ -23,7 +23,6 @@ This hybrid approach supports independent service evolution, resilience under lo
 
 - **proctoring-service**: suspicious behavior detection, face verification (identity signals), and proctoring events.
 - **grading-service**: scoring pipelines, grading completion, and final result publishing.
-- **reporting-service**: aggregated operational/assessment reporting from event streams.
 
 ### Event backbone
 
@@ -50,45 +49,42 @@ Producers publish domain events to Kafka. Consumers subscribe to topics relevant
 
 ```mermaid
 flowchart LR
-	%% Core Services
-	AuthService["auth-service"]
-	EnterpriseService["enterprise-service"]
-	ExamService["exam-service"]
-	CandidateService["candidate-service"]
-	PaymentService["payment-service"]
+ %% Core Services
+ AuthService["auth-service"]
+ EnterpriseService["enterprise-service"]
+ ExamService["exam-service"]
+ CandidateService["candidate-service"]
+ PaymentService["payment-service"]
 
-	ProctoringService["proctoring-service"]
-	GradingService["grading-service"]
-	ReportingService["reporting-service"]
+ ProctoringService["proctoring-service"]
+ GradingService["grading-service"]
 
-	Kafka[(Kafka Event Bus)]
+ Kafka[(Kafka Event Bus)]
 
-	%% Synchronous APIs
-	AuthService -->|HTTP read users| EnterpriseService
-	ExamService -->|HTTP validate enterprise| EnterpriseService
-	CandidateService -->|HTTP fetch exam snapshot| ExamService
-	EnterpriseService -->|HTTP subscription validation| PaymentService
+ %% Synchronous APIs
+ AuthService -->|HTTP read users| EnterpriseService
+ ExamService -->|HTTP validate enterprise| EnterpriseService
+ CandidateService -->|HTTP fetch exam snapshot| ExamService
+ EnterpriseService -->|HTTP subscription validation| PaymentService
 
-	%% Event Publishing
-	CandidateService -->|SESSION_STARTED SESSION_SUBMITTED SESSION_TERMINATED| Kafka
-	ProctoringService -->|FACE_REGISTERED IDENTITY_VERIFIED PROCTORING_EVENT_DETECTED| Kafka
-	GradingService -->|EXAM_GRADED RESULT_READY| Kafka
-	PaymentService -->|SUBSCRIPTION_UPDATED PAYMENT_FAILED| Kafka
-	EnterpriseService -->|ENTERPRISE_SUSPENDED ENTERPRISE_DELETED| Kafka
+ %% Event Publishing
+ CandidateService -->|SESSION_STARTED SESSION_SUBMITTED SESSION_TERMINATED| Kafka
+ ProctoringService -->|FACE_REGISTERED IDENTITY_VERIFIED PROCTORING_EVENT_DETECTED| Kafka
+ GradingService -->|EXAM_GRADED RESULT_READY| Kafka
+ PaymentService -->|SUBSCRIPTION_UPDATED PAYMENT_FAILED| Kafka
+ EnterpriseService -->|ENTERPRISE_SUSPENDED ENTERPRISE_DELETED| Kafka
 
-	%% Event Consumers
-	Kafka --> ProctoringService
-	Kafka --> GradingService
-	Kafka --> ReportingService
-	Kafka --> CandidateService
-	Kafka --> EnterpriseService
+ %% Event Consumers
+ Kafka --> ProctoringService
+ Kafka --> GradingService
+ Kafka --> CandidateService
+ Kafka --> EnterpriseService
 
-	%% Cross Domain Reactions
-	ProctoringService -->|CHEATING_SCORE_UPDATED| Kafka
-	GradingService -->|FINAL_RESULT_PUBLISHED| Kafka
+ %% Cross Domain Reactions
+ ProctoringService -->|CHEATING_SCORE_UPDATED| Kafka
+ GradingService -->|FINAL_RESULT_PUBLISHED| Kafka
 
-	Kafka --> ReportingService
-	Kafka --> EnterpriseService
+ Kafka --> EnterpriseService
 ```
 
 ## 5. Key Event Categories
@@ -112,4 +108,3 @@ flowchart LR
 - Ensure idempotent consumer logic and safe retries.
 - Add distributed tracing and correlation IDs across HTTP + Kafka boundaries.
 - Configure dead-letter topics and alerting for failed event processing.
-
