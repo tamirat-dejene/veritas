@@ -206,10 +206,11 @@ services:
         SERVICE_NAME: proctoring-service
     ports:
       - "8086:8000"
+    working_dir: /app/services/proctoring-service
     volumes:
-      - ./.env.dev:/app/.env.dev
-      - ./services/proctoring-service:/app
-      - ./shared:/app/shared:ro
+      - ./services/proctoring-service:/app/services/proctoring-service
+      - /app/services/proctoring-service/__pycache__
+      - /app/services/proctoring-service/.venv
     env_file:
       - .env.dev
 
@@ -221,25 +222,11 @@ services:
         SERVICE_NAME: grading-service
     ports:
       - "8087:8000"
+    working_dir: /app/services/grading-service
     volumes:
-      - ./.env.dev:/app/.env.dev
-      - ./services/grading-service:/app
-      - ./shared:/app/shared:ro
-    env_file:
-      - .env.dev
-
-  reporting-service:
-    build:
-      context: ./services/reporting-service
-      dockerfile: ../../infra/docker/dev/python-service.Dockerfile
-      args:
-        SERVICE_NAME: reporting-service
-    ports:
-      - "8088:8000"
-    volumes:
-      - ./.env.dev:/app/.env.dev
-      - ./services/reporting-service:/app
-      - ./shared:/app/shared:ro
+      - ./services/grading-service:/app/services/grading-service
+      - /app/services/grading-service/__pycache__
+      - /app/services/grading-service/.venv
     env_file:
       - .env.dev
 
