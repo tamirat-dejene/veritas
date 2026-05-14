@@ -2,8 +2,9 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.responses import RedirectResponse
+from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.middleware.cors import CORSMiddleware
+
 
 from app.config import settings
 
@@ -30,9 +31,16 @@ def create_app() -> FastAPI:
         description="Automated exam grading and evaluation service.",
         version="1.0.0",
         lifespan=lifespan,
-        docs_url="/swagger/grading",
-        openapi_url="/swagger/grading/openapi.json"
+        docs_url=None,
+        openapi_url="/swagger/openapi.json"
     )
+
+    @app.get("/swagger/index.html", include_in_schema=False)
+    async def custom_swagger_ui_html():
+        return get_swagger_ui_html(
+            openapi_url="openapi.json",
+            title=app.title + " - Swagger UI",
+        )
 
     # Middleware
     app.add_middleware(
