@@ -211,6 +211,11 @@ services:
       - ./services/proctoring-service:/app/services/proctoring-service
       - /app/services/proctoring-service/__pycache__
       - /app/services/proctoring-service/.venv
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     env_file:
       - .env.dev
 
@@ -227,6 +232,11 @@ services:
       - ./services/grading-service:/app/services/grading-service
       - /app/services/grading-service/__pycache__
       - /app/services/grading-service/.venv
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     env_file:
       - .env.dev
 

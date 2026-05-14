@@ -182,6 +182,11 @@ services:
     init: true
     env_file:
       - .env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     networks:
       - backend
 
@@ -193,6 +198,11 @@ services:
     init: true
     env_file:
       - .env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     networks:
       - backend
 
