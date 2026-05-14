@@ -70,6 +70,7 @@ async def lifespan(app: FastAPI):
         )
         logger.info("Face detector: deepface.dev managed API (model=%s)", settings.DEEPFACE_DEV_MODEL)
     else:
+        logger.warning("DEEPFACE_DEV_API_KEY is empty. Falling back to local DeepFace detector (requires local dependencies).")
         # Lazy import — only load when actually needed to avoid ImportError
         from app.infrastructure.face.deepface_detector import DeepFaceDetector
         detector = DeepFaceDetector()

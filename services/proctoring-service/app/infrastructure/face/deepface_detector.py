@@ -12,17 +12,18 @@ import asyncio
 import base64
 from concurrent.futures import ThreadPoolExecutor
 
-# pyrefly: ignore [missing-import]
-import cv2
 import httpx
-import numpy as np
 
 from app.domain.ports import FaceDetector, DetectResult, CompareResult
 
 _executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="deepface")
 
 
-def _b64_to_array(b64: str) -> np.ndarray:
+# pyrefly: ignore [unknown-name]
+def _b64_to_array(b64: str) -> "np.ndarray":
+    # pyrefly: ignore [missing-import]
+    import cv2
+    import numpy as np
     data = base64.b64decode(b64)
     arr = np.frombuffer(data, np.uint8)
     img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
@@ -31,6 +32,7 @@ def _b64_to_array(b64: str) -> np.ndarray:
     return img
 
 
+# pyrefly: ignore [unknown-name]
 def _run_detect(img_array: np.ndarray) -> list:
     # pyrefly: ignore [missing-import]
     from deepface import DeepFace  # lazy import — heavy module
@@ -43,7 +45,10 @@ def _run_detect(img_array: np.ndarray) -> list:
 
 def _run_compare(ref_bytes: bytes, probe_bytes: bytes) -> dict:
     # pyrefly: ignore [missing-import]
-    from deepface import DeepFace  # lazy import
+    from deepface import DeepFace
+    # pyrefly: ignore [missing-import]
+    import cv2
+    import numpy as np
     ref_arr = np.frombuffer(ref_bytes, np.uint8)
     probe_arr = np.frombuffer(probe_bytes, np.uint8)
     ref_img = cv2.imdecode(ref_arr, cv2.IMREAD_COLOR)
