@@ -56,3 +56,19 @@ const (
 	// The grading-service consumes this fat event containing all answers and questions.
 	CandidateExamReadyForGrading = "candidate.exam.ready_for_grading"
 )
+
+// Proctoring-Service topics
+const (
+	// ProctoringIdentityVerified is published after each periodic face verification check.
+	// Contains is_match flag, confidence score, and session context.
+	ProctoringIdentityVerified = "proctoring.identity.verified"
+
+	// ProctoringEventDetected is published for every behavioral event ingested
+	// (tab switch, mouse inactivity, face anomaly, etc.).
+	ProctoringEventDetected = "proctoring.event.detected"
+
+	// ProctoringCheatingScore is published whenever the cheating probability score
+	// is recomputed for a session. The is_final flag is set to true once the session
+	// is submitted, signalling the definitive score to reporting and grading services.
+	ProctoringCheatingScore = "proctoring.cheating_score.updated"
+)
