@@ -183,9 +183,6 @@ func (g *RouterGroup) RegisterCandidateRoutes(proxy http.Handler) {
 
 // RegisterProctoringRoutes attaches Proctoring Service proxy routes
 func (g *RouterGroup) RegisterProctoringRoutes(proxy http.Handler) {
-	g.register("GET", "/swagger/proctoring", proxy)
-	g.register("GET", "/swagger/proctoring/openapi.json", proxy)
-	
 	candidateRole := g.candidateAuthChain()
 	adminRole := g.authWithRoles(domain.RoleEnterpriseAdmin)
 
@@ -202,9 +199,6 @@ func (g *RouterGroup) RegisterProctoringRoutes(proxy http.Handler) {
 
 // RegisterGradingRoutes attaches Grading Service proxy routes
 func (g *RouterGroup) RegisterGradingRoutes(proxy http.Handler) {
-	g.register("GET", "/swagger/grading", proxy)
-	g.register("GET", "/swagger/grading/openapi.json", proxy)
-
 	g.register("POST", "/grading/auto", proxy, g.authWithRoles(domain.RoleEnterpriseAuto)...)
 	g.register("POST", "/grading/manual", proxy, g.authWithRoles(domain.RoleEnterpriseStaff)...)
 	g.register("GET", "/results/:examId", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
