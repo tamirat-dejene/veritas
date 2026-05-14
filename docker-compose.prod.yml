@@ -196,17 +196,6 @@ services:
     networks:
       - backend
 
-  reporting-service:
-    build:
-      context: ./services/reporting-service
-      dockerfile: ../../infra/docker/prod/reporting-service.Dockerfile
-    restart: unless-stopped
-    init: true
-    env_file:
-      - .env.production
-    networks:
-      - backend
-
 volumes:
   postgres_data:
   redis_data:
