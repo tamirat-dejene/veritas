@@ -27,7 +27,7 @@ var (
 	ErrSubmissionExists        = errors.New("a submission already exists for this session")
 	ErrSubmissionNotFound      = errors.New("submission not found")
 	ErrUnauthorizedAccess      = errors.New("unauthorized to access this resource")
-	ErrInvalidEnrollmentTime   = errors.New("invalid enrollment time")
+	ErrInvalidEnrollmentTime   = errors.New("invalid enrollment time, time cannot be before now or after exam end time")
 
 	// Standardized System & Validation errors
 	ErrEnterpriseIDMissing = errors.New("enterprise ID missing")
