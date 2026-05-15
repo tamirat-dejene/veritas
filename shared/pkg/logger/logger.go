@@ -28,10 +28,11 @@ func NewLogger(serviceName string) (*zap.Logger, error) {
 		cfg = zap.NewDevelopmentConfig()
 		cfg.Encoding = "console"
 		cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-		cfg.EncoderConfig.EncodeCaller = zapcore.ShortCallerEncoder // Re-enable caller in dev
+		cfg.EncoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
 		cfg.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("15:04:05")
 		cfg.EncoderConfig.ConsoleSeparator = " "
 		cfg.EncoderConfig.LineEnding = zapcore.DefaultLineEnding
+		cfg.Development = false
 	} else {
 		cfg = zap.NewProductionConfig()
 		cfg.Encoding = "json"
