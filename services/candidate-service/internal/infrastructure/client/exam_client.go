@@ -12,8 +12,8 @@ import (
 )
 
 type ExamServiceClient interface {
-	GetExamMetadata(ctx context.Context, examID uuid.UUID) (*sdomain.Exam, error)
-	GetExamQuestions(ctx context.Context, examID uuid.UUID, withAnswers bool) ([]sdomain.ExamQuestion, error)
+	GetExamMetadata(ctx context.Context, enterpriseID uuid.UUID, examID uuid.UUID) (*sdomain.Exam, error)
+	GetExamQuestions(ctx context.Context, enterpriseID uuid.UUID, examID uuid.UUID, withAnswers bool) ([]sdomain.ExamQuestion, error)
 }
 
 type examServiceClient struct {
@@ -29,9 +29,9 @@ func NewExamServiceClient(baseURL string, timeout time.Duration) ExamServiceClie
 	}
 }
 
-func (c *examServiceClient) GetExamMetadata(ctx context.Context, examID uuid.UUID) (*sdomain.Exam, error) {
+func (c *examServiceClient) GetExamMetadata(ctx context.Context, enterpriseID uuid.UUID, examID uuid.UUID) (*sdomain.Exam, error) {
 	path := fmt.Sprintf("/exams/%s", examID)
-	resp, err := c.client.Get(ctx, path)
+	resp, err := c.client.Get(ctx, path, httpclient.WithHeader("X-Enterprise-ID", enterpriseID.String()))
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (c *examServiceClient) GetExamMetadata(ctx context.Context, examID uuid.UUI
 	return &exam, nil
 }
 
-func (c *examServiceClient) GetExamQuestions(ctx context.Context, examID uuid.UUID, withAnswers bool) ([]sdomain.ExamQuestion, error) {
+func (c *examServiceClient) GetExamQuestions(ctx context.Context, enterpriseID uuid.UUID, examID uuid.UUID, withAnswers bool) ([]sdomain.ExamQuestion, error) {
 	var allQuestions []sdomain.ExamQuestion
 	page := 1
 	limit := 100
@@ -56,7 +56,7 @@ func (c *examServiceClient) GetExamQuestions(ctx context.Context, examID uuid.UU
 	for {
 		path := fmt.Sprintf("/exams/%s/questions?with_correct_answer=%v&page=%d&limit=%d", examID, withAnswers, page, limit)
 
-		resp, err := c.client.Get(ctx, path)
+		resp, err := c.client.Get(ctx, path, httpclient.WithHeader("X-Enterprise-ID", enterpriseID.String()))
 		if err != nil {
 			return nil, err
 		}

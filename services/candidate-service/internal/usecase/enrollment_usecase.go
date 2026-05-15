@@ -92,7 +92,7 @@ func (uc *enrollmentUseCase) EnrollCandidates(
 	expiresAt time.Time,
 ) ([]*domain.EnrollmentResult, error) {
 	// Validate exam status: must be Scheduled to allow enrollment
-	exam, err := uc.examClient.GetExamMetadata(ctx, examID)
+	exam, err := uc.examClient.GetExamMetadata(ctx, enterpriseID, examID)
 	if err != nil {
 		return nil, fmt.Errorf("fetch exam metadata for enrollment: %w", err)
 	}
@@ -198,7 +198,7 @@ func (uc *enrollmentUseCase) NotifyCandidates(
 	}
 
 	// 1. Fetch data upfront
-	exam, err := uc.examClient.GetExamMetadata(ctx, examID)
+	exam, err := uc.examClient.GetExamMetadata(ctx, enterpriseID, examID)
 	if err != nil {
 		return nil, fmt.Errorf("fetch exam metadata: %w", err)
 	}

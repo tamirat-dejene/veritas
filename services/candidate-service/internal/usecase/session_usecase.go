@@ -17,7 +17,6 @@ import (
 	"github.com/tamirat-dejene/veritas/shared/pkg/messaging/topics"
 	"github.com/tamirat-dejene/veritas/shared/pkg/storage"
 	sdomain "github.com/tamirat-dejene/veritas/shared/domain"
-	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 )
 
 type sessionUseCase struct {
@@ -105,8 +104,7 @@ func (uc *sessionUseCase) StartSession(ctx context.Context, enrollmentID, enterp
 	}
 
 	// 1. Fetch Exam Metadata & validate constraints
-	examCtx := logger.SetEnterpriseID(ctx, e.EnterpriseID.String())
-	examMeta, err := uc.examClient.GetExamMetadata(examCtx, e.ExamID)
+	examMeta, err := uc.examClient.GetExamMetadata(ctx, e.EnterpriseID, e.ExamID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch exam metadata: %v", err)
 	}
@@ -120,7 +118,7 @@ func (uc *sessionUseCase) StartSession(ctx context.Context, enrollmentID, enterp
 	}
 
 	// 2. Snapshot questions
-	questionsMeta, err := uc.examClient.GetExamQuestions(examCtx, e.ExamID, false)
+	questionsMeta, err := uc.examClient.GetExamQuestions(ctx, e.EnterpriseID, e.ExamID, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch question snapshot: %v", err)
 	}
@@ -358,8 +356,7 @@ func (uc *sessionUseCase) SubmitExam(ctx context.Context, sessionID uuid.UUID, c
 		fmt.Printf("failed to fetch candidate for submission event: %v\n", err)
 	}
 	
-	examCtx := logger.SetEnterpriseID(ctx, session.EnterpriseID.String())
-	examMeta, err := uc.examClient.GetExamMetadata(examCtx, session.ExamID)
+	examMeta, err := uc.examClient.GetExamMetadata(ctx, session.EnterpriseID, session.ExamID)
 	if err != nil {
 		fmt.Printf("failed to fetch exam metadata for submission event: %v\n", err)
 	}
@@ -424,8 +421,7 @@ func (uc *sessionUseCase) ForceExpireSession(ctx context.Context, sessionID uuid
 
 func (uc *sessionUseCase) publishReadyForGradingEvent(ctx context.Context, session *domain.ExamSession) {
 	// 1. Fetch Master Questions from Exam Service (with true evaluation criteria)
-	examCtx := logger.SetEnterpriseID(ctx, session.EnterpriseID.String())
-	masterQuestions, err := uc.examClient.GetExamQuestions(examCtx, session.ExamID, true)
+	masterQuestions, err := uc.examClient.GetExamQuestions(ctx, session.EnterpriseID, session.ExamID, true)
 	if err != nil {
 		fmt.Printf("failed to fetch master questions for grading event: %v\n", err)
 		return
