@@ -58,7 +58,7 @@ func (g *RouterGroup) RegisterEnterpriseRoutes(proxy http.Handler) {
 	// Enterprise user management
 	g.register("POST", "/enterprises/:enterpriseId/users", proxy, entAdmin...)
 	g.register("GET", "/enterprises/:enterpriseId/users", proxy, entAdmin...)
-	g.register("GET", "/enterprises/:enterpriseId/users/:userId", proxy, entAdmin...)
+	g.register("GET", "/enterprises/:enterpriseId/users/:userId", proxy, allAuth...)
 	g.register("PATCH", "/enterprises/:enterpriseId/users/:userId", proxy, allAuth...)
 	g.register("PATCH", "/enterprises/:enterpriseId/users/:userId/deactivate", proxy, entAdmin...)
 	g.register("PATCH", "/enterprises/:enterpriseId/users/:userId/activate", proxy, entAdmin...)
@@ -117,9 +117,9 @@ func (g *RouterGroup) RegisterExamRoutes(proxy http.Handler) {
 
 	// Exams Lifecycle
 	g.register("POST", "/exams", proxy, adminRole...)
-	g.register("GET", "/exams", proxy, adminRole...)
-	g.register("GET", "/exams/:examId", proxy, adminRole...)
-	g.register("GET", "/exams/:examId/questions", proxy, adminRole...)
+	g.register("GET", "/exams", proxy, staffOrAdmin...)
+	g.register("GET", "/exams/:examId", proxy, staffOrAdmin...)
+	g.register("GET", "/exams/:examId/questions", proxy, staffOrAdmin...)
 	g.register("PATCH", "/exams/:examId", proxy, adminRole...)
 	g.register("POST", "/exams/:examId/schedule", proxy, adminRole...)
 	g.register("POST", "/exams/:examId/clone", proxy, adminRole...)
