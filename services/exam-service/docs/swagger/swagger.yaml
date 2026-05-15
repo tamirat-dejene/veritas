@@ -371,6 +371,10 @@ paths:
         name: X-Enterprise-ID
         required: true
         type: string
+      - description: Filter by title (case-insensitive substring match)
+        in: query
+        name: search
+        type: string
       - description: 'Page number (default: 1)'
         in: query
         name: page

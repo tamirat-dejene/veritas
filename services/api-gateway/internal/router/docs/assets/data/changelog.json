@@ -1,5 +1,39 @@
 [
   {
+    "date": "2026-05-15",
+    "changes": [
+      {
+        "type": "changed",
+        "service": "exam",
+        "summary": "EnterpriseStaff can now read exam listings and details",
+        "description": "GET /exams and GET /exams/:examId are now accessible to EnterpriseStaff in addition to EnterpriseAdmin. All write operations (create, update, schedule, publish, close, delete, question assembly) remain restricted to EnterpriseAdmin.",
+        "endpoints": [
+          "GET /exams (UPDATED: EnterpriseStaff access added)",
+          "GET /exams/:examId (UPDATED: EnterpriseStaff access added)",
+          "GET /exams/:examId/questions (UPDATED: EnterpriseStaff access added)"
+        ]
+      },
+      {
+        "type": "new",
+        "service": "exam",
+        "summary": "Title search filter on GET /exams",
+        "description": "The exam listing endpoint now supports an optional ?search= query parameter for case-insensitive substring filtering by exam title. Combine with existing pagination and sort parameters.",
+        "endpoints": [
+          "GET /exams?search=<title> (UPDATED: optional search query param)"
+        ]
+      },
+      {
+        "type": "changed",
+        "service": "enterprise",
+        "summary": "Enterprise staff can now view individual user details",
+        "description": "GET /enterprises/:enterpriseId/users/:userId is now accessible to all authenticated enterprise users, not just EnterpriseAdmin. This allows staff to look up colleague profiles within their own enterprise.",
+        "endpoints": [
+          "GET /enterprises/:enterpriseId/users/:userId (UPDATED: role changed to all authenticated)"
+        ]
+      }
+    ]
+  },
+  {
     "date": "2026-05-14",
     "changes": [
       {
