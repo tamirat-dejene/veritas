@@ -147,11 +147,21 @@ func (r *examRepository) Update(ctx context.Context, e *sdomain.Exam) error {
 	return err
 }
 
-func (r *examRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*sdomain.Exam], error) {
+func (r *examRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params, search string) (pagination.PaginatedResponse[*sdomain.Exam], error) {
+	args := []any{enterpriseID}
+
+	// Base filter — always exclude archived exams.
+	whereClause := "enterprise_id = $1 AND status != 'Archived'"
+
+	// Optional title search — append only when a non-empty search term is provided.
+	if search != "" {
+		args = append(args, "%"+search+"%")
+		whereClause += fmt.Sprintf(" AND title ILIKE $%d", len(args))
+	}
+
 	var total int64
-	countQuery := "SELECT count(*) FROM veritas_exams WHERE enterprise_id = $1 AND status != 'Archived'"
-	err := r.db.QueryRow(ctx, countQuery, enterpriseID).Scan(&total)
-	if err != nil {
+	countQuery := fmt.Sprintf("SELECT count(*) FROM veritas_exams WHERE %s", whereClause)
+	if err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
 		return pagination.PaginatedResponse[*sdomain.Exam]{}, err
 	}
 
@@ -168,8 +178,16 @@ func (r *examRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid
 		sortField = "created_at"
 	}
 
-	query := fmt.Sprintf("SELECT %s FROM veritas_exams WHERE enterprise_id = $1 AND status != 'Archived' ORDER BY %s %s LIMIT $2 OFFSET $3", examFields, sortField, params.GetSortDir())
-	rows, err := r.db.Query(ctx, query, enterpriseID, params.GetLimit(), params.GetOffset())
+	// Append LIMIT / OFFSET args after the WHERE args.
+	limitIdx := len(args) + 1
+	offsetIdx := len(args) + 2
+	args = append(args, params.GetLimit(), params.GetOffset())
+
+	query := fmt.Sprintf(
+		"SELECT %s FROM veritas_exams WHERE %s ORDER BY %s %s LIMIT $%d OFFSET $%d",
+		examFields, whereClause, sortField, params.GetSortDir(), limitIdx, offsetIdx,
+	)
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
 		return pagination.PaginatedResponse[*sdomain.Exam]{}, err
 	}
@@ -181,8 +199,6 @@ func (r *examRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid
 		if err != nil {
 			return pagination.PaginatedResponse[*sdomain.Exam]{}, err
 		}
-		// Notice: To keep this lightweight, we aren't joining questions/rules on a bulk list request.
-		// If the client needs deep details, they should call GetByID.
 		exams = append(exams, e)
 	}
 

@@ -14,7 +14,7 @@ import (
 type ExamRepository interface {
 	Create(ctx context.Context, exam *sdomain.Exam) error
 	GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*sdomain.Exam, error)
-	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*sdomain.Exam], error)
+	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params, search string) (pagination.PaginatedResponse[*sdomain.Exam], error)
 	Update(ctx context.Context, exam *sdomain.Exam) error
 	Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	CountByEnterpriseAndStatus(ctx context.Context, enterpriseID uuid.UUID, status sdomain.ExamStatus) (int, error)
@@ -32,7 +32,7 @@ type ExamRepository interface {
 
 type ExamUsecase interface {
 	CreateExam(ctx context.Context, exam *sdomain.Exam, userID uuid.UUID) (*sdomain.Exam, error)
-	GetExams(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params) (pagination.PaginatedResponse[*sdomain.Exam], error)
+	GetExams(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params, search string) (pagination.PaginatedResponse[*sdomain.Exam], error)
 	GetExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*sdomain.Exam, error)
 	UpdateExam(ctx context.Context, exam *sdomain.Exam, userID uuid.UUID) error
 	ScheduleExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID, startTime time.Time, endTime time.Time, userID uuid.UUID) error
