@@ -75,7 +75,7 @@ func (h *PaymentHandler) UpgradeSubscription(c *gin.Context) {
 
 	checkoutURL, err := h.usecase.UpgradeSubscription(c.Request.Context(), enterpriseID, planID)
 	if err != nil {
-		{ e := mapDomainError(err); writeError(c, e.Code, e.Message) }
+		handleError(c, err)
 		return
 	}
 
@@ -131,7 +131,7 @@ func (h *PaymentHandler) GetPayment(c *gin.Context) {
 
 	payment, err := h.usecase.GetPayment(c.Request.Context(), paymentID)
 	if err != nil {
-		{ e := mapDomainError(err); writeError(c, e.Code, e.Message) }
+		handleError(c, err)
 		return
 	}
 
@@ -170,7 +170,7 @@ func (h *PaymentHandler) ListPaymentHistory(c *gin.Context) {
 
 	payments, err := h.usecase.ListPaymentHistory(c.Request.Context(), enterpriseID, params)
 	if err != nil {
-		{ e := mapDomainError(err); writeError(c, e.Code, e.Message) }
+		handleError(c, err)
 		return
 	}
 
@@ -238,11 +238,7 @@ func (h *PaymentHandler) GetInvoice(c *gin.Context) {
 
 	invoice, err := h.usecase.GetInvoice(c.Request.Context(), invoiceID)
 	if err != nil {
-		if err == domain.ErrInvoiceNotFound {
-			writeError(c, http.StatusNotFound, err.Error())
-			return
-		}
-		{ e := mapDomainError(err); writeError(c, e.Code, e.Message) }
+		handleError(c, err)
 		return
 	}
 
@@ -275,7 +271,7 @@ func (h *PaymentHandler) GetBillingSummary(c *gin.Context) {
 
 	summary, err := h.usecase.GetBillingSummary(c.Request.Context(), enterpriseID)
 	if err != nil {
-		{ e := mapDomainError(err); writeError(c, e.Code, e.Message) }
+		handleError(c, err)
 		return
 	}
 
@@ -302,11 +298,7 @@ func (h *PaymentHandler) GetActiveSubscription(c *gin.Context) {
 	}
 	sub, err := h.usecase.GetActiveSubscription(c.Request.Context(), enterpriseID)
 	if err != nil {
-		if err == domain.ErrSubscriptionNotFound {
-			writeError(c, http.StatusNotFound, "no subscription found")
-			return
-		}
-		{ e := mapDomainError(err); writeError(c, e.Code, e.Message) }
+		handleError(c, err)
 		return
 	}
 	writeJSON(c, http.StatusOK, sub)
@@ -337,14 +329,7 @@ func (h *PaymentHandler) CancelSubscription(c *gin.Context) {
 	_ = c.ShouldBindJSON(&req)
 
 	if err := h.usecase.CancelSubscription(c.Request.Context(), enterpriseID, req.CancelAtPeriodEnd); err != nil {
-		switch err {
-		case domain.ErrSubscriptionNotFound:
-			writeError(c, http.StatusNotFound, "no subscription found")
-		case domain.ErrSubscriptionAlreadyCanceled:
-			writeError(c, http.StatusConflict, "subscription is already canceled")
-		default:
-			{ e := mapDomainError(err); writeError(c, e.Code, e.Message) }
-		}
+		handleError(c, err)
 		return
 	}
 	c.Status(http.StatusNoContent)
@@ -368,12 +353,7 @@ func (h *PaymentHandler) ReactivateSubscription(c *gin.Context) {
 		return
 	}
 	if err := h.usecase.ReactivateSubscription(c.Request.Context(), enterpriseID); err != nil {
-		switch err {
-		case domain.ErrSubscriptionNotFound:
-			writeError(c, http.StatusNotFound, "no subscription found")
-		default:
-			{ e := mapDomainError(err); writeError(c, e.Code, e.Message) }
-		}
+		handleError(c, err)
 		return
 	}
 	c.Status(http.StatusNoContent)
@@ -414,7 +394,7 @@ func (h *PaymentHandler) AdminSetSubscription(c *gin.Context) {
 		PeriodEnd:   req.PeriodEnd,
 	}
 	if err := h.usecase.AdminSetSubscription(c.Request.Context(), enterpriseID, domainReq); err != nil {
-		{ e := mapDomainError(err); writeError(c, e.Code, e.Message) }
+		handleError(c, err)
 		return
 	}
 	c.Status(http.StatusNoContent)
@@ -452,7 +432,7 @@ func (h *PaymentHandler) CreatePlan(c *gin.Context) {
 	}
 
 	if err := h.usecase.CreatePlan(c.Request.Context(), plan); err != nil {
-		{ e := mapDomainError(err); writeError(c, e.Code, e.Message) }
+		handleError(c, err)
 		return
 	}
 
@@ -488,11 +468,7 @@ func (h *PaymentHandler) UpdatePlan(c *gin.Context) {
 	// Fetch existing plan first to merge updates
 	targetPlan, err := h.usecase.GetPlanByID(c.Request.Context(), planID)
 	if err != nil {
-		if err == domain.ErrPlanNotFound {
-			writeError(c, http.StatusNotFound, "plan not found")
-			return
-		}
-		{ e := mapDomainError(err); writeError(c, e.Code, e.Message) }
+		handleError(c, err)
 		return
 	}
 
@@ -525,7 +501,7 @@ func (h *PaymentHandler) UpdatePlan(c *gin.Context) {
 	}
 
 	if err := h.usecase.UpdatePlan(c.Request.Context(), targetPlan); err != nil {
-		{ e := mapDomainError(err); writeError(c, e.Code, e.Message) }
+		handleError(c, err)
 		return
 	}
 
@@ -573,7 +549,7 @@ func (h *PaymentHandler) DeactivatePlan(c *gin.Context) {
 	}
 
 	if err := h.usecase.DeactivatePlan(c.Request.Context(), planID); err != nil {
-		{ e := mapDomainError(err); writeError(c, e.Code, e.Message) }
+		handleError(c, err)
 		return
 	}
 
@@ -607,7 +583,7 @@ func (h *PaymentHandler) RefundInvoice(c *gin.Context) {
 	}
 
 	if err := h.usecase.RefundPayment(c.Request.Context(), invoiceID, req.Amount, req.Reason); err != nil {
-		{ e := mapDomainError(err); writeError(c, e.Code, e.Message) }
+		handleError(c, err)
 		return
 	}
 
@@ -647,7 +623,7 @@ func (h *PaymentHandler) CreateTrialSubscription(c *gin.Context) {
 	}
 
 	if err := h.usecase.CreateTrialSubscription(c.Request.Context(), enterpriseID, planID, req.TrialDays); err != nil {
-		{ e := mapDomainError(err); writeError(c, e.Code, e.Message) }
+		handleError(c, err)
 		return
 	}
 
@@ -675,17 +651,13 @@ func (h *PaymentHandler) GetFeatureGate(c *gin.Context) {
 
 	sub, err := h.usecase.GetActiveSubscription(c.Request.Context(), enterpriseID)
 	if err != nil {
-		if err == domain.ErrSubscriptionNotFound {
-			writeError(c, http.StatusNotFound, "subscription not found")
-			return
-		}
-		{ e := mapDomainError(err); writeError(c, e.Code, e.Message) }
+		handleError(c, err)
 		return
 	}
 
 	plan, err := h.usecase.GetPlanByID(c.Request.Context(), sub.PlanID)
 	if err != nil {
-		writeError(c, http.StatusInternalServerError, "failed to get plan")
+		handleError(c, err)
 		return
 	}
 

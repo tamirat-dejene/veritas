@@ -4,7 +4,9 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
+	"go.uber.org/zap"
 )
 
 // httpError pairs an HTTP status code with a safe client-facing message.
@@ -46,4 +48,17 @@ func mapDomainError(err error) httpError {
 	default:
 		return httpError{http.StatusInternalServerError, "an internal error occurred"}
 	}
+}
+
+// handleError maps the domain error to an HTTP response and logs it.
+// WARN is used for 4xx (client errors), ERROR for 5xx (server errors).
+func handleError(c *gin.Context, err error) {
+	e := mapDomainError(err)
+	log := zap.L().With(zap.String("path", c.FullPath()), zap.Int("status", e.Code))
+	if e.Code >= 500 {
+		log.Error("payment handler error", zap.Error(err))
+	} else {
+		log.Warn("payment handler error", zap.Error(err))
+	}
+	writeError(c, e.Code, e.Message)
 }

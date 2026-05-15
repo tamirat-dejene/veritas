@@ -657,25 +657,34 @@ func (h *EnterpriseHandler) GetAuditLogs(c *gin.Context) {
 // ─── Error helper ─────────────────────────────────────────────────────────────
 
 func (h *EnterpriseHandler) handleEnterpriseError(c *gin.Context, err error) {
+	log := zap.L().With(zap.String("path", c.FullPath()), zap.Error(err))
 	switch err {
 	case domain.ErrEnterpriseNotFound:
+		log.Warn("enterprise not found")
 		writeError(c, http.StatusNotFound, "enterprise not found")
 	case domain.ErrInvalidStatus:
+		log.Warn("invalid status transition")
 		writeError(c, http.StatusConflict, "invalid status transition")
 	case domain.ErrRetentionActive:
+		log.Warn("retention period has not expired yet")
 		writeError(c, http.StatusConflict, "retention period has not expired yet")
 	case domain.ErrForbidden:
+		log.Warn("forbidden")
 		writeError(c, http.StatusForbidden, "forbidden")
 	case domain.ErrDomainValidation:
+		log.Warn("domain validation error")
 		writeError(c, http.StatusUnprocessableEntity, "domain validation error")
 	case domain.ErrSlugAlreadyExists:
+		log.Warn("enterprise slug already exists")
 		writeError(c, http.StatusConflict, "enterprise slug already exists")
 	case domain.ErrEmailAlreadyExists:
+		log.Warn("owner email already exists")
 		writeError(c, http.StatusConflict, "owner email already exists")
 	case domain.ErrUserNotFound:
+		log.Warn("user not found")
 		writeError(c, http.StatusNotFound, "user not found")
 	default:
-		zap.L().Error("Unhandled enterprise error", zap.Error(err))
+		log.Error("unhandled enterprise error")
 		writeError(c, http.StatusInternalServerError, "internal server error")
 	}
 }

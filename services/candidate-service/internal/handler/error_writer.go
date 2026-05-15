@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/dto"
+	"go.uber.org/zap"
 )
 
 // HandleError centralizes domain error mapping to HTTP status codes.
@@ -73,6 +74,13 @@ func HandleError(c *gin.Context, err error) {
 	case errors.Is(err, domain.ErrNotSupported):
 		statusCode = http.StatusNotImplemented
 		message = err.Error()
+	}
+
+	log := zap.L().With(zap.String("path", c.FullPath()), zap.Int("status", statusCode))
+	if statusCode >= 500 {
+		log.Error("handler error", zap.Error(err))
+	} else {
+		log.Warn("handler error", zap.Error(err))
 	}
 
 	c.AbortWithStatusJSON(statusCode, dto.ErrorResponse{Error: message})
