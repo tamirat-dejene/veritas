@@ -30,7 +30,7 @@ func (c *candidateClient) GetCandidateEmailsForExam(ctx context.Context, enterpr
 	q.Set("enterprise_id", enterpriseID.String())
 
 	path := "/internal/candidates/emails?" + q.Encode()
-	hResp, err := c.client.Get(ctx, path)
+	hResp, err := c.client.Get(ctx, path, httpclient.WithHeader("X-Enterprise-ID", enterpriseID.String()))
 	if err != nil {
 		return nil, fmt.Errorf("candidate_client: get emails: %w", err)
 	}

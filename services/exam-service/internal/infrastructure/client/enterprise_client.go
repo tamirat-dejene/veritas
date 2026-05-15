@@ -26,7 +26,7 @@ func (c *enterpriseClient) GetEnterpriseAdminEmail(ctx context.Context, enterpri
 	}
 
 	path := fmt.Sprintf("/enterprises/%s", enterpriseID)
-	hResp, err := c.client.Get(ctx, path)
+	hResp, err := c.client.Get(ctx, path, httpclient.WithHeader("X-Enterprise-ID", enterpriseID.String()))
 	if err != nil {
 		return "", fmt.Errorf("enterprise_client: get enterprise: %w", err)
 	}
