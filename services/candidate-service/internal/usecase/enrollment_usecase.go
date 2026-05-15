@@ -100,8 +100,11 @@ func (uc *enrollmentUseCase) EnrollCandidates(
 		return nil, domain.ErrInvalidExamStatus
 	}
 
-	// Validate expiration time
-	if expiresAt.Before(time.Now()) || expiresAt.After(*exam.ScheduledEnd) {
+	// ScheduledEnd is optional on the exam; only validate the upper bound when it is set.
+	if expiresAt.Before(time.Now()) {
+		return nil, domain.ErrInvalidEnrollmentTime
+	}
+	if exam.ScheduledEnd != nil && expiresAt.After(*exam.ScheduledEnd) {
 		return nil, domain.ErrInvalidEnrollmentTime
 	}
 
@@ -329,23 +332,18 @@ func (uc *enrollmentUseCase) NotifyCandidate(
 	id uuid.UUID,
 	enterpriseID uuid.UUID,
 ) (*domain.NotifyResult, error) {
-	// Re-use batch logic for single notification if possible, or keep simple
-	results, err := uc.NotifyCandidates(ctx, uuid.Nil, enterpriseID, []uuid.UUID{id})
+	// Fetch the enrollment first so we have the correct examID for the batch call.
+	e, err := uc.repo.GetByID(ctx, id, enterpriseID)
+	if err != nil {
+		return nil, err
+	}
+
+	results, err := uc.NotifyCandidates(ctx, e.ExamID, enterpriseID, []uuid.UUID{id})
 	if err != nil {
 		return nil, err
 	}
 	if len(results) == 0 {
 		return nil, domain.ErrEnrollmentNotFound
-	}
-
-	e, err := uc.repo.GetByID(ctx, id, enterpriseID)
-	if err != nil {
-		return nil, err
-	}
-	
-	results, err = uc.NotifyCandidates(ctx, e.ExamID, enterpriseID, []uuid.UUID{id})
-	if err != nil {
-		return nil, err
 	}
 	return results[0], nil
 }
