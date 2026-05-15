@@ -2,51 +2,43 @@ package client
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/enterprise-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/httpclient"
 )
 
 type httpExamClient struct {
-	baseURL    string
-	httpClient *http.Client
+	client httpclient.Client
 }
 
 func NewExamClient(baseURL string) domain.ExamClient {
 	return &httpExamClient{
-		baseURL: baseURL,
-		httpClient: &http.Client{
+		client: httpclient.New(httpclient.Config{
+			BaseURL: baseURL,
 			Timeout: 5 * time.Second,
-		},
+		}),
 	}
 }
 
 func (c *httpExamClient) GetActiveExamsCount(ctx context.Context, enterpriseID uuid.UUID) (int, error) {
-	url := fmt.Sprintf("%s/internal/enterprises/%s/counts", c.baseURL, enterpriseID)
+	path := fmt.Sprintf("/internal/enterprises/%s/counts", enterpriseID)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	resp, err := c.client.Get(ctx, path)
 	if err != nil {
 		return 0, err
 	}
 
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
+	if err := resp.Error(); err != nil {
 		return 0, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return 0, fmt.Errorf("unexpected status: %d", resp.StatusCode)
 	}
 
 	var res struct {
 		ActiveExamCount int `json:"active_exam_count"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+	if err := resp.Decode(&res); err != nil {
 		return 0, err
 	}
 
