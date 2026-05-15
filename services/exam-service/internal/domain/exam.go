@@ -38,6 +38,7 @@ type ExamUsecase interface {
 	ScheduleExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID, startTime time.Time, endTime time.Time, userID uuid.UUID) error
 	CloneExam(ctx context.Context, sourceID uuid.UUID, enterpriseID uuid.UUID, cloneTitle string, userID uuid.UUID) (*sdomain.Exam, error)
 	PublishExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
+	UnscheduleExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	CloseExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	ArchiveExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	DeleteExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error

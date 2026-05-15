@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/tamirat-dejene/veritas/services/exam-service/internal/domain"
@@ -41,20 +42,35 @@ func (uc *maintenanceUseCase) PublishScheduledExams(ctx context.Context) error {
 	uc.log.Info("publishing scheduled exams", zap.Int("count", len(exams)))
 
 	successCount := 0
+	unscheduledCount := 0
 	for _, exam := range exams {
 		if err := uc.examUC.PublishExam(ctx, exam.ID, exam.EnterpriseID); err != nil {
-			uc.log.Error("failed to auto-publish exam",
-				zap.String("exam_id", exam.ID.String()),
-				zap.Error(err))
+			if errors.Is(err, domain.ErrNoQuestions) {
+				if unschedErr := uc.examUC.UnscheduleExam(ctx, exam.ID, exam.EnterpriseID); unschedErr != nil {
+					uc.log.Error("failed to unschedule unpublishable exam",
+						zap.String("exam_id", exam.ID.String()),
+						zap.Error(unschedErr))
+				} else {
+					uc.log.Warn("exam unscheduled due to missing questions; reverted to Draft",
+						zap.String("exam_id", exam.ID.String()))
+					unscheduledCount++
+				}
+			} else {
+				uc.log.Error("failed to auto-publish exam",
+					zap.String("exam_id", exam.ID.String()),
+					zap.Error(err))
+			}
 			continue
 		}
 		successCount++
 	}
 
+	failedCount := len(exams) - successCount - unscheduledCount
 	uc.log.Info("completed auto-publishing scheduled exams",
 		zap.Int("total", len(exams)),
 		zap.Int("success", successCount),
-		zap.Int("failed", len(exams)-successCount))
+		zap.Int("unscheduled", unscheduledCount),
+		zap.Int("failed", failedCount))
 
 	return nil
 }

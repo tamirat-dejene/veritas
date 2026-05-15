@@ -225,6 +225,25 @@ func (uc *examUsecase) PublishExam(ctx context.Context, id uuid.UUID, enterprise
 	})
 }
 
+func (uc *examUsecase) UnscheduleExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
+	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		exam, err := uc.examRepo.WithTx(tx).GetByID(ctx, id, enterpriseID)
+		if err != nil {
+			return err
+		}
+
+		if exam.Status != sdomain.ExamScheduled {
+			return domain.ErrInvalidStatus
+		}
+
+		exam.Status = sdomain.ExamDraft
+		exam.ScheduledStart = nil
+		exam.ScheduledEnd = nil
+
+		return uc.examRepo.WithTx(tx).Update(ctx, exam)
+	})
+}
+
 func (uc *examUsecase) GetExamQuestions(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params, withCorrectAnswer bool) (pagination.PaginatedResponse[*sdomain.ExamQuestion], error) {
 	_, err := uc.examRepo.GetByID(ctx, examID, enterpriseID)
 	if err != nil {
