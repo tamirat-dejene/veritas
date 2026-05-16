@@ -27,7 +27,6 @@ func (s *jwtTokenService) GenerateToken(ctx context.Context, claims domain.Enrol
 		"xid":  claims.ExamID.String(),
 		"ent":  claims.EnterpriseID.String(),
 		"role": claims.Role,
-		"iat":  time.Now().Unix(),
 		"exp":  claims.ExpiresAt.Unix(),
 	}
 
