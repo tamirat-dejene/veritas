@@ -161,6 +161,25 @@ func (r *enrollmentRepository) GetByExamAndCandidate(ctx context.Context, examID
 	return scanEnrollment(r.db.QueryRow(ctx, query, examID, candidateID))
 }
 
+func (r *enrollmentRepository) GetByExamAndCandidates(ctx context.Context, examID uuid.UUID, candidateIDs []uuid.UUID) ([]*domain.ExamEnrollment, error) {
+	query := fmt.Sprintf("SELECT %s FROM exam_enrollments WHERE exam_id = $1 AND candidate_id = ANY($2)", enrollmentFields)
+	rows, err := r.db.Query(ctx, query, examID, candidateIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []*domain.ExamEnrollment
+	for rows.Next() {
+		e, err := scanEnrollment(rows)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, e)
+	}
+	return list, nil
+}
+
 func (r *enrollmentRepository) GetByInvitationCodeHash(ctx context.Context, codeHash string) (*domain.ExamEnrollment, error) {
 	query := fmt.Sprintf("SELECT %s FROM exam_enrollments WHERE invitation_code_hash = $1 LIMIT 1", enrollmentFields)
 	return scanEnrollment(r.db.QueryRow(ctx, query, codeHash))
@@ -308,6 +327,18 @@ func (r *enrollmentRepository) RevokeByExam(ctx context.Context, examID uuid.UUI
 	`
 	_, err := r.db.Exec(ctx, q, examID)
 	return err
+}
+
+func (r *enrollmentRepository) Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
+	const q = "DELETE FROM exam_enrollments WHERE id = $1 AND enterprise_id = $2"
+	tag, err := r.db.Exec(ctx, q, id, enterpriseID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrEnrollmentNotFound
+	}
+	return nil
 }
 
 func (r *enrollmentRepository) WithTx(tx pgx.Tx) domain.EnrollmentRepository {
