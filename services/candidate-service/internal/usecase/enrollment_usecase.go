@@ -15,21 +15,21 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/candidate-service/internal/infrastructure/client"
+	sdomain "github.com/tamirat-dejene/veritas/shared/domain"
 	"github.com/tamirat-dejene/veritas/shared/pkg/messaging"
 	"github.com/tamirat-dejene/veritas/shared/pkg/messaging/topics"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 	"golang.org/x/sync/errgroup"
-	sdomain "github.com/tamirat-dejene/veritas/shared/domain"
 )
 
 type enrollmentUseCase struct {
-	pool           *pgxpool.Pool
-	repo           domain.EnrollmentRepository
-	candidateRepo  domain.CandidateRepository
-	tokenService   domain.EnrollmentTokenService
-	examClient     client.ExamServiceClient
-	publisher      messaging.Publisher
-	portalBaseURL  string
+	pool          *pgxpool.Pool
+	repo          domain.EnrollmentRepository
+	candidateRepo domain.CandidateRepository
+	tokenService  domain.EnrollmentTokenService
+	examClient    client.ExamServiceClient
+	publisher     messaging.Publisher
+	portalBaseURL string
 }
 
 func NewEnrollmentUseCase(
@@ -96,7 +96,7 @@ func (uc *enrollmentUseCase) EnrollCandidates(
 	if err != nil {
 		return nil, fmt.Errorf("fetch exam metadata for enrollment: %w", err)
 	}
-	if exam.Status != sdomain.ExamScheduled {
+	if exam.Status != sdomain.ExamScheduled && exam.Status != sdomain.ExamActive {
 		return nil, domain.ErrInvalidExamStatus
 	}
 
@@ -108,11 +108,20 @@ func (uc *enrollmentUseCase) EnrollCandidates(
 		return nil, domain.ErrInvalidEnrollmentTime
 	}
 
+	// Check if any candidates are already enrolled for this exam
+	existing, err := uc.repo.GetByExamAndCandidates(ctx, examID, candidateIDs)
+	if err != nil {
+		return nil, fmt.Errorf("check existing enrollments: %w", err)
+	}
+	if len(existing) > 0 {
+		return nil, domain.ErrCandidateAlreadyEnrolled
+	}
+
 	const batchSize = 100
 	results := make([]*domain.EnrollmentResult, 0, len(candidateIDs))
 
 	for i := 0; i < len(candidateIDs); i += batchSize {
-		end := min(i + batchSize, len(candidateIDs))
+		end := min(i+batchSize, len(candidateIDs))
 
 		batchIDs := candidateIDs[i:end]
 		batchEnrollments := make([]*domain.ExamEnrollment, 0, len(batchIDs))
@@ -142,15 +151,15 @@ func (uc *enrollmentUseCase) EnrollCandidates(
 					return fmt.Errorf("generate opaque code for candidate %s: %w", cid, err)
 				}
 
-					h := hashSHA256(opaqueCode)
-					enrollment := &domain.ExamEnrollment{
-						ID:                 enrollmentID,
-						EnterpriseID:       enterpriseID,
-						ExamID:             examID,
-						CandidateID:        cid,
-						AccessTokenHash:    hashSHA256(rawToken),
-						InvitationCodeHash: &h,
-						TokenExpiresAt:     expiresAt,
+				h := hashSHA256(opaqueCode)
+				enrollment := &domain.ExamEnrollment{
+					ID:                 enrollmentID,
+					EnterpriseID:       enterpriseID,
+					ExamID:             examID,
+					CandidateID:        cid,
+					AccessTokenHash:    hashSHA256(rawToken),
+					InvitationCodeHash: &h,
+					TokenExpiresAt:     expiresAt,
 					MaxAttempts:        maxAttempts,
 					AttemptsUsed:       0,
 					Status:             domain.StatusPending,
@@ -354,19 +363,24 @@ func (uc *enrollmentUseCase) NotifyCandidate(
 // ─────────────────────────────────────────────────────────────────────────────
 
 func (uc *enrollmentUseCase) RedeemInvitationCode(ctx context.Context, code string) (string, error) {
+	fmt.Println("Redeeming invitation code:", code)
 	codeHash := hashSHA256(code)
 	e, err := uc.repo.GetByInvitationCodeHash(ctx, codeHash)
 	if err != nil {
+		fmt.Println("Error getting enrollment by invitation code hash:", err)
 		return "", domain.ErrInvalidAccessToken
 	}
 
 	if e.Status == domain.StatusRevoked {
+		fmt.Println("Error: Enrollment is revoked")
 		return "", domain.ErrInvalidAccessToken
 	}
 	if time.Now().After(e.TokenExpiresAt) {
+		fmt.Println("Error: Token has expired")
 		return "", domain.ErrInvalidAccessToken
 	}
 	if e.AttemptsUsed >= e.MaxAttempts {
+		fmt.Println("Error: Maximum attempts reached")
 		return "", domain.ErrMaxAttemptsReached
 	}
 
@@ -382,11 +396,14 @@ func (uc *enrollmentUseCase) RedeemInvitationCode(ctx context.Context, code stri
 	}
 	rawToken, err := uc.tokenService.GenerateToken(ctx, claims)
 	if err != nil {
+		fmt.Println("Error generating token on redeem:", err)
 		return "", fmt.Errorf("regenerate token on redeem: %w", err)
 	}
 
 	// Verify the regenerated token hash matches what is stored (integrity check).
 	if hashSHA256(rawToken) != e.AccessTokenHash {
+		fmt.Println("Error: Token hash does not match")
+		fmt.Println("Claims", claims)
 		return "", domain.ErrInvalidAccessToken
 	}
 
@@ -445,6 +462,19 @@ func (uc *enrollmentUseCase) RevokeEnrollment(ctx context.Context, id uuid.UUID,
 	e.Status = domain.StatusRevoked
 	e.TokenExpiresAt = time.Now().Add(-1 * time.Hour) // belt-and-suspenders expiry
 	return uc.repo.Update(ctx, e)
+}
+
+func (uc *enrollmentUseCase) DeleteEnrollment(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
+	e, err := uc.repo.GetByID(ctx, id, enterpriseID)
+	if err != nil {
+		return err
+	}
+
+	if e.Status != domain.StatusPending {
+		return domain.ErrEnrollmentCannotBeDeleted
+	}
+
+	return uc.repo.Delete(ctx, id, enterpriseID)
 }
 
 func (uc *enrollmentUseCase) ResetAttempts(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
