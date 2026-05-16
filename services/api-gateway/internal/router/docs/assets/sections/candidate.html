@@ -70,6 +70,10 @@
         <endpoint-item method="PATCH" path="/enrollments/:enrollmentId/revoke">
             <span class="badge badge-admin">EnterpriseAdmin</span>
         </endpoint-item>
+        <endpoint-item method="DELETE" path="/enrollments/:enrollmentId">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+            <span class="badge badge-staff">EnterpriseStaff</span>
+        </endpoint-item>
         <endpoint-item method="POST" path="/enrollments/:enrollmentId/reset-attempts">
             <span class="badge badge-admin">EnterpriseAdmin</span>
         </endpoint-item>

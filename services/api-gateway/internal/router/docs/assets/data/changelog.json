@@ -1,5 +1,19 @@
 [
   {
+    "date": "2026-05-16",
+    "changes": [
+      {
+        "type": "new",
+        "service": "candidate",
+        "summary": "Deletion of Pending Enrollments",
+        "description": "Administrators can now delete candidate enrollments that are in a 'Pending' status. Once a candidate has been notified or has started the exam, the enrollment cannot be deleted (must be revoked instead).",
+        "endpoints": [
+          "DELETE /enrollments/:enrollmentId (NEW)"
+        ]
+      }
+    ]
+  },
+  {
     "date": "2026-05-15",
     "changes": [
       {

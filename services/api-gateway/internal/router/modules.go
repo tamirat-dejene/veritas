@@ -161,6 +161,7 @@ func (g *RouterGroup) RegisterCandidateRoutes(proxy http.Handler) {
 	g.register("POST", "/enrollments/:enrollmentId/notify", proxy, staffOrAdmin...)
 	g.register("GET", "/enrollments/:enrollmentId/link", proxy, staffOrAdmin...)
 	g.register("PATCH", "/enrollments/:enrollmentId/revoke", proxy, adminRole...)
+	g.register("DELETE", "/enrollments/:enrollmentId", proxy, staffOrAdmin...)
 	g.register("POST", "/enrollments/:enrollmentId/reset-attempts", proxy, adminRole...)
 
 	// Access & Sessions
