@@ -57,6 +57,7 @@ func NewRouter(
 	enrollments := engine.Group("/enrollments")
 	{
 		enrollments.GET("/:enrollmentId", eh.Get)
+		enrollments.DELETE("/:enrollmentId", eh.Delete)
 		enrollments.PATCH("/:enrollmentId/revoke", eh.Revoke)
 		enrollments.POST("/:enrollmentId/reset-attempts", eh.ResetAttempts)
 

@@ -346,6 +346,41 @@ func (h *EnrollmentHandler) Revoke(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.MessageResponse{Message: "Enrollment revoked"})
 }
 
+// Delete deletes an enrollment if its status is Pending.
+//
+//	@Summary		Delete enrollment
+//	@Description	Delete an enrollment. Only allowed if status is Pending.
+//	@Tags			enrollment
+//	@Produce		json
+//	@Param			X-Enterprise-Id	header	string	false	"Enterprise ID"
+//	@Param			enrollmentId	path	string	true	"Enrollment ID (UUID)"
+//	@Success		204				"No Content"
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		404				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
+//	@Router			/enrollments/{enrollmentId} [delete]
+func (h *EnrollmentHandler) Delete(c *gin.Context) {
+	entID, err := getEnterpriseID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrEnterpriseIDMissing.Error()})
+		return
+	}
+
+	id, err := uuid.Parse(c.Param("enrollmentId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
+		return
+	}
+
+	if err := h.uc.DeleteEnrollment(c.Request.Context(), id, entID); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
 // ResetAttempts resets the attempt counter for an enrollment.
 //
 //	@Summary		Reset enrollment attempts

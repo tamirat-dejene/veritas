@@ -58,7 +58,9 @@ func HandleError(c *gin.Context, err error) {
 		errors.Is(err, domain.ErrInvalidIDFormat),
 		errors.Is(err, domain.ErrMissingFile),
 		errors.Is(err, domain.ErrNoValidCandidates),
-		errors.Is(err, domain.ErrNotAString):
+		errors.Is(err, domain.ErrNotAString),
+		errors.Is(err, domain.ErrCandidateAlreadyEnrolled),
+		errors.Is(err, domain.ErrEnrollmentCannotBeDeleted):
 		statusCode = http.StatusBadRequest
 		message = err.Error()
 
