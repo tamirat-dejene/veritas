@@ -11,6 +11,8 @@ var (
 	// Enrollment constraints
 	ErrEnrollmentNotFound = errors.New("enrollment not found")
 	ErrMaxAttemptsReached = errors.New("max exam attempts reached")
+	ErrCandidateAlreadyEnrolled = errors.New("one or more candidates are already enrolled for this exam")
+	ErrEnrollmentCannotBeDeleted = errors.New("only enrollments with Pending status can be deleted")
 
 	// Session constraints
 	ErrSessionNotFound         = errors.New("session not found")
@@ -20,7 +22,7 @@ var (
 	ErrSessionAlreadyActive    = errors.New("an active session already exists for this enrollment")
 	ErrSessionExpired          = errors.New("session has expired")
 	ErrExamNotScheduled        = errors.New("exam is not currently within its scheduled window")
-	ErrInvalidExamStatus       = errors.New("exam should be Scheduled to enroll candidates")
+	ErrInvalidExamStatus       = errors.New("exam should be Scheduled or Active to enroll candidates")
 	ErrInvalidAccessToken      = errors.New("invalid or expired access token")
 	ErrQuestionNotFound        = errors.New("question not found in session snapshot")
 	ErrInvalidAnswerFormat     = errors.New("invalid answer format for question type")

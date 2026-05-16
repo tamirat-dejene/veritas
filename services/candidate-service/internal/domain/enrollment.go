@@ -46,6 +46,7 @@ type EnrollmentRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*ExamEnrollment, error)
 	GetByIDs(ctx context.Context, ids []uuid.UUID, enterpriseID uuid.UUID) ([]*ExamEnrollment, error)
 	GetByExamAndCandidate(ctx context.Context, examID uuid.UUID, candidateID uuid.UUID) (*ExamEnrollment, error)
+	GetByExamAndCandidates(ctx context.Context, examID uuid.UUID, candidateIDs []uuid.UUID) ([]*ExamEnrollment, error)
 	GetByInvitationCodeHash(ctx context.Context, codeHash string) (*ExamEnrollment, error)
 	ListByExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) ([]*ExamEnrollment, int64, error)
 	Update(ctx context.Context, enrollment *ExamEnrollment) error
@@ -55,6 +56,7 @@ type EnrollmentRepository interface {
 	GetExpiredPendingEnrollments(ctx context.Context, limit int) ([]*ExamEnrollment, error)
 	RevokeByEnterprise(ctx context.Context, enterpriseID uuid.UUID) error
 	RevokeByExam(ctx context.Context, examID uuid.UUID) error
+	Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	WithTx(tx pgx.Tx) EnrollmentRepository
 }
 
@@ -78,5 +80,6 @@ type EnrollmentUseCase interface {
 	GetEnrollmentsForExam(ctx context.Context, examID uuid.UUID, enterpriseID uuid.UUID, params pagination.Params) ([]*ExamEnrollment, int64, error)
 	GetEnrollment(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) (*ExamEnrollment, error)
 	RevokeEnrollment(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
+	DeleteEnrollment(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	ResetAttempts(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 }
