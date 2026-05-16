@@ -710,6 +710,60 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "description": "Delete an enrollment. Only allowed if status is Pending.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollment"
+                ],
+                "summary": "Delete enrollment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Enterprise ID",
+                        "name": "X-Enterprise-Id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Enrollment ID (UUID)",
+                        "name": "enrollmentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/enrollments/{enrollmentId}/link": {

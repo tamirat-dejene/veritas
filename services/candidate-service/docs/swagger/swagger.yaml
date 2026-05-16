@@ -889,6 +889,42 @@ paths:
       tags:
       - candidate
   /enrollments/{enrollmentId}:
+    delete:
+      description: Delete an enrollment. Only allowed if status is Pending.
+      parameters:
+      - description: Enterprise ID
+        in: header
+        name: X-Enterprise-Id
+        type: string
+      - description: Enrollment ID (UUID)
+        in: path
+        name: enrollmentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Delete enrollment
+      tags:
+      - enrollment
     get:
       description: Get one enrollment by ID.
       parameters:
