@@ -1,5 +1,19 @@
 [
   {
+    "date": "2026-05-17",
+    "changes": [
+      {
+        "type": "new",
+        "service": "candidate",
+        "summary": "Bulk Answer Submission Endpoint",
+        "description": "A new endpoint allows candidates to upsert answers for multiple questions in a single HTTP request. The endpoint returns HTTP 207 Multi-Status with per-item results, so callers can distinguish which answers were saved and which failed without the failure of one item blocking the others. Each item is validated against its question type (MCQ option IDs checked against snapshot, text answer checked for non-empty string). Session-level errors (session not active, expired, unauthorized) still return a standard 4xx and affect the entire request. Maximum 100 items per request. The existing single-answer PATCH endpoint is unchanged.",
+        "endpoints": [
+          "PUT /sessions/:sessionId/answers (NEW: bulk upsert up to 100 answers, returns 207)"
+        ]
+      }
+    ]
+  },
+  {
     "date": "2026-05-16",
     "changes": [
       {

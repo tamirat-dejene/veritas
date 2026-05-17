@@ -172,6 +172,7 @@ func (g *RouterGroup) RegisterCandidateRoutes(proxy http.Handler) {
 	g.register("GET", "/sessions/:sessionId", proxy, g.candidateOrAdminChain(domain.RoleEnterpriseAdmin)...)
 	g.register("GET", "/sessions/:sessionId/questions", proxy, candidateRole...)
 	g.register("PATCH", "/sessions/:sessionId/answers", proxy, candidateRole...)
+	g.register("PUT", "/sessions/:sessionId/answers", proxy, candidateRole...)
 	g.register("GET", "/sessions/:sessionId/answers", proxy, candidateRole...)
 	g.register("POST", "/sessions/:sessionId/submit", proxy, candidateRole...)
 	g.register("POST", "/sessions/:sessionId/terminate", proxy, adminRole...)

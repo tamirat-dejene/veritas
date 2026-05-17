@@ -2,7 +2,7 @@
 <section class="section" data-service="candidate">
     <div class="section-header">
         <h2>Exam Candidate & Sessions</h2>
-        <span class="section-count">31 endpoints</span>
+        <span class="section-count">32 endpoints</span>
     </div>
     <div class="endpoint-list">
         <!-- Candidates -->
@@ -100,6 +100,9 @@
             <span class="badge badge-candidate">ExamCandidate</span>
         </endpoint-item>
         <endpoint-item method="PATCH" path="/sessions/:sessionId/answers">
+            <span class="badge badge-candidate">ExamCandidate</span>
+        </endpoint-item>
+        <endpoint-item method="PUT" path="/sessions/:sessionId/answers">
             <span class="badge badge-candidate">ExamCandidate</span>
         </endpoint-item>
         <endpoint-item method="GET" path="/sessions/:sessionId/answers">
