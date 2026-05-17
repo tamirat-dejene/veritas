@@ -193,6 +193,41 @@ definitions:
       data:
         $ref: '#/definitions/ValidateAccessTokenResponse'
     type: object
+  BulkAnswerItemRequestSwag:
+    properties:
+      answerData:
+        $ref: '#/definitions/SwaggerAnswerData'
+      sessionQuestionId:
+        type: string
+    type: object
+  BulkAnswerResultItem:
+    properties:
+      error:
+        type: string
+      sessionQuestionId:
+        type: string
+      status:
+        description: '"saved" | "failed"'
+        type: string
+    type: object
+  BulkSaveAnswersRequestSwag:
+    properties:
+      answers:
+        items:
+          $ref: '#/definitions/BulkAnswerItemRequestSwag'
+        type: array
+    type: object
+  BulkSaveAnswersResponse:
+    properties:
+      failedCount:
+        type: integer
+      results:
+        items:
+          $ref: '#/definitions/BulkAnswerResultItem'
+        type: array
+      savedCount:
+        type: integer
+    type: object
   BulkUploadResponse:
     properties:
       count:
@@ -1501,6 +1536,56 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
       summary: Save session answer
+      tags:
+      - session
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Upsert multiple question answers in a single request. Returns 207 with per-item results.
+        Items that fail validation or cannot be persisted are reported individually; successfully saved items are not affected by others failing.
+        Maximum 100 items per request.
+      parameters:
+      - description: Candidate ID
+        in: header
+        name: X-Subject-Id
+        required: true
+        type: string
+      - description: Session ID (UUID)
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Bulk answer payload (max 100 items)
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/BulkSaveAnswersRequestSwag'
+      produces:
+      - application/json
+      responses:
+        "207":
+          description: Multi-Status
+          schema:
+            $ref: '#/definitions/BulkSaveAnswersResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Bulk save session answers
       tags:
       - session
   /sessions/{sessionId}/expire:

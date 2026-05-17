@@ -1614,6 +1614,76 @@ const docTemplate = `{
                     }
                 }
             },
+            "put": {
+                "description": "Upsert multiple question answers in a single request. Returns 207 with per-item results.\nItems that fail validation or cannot be persisted are reported individually; successfully saved items are not affected by others failing.\nMaximum 100 items per request.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "session"
+                ],
+                "summary": "Bulk save session answers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Candidate ID",
+                        "name": "X-Subject-Id",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Session ID (UUID)",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Bulk answer payload (max 100 items)",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/BulkSaveAnswersRequestSwag"
+                        }
+                    }
+                ],
+                "responses": {
+                    "207": {
+                        "description": "Multi-Status",
+                        "schema": {
+                            "$ref": "#/definitions/BulkSaveAnswersResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
             "patch": {
                 "description": "Save or update one question answer in a session. One of the two fields in the answer data must be non null. Both fields being non null or null is not allowed.",
                 "consumes": [
@@ -2309,6 +2379,60 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/ValidateAccessTokenResponse"
+                }
+            }
+        },
+        "BulkAnswerItemRequestSwag": {
+            "type": "object",
+            "properties": {
+                "answerData": {
+                    "$ref": "#/definitions/SwaggerAnswerData"
+                },
+                "sessionQuestionId": {
+                    "type": "string"
+                }
+            }
+        },
+        "BulkAnswerResultItem": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "sessionQuestionId": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "\"saved\" | \"failed\"",
+                    "type": "string"
+                }
+            }
+        },
+        "BulkSaveAnswersRequestSwag": {
+            "type": "object",
+            "properties": {
+                "answers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/BulkAnswerItemRequestSwag"
+                    }
+                }
+            }
+        },
+        "BulkSaveAnswersResponse": {
+            "type": "object",
+            "properties": {
+                "failedCount": {
+                    "type": "integer"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/BulkAnswerResultItem"
+                    }
+                },
+                "savedCount": {
+                    "type": "integer"
                 }
             }
         },
