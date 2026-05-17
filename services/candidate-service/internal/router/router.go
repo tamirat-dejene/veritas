@@ -87,6 +87,7 @@ func NewRouter(
 
 		sessions.GET("/:sessionId/questions", sh.GetQuestions)
 		sessions.PATCH("/:sessionId/answers", sh.SaveAnswers)
+		sessions.PUT("/:sessionId/answers", sh.BulkSaveAnswers)
 		sessions.GET("/:sessionId/answers", sh.GetMyAnswers)
 
 		sessions.POST("/:sessionId/submit", sh.Submit)

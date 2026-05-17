@@ -267,6 +267,79 @@ func (h *SessionHandler) SaveAnswers(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.MessageResponse{Message: "Answers saved"})
 }
 
+// BulkSaveAnswers upserts multiple answers for a session in one request.
+//
+//	@Summary		Bulk save session answers
+//	@Description	Upsert multiple question answers in a single request. Returns 207 with per-item results.
+//	@Description	Items that fail validation or cannot be persisted are reported individually; successfully saved items are not affected by others failing.
+//	@Description	Maximum 100 items per request.
+//	@Tags			session
+//	@Accept			json
+//	@Produce		json
+//	@Param			X-Subject-Id	header	string							true	"Candidate ID"
+//	@Param			sessionId		path	string							true	"Session ID (UUID)"
+//	@Param			body			body	dto.BulkSaveAnswersRequestSwag	true	"Bulk answer payload (max 100 items)"
+//	@Success		207				{object}	dto.BulkSaveAnswersResponse
+//	@Failure		400				{object}	dto.ErrorResponse
+//	@Failure		401				{object}	dto.ErrorResponse
+//	@Failure		403				{object}	dto.ErrorResponse
+//	@Failure		500				{object}	dto.ErrorResponse
+//	@Router			/sessions/{sessionId}/answers [put]
+func (h *SessionHandler) BulkSaveAnswers(c *gin.Context) {
+	sessionID, err := uuid.Parse(c.Param("sessionId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: domain.ErrInvalidIDFormat.Error()})
+		return
+	}
+
+	candidateID, err := getCandidateID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: domain.ErrUnauthorizedContext.Error()})
+		return
+	}
+
+	var req dto.BulkSaveAnswersRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	// Map DTO → domain items
+	items := make([]domain.BulkAnswerItem, len(req.Answers))
+	for i, a := range req.Answers {
+		items[i] = domain.BulkAnswerItem{
+			SessionQuestionID: a.SessionQuestionID,
+			AnswerData:        a.AnswerData,
+		}
+	}
+
+	domainResults, err := h.uc.BulkSaveAnswers(c.Request.Context(), sessionID, candidateID, items)
+	if err != nil {
+		// Session-level errors are not partial — they affect the whole request
+		HandleError(c, err)
+		return
+	}
+
+	// Build 207 response
+	response := dto.BulkSaveAnswersResponse{
+		Results: make([]dto.BulkAnswerResultItem, len(domainResults)),
+	}
+	for i, r := range domainResults {
+		response.Results[i] = dto.BulkAnswerResultItem{
+			SessionQuestionID: r.SessionQuestionID,
+			Status:            r.Status,
+			Error:             r.Error,
+		}
+		if r.Status == "saved" {
+			response.SavedCount++
+		} else {
+			response.FailedCount++
+		}
+	}
+
+	c.JSON(http.StatusMultiStatus, response)
+}
+
 // GetMyAnswers returns the caller candidate's saved answers for the session.
 //
 //	@Summary		Get my answers

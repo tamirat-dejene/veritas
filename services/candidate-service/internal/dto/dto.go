@@ -17,16 +17,16 @@ type MessageResponse struct {
 }
 
 type CandidateCreateRequest struct {
-	ExternalID       string  `json:"externalId" binding:"required"`
-	FirstName        string  `json:"firstName" binding:"required"`
-	LastName         string  `json:"lastName" binding:"required"`
-	Email            *string `json:"email"`
+	ExternalID string  `json:"externalId" binding:"required"`
+	FirstName  string  `json:"firstName" binding:"required"`
+	LastName   string  `json:"lastName" binding:"required"`
+	Email      *string `json:"email"`
 }
 
 type CandidateUpdateRequest struct {
-	FirstName        string  `json:"firstName" binding:"required"`
-	LastName         string  `json:"lastName" binding:"required"`
-	Email            *string `json:"email"`
+	FirstName string  `json:"firstName" binding:"required"`
+	LastName  string  `json:"lastName" binding:"required"`
+	Email     *string `json:"email"`
 }
 
 type CandidateResponse struct {
@@ -102,9 +102,9 @@ type RedeemResponse struct {
 
 // InvitationLinkResponse is returned when an admin requests a fresh link for a no-email candidate.
 type InvitationLinkResponse struct {
-	EnrollmentID  uuid.UUID `json:"enrollmentId"`
-	InvitationURL string    `json:"invitationUrl"`
-	Status        string    `json:"status"`
+	EnrollmentID   uuid.UUID `json:"enrollmentId"`
+	InvitationURL  string    `json:"invitationUrl"`
+	Status         string    `json:"status"`
 	TokenExpiresAt time.Time `json:"tokenExpiresAt"`
 }
 
@@ -128,6 +128,42 @@ type SwaggerAnswerData struct {
 type SaveAnswerRequestSwag struct {
 	SessionQuestionID uuid.UUID         `json:"sessionQuestionId" binding:"required"`
 	AnswerData        SwaggerAnswerData `json:"answerData" binding:"required"`
+}
+
+// BulkAnswerItemRequest is one entry in a bulk save-answers request body.
+type BulkAnswerItemRequest struct {
+	SessionQuestionID uuid.UUID       `json:"sessionQuestionId" binding:"required"`
+	AnswerData        json.RawMessage `json:"answerData"        binding:"required"`
+}
+
+// BulkSaveAnswersRequest is the body for PUT /sessions/{sessionId}/answers.
+// At most 100 items may be submitted in a single request.
+type BulkSaveAnswersRequest struct {
+	Answers []BulkAnswerItemRequest `json:"answers" binding:"required,min=1,max=100"`
+}
+
+// BulkAnswerItemRequestSwag and BulkSaveAnswersRequestSwag are Swagger-only types.
+type BulkAnswerItemRequestSwag struct {
+	SessionQuestionID uuid.UUID         `json:"sessionQuestionId"`
+	AnswerData        SwaggerAnswerData `json:"answerData"`
+}
+
+type BulkSaveAnswersRequestSwag struct {
+	Answers []BulkAnswerItemRequestSwag `json:"answers"`
+}
+
+// BulkAnswerResultItem is the per-item outcome within a 207 bulk-save response.
+type BulkAnswerResultItem struct {
+	SessionQuestionID uuid.UUID `json:"sessionQuestionId"`
+	Status            string    `json:"status"` // "saved" | "failed"
+	Error             *string   `json:"error,omitempty"`
+}
+
+// BulkSaveAnswersResponse is the 207 response for PUT /sessions/{sessionId}/answers.
+type BulkSaveAnswersResponse struct {
+	SavedCount  int                    `json:"savedCount"`
+	FailedCount int                    `json:"failedCount"`
+	Results     []BulkAnswerResultItem `json:"results"`
 }
 
 type SubmitRequest struct {
