@@ -306,6 +306,143 @@ func (uc *sessionUseCase) SaveAnswers(ctx context.Context, sessionID uuid.UUID, 
 	return uc.sessionRepo.UpsertAnswer(ctx, ans)
 }
 
+func (uc *sessionUseCase) BulkSaveAnswers(ctx context.Context, sessionID uuid.UUID, candidateID uuid.UUID, items []domain.BulkAnswerItem) ([]domain.BulkAnswerResult, error) {
+	// 1. Validate session once (ownership, status, expiry)
+	session, err := uc.sessionRepo.GetSessionByID(ctx, sessionID, uuid.Nil)
+	if err != nil {
+		return nil, err
+	}
+	if session.CandidateID != candidateID {
+		return nil, domain.ErrUnauthorizedAccess
+	}
+	if session.Status != domain.SessionActive {
+		return nil, domain.ErrSessionNotActive
+	}
+	if time.Now().After(session.ExpiresAt) {
+		_ = uc.sessionRepo.UpdateSessionStatus(ctx, sessionID, domain.SessionExpired, nil)
+		return nil, domain.ErrSessionExpired
+	}
+
+	// 2. Load all session questions once into a map for O(1) look-up
+	sessionQuestions, err := uc.sessionRepo.GetSessionQuestions(ctx, sessionID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load session questions: %w", err)
+	}
+	questionMap := make(map[uuid.UUID]domain.SessionQuestion, len(sessionQuestions))
+	for _, sq := range sessionQuestions {
+		questionMap[sq.ID] = sq
+	}
+
+	strictUnmarshal := func(data []byte, v any) error {
+		dec := json.NewDecoder(bytes.NewReader(data))
+		dec.DisallowUnknownFields()
+		return dec.Decode(v)
+	}
+
+	// 3. Validate each item and accumulate results
+	results := make([]domain.BulkAnswerResult, 0, len(items))
+	validAnswers := make([]*domain.SessionAnswer, 0, len(items))
+
+	for _, item := range items {
+		result := domain.BulkAnswerResult{
+			SessionQuestionID: item.SessionQuestionID,
+			Status:            "saved",
+		}
+
+		sq, ok := questionMap[item.SessionQuestionID]
+		if !ok {
+			msg := domain.ErrQuestionNotFound.Error()
+			result.Status = "failed"
+			result.Error = &msg
+			results = append(results, result)
+			continue
+		}
+
+		var snapshot struct {
+			Type sdomain.QuestionType `json:"type"`
+		}
+		if err := json.Unmarshal(sq.QuestionSnapshot, &snapshot); err != nil {
+			msg := "failed to decode question snapshot"
+			result.Status = "failed"
+			result.Error = &msg
+			results = append(results, result)
+			continue
+		}
+
+		var validationErr error
+		switch snapshot.Type {
+		case sdomain.QuestionTypeMCQ, sdomain.QuestionTypeTrueFalse:
+			var a domain.MCQAnswer
+			if err := strictUnmarshal(item.AnswerData, &a); err != nil || a.SelectedOptionIDs == nil {
+				validationErr = domain.ErrInvalidAnswerFormat
+				break
+			}
+			var qSnapshot struct {
+				Options []struct {
+					ID string `json:"id"`
+				} `json:"options"`
+			}
+			if err := json.Unmarshal(sq.QuestionSnapshot, &qSnapshot); err != nil {
+				validationErr = domain.ErrInvalidAnswerFormat
+				break
+			}
+			validOptionIDs := make(map[string]bool, len(qSnapshot.Options))
+			for _, opt := range qSnapshot.Options {
+				validOptionIDs[opt.ID] = true
+			}
+			for _, selectedID := range a.SelectedOptionIDs {
+				if !validOptionIDs[selectedID.String()] {
+					validationErr = domain.ErrInvalidAnswerFormat
+					break
+				}
+			}
+		case sdomain.QuestionTypeShortAnswer, sdomain.QuestionTypeEssay:
+			var a domain.TextAnswer
+			if err := strictUnmarshal(item.AnswerData, &a); err != nil || a.Text == "" {
+				validationErr = domain.ErrInvalidAnswerFormat
+			}
+		default:
+			validationErr = domain.ErrInvalidAnswerFormat
+		}
+
+		if validationErr != nil {
+			msg := validationErr.Error()
+			result.Status = "failed"
+			result.Error = &msg
+			results = append(results, result)
+			continue
+		}
+
+		validAnswers = append(validAnswers, &domain.SessionAnswer{
+			SessionID:         sessionID,
+			SessionQuestionID: sq.ID,
+			AnswerData:        item.AnswerData,
+			IsFinal:           false,
+		})
+		results = append(results, result) // optimistic "saved"; may be overwritten below
+	}
+
+	// 4. Persist valid answers; mark DB failures in results
+	if len(validAnswers) > 0 {
+		failedIDs, _ := uc.sessionRepo.BulkUpsertAnswer(ctx, validAnswers)
+		if len(failedIDs) > 0 {
+			failedSet := make(map[uuid.UUID]bool, len(failedIDs))
+			for _, id := range failedIDs {
+				failedSet[id] = true
+			}
+			dbErr := "failed to persist answer"
+			for i, r := range results {
+				if r.Status == "saved" && failedSet[r.SessionQuestionID] {
+					results[i].Status = "failed"
+					results[i].Error = &dbErr
+				}
+			}
+		}
+	}
+
+	return results, nil
+}
+
 func (uc *sessionUseCase) GetMyAnswers(ctx context.Context, sessionID uuid.UUID, candidateID uuid.UUID) ([]domain.SessionAnswer, error) {
 	return uc.sessionRepo.GetSessionAnswers(ctx, sessionID)
 }

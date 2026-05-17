@@ -47,6 +47,19 @@ type TextAnswer struct {
 	Text string `json:"text"`
 }
 
+// BulkAnswerItem is one entry in a bulk save-answers request.
+type BulkAnswerItem struct {
+	SessionQuestionID uuid.UUID       `json:"sessionQuestionId"`
+	AnswerData        json.RawMessage `json:"answerData"`
+}
+
+// BulkAnswerResult is the per-item outcome returned in a 207 bulk-save response.
+type BulkAnswerResult struct {
+	SessionQuestionID uuid.UUID `json:"sessionQuestionId"`
+	Status            string    `json:"status"` // "saved" | "failed"
+	Error             *string   `json:"error,omitempty"`
+}
+
 type ExamSubmission struct {
 	ID            uuid.UUID `db:"id" json:"id"`
 	SessionID     uuid.UUID `db:"session_id" json:"sessionId"`
@@ -96,6 +109,7 @@ type SessionRepository interface {
 	GetSessionQuestion(ctx context.Context, sessionID uuid.UUID, sessionQuestionID uuid.UUID) (*SessionQuestion, error)
 
 	UpsertAnswer(ctx context.Context, answer *SessionAnswer) error
+	BulkUpsertAnswer(ctx context.Context, answers []*SessionAnswer) ([]uuid.UUID, error)
 	GetSessionAnswers(ctx context.Context, sessionID uuid.UUID) ([]SessionAnswer, error)
 
 	CreateSubmission(ctx context.Context, submission *ExamSubmission) error
@@ -118,6 +132,7 @@ type SessionUseCase interface {
 	GetSessionDetails(ctx context.Context, sessionID uuid.UUID, requestingUserID uuid.UUID, role string) (*ExamSession, error)
 	GetSessionQuestionsSnapshot(ctx context.Context, sessionID uuid.UUID, candidateID uuid.UUID) ([]SessionQuestion, error)
 	SaveAnswers(ctx context.Context, sessionID uuid.UUID, candidateID uuid.UUID, sessionQuestionID uuid.UUID, answerData json.RawMessage) error
+	BulkSaveAnswers(ctx context.Context, sessionID uuid.UUID, candidateID uuid.UUID, answers []BulkAnswerItem) ([]BulkAnswerResult, error)
 	GetMyAnswers(ctx context.Context, sessionID uuid.UUID, candidateID uuid.UUID) ([]SessionAnswer, error)
 	SubmitExam(ctx context.Context, sessionID uuid.UUID, candidateID uuid.UUID, autoSubmitted bool) (*ExamSubmission, error)
 	TerminateSession(ctx context.Context, sessionID uuid.UUID, enterpriseID uuid.UUID, reason string) error

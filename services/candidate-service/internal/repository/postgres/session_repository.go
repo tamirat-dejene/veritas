@@ -285,6 +285,31 @@ func (r *sessionRepository) UpsertAnswer(ctx context.Context, a *domain.SessionA
 	return err
 }
 
+// BulkUpsertAnswer persists each answer independently.
+// It returns the slice of SessionQuestionIDs whose upserts failed, allowing partial-success at the caller.
+func (r *sessionRepository) BulkUpsertAnswer(ctx context.Context, answers []*domain.SessionAnswer) ([]uuid.UUID, error) {
+	const upsertQuery = `
+		INSERT INTO session_answers (id, session_id, session_question_id, answer_data, is_final, saved_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT ON CONSTRAINT uq_session_question DO UPDATE
+		SET answer_data = EXCLUDED.answer_data,
+		    is_final    = EXCLUDED.is_final,
+		    saved_at    = EXCLUDED.saved_at
+	`
+	now := time.Now()
+	var failedIDs []uuid.UUID
+	for _, a := range answers {
+		if a.ID == uuid.Nil {
+			a.ID = uuid.New()
+		}
+		a.SavedAt = now
+		if _, err := r.db.Exec(ctx, upsertQuery, a.ID, a.SessionID, a.SessionQuestionID, a.AnswerData, a.IsFinal, a.SavedAt); err != nil {
+			failedIDs = append(failedIDs, a.SessionQuestionID)
+		}
+	}
+	return failedIDs, nil
+}
+
 func (r *sessionRepository) GetSessionAnswers(ctx context.Context, sessionID uuid.UUID) ([]domain.SessionAnswer, error) {
 	query := `
 		SELECT id, session_id, session_question_id, answer_data, is_final, saved_at
