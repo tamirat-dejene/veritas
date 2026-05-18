@@ -14,6 +14,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.middleware.cors import CORSMiddleware
+import redis.asyncio as redis
 
 from app.config import settings
 from app.database import create_pool
@@ -24,8 +25,7 @@ from app.repository.event_repository import EventRepository
 from app.repository.score_repository import ScoreRepository
 
 # Infrastructure
-# from app.infrastructure.face.deepface_detector import DeepFaceDetector
-from app.infrastructure.face.deepface_dev_detector import DeepFaceDevDetector
+from app.infrastructure.face.remote_face_detector import RemoteFaceDetector
 from app.infrastructure.client.candidate_client import CandidateServiceClient
 from app.infrastructure.kafka.producer import KafkaProducer
 from app.infrastructure.kafka.consumer import run_consumer
@@ -61,25 +61,27 @@ async def lifespan(app: FastAPI):
     event_repo = EventRepository(pool)
     score_repo = ScoreRepository(pool)
 
-    # 4. Infrastructure — face detector (auto-select based on config)
-    if settings.DEEPFACE_DEV_API_KEY:
-        detector = DeepFaceDevDetector(
-            api_key=settings.DEEPFACE_DEV_API_KEY,
-            model_name=settings.DEEPFACE_DEV_MODEL,
-            detector_backend=settings.DEEPFACE_DEV_DETECTOR,
-        )
-        logger.info("Face detector: deepface.dev managed API (model=%s)", settings.DEEPFACE_DEV_MODEL)
-    else:
-        logger.warning("DEEPFACE_DEV_API_KEY is empty. Falling back to local DeepFace detector (requires local dependencies).")
-        # Lazy import — only load when actually needed to avoid ImportError
-        from app.infrastructure.face.deepface_detector import DeepFaceDetector
-        detector = DeepFaceDetector()
-        logger.info("Face detector: self-hosted DeepFace (local)")
+    # 4. Infrastructure — face detector
+    detector = RemoteFaceDetector(
+        base_url=settings.FACE_API_URL,
+        model_name=settings.FACE_API_MODEL,
+        detector_backend=settings.FACE_API_DETECTOR,
+    )
+    
+    logger.info("Face detector: custom RemoteFaceDetector API (url=%s, model=%s)", settings.FACE_API_URL, settings.FACE_API_MODEL)
     candidate_client = CandidateServiceClient(settings.CANDIDATE_SERVICE_URL)
+
+    redis_client = redis.Redis(
+        host=settings.REDIS_HOST,
+        port=settings.REDIS_PORT,
+        password=settings.REDIS_PASSWORD,
+        db=settings.REDIS_DB,
+        decode_responses=True
+    )
 
     # 5. Usecases
     event_uc = EventUseCase(event_repo, score_repo, producer)
-    face_uc = FaceUseCase(detector, candidate_client, event_uc, producer)
+    face_uc = FaceUseCase(detector, candidate_client, event_uc, producer, redis_client)
 
     app.state.event_uc = event_uc
     app.state.face_uc = face_uc
@@ -101,6 +103,7 @@ async def lifespan(app: FastAPI):
         pass
     await producer.stop()
     await pool.close()
+    await redis_client.close()
     logger.info("Shutdown complete")
 
 

@@ -1,0 +1,4 @@
+deepface==0.0.93
+fastapi
+uvicorn
+tf-keras

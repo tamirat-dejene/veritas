@@ -44,13 +44,13 @@ class FaceDetector(ABC):
         ...
 
     @abstractmethod
-    async def compare(self, reference_url: str, probe_b64: str) -> CompareResult:
+    async def compare(self, reference_embedding: list[float], probe_b64: str) -> CompareResult:
         """
-        Compare a probe image against a reference image stored at a URL.
+        Compare a probe image against a pre-calculated reference embedding.
 
         Args:
-            reference_url: Public URL of the reference face image
-                           (from exam_sessions.face_registered_url).
+            reference_embedding: Float array of the face embedding
+                                 (from exam_sessions.face_registered_embedding).
             probe_b64: Base64-encoded current webcam frame.
 
         Returns:

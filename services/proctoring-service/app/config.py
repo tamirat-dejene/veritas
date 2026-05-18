@@ -14,18 +14,22 @@ class Settings(BaseSettings):
     # Kafka
     KAFKA_BROKERS: str = "kafka:9092"
 
+    # Redis
+    REDIS_HOST: str = "redis"
+    REDIS_PORT: int = 6379
+    REDIS_PASSWORD: str = ""
+    REDIS_DB: int = 0
+
     # Auth
     JWT_SECRET: str = "supersecretkey123"
 
     # Internal service URLs
     CANDIDATE_SERVICE_URL: str = "http://candidate-service:8080"
 
-    # Face detection provider — set to use deepface.dev managed API instead of local DeepFace.
-    # Leave empty to use self-hosted DeepFace (default).
-    # Sign up at https://deepface.dev/signup to get a key.
-    DEEPFACE_DEV_API_KEY: str = ""
-    DEEPFACE_DEV_MODEL: str = "Facenet512"       # Facenet, Facenet512, Dlib, OpenFace, SFace
-    DEEPFACE_DEV_DETECTOR: str = "retinaface"    # retinaface, opencv, mtcnn, yolov8
+    # Face detection provider
+    FACE_API_URL: str = "https://deepface-api-XXXXXXXXXX.us-central1.run.app"
+    FACE_API_MODEL: str = "Facenet512"
+    FACE_API_DETECTOR: str = "retinaface"
 
     model_config = SettingsConfigDict(extra="ignore")
 

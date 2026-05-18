@@ -12,6 +12,7 @@ Flow:
 """
 from datetime import datetime, timezone
 from uuid import UUID
+import json
 
 from app.domain.models import FaceVerifyRequest, FaceVerifyResponse, IngestEventRequest
 from app.domain.enums import EventType
@@ -29,11 +30,13 @@ class FaceUseCase:
         candidate_client: CandidateServiceClient,
         event_uc: EventUseCase,
         producer: KafkaProducer,
+        redis_client,
     ):
         self._detector = detector
         self._candidate_client = candidate_client
         self._event_uc = event_uc
         self._producer = producer
+        self._redis = redis_client
 
     async def verify_face(
         self,
@@ -44,12 +47,23 @@ class FaceUseCase:
     ) -> FaceVerifyResponse:
         now = datetime.now(tz=timezone.utc)
 
-        # 1. Fetch reference from candidate-service
-        ref_url = await self._candidate_client.get_face_reference_url(session_id)
-        if not ref_url:
+        # 1. Fetch reference from candidate-service (or cache)
+        cache_key = f"face_ref:{session_id}"
+        cached_data = await self._redis.get(cache_key)
+        
+        if cached_data:
+            ref_data = json.loads(cached_data)
+        else:
+            ref_data = await self._candidate_client.get_face_reference_data(session_id)
+            if ref_data and ref_data.get("embedding"):
+                await self._redis.set(cache_key, json.dumps(ref_data), ex=7200)
+
+        if not ref_data or not ref_data.get("embedding"):
             raise FaceNotRegisteredError(
-                f"No face reference registered for session {session_id}"
+                f"No face embedding registered for session {session_id}"
             )
+        
+        ref_embedding = ref_data["embedding"]
 
         # 2. Detect faces in probe frame
         detect = await self._detector.detect(req.image_b64)
@@ -84,7 +98,7 @@ class FaceUseCase:
             )
 
         # 4. Compare vs reference
-        cmp = await self._detector.compare(ref_url, req.image_b64)
+        cmp = await self._detector.compare(ref_embedding, req.image_b64)
 
         # 5. Log mismatch
         if not cmp.is_match:

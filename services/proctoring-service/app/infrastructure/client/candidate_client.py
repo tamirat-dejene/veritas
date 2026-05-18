@@ -14,19 +14,17 @@ class CandidateServiceClient:
     def __init__(self, base_url: str):
         self._base = base_url.rstrip("/")
 
-    async def get_face_reference_url(self, session_id: UUID) -> str | None:
+    async def get_face_reference_data(self, session_id: UUID) -> dict | None:
         """
-        Fetch face_registered_url for a session from candidate-service.
+        Fetch face_registered_url and face_registered_embedding for a session.
 
         Returns:
-            The Cloudinary URL of the face reference image, or None if not set.
+            A dictionary with 'url' and 'embedding', or None if neither are set.
 
         Raises:
             SessionNotFoundError: If the session does not exist.
             InternalServiceError: On network / unexpected HTTP errors.
         """
-
-        
         url = f"{self._base}/sessions/{session_id}"
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
@@ -42,4 +40,13 @@ class CandidateServiceClient:
             )
 
         data = resp.json().get("data", {})
-        return data.get("faceRegisteredUrl")  # None if not registered
+        url_val = data.get("faceRegisteredUrl")
+        embedding_val = data.get("faceRegisteredEmbedding")
+        
+        if not url_val and not embedding_val:
+            return None
+            
+        return {
+            "url": url_val,
+            "embedding": embedding_val
+        }
