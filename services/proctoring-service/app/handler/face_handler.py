@@ -39,4 +39,6 @@ async def verify_face(body: FaceVerifyRequest, request: Request):
     except InternalServiceError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
     except Exception as exc:
+        import logging
+        logging.getLogger("proctoring").exception("Unhandled exception in verify_face")
         raise HTTPException(status_code=500, detail="Face verification failed") from exc

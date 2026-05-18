@@ -25,16 +25,17 @@ class EventRepository:
         metadata: dict[str, Any],
         occurred_at: datetime,
     ) -> ProctoringEvent:
+        import json
         row = await self._pool.fetchrow(
             """
             INSERT INTO proctoring_events
                 (session_id, candidate_id, enterprise_id, event_type,
                  severity, metadata, occurred_at)
-            VALUES ($1, $2, $3, $4, $5::proctoring_severity, $6, $7)
+            VALUES ($1, $2, $3, $4, $5::proctoring_severity, $6::jsonb, $7)
             RETURNING *
             """,
             session_id, candidate_id, enterprise_id, event_type,
-            severity, metadata, occurred_at,
+            severity, json.dumps(metadata), occurred_at,
         )
         return self._to_model(row)
 
@@ -54,6 +55,13 @@ class EventRepository:
 
     @staticmethod
     def _to_model(row: asyncpg.Record) -> ProctoringEvent:
+        import json
+        meta = row["metadata"]
+        if isinstance(meta, str):
+            meta_dict = json.loads(meta)
+        else:
+            meta_dict = dict(meta) if meta else {}
+            
         return ProctoringEvent(
             id=row["id"],
             session_id=row["session_id"],
@@ -61,7 +69,7 @@ class EventRepository:
             enterprise_id=row["enterprise_id"],
             event_type=EventType(row["event_type"]),
             severity=Severity(row["severity"]),
-            metadata=dict(row["metadata"]) if row["metadata"] else {},
+            metadata=meta_dict,
             occurred_at=row["occurred_at"],
             created_at=row["created_at"],
         )

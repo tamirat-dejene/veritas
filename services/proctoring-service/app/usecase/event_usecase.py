@@ -36,15 +36,17 @@ class EventUseCase:
         req: IngestEventRequest,
     ) -> tuple[ProctoringEvent, SessionScore]:
         # 1. Determine severity
-        severity = EVENT_SEVERITY.get(str(req.event_type), "low")
+        severity_val = EVENT_SEVERITY.get(req.event_type, "low")
+        if hasattr(severity_val, "value"):
+            severity_val = severity_val.value
 
         # 2. Persist event
         event = await self._event_repo.create(
             session_id=req.session_id,
             candidate_id=candidate_id,
             enterprise_id=enterprise_id,
-            event_type=str(req.event_type),
-            severity=severity,
+            event_type=req.event_type.value,
+            severity=severity_val,
             metadata=req.metadata,
             occurred_at=req.occurred_at,
         )
@@ -58,8 +60,8 @@ class EventUseCase:
             "session_id": str(req.session_id),
             "candidate_id": str(candidate_id),
             "enterprise_id": str(enterprise_id),
-            "event_type": str(req.event_type),
-            "severity": severity,
+            "event_type": req.event_type.value,
+            "severity": severity_val,
             "occurred_at": req.occurred_at.isoformat(),
         })
         await self._producer.publish("proctoring.cheating_score.updated", {
@@ -83,7 +85,7 @@ class EventUseCase:
         self, session_id: UUID, candidate_id: UUID, enterprise_id: UUID
     ) -> SessionScore:
         events = await self._event_repo.list_by_session(session_id)
-        raw = sum(EVENT_SCORE_WEIGHT.get(str(e.event_type), 0.0) for e in events)
+        raw = sum(EVENT_SCORE_WEIGHT.get(e.event_type, 0.0) for e in events)
         score = round(min(100.0, raw), 2)
         return await self._score_repo.upsert(
             session_id=session_id,

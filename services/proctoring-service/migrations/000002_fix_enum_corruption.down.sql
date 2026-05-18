@@ -1,0 +1,4 @@
+-- This is a data cleanup migration, so there is no meaningful down migration.
+-- We cannot definitively restore data back to a corrupted state because the
+-- DELETE statement in the UP migration deletes unknown corrupted events
+-- which are unrecoverable.
