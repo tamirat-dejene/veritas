@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -52,21 +53,26 @@ func NewSessionRepository(db DBTX) domain.SessionRepository {
 const sessionFields = `
 	id, enterprise_id, exam_id, candidate_id, enrollment_id, status,
 	started_at, expires_at, submitted_at, terminated_at, termination_reason,
-	client_ip::text, user_agent, face_registered_url, created_at
+	client_ip::text, user_agent, face_registered_url, face_registered_embedding, created_at
 `
 
 func scanSession(row pgx.Row) (*domain.ExamSession, error) {
 	var s domain.ExamSession
+	var embedJSON []byte
 	err := row.Scan(
 		&s.ID, &s.EnterpriseID, &s.ExamID, &s.CandidateID, &s.EnrollmentID, &s.Status,
 		&s.StartedAt, &s.ExpiresAt, &s.SubmittedAt, &s.TerminatedAt, &s.TerminationReason,
-		&s.ClientIP, &s.UserAgent, &s.FaceRegisteredURL, &s.CreatedAt,
+		&s.ClientIP, &s.UserAgent, &s.FaceRegisteredURL, &embedJSON, &s.CreatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrSessionNotFound
 		}
 		return nil, err
+	}
+
+	if len(embedJSON) > 0 {
+		_ = json.Unmarshal(embedJSON, &s.FaceRegisteredEmbedding)
 	}
 	return &s, nil
 }
@@ -75,8 +81,8 @@ func (r *sessionRepository) CreateSession(ctx context.Context, s *domain.ExamSes
 	const insertQuery = `
 		INSERT INTO exam_sessions (
 			id, enterprise_id, exam_id, candidate_id, enrollment_id, status,
-			started_at, expires_at, client_ip, user_agent, face_registered_url, created_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			started_at, expires_at, client_ip, user_agent, face_registered_url, face_registered_embedding, created_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 	`
 	if s.ID == uuid.Nil {
 		s.ID = uuid.New()
@@ -88,9 +94,14 @@ func (r *sessionRepository) CreateSession(ctx context.Context, s *domain.ExamSes
 		s.StartedAt = s.CreatedAt
 	}
 
+	var embedJSON []byte
+	if len(s.FaceRegisteredEmbedding) > 0 {
+		embedJSON, _ = json.Marshal(s.FaceRegisteredEmbedding)
+	}
+
 	_, err := r.db.Exec(ctx, insertQuery,
 		s.ID, s.EnterpriseID, s.ExamID, s.CandidateID, s.EnrollmentID, s.Status,
-		s.StartedAt, s.ExpiresAt, s.ClientIP, s.UserAgent, s.FaceRegisteredURL, s.CreatedAt,
+		s.StartedAt, s.ExpiresAt, s.ClientIP, s.UserAgent, s.FaceRegisteredURL, embedJSON, s.CreatedAt,
 	)
 	return err
 }

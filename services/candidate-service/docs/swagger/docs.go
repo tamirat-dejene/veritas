@@ -2231,6 +2231,12 @@ const docTemplate = `{
                 "expiresAt": {
                     "type": "string"
                 },
+                "faceRegisteredEmbedding": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
                 "faceRegisteredUrl": {
                     "type": "string"
                 },

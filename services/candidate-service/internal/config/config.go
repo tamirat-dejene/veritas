@@ -23,6 +23,8 @@ type Config struct {
 	CloudinaryAPIKey           string
 	CloudinaryAPISecret        string
 	CloudinaryFaceUploadFolder string
+
+	FaceAPIURL                 string
 }
 
 func Load() *Config {
@@ -42,6 +44,7 @@ func Load() *Config {
 		CloudinaryAPIKey:           getEnv("CLOUDINARY_API_KEY", ""),
 		CloudinaryAPISecret:        getEnv("CLOUDINARY_API_SECRET", ""),
 		CloudinaryFaceUploadFolder: getEnv("CLOUDINARY_FACE_UPLOADFOLDER", "veritas/face_registrations"),
+		FaceAPIURL:                 getEnv("FACE_API_URL", "http://deepface-api"),
 	}
 
 	cfg.DSN = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",

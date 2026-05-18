@@ -83,6 +83,7 @@ type ExamSession struct {
 	ClientIP          *string       `db:"client_ip" json:"clientIp,omitempty"`
 	UserAgent         *string       `db:"user_agent" json:"userAgent,omitempty"`
 	FaceRegisteredURL *string       `db:"face_registered_url" json:"faceRegisteredUrl,omitempty"`
+	FaceRegisteredEmbedding []float64 `db:"face_registered_embedding" json:"faceRegisteredEmbedding,omitempty"`
 	CreatedAt         time.Time     `db:"created_at" json:"createdAt"`
 
 	// Relations

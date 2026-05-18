@@ -1,5 +1,16 @@
 [
   {
+    "date": "2026-05-19",
+    "changes": [
+      {
+        "type": "changed",
+        "service": "candidate",
+        "summary": "Added face_registered_embedding to ExamSession",
+        "description": "The ExamSession domain model and corresponding database table have been updated to include a face_registered_embedding field. This allows the system to store the computed high-accuracy DeepFace embedding generated during session registration for use in high-speed webcam verification during the exam."
+      }
+    ]
+  },
+  {
     "date": "2026-05-17",
     "changes": [
       {

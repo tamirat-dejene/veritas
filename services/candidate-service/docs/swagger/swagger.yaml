@@ -92,6 +92,10 @@ definitions:
         type: string
       expiresAt:
         type: string
+      faceRegisteredEmbedding:
+        items:
+          type: number
+        type: array
       faceRegisteredUrl:
         type: string
       id:

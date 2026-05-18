@@ -108,7 +108,7 @@ func main() {
 	// 8. Initialize UseCases
 	candidateUC := usecase.NewCandidateUseCase(pool, candidateRepo)
 	enrollmentUC := usecase.NewEnrollmentUseCase(pool, enrollmentRepo, candidateRepo, tokenService, examClient, publisher, cfg.CandidatePortalBaseURL)
-	sessionUC := usecase.NewSessionUseCase(pool, sessionRepo, enrollmentRepo, candidateRepo, examClient, tokenService, publisher, fileStorage)
+	sessionUC := usecase.NewSessionUseCase(pool, sessionRepo, enrollmentRepo, candidateRepo, examClient, tokenService, publisher, fileStorage, cfg.FaceAPIURL)
 	monitoringUC := usecase.NewMonitoringUseCase(sessionRepo)
 	maintenanceUC := usecase.NewMaintenanceUseCase(sessionRepo, sessionUC, enrollmentRepo, log)
 	consistencyUC := usecase.NewConsistencyUseCase(sessionRepo, enrollmentRepo, candidateRepo, log)

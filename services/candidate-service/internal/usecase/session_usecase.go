@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
+	"encoding/base64"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,6 +30,7 @@ type sessionUseCase struct {
 	tokenService   domain.EnrollmentTokenService
 	publisher      messaging.Publisher
 	storage        storage.FileStorage
+	faceAPIURL     string
 }
 
 func NewSessionUseCase(
@@ -39,6 +42,7 @@ func NewSessionUseCase(
 	tokenService domain.EnrollmentTokenService,
 	publisher messaging.Publisher,
 	storage storage.FileStorage,
+	faceAPIURL string,
 ) domain.SessionUseCase {
 	return &sessionUseCase{
 		pool:           pool,
@@ -49,6 +53,7 @@ func NewSessionUseCase(
 		tokenService:   tokenService,
 		publisher:      publisher,
 		storage:        storage,
+		faceAPIURL:     faceAPIURL,
 	}
 }
 
@@ -125,13 +130,48 @@ func (uc *sessionUseCase) StartSession(ctx context.Context, enrollmentID, enterp
 
 	// 2.5 Handle Face Image Registration
 	var faceURL *string
+	var faceEmbedding []float64
 	if faceImage != nil {
+		imgData, err := io.ReadAll(faceImage)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read face registration image: %w", err)
+		}
+
 		fileName := fmt.Sprintf("reg_%s_%s", e.ID.String(), uuid.New().String())
-		url, err := uc.storage.Upload(ctx, fileName, faceImage)
+		url, err := uc.storage.Upload(ctx, fileName, bytes.NewReader(imgData))
 		if err != nil {
 			return nil, fmt.Errorf("failed to upload face registration image: %w", err)
 		}
 		faceURL = &url
+
+		if uc.faceAPIURL != "" {
+			b64Str := base64.StdEncoding.EncodeToString(imgData)
+			payloadBytes, _ := json.Marshal(map[string]interface{}{
+				"img": b64Str,
+				"model_name": "Facenet512",
+				"detector_backend": "retinaface",
+			})
+			req, _ := http.NewRequestWithContext(ctx, "POST", uc.faceAPIURL+"/embed", bytes.NewReader(payloadBytes))
+			req.Header.Set("Content-Type", "application/json")
+			
+			httpClient := &http.Client{Timeout: 15 * time.Second}
+			resp, err := httpClient.Do(req)
+			if err == nil {
+				defer resp.Body.Close()
+				if resp.StatusCode == http.StatusOK {
+					var embedResp struct {
+						Embedding []float64 `json:"embedding"`
+					}
+					if err := json.NewDecoder(resp.Body).Decode(&embedResp); err == nil {
+						faceEmbedding = embedResp.Embedding
+					}
+				} else {
+					fmt.Printf("warning: face embedding failed with status %d\n", resp.StatusCode)
+				}
+			} else {
+				fmt.Printf("warning: face embedding request failed: %v\n", err)
+			}
+		}
 	}
 
 	// 3. Create Session and Save Question Snapshots in a transaction
@@ -148,6 +188,7 @@ func (uc *sessionUseCase) StartSession(ctx context.Context, enrollmentID, enterp
 		ClientIP:          &clientIP,
 		UserAgent:         &userAgent,
 		FaceRegisteredURL: faceURL,
+		FaceRegisteredEmbedding: faceEmbedding,
 	}
 
 	err = RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
