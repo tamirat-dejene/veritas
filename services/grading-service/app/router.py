@@ -42,14 +42,6 @@ def create_app() -> FastAPI:
             title=app.title + " - Swagger UI",
         )
 
-    # Middleware
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
     # Health check
     @app.get("/health", tags=["system"])
     async def health():
