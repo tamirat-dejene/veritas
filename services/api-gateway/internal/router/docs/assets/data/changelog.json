@@ -19,6 +19,24 @@
         "endpoints": [
           "GET /exams?archived=<boolean> (UPDATED: optional archived query param)"
         ]
+      },
+      {
+        "type": "new",
+        "service": "exam",
+        "summary": "Support filtering only archived exams on GET /exams",
+        "description": "The exam listing endpoint now supports an optional ?archived_only=<boolean> query parameter to filter and retrieve only archived exams.",
+        "endpoints": [
+          "GET /exams?archived_only=<boolean> (NEW: optional archived_only query param)"
+        ]
+      },
+      {
+        "type": "new",
+        "service": "exam",
+        "summary": "Support restoring archived exams",
+        "description": "Introduced an endpoint to restore archived exams back to active use. Restored exams transition to Draft status (if they have no scheduled dates) or Closed status (if scheduled dates are present).",
+        "endpoints": [
+          "POST /exams/:examId/restore (NEW)"
+        ]
       }
     ]
   },
