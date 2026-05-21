@@ -41,6 +41,7 @@ func NewRouter(qh *handler.QuestionHandler, eh *handler.ExamHandler) *gin.Engine
 		exams.POST("/:examId/clone", eh.CloneExam)
 		exams.POST("/:examId/publish", eh.PublishExam)
 		exams.POST("/:examId/close", eh.CloseExam)
+		exams.POST("/:examId/restore", eh.RestoreExam)
 		exams.DELETE("/:examId", eh.DeleteExam)
 
 		// Exam Question Assembly

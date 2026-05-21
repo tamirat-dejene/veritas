@@ -323,6 +323,27 @@ func (uc *examUsecase) ArchiveExam(ctx context.Context, id uuid.UUID, enterprise
 	})
 }
 
+func (uc *examUsecase) RestoreExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
+	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		exam, err := uc.examRepo.WithTx(tx).GetByID(ctx, id, enterpriseID)
+		if err != nil {
+			return err
+		}
+
+		if exam.Status != sdomain.ExamArchived {
+			return domain.ErrInvalidStatus
+		}
+
+		if exam.ScheduledStart == nil {
+			exam.Status = sdomain.ExamDraft
+		} else {
+			exam.Status = sdomain.ExamClosed
+		}
+
+		return uc.examRepo.WithTx(tx).Update(ctx, exam)
+	})
+}
+
 func (uc *examUsecase) AddQuestionsToExam(ctx context.Context, enterpriseID, examID uuid.UUID, inputs []sdomain.ExamQuestionInput) ([]*sdomain.ExamQuestion, error) {
 	var eqs []*sdomain.ExamQuestion
 	err := RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {

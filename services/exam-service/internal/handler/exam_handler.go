@@ -451,6 +451,42 @@ func (h *ExamHandler) CloseExam(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// RestoreExam restores an archived exam.
+//
+//	@Summary		Restore exam
+//	@Description	Restore an archived exam back to Draft or Closed status depending on scheduled dates.
+//	@Tags			exam
+//	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
+//	@Param			examId			path	string	true	"Exam ID (UUID)"
+//	@Success		204			{string}	string	"No Content"
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		409			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
+//	@Router			/exams/{examId}/restore [post]
+func (h *ExamHandler) RestoreExam(c *gin.Context) {
+	enterpriseID, ok := getEnterpriseID(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "missing enterprise ID")
+		return
+	}
+
+	examIDStr := c.Param("examId")
+	examID, err := uuid.Parse(examIDStr)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid exam ID")
+		return
+	}
+
+	if err := h.usecase.RestoreExam(c.Request.Context(), examID, enterpriseID); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
 // DeleteExam deletes an exam.
 //
 //	@Summary		Delete exam

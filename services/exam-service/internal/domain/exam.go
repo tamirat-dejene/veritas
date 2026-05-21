@@ -41,6 +41,7 @@ type ExamUsecase interface {
 	UnscheduleExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	CloseExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	ArchiveExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
+	RestoreExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	DeleteExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	GetActiveExamsCount(ctx context.Context, enterpriseID uuid.UUID) (int, error)
 
