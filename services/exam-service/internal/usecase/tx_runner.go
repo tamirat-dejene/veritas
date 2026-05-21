@@ -9,7 +9,7 @@ import (
 )
 
 // RunInTx is a helper to execute a function within a database transaction.
-func RunInTx(ctx context.Context, pool *pgxpool.Pool, fn func(pgx.Tx) error) error {
+var RunInTx = func(ctx context.Context, pool *pgxpool.Pool, fn func(pgx.Tx) error) error {
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
