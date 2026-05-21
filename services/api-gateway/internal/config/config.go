@@ -69,7 +69,7 @@ func Load() *Config {
 			getEnv("PG_VERITAS_PASSWORD", "postgres"),
 			getEnv("PG_VERITAS_HOST", "postgres"),
 			getEnv("PG_VERITAS_PORT", "5432"),
-			getEnv("PG_VERITAS_CORE_DB", "veritas_core"),
+			getEnv("POSTGRES_ENTERPRISE_DB", getEnv("PG_VERITAS_CORE_DB", "veritas_enterprise_db")),
 		),
 	}
 }

@@ -28,7 +28,7 @@ func Load() *Config {
 		Pg_Veritas_Port:     getEnv("PG_VERITAS_PORT", "5432"),
 		Pg_Veritas_User:     getEnv("PG_VERITAS_USER", "postgres"),
 		Pg_Veritas_Password: getEnv("PG_VERITAS_PASSWORD", "postgres"),
-		Pg_Veritas_Core_DB:  getEnv("PG_VERITAS_CORE_DB", "veritas_core"),
+		Pg_Veritas_Core_DB:  getEnv("POSTGRES_PAYMENT_DB", getEnv("PG_VERITAS_CORE_DB", "veritas_payment_db")),
 		StripeSecretKey:     getEnv("STRIPE_SECRET_KEY", ""),
 		StripeWebhookSecret: getEnv("STRIPE_WEBHOOK_SECRET", ""),
 		StripeSuccessURL:    getEnv("STRIPE_SUCCESS_URL", "https://veritas.com/payment/success?session_id={CHECKOUT_SESSION_ID}"),

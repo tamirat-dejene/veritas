@@ -29,7 +29,7 @@ func Load() *Config {
 		DBPass: getEnv("PG_VERITAS_PASSWORD", "postgres"),
 		DBHost: getEnv("PG_VERITAS_HOST", "localhost"),
 		DBPort: getEnv("PG_VERITAS_PORT", "5432"),
-		DBName: getEnv("PG_VERITAS_CORE_DB", "veritas_core"),
+		DBName: getEnv("POSTGRES_EXAM_DB", getEnv("PG_VERITAS_CORE_DB", "veritas_exam_db")),
 	}
 
 	cfg.DSN = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",

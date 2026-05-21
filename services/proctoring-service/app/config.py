@@ -1,3 +1,4 @@
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -35,9 +36,10 @@ class Settings(BaseSettings):
 
     @property
     def DATABASE_URL(self) -> str:
+        db_name = os.getenv("POSTGRES_PROCTORING_DB") or os.getenv("PG_VERITAS_CORE_DB") or self.PG_VERITAS_CORE_DB
         return (
             f"postgresql://{self.PG_VERITAS_USER}:{self.PG_VERITAS_PASSWORD}"
-            f"@{self.PG_VERITAS_HOST}:{self.PG_VERITAS_PORT}/{self.PG_VERITAS_CORE_DB}"
+            f"@{self.PG_VERITAS_HOST}:{self.PG_VERITAS_PORT}/{db_name}"
         )
 
 

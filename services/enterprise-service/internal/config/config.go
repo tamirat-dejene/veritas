@@ -33,7 +33,7 @@ func Load() *Config {
 		DBPass:       getEnv("PG_VERITAS_PASSWORD", "postgres"),
 		DBHost:       getEnv("PG_VERITAS_HOST", "localhost"),
 		DBPort:       getEnv("PG_VERITAS_PORT", "5432"),
-		DBName:       getEnv("PG_VERITAS_CORE_DB", "veritas_core"),
+		DBName:       getEnv("POSTGRES_ENTERPRISE_DB", getEnv("PG_VERITAS_CORE_DB", "veritas_enterprise_db")),
 		KafkaBrokers:      getEnvList("KAFKA_BROKERS", ","),
 		PaymentServiceURL: getEnv("PAYMENT_SERVICE_URL", "http://payment-service:8080"),
 		ExamServiceURL:      getEnv("EXAM_SERVICE_URL", "http://exam-service:8080"),
