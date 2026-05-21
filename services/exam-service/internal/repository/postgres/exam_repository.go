@@ -147,12 +147,14 @@ func (r *examRepository) Update(ctx context.Context, e *sdomain.Exam) error {
 	return err
 }
 
-func (r *examRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params, search string, archived bool) (pagination.PaginatedResponse[*sdomain.Exam], error) {
+func (r *examRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params, search string, archived bool, archivedOnly bool) (pagination.PaginatedResponse[*sdomain.Exam], error) {
 	args := []any{enterpriseID}
 
 	// Apply archived option
 	whereClause := "enterprise_id = $1"
-	if !archived {
+	if archivedOnly {
+		whereClause += " AND status = 'Archived'"
+	} else if !archived {
 		whereClause += " AND status != 'Archived'"
 	}
 

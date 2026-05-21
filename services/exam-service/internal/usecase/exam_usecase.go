@@ -180,8 +180,8 @@ func (uc *examUsecase) CloneExam(ctx context.Context, sourceID uuid.UUID, enterp
 	return clone, nil
 }
 
-func (uc *examUsecase) GetExams(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params, search string, archived bool) (pagination.PaginatedResponse[*sdomain.Exam], error) {
-	return uc.examRepo.ListByEnterprise(ctx, enterpriseID, params, search, archived)
+func (uc *examUsecase) GetExams(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params, search string, archived bool, archivedOnly bool) (pagination.PaginatedResponse[*sdomain.Exam], error) {
+	return uc.examRepo.ListByEnterprise(ctx, enterpriseID, params, search, archived, archivedOnly)
 }
 
 // TODO: Also returns archived ones. Refactor it later.
