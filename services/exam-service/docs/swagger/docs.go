@@ -48,6 +48,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "Get only archived exams (exclude by default)",
+                        "name": "archived_only",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "Page number (default: 1)",
                         "name": "page",
@@ -822,6 +828,69 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/exams/{examId}/restore": {
+            "post": {
+                "description": "Restore an archived exam back to Draft or Closed status depending on scheduled dates.",
+                "tags": [
+                    "exam"
+                ],
+                "summary": "Restore exam",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Enterprise ID (UUID)",
+                        "name": "X-Enterprise-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Exam ID (UUID)",
+                        "name": "examId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
