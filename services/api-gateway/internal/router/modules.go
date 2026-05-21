@@ -125,6 +125,7 @@ func (g *RouterGroup) RegisterExamRoutes(proxy http.Handler) {
 	g.register("POST", "/exams/:examId/clone", proxy, adminRole...)
 	g.register("POST", "/exams/:examId/publish", proxy, adminRole...)
 	g.register("POST", "/exams/:examId/close", proxy, adminRole...)
+	g.register("POST", "/exams/:examId/restore", proxy, adminRole...)
 	g.register("DELETE", "/exams/:examId", proxy, adminRole...)
 
 	// Exam Questions Assembly
