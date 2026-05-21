@@ -375,6 +375,10 @@ paths:
         in: query
         name: search
         type: string
+      - description: Include archived exams (exclude by default)
+        in: query
+        name: archived
+        type: boolean
       - description: 'Page number (default: 1)'
         in: query
         name: page

@@ -1,5 +1,28 @@
 [
   {
+    "date": "2026-05-21",
+    "changes": [
+      {
+        "type": "changed",
+        "service": "exam",
+        "summary": "Updated exam deletion policy",
+        "description": "Exams with status Draft, Closed can now be deleted. Only Active and Scheduled exams are protected from deletion.",
+        "endpoints": [
+          "DELETE /exams/:examId (UPDATED: allow deletion of Closed exams)"
+        ]
+      },
+      {
+        "type": "new",
+        "service": "exam",
+        "summary": "Support filtering archived exams on GET /exams",
+        "description": "The exam listing endpoint now supports an optional ?archived=<boolean> query parameter to include archived exams in the response. By default, archived exams remain excluded.",
+        "endpoints": [
+          "GET /exams?archived=<boolean> (UPDATED: optional archived query param)"
+        ]
+      }
+    ]
+  },
+  {
     "date": "2026-05-19",
     "changes": [
       {

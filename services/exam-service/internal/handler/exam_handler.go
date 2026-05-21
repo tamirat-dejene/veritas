@@ -267,6 +267,7 @@ func (h *ExamHandler) CloneExam(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
 //	@Param			search			query	string	false	"Filter by title (case-insensitive substring match)"
+//  @Param			archived		query	bool	false	"Include archived exams (exclude by default)"
 //	@Param			page			query	int		false	"Page number (default: 1)"
 //	@Param			limit			query	int		false	"Number of items per page (default: 10, max: 1000)"
 //	@Param			sort			query	string	false	"Sort field (allowed: created_at, updated_at, title, duration_minutes, passing_score_percent, status) (default: created_at)"
@@ -284,8 +285,9 @@ func (h *ExamHandler) ListExams(c *gin.Context) {
 
 	params := pagination.ParseGin(c)
 	search := strings.TrimSpace(c.Query("search"))
+	archived := c.GetBool("archived")
 
-	exams, err := h.usecase.GetExams(c.Request.Context(), enterpriseID, params, search)
+	exams, err := h.usecase.GetExams(c.Request.Context(), enterpriseID, params, search, archived)
 	if err != nil {
 		handleError(c, err)
 		return

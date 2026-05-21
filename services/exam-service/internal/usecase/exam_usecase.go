@@ -180,8 +180,8 @@ func (uc *examUsecase) CloneExam(ctx context.Context, sourceID uuid.UUID, enterp
 	return clone, nil
 }
 
-func (uc *examUsecase) GetExams(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params, search string) (pagination.PaginatedResponse[*sdomain.Exam], error) {
-	return uc.examRepo.ListByEnterprise(ctx, enterpriseID, params, search)
+func (uc *examUsecase) GetExams(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params, search string, archived bool) (pagination.PaginatedResponse[*sdomain.Exam], error) {
+	return uc.examRepo.ListByEnterprise(ctx, enterpriseID, params, search, archived)
 }
 
 // TODO: Also returns archived ones. Refactor it later.
@@ -295,7 +295,7 @@ func (uc *examUsecase) DeleteExam(ctx context.Context, id uuid.UUID, enterpriseI
 			return err
 		}
 
-		if exam.Status != sdomain.ExamDraft && exam.Status != sdomain.ExamScheduled {
+		if exam.Status != sdomain.ExamDraft && exam.Status != sdomain.ExamClosed {
 			return domain.ErrExamCannotBeDeleted
 		}
 

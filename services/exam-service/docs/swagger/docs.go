@@ -42,6 +42,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "Include archived exams (exclude by default)",
+                        "name": "archived",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "Page number (default: 1)",
                         "name": "page",
