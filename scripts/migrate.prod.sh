@@ -183,12 +183,23 @@ ensure_extensions() {
 apply_sql_file() {
   local file="$1"
   local db="$2"
+  local ignore_errors="${3:-false}"
   info "Applying ${file} to database ${db}"
-  if psql_exec -d "$db" -v ON_ERROR_STOP=1 -f - < "$file"; then
+  
+  local psql_opts=()
+  if [[ "$ignore_errors" == "false" ]]; then
+    psql_opts+=("-v" "ON_ERROR_STOP=1")
+  fi
+
+  if psql_exec -d "$db" "${psql_opts[@]}" -f - < "$file"; then
     success "Successfully applied $(basename "$file") to ${db}"
   else
-    error "Failed to apply $(basename "$file") to ${db}"
-    exit 1
+    if [[ "$ignore_errors" == "true" ]]; then
+      warn "Some errors occurred while applying $(basename "$file") to ${db} (ignored)."
+    else
+      error "Failed to apply $(basename "$file") to ${db}"
+      exit 1
+    fi
   fi
 }
 
@@ -201,11 +212,11 @@ run_up() {
       info "Directory: $dir (Target Database: $db)"
       while IFS= read -r file; do
         if [[ -n "$file" ]]; then
-          apply_sql_file "$file" "$db"
+          apply_sql_file "$file" "$db" "false"
         fi
       done < <(find "$dir" -maxdepth 1 -type f -name '*.up.sql' | sort)
     else
-      warn "Migration directory not found: $dir"
+      info "Migration directory not found or empty: $dir (Skipping)"
     fi
   done
   success "UP migrations completed."
@@ -220,11 +231,11 @@ run_down() {
       info "Directory: $dir (Target Database: $db)"
       while IFS= read -r file; do
         if [[ -n "$file" ]]; then
-          apply_sql_file "$file" "$db"
+          apply_sql_file "$file" "$db" "true"
         fi
       done < <(find "$dir" -maxdepth 1 -type f -name '*.down.sql' | sort -r)
     else
-      warn "Migration directory not found: $dir"
+      info "Migration directory not found or empty: $dir (Skipping)"
     fi
   done
   success "DOWN migrations completed."
