@@ -4,7 +4,7 @@ Grading Worker — Kafka consumer for ``candidate.exam.ready_for_grading`` event
 This module is the event-driven entry point. It:
   1. Subscribes to the ``candidate.exam.ready_for_grading`` Kafka topic.
   2. Deserialises each message and delegates to the grading pipeline.
-  3. Persists the result (simulated DB save for now).
+  3. Persists the result using the secure GradingRepository.
 
 Runs as a long-lived asyncio background task spawned during FastAPI lifespan.
 """
@@ -13,13 +13,14 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from dataclasses import asdict
 from typing import Any
+import asyncpg
 
 from aiokafka import AIOKafkaConsumer
 
 from app.config import settings
 from app.grading.grader import grade_exam, ExamGradeReport
+from app.repository.grading_repository import GradingRepository
 
 logger = logging.getLogger("grading.worker")
 
@@ -32,59 +33,23 @@ CONSUMER_GROUP = "grading-service-group"
 
 
 # ---------------------------------------------------------------------------
-# Simulated persistence
-# ---------------------------------------------------------------------------
-
-async def _persist_grade_report(report: ExamGradeReport) -> None:
-    """
-    Simulate saving the grading report to the database.
-
-    In production this would INSERT into a ``grade_results`` table and
-    optionally publish a ``grading.completed`` Kafka event for downstream
-    services (notifications, analytics, etc.).
-    """
-    logger.info(
-        "[DB-SAVE] Persisting grade report for session=%s  "
-        "candidate=%s  exam=%s  score=%.2f / %.2f (%.1f%%)",
-        report.session_id,
-        report.candidate_id,
-        report.exam_id,
-        report.total_awarded_points,
-        report.total_max_points,
-        report.percentage,
-    )
-
-    # Pretty-print the per-question breakdown
-    for qr in report.question_results:
-        logger.info(
-            "  ├─ [%s] q=%s  %-20s  %6.2f / %6.2f  (%s)",
-            qr.question_type.upper()[:3],
-            qr.question_id[:12] + "…",
-            qr.title[:20],
-            qr.awarded_points,
-            qr.max_points,
-            qr.status,
-        )
-
-    logger.info(
-        "[DB-SAVE] Grade report saved successfully for session=%s.",
-        report.session_id,
-    )
-
-
-# ---------------------------------------------------------------------------
 # Public entry point (also usable in tests / manual invocations)
 # ---------------------------------------------------------------------------
 
-async def process_incoming_event(payload: dict[str, Any]) -> ExamGradeReport:
+async def process_incoming_event(payload: dict[str, Any], pool: asyncpg.Pool) -> ExamGradeReport:
     """
-    Top-level handler: parse → grade → persist.
+    Top-level handler: parse → grade → persist to database.
 
     Can be called directly (e.g. from an HTTP endpoint or test harness)
-    without requiring Kafka.
+    by passing a database pool.
     """
     report = await grade_exam(payload)
-    await _persist_grade_report(report)
+    
+    # Secure database storage step
+    repo = GradingRepository(pool)
+    logger.info("Saving grading report securely to database for session=%s", report.session_id)
+    await repo.save_grading_report(report, graded_by="system")
+    
     return report
 
 
@@ -92,7 +57,7 @@ async def process_incoming_event(payload: dict[str, Any]) -> ExamGradeReport:
 # Kafka consumer loop
 # ---------------------------------------------------------------------------
 
-async def run_grading_consumer() -> None:
+async def run_grading_consumer(pool: asyncpg.Pool) -> None:
     """
     Long-running Kafka consumer coroutine.
 
@@ -117,7 +82,7 @@ async def run_grading_consumer() -> None:
             )
 
             async for msg in consumer:
-                await _handle_message(msg)
+                await _handle_message(msg, pool)
 
         except asyncio.CancelledError:
             logger.info("Kafka consumer received shutdown signal.")
@@ -134,7 +99,7 @@ async def run_grading_consumer() -> None:
                 pass
 
 
-async def _handle_message(msg) -> None:
+async def _handle_message(msg: Any, pool: asyncpg.Pool) -> None:
     """Process a single Kafka message."""
     try:
         payload: dict[str, Any] = json.loads(msg.value)
@@ -156,7 +121,7 @@ async def _handle_message(msg) -> None:
             payload.get("session_id", "n/a"),
         )
 
-        await process_incoming_event(payload)
+        await process_incoming_event(payload, pool)
 
     except json.JSONDecodeError as exc:
         logger.error("Failed to decode Kafka message as JSON: %s", exc)
