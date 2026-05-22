@@ -2,7 +2,7 @@
 <section class="section" data-service="grading">
     <div class="section-header">
         <h2>Grading & Results</h2>
-        <span class="section-count">4 endpoints</span>
+        <span class="section-count">8 endpoints</span>
     </div>
     <div class="endpoint-list">
         <h3 class="endpoint-group-title">Scoring</h3>
@@ -18,6 +18,22 @@
         </endpoint-item>
         <endpoint-item method="GET" path="/certificates/:certificateId">
             <span class="badge badge-candidate">ExamCandidate</span>
+        </endpoint-item>
+        <h3 class="endpoint-group-title">Integrity-Protected Grading Reports & Audits</h3>
+        <endpoint-item method="GET" path="/grading/results">
+            <span class="badge badge-enterprise-staff">EnterpriseStaff</span>
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+        </endpoint-item>
+        <endpoint-item method="GET" path="/grading/results/:sessionId">
+            <span class="badge badge-enterprise-staff">EnterpriseStaff</span>
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+        </endpoint-item>
+        <endpoint-item method="POST" path="/grading/results/:sessionId/override">
+            <span class="badge badge-admin">EnterpriseAdmin</span>
+        </endpoint-item>
+        <endpoint-item method="GET" path="/grading/results/:sessionId/logs">
+            <span class="badge badge-enterprise-staff">EnterpriseStaff</span>
+            <span class="badge badge-admin">EnterpriseAdmin</span>
         </endpoint-item>
     </div>
 </section>

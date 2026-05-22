@@ -1,5 +1,22 @@
 [
   {
+    "date": "2026-05-22",
+    "changes": [
+      {
+        "type": "new",
+        "service": "grading",
+        "summary": "Integrity-Protected Grading & Immutable Audit Trail Endpoints",
+        "description": "Exposed new API endpoints in the grading-service to list grading reports, fetch grading breakdown per session, manually override student scores, and retrieve immutable audit logs. All stored grading rows are cryptographically signed using HMAC-SHA256 to guarantee database integrity, rejecting tampered entries. Manual overrides append immutable edit history for security compliance.",
+        "endpoints": [
+          "GET /grading/results (NEW: retrieve paginated grading reports for an enterprise)",
+          "GET /grading/results/:sessionId (NEW: detailed score breakdown by exam session with data integrity validation)",
+          "POST /grading/results/:sessionId/override (NEW: manually override a student's grade with HMAC integrity signature updates)",
+          "GET /grading/results/:sessionId/logs (NEW: retrieve immutable append-only edit history/audit logs for grading results)"
+        ]
+      }
+    ]
+  },
+  {
     "date": "2026-05-19",
     "changes": [
       {
