@@ -7,7 +7,12 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+from app.database import create_pool
 from app.grading.worker import run_grading_consumer
+from app.middleware.context import IdentityMiddleware
+from app.repository.grading_repository import GradingRepository
+from app.usecase.grading_usecase import GradingUseCase
+from app.handler import grading_handler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("grading")
@@ -17,10 +22,19 @@ logger = logging.getLogger("grading")
 async def lifespan(app: FastAPI):
     # ---- Startup ----
     logger.info("Grading service starting up...")
-    logger.info("Connected to Kafka (brokers=%s)", settings.KAFKA_BROKERS)
 
-    # Spawn the Kafka consumer as a background task
-    consumer_task = asyncio.create_task(run_grading_consumer())
+    # 1. Database Connection Pool Setup
+    pool = await create_pool()
+    app.state.pool = pool
+    logger.info("Connected to PostgreSQL")
+
+    # 2. Dependency Injection
+    grading_repo = GradingRepository(pool)
+    grading_uc = GradingUseCase(grading_repo)
+    app.state.grading_uc = grading_uc
+
+    # 3. Spawn the Kafka consumer as a background task, passing the DB pool
+    consumer_task = asyncio.create_task(run_grading_consumer(pool))
     logger.info("Grading Kafka consumer task started.")
 
     yield  # application runs
@@ -32,13 +46,15 @@ async def lifespan(app: FastAPI):
         await consumer_task
     except asyncio.CancelledError:
         pass
+    
+    await pool.close()
     logger.info("Shutdown complete")
 
 
 def create_app() -> FastAPI:
     app = FastAPI(
         title="Veritas Grading Service",
-        description="Automated exam grading and evaluation service.",
+        description="Automated exam grading, manual override, and audit trail validation service.",
         version="1.0.0",
         lifespan=lifespan,
         docs_url=None,
@@ -59,6 +75,10 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.add_middleware(IdentityMiddleware)
+
+    # Routers
+    app.include_router(grading_handler.router)
 
     # Health check
     @app.get("/health", tags=["system"])
