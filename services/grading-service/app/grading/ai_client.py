@@ -64,6 +64,10 @@ async def evaluate_short_answers(
 
     payload = build_batch_payload(batch_items)
 
+    headers = {}
+    if settings.HF_TOKEN:
+        headers["Authorization"] = f"Bearer {settings.HF_TOKEN}"
+
     try:
         async with httpx.AsyncClient(timeout=settings.HF_TIMEOUT_SECONDS) as client:
             logger.info(
@@ -71,7 +75,9 @@ async def evaluate_short_answers(
                 len(batch_items),
                 settings.HF_EVALUATE_URL,
             )
-            response = await client.post(settings.HF_EVALUATE_URL, json=payload)
+            response = await client.post(
+                settings.HF_EVALUATE_URL, json=payload, headers=headers
+            )
             response.raise_for_status()
 
             body = response.json()

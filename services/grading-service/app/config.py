@@ -17,9 +17,10 @@ class Settings(BaseSettings):
 
     # Hugging Face AI Space
     HF_EVALUATE_URL: str = (
-        "https://your-huggingface-space-dummy-url.hf.space/evaluate"
+        "https://cheifo-veritasgradertransformer.hf.space/evaluate"
     )
     HF_TIMEOUT_SECONDS: float = 120.0
+    HF_TOKEN: str | None = None
 
     # Security
     JWT_SECRET: str = "supersecretkey123"

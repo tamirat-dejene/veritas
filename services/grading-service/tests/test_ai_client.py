@@ -125,3 +125,25 @@ class TestEvaluateShortAnswers:
         scores = await evaluate_short_answers(self.BATCH)
         assert scores == {"q1": 0.5}
         assert "q2" not in scores
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_passes_authorization_header_when_token_is_configured(self):
+        with patch.object(settings, "HF_TOKEN", "mock-hf-token-abc"):
+            route = respx.post(settings.HF_EVALUATE_URL).mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "graded_items": [
+                            {"question_id": "q1", "score_percentage": 0.9},
+                        ]
+                    },
+                )
+            )
+            scores = await evaluate_short_answers(self.BATCH)
+            assert scores == {"q1": 0.9}
+            
+            # Verify the Authorization header was sent
+            request = route.calls.last.request
+            assert "Authorization" in request.headers
+            assert request.headers["Authorization"] == "Bearer mock-hf-token-abc"
