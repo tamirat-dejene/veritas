@@ -1,0 +1,160 @@
+<svg id="svg-async" class="view-svg" viewBox="0 0 800 500" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100%" height="100%" fill="url(#grid)" rx="8" />
+
+                        <!-- Left column: Publishers -->
+                        <text x="110" y="44" text-anchor="middle" fill="#1e3a8a" font-size="11" font-weight="600"
+                            letter-spacing="1">EVENT PUBLISHERS</text>
+                        <rect x="20" y="60" width="180" height="380" rx="12" fill="#eff6ff" fill-opacity="0.6"
+                            stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4 4" />
+
+                        <g transform="translate(35, 80)">
+                            <rect width="150" height="40" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1" />
+                            <text x="75" y="24" text-anchor="middle" fill="#1e3a8a" font-size="10"
+                                font-weight="bold">Auth Service</text>
+                        </g>
+                        <g transform="translate(35, 140)">
+                            <rect width="150" height="40" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1" />
+                            <text x="75" y="24" text-anchor="middle" fill="#1e3a8a" font-size="10"
+                                font-weight="bold">Enterprise Service</text>
+                        </g>
+                        <g transform="translate(35, 200)">
+                            <rect width="150" height="40" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1" />
+                            <text x="75" y="24" text-anchor="middle" fill="#1e3a8a" font-size="10"
+                                font-weight="bold">Exam Service</text>
+                        </g>
+                        <g transform="translate(35, 260)">
+                            <rect width="150" height="40" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1" />
+                            <text x="75" y="24" text-anchor="middle" fill="#1e3a8a" font-size="10"
+                                font-weight="bold">Candidate Service</text>
+                        </g>
+                        <g transform="translate(35, 320)">
+                            <rect width="150" height="40" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1" />
+                            <text x="75" y="24" text-anchor="middle" fill="#1e3a8a" font-size="10"
+                                font-weight="bold">Payment Service</text>
+                        </g>
+                        <g transform="translate(35, 380)">
+                            <rect width="150" height="40" rx="6" fill="#fff7ed" stroke="#f97316" stroke-dasharray="2 2"
+                                stroke-width="1" />
+                            <text x="75" y="24" text-anchor="middle" fill="#7c2d12" font-size="10"
+                                font-weight="bold">Proctoring AI</text>
+                        </g>
+
+                        <!-- Center column: Message Broker -->
+                        <rect x="290" y="60" width="220" height="380" rx="12" fill="#faf5ff" fill-opacity="0.6"
+                            stroke="#8b5cf6" stroke-width="2" />
+                        <text x="400" y="44" text-anchor="middle" fill="#6b21a8" font-size="11" font-weight="600"
+                            letter-spacing="1">KAFKA EVENT LOG</text>
+
+                        <!-- Topics -->
+                        <g id="topic-auth" transform="translate(305, 80)">
+                            <rect width="190" height="35" rx="4" fill="#ffffff" stroke="#c084fc" stroke-width="1" />
+                            <text x="15" y="21" fill="#5b21b6" font-size="9"
+                                font-family="monospace">auth.user.login</text>
+                        </g>
+                        <g id="topic-lifecycle" transform="translate(305, 125)">
+                            <rect width="190" height="35" rx="4" fill="#ffffff" stroke="#c084fc" stroke-width="1" />
+                            <text x="15" y="21" fill="#5b21b6" font-size="9"
+                                font-family="monospace">enterprise.lifecycle</text>
+                        </g>
+                        <g id="topic-exams" transform="translate(305, 170)">
+                            <rect width="190" height="35" rx="4" fill="#ffffff" stroke="#c084fc" stroke-width="1" />
+                            <text x="15" y="21" fill="#5b21b6" font-size="9"
+                                font-family="monospace">exam.lifecycle</text>
+                        </g>
+                        <g id="topic-candidate" transform="translate(305, 215)">
+                            <rect width="190" height="35" rx="4" fill="#ffffff" stroke="#c084fc" stroke-width="1" />
+                            <text x="15" y="21" fill="#5b21b6" font-size="9"
+                                font-family="monospace">candidate.enrollment</text>
+                        </g>
+                        <g id="topic-examsub" transform="translate(305, 260)">
+                            <rect width="190" height="35" rx="4" fill="#ffffff" stroke="#c084fc" stroke-width="1" />
+                            <text x="15" y="21" fill="#5b21b6" font-size="9"
+                                font-family="monospace">exam.submitted</text>
+                        </g>
+                        <g id="topic-ready" transform="translate(305, 305)">
+                            <rect width="190" height="35" rx="4" fill="#ffffff" stroke="#c084fc" stroke-width="1" />
+                            <text x="15" y="21" fill="#5b21b6" font-size="9"
+                                font-family="monospace">exam.ready_for_grading</text>
+                        </g>
+                        <g id="topic-billing" transform="translate(305, 350)">
+                            <rect width="190" height="35" rx="4" fill="#ffffff" stroke="#c084fc" stroke-width="1" />
+                            <text x="15" y="21" fill="#5b21b6" font-size="9"
+                                font-family="monospace">billing.subscription</text>
+                        </g>
+                        <g id="topic-notification" transform="translate(305, 395)">
+                            <rect width="190" height="35" rx="4" fill="#ffffff" stroke="#c084fc" stroke-width="1" />
+                            <text x="15" y="21" fill="#5b21b6" font-size="9"
+                                font-family="monospace">notification.email</text>
+                        </g>
+
+                        <!-- Right column: Consumers -->
+                        <text x="690" y="44" text-anchor="middle" fill="#047857" font-size="11" font-weight="600"
+                            letter-spacing="1">EVENT CONSUMERS</text>
+                        <rect x="600" y="60" width="180" height="380" rx="12" fill="#ecfdf5" fill-opacity="0.6"
+                            stroke="#059669" stroke-width="1.5" stroke-dasharray="4 4" />
+
+                        <g transform="translate(615, 80)">
+                            <rect width="150" height="45" rx="6" fill="#ffffff" stroke="#059669" stroke-width="1" />
+                            <text x="75" y="21" text-anchor="middle" fill="#065f46" font-size="10"
+                                font-weight="bold">Auth Service</text>
+                            <text x="75" y="34" text-anchor="middle" fill="#047857" font-size="8">Ensures session
+                                sync</text>
+                        </g>
+                        <g transform="translate(615, 145)">
+                            <rect width="150" height="45" rx="6" fill="#ffffff" stroke="#059669" stroke-width="1" />
+                            <text x="75" y="21" text-anchor="middle" fill="#065f46" font-size="10"
+                                font-weight="bold">Enterprise Service</text>
+                            <text x="75" y="34" text-anchor="middle" fill="#047857" font-size="8">Billing fail
+                                updates</text>
+                        </g>
+                        <g transform="translate(615, 210)">
+                            <rect width="150" height="45" rx="6" fill="#ffffff" stroke="#059669" stroke-width="1" />
+                            <text x="75" y="21" text-anchor="middle" fill="#065f46" font-size="10"
+                                font-weight="bold">Grading AI Service</text>
+                            <text x="75" y="34" text-anchor="middle" fill="#047857" font-size="8">Triggers ML
+                                grading</text>
+                        </g>
+                        <g transform="translate(615, 275)">
+                            <rect width="150" height="45" rx="6" fill="#ffffff" stroke="#059669" stroke-width="1" />
+                            <text x="75" y="21" text-anchor="middle" fill="#065f46" font-size="10"
+                                font-weight="bold">Proctoring AI</text>
+                            <text x="75" y="34" text-anchor="middle" fill="#047857" font-size="8">Binds score
+                                events</text>
+                        </g>
+                        <g transform="translate(615, 340)">
+                            <rect width="150" height="65" rx="6" fill="#f5f3ff" stroke="#6366f1" stroke-width="1.5" />
+                            <text x="75" y="22" text-anchor="middle" fill="#312e81" font-size="11"
+                                font-weight="bold">Notification Worker</text>
+                            <text x="75" y="38" text-anchor="middle" fill="#4338ca" font-size="9">Dedicated SMTP
+                                worker</text>
+                            <text x="75" y="50" text-anchor="middle" fill="#4f46e5" font-size="8"
+                                font-family="monospace">Listens: notification.*</text>
+                        </g>
+
+                        <!-- Publish Connections (Left to Center) -->
+                        <path d="M 185 100 L 305 100" stroke="#3b82f6" stroke-width="1" marker-end="url(#arrow)" />
+                        <path d="M 185 160 L 305 142" stroke="#3b82f6" stroke-width="1" marker-end="url(#arrow)" />
+                        <path d="M 185 220 L 305 188" stroke="#3b82f6" stroke-width="1" marker-end="url(#arrow)" />
+
+                        <path d="M 185 280 L 250 280 L 250 232 L 305 232" stroke="#3b82f6" stroke-width="1"
+                            marker-end="url(#arrow)" />
+                        <path d="M 185 280 L 250 280 L 250 277 L 305 277" stroke="#3b82f6" stroke-width="1"
+                            marker-end="url(#arrow)" />
+
+                        <path d="M 185 340 L 305 367" stroke="#3b82f6" stroke-width="1" marker-end="url(#arrow)" />
+                        <path d="M 185 400 L 270 400 L 270 322 L 305 322" stroke="#3b82f6" stroke-width="1"
+                            stroke-dasharray="2 2" marker-end="url(#arrow)" />
+
+                        <!-- Subscribe Connections (Center to Right) -->
+                        <path d="M 495 100 L 615 100" stroke="#059669" stroke-width="1" marker-end="url(#arrow)" />
+                        <path d="M 495 367 L 550 367 L 550 167 L 615 167" stroke="#059669" stroke-width="1"
+                            marker-end="url(#arrow)" />
+                        <path d="M 495 322 L 615 232" stroke="#059669" stroke-width="1" marker-end="url(#arrow)" />
+                        <path d="M 495 277 L 570 277 L 570 297 L 615 297" stroke="#059669" stroke-width="1"
+                            marker-end="url(#arrow)" />
+
+                        <!-- All channels can route notices to notification worker -->
+                        <path d="M 495 412 L 615 372" stroke="#6366f1" stroke-width="1.2" stroke-dasharray="2 1"
+                            marker-end="url(#arrow)" />
+                    </svg>

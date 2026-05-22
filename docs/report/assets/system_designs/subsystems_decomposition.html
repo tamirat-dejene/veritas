@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veritas Subsystem Decomposition</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for UI Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container svg {
+            width: 100%;
+            height: auto;
+            max-height: 520px;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="border-b border-slate-200 bg-white/80 backdrop-blur sticky top-0 z-50 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div
+                    class="h-10 w-10 rounded-xl bg-indigo-50 flex items-center justify-center border border-indigo-200">
+                    <i class="fa-solid fa-cubes text-indigo-600 text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-slate-900">Veritas Subsystem Decomposition</h1>
+                    <p class="text-xs text-slate-500">Logical architecture grouping, boundary isolations, and module
+                        patterns</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="copySubsystemSVG()"
+                    class="px-4 py-2 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors flex items-center gap-2 shadow-md shadow-indigo-900/10">
+                    <i class="fa-solid fa-copy"></i> Copy SVG Vector
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 md:px-6 py-8">
+
+        <!-- Info Banner -->
+        <div class="mb-8 p-4 bg-indigo-50/60 border border-indigo-100 rounded-2xl flex gap-4 items-start">
+            <div class="p-2 bg-indigo-100 text-indigo-700 rounded-lg shrink-0 mt-0.5">
+                <i class="fa-solid fa-diagram-project"></i>
+            </div>
+            <div>
+                <h3 class="text-sm font-semibold text-indigo-900">Logical Decomposition View (Light Mode)</h3>
+                <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                    This standalone canvas breaks down the Veritas subsystems as modular layers. To prevent
+                    overcrowding, use the selectors below to inspect each subsystem independently or copy their distinct
+                    vector graphics directly into your design and reporting software.
+                </p>
+            </div>
+        </div>
+
+        <!-- Subsystem Switcher Tabs -->
+        <div
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200 mb-8">
+            <button onclick="switchView('global')" id="btn-global"
+                class="tab-btn px-4 py-3 text-xs font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 bg-indigo-50 text-indigo-700 border border-indigo-200/60 shadow-sm">
+                <i class="fa-solid fa-globe text-base"></i>
+                <div class="text-left">
+                    <div class="font-bold">Global Subsystems Map</div>
+                    <div class="text-[10px] opacity-75">All Layers Overview</div>
+                </div>
+            </button>
+            <button onclick="switchView('identity')" id="btn-identity"
+                class="tab-btn px-4 py-3 text-xs font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 text-slate-500 hover:text-slate-800 hover:bg-white/50">
+                <i class="fa-solid fa-key text-base"></i>
+                <div class="text-left">
+                    <div class="font-bold">Access &amp; Identity</div>
+                    <div class="text-[10px] opacity-75">Tenant &amp; Session Control</div>
+                </div>
+            </button>
+            <button onclick="switchView('assessment')" id="btn-assessment"
+                class="tab-btn px-4 py-3 text-xs font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 text-slate-500 hover:text-slate-800 hover:bg-white/50">
+                <i class="fa-solid fa-graduation-cap text-base"></i>
+                <div class="text-left">
+                    <div class="font-bold">Assessment &amp; AI</div>
+                    <div class="text-[10px] opacity-75">Exams, Proctoring &amp; Grading</div>
+                </div>
+            </button>
+            <button onclick="switchView('integration')" id="btn-integration"
+                class="tab-btn px-4 py-3 text-xs font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 text-slate-500 hover:text-slate-800 hover:bg-white/50">
+                <i class="fa-solid fa-circle-nodes text-base"></i>
+                <div class="text-left">
+                    <div class="font-bold">Backbone &amp; Comms</div>
+                    <div class="text-[10px] opacity-75">Integration &amp; Payments</div>
+                </div>
+            </button>
+        </div>
+
+        <!-- Main Content Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            <!-- Vector Display (8 cols) -->
+            <div
+                class="lg:col-span-8 bg-white rounded-2xl border border-slate-200 p-6 flex flex-col shadow-sm relative overflow-hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center gap-2.5">
+                        <span class="h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500"
+                            id="current-view-title">Global Overview Diagram</span>
+                    </div>
+                    <span class="text-[11px] text-slate-400 font-mono">SVG 1.1 Vector Blueprint</span>
+                </div>
+
+                <!-- SVG Graphics Box -->
+                <div
+                    class="svg-container bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center justify-center min-h-[500px]">
+
+                    <!-- VIEW 1: GLOBAL SUBSYSTEM OVERVIEW -->
+                    <svg id="svg-global" class="view-svg" viewBox="0 0 800 500" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="grid-global" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e2e8f0" stroke-width="0.75" />
+                            </pattern>
+                            <marker id="arrow-glb-gray" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6"
+                                markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b" />
+                            </marker>
+                        </defs>
+
+                        <rect width="100%" height="100%" fill="url(#grid-global)" rx="8" />
+
+                        <!-- Subsystem Group 1: Presentation (Top-Left) -->
+                        <rect x="20" y="30" width="220" height="130" rx="10" fill="#f8fafc" stroke="#cbd5e1"
+                            stroke-width="1.5" />
+                        <text x="30" y="48" fill="#334155" font-size="10" font-weight="700">1. PRESENTATION &amp;
+                            ACCESS</text>
+                        <rect x="30" y="60" width="95" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" />
+                        <text x="77.5" y="78" text-anchor="middle" fill="#0f172a" font-size="9"
+                            font-weight="600">Enterprise Admin UI</text>
+                        <rect x="135" y="60" width="95" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" />
+                        <text x="182.5" y="78" text-anchor="middle" fill="#0f172a" font-size="9"
+                            font-weight="600">Candidate Player</text>
+                        <rect x="30" y="100" width="200" height="45" rx="4" fill="#ecfdf5" stroke="#10b981" />
+                        <text x="130" y="117" text-anchor="middle" fill="#065f46" font-size="10" font-weight="bold">API
+                            Gateway Service</text>
+                        <text x="130" y="130" text-anchor="middle" fill="#047857" font-size="8">Gin Proxy / JWT
+                            Filters</text>
+
+                        <!-- Subsystem Group 2: Identity & Tenant (Middle-Left) -->
+                        <rect x="20" y="180" width="220" height="135" rx="10" fill="#f0f9ff" stroke="#3b82f6"
+                            stroke-width="1.5" />
+                        <text x="30" y="198" fill="#1e3a8a" font-size="10" font-weight="700">2. IDENTITY &amp;
+                            TENANTS</text>
+                        <rect x="30" y="210" width="200" height="35" rx="4" fill="#ffffff" stroke="#3b82f6" />
+                        <text x="40" y="226" fill="#1e40af" font-size="9.5" font-weight="bold">Auth Service
+                            (JWTs)</text>
+                        <rect x="30" y="255" width="200" height="35" rx="4" fill="#ffffff" stroke="#3b82f6" />
+                        <text x="40" y="271" fill="#1e40af" font-size="9.5" font-weight="bold">Enterprise &amp; Tenant
+                            Svc</text>
+
+                        <!-- Subsystem Group 3: Assessment & Sessions (Top-Right) -->
+                        <rect x="260" y="30" width="250" height="130" rx="10" fill="#eff6ff" stroke="#2563eb"
+                            stroke-width="1.5" />
+                        <text x="270" y="48" fill="#1e40af" font-size="10" font-weight="700">3. ASSESSMENT &amp;
+                            SESSIONS</text>
+                        <rect x="270" y="60" width="230" height="35" rx="4" fill="#ffffff" stroke="#2563eb" />
+                        <text x="280" y="76" fill="#1e3a8a" font-size="9.5" font-weight="bold">Exam Service (Questions
+                            &amp; Schedule)</text>
+                        <rect x="270" y="105" width="230" height="35" rx="4" fill="#ffffff" stroke="#2563eb" />
+                        <text x="280" y="121" fill="#1e3a8a" font-size="9.5" font-weight="bold">Candidate Service
+                            (Answer Matrix)</text>
+
+                        <!-- Subsystem Group 4: AI Proctoring & Grading (Middle-Right) -->
+                        <rect x="260" y="180" width="250" height="135" rx="10" fill="#fff7ed" stroke="#f97316"
+                            stroke-width="1.5" />
+                        <text x="270" y="198" fill="#7c2d12" font-size="10" font-weight="700">4. AI PROCTORING &amp;
+                            GRADING</text>
+                        <rect x="270" y="210" width="230" height="35" rx="4" fill="#ffffff" stroke="#f97316" />
+                        <text x="280" y="226" fill="#7c2d12" font-size="9.5" font-weight="bold">Proctoring Svc (Face
+                            audit logs)</text>
+                        <rect x="270" y="255" width="230" height="35" rx="4" fill="#ffffff" stroke="#f97316" />
+                        <text x="280" y="271" fill="#7c2d12" font-size="9.5" font-weight="bold">Grading Svc (Semantic
+                            Scoring)</text>
+
+                        <!-- Subsystem Group 5: Integration & Shared (Bottom Box) -->
+                        <rect x="20" y="335" width="490" height="135" rx="10" fill="#faf5ff" stroke="#8b5cf6"
+                            stroke-width="1.5" />
+                        <text x="32" y="353" fill="#5b21b6" font-size="10" font-weight="700">5. INTEGRATION BACKBONE
+                            &amp; COMMS</text>
+
+                        <rect x="30" y="365" width="135" height="40" rx="4" fill="#ffffff" stroke="#8b5cf6" />
+                        <text x="40" y="380" fill="#5b21b6" font-size="9" font-weight="bold">Kafka Topics</text>
+                        <text x="40" y="392" fill="#7c3aed" font-size="8">Loose Coupled Events</text>
+
+                        <rect x="175" y="365" width="115" height="40" rx="4" fill="#ffffff" stroke="#8b5cf6" />
+                        <text x="185" y="380" fill="#5b21b6" font-size="9" font-weight="bold">Redis Cache</text>
+                        <text x="185" y="392" fill="#7c3aed" font-size="8">Tenancy Limits Svc</text>
+
+                        <rect x="300" y="365" width="100" height="40" rx="4" fill="#ffffff" stroke="#8b5cf6" />
+                        <text x="310" y="380" fill="#5b21b6" font-size="9" font-weight="bold">Shared Go Mod</text>
+                        <text x="310" y="392" fill="#7c3aed" font-size="8">Middleware/Logs</text>
+
+                        <rect x="410" y="365" width="90" height="40" rx="4" fill="#ffffff" stroke="#8b5cf6" />
+                        <text x="420" y="380" fill="#5b21b6" font-size="9" font-weight="bold">Notice Svc</text>
+                        <text x="420" y="392" fill="#7c3aed" font-size="8">Email Consumer</text>
+
+                        <rect x="30" y="420" width="460" height="35" rx="4" fill="#ffffff" stroke="#8b5cf6" />
+                        <text x="40" y="438" fill="#5b21b6" font-size="9.5" font-weight="bold">Commercial Payment
+                            Service (Stripe Webhook Pipelines)</text>
+
+                        <!-- Subsystem Group 6: External Clouds (Right) -->
+                        <rect x="530" y="30" width="250" height="440" rx="10" fill="#f8fafc" stroke="#475569"
+                            stroke-width="1.5" stroke-dasharray="4 2" />
+                        <text x="545" y="50" fill="#334155" font-size="10" font-weight="700">EXTERNAL SaaS
+                            PROVIDERS</text>
+
+                        <g transform="translate(545, 65)">
+                            <rect width="220" height="45" rx="6" fill="#ffffff" stroke="#94a3b8" />
+                            <text x="12" y="20" fill="#0f172a" font-size="9.5" font-weight="bold">Cloudinary API</text>
+                            <text x="12" y="33" fill="#64748b" font-size="8.5">Logos, Face Photos CDN</text>
+                        </g>
+                        <g transform="translate(545, 125)">
+                            <rect width="220" height="45" rx="6" fill="#ffffff" stroke="#94a3b8" />
+                            <text x="12" y="20" fill="#0f172a" font-size="9.5" font-weight="bold">Stripe Gateway</text>
+                            <text x="12" y="33" fill="#64748b" font-size="8.5">Tenant Subscription Platform</text>
+                        </g>
+                        <g transform="translate(545, 185)">
+                            <rect width="220" height="45" rx="6" fill="#ffffff" stroke="#94a3b8" />
+                            <text x="12" y="20" fill="#0f172a" font-size="9.5" font-weight="bold">SMTP Relay</text>
+                            <text x="12" y="33" fill="#64748b" font-size="8.5">SendGrid Transactional Mails</text>
+                        </g>
+                        <g transform="translate(545, 245)">
+                            <rect width="220" height="45" rx="6" fill="#eff6ff" stroke="#3b82f6" />
+                            <text x="12" y="20" fill="#1e3a8a" font-size="9.5" font-weight="bold">DeepFace GCP Run
+                                Service</text>
+                            <text x="12" y="33" fill="#2563eb" font-size="8.5">Facial Biometrics Engine</text>
+                        </g>
+                        <g transform="translate(545, 305)">
+                            <rect width="220" height="45" rx="6" fill="#fffbeb" stroke="#d97706" />
+                            <text x="12" y="20" fill="#78350f" font-size="9.5" font-weight="bold">Hugging Face
+                                Evaluators</text>
+                            <text x="12" y="33" fill="#92400e" font-size="8.5">Semantic Assessment Grader</text>
+                        </g>
+
+                        <!-- Connections map -->
+                        <path d="M 240 115 L 260 115" stroke="#475569" stroke-width="1.2"
+                            marker-end="url(#arrow-glb-gray)" />
+                        <path d="M 240 235 L 260 235" stroke="#475569" stroke-width="1.2"
+                            marker-end="url(#arrow-glb-gray)" />
+                        <path d="M 260 90 L 240 90" stroke="#475569" stroke-width="1.2"
+                            marker-end="url(#arrow-glb-gray)" />
+                        <path d="M 240 380 L 260 380" stroke="#475569" stroke-width="1" stroke-dasharray="3 3" />
+                    </svg>
+
+                    <!-- VIEW 2: SUBSYSTEM FOCUS - ACCESS & IDENTITY -->
+                    <svg id="svg-identity" class="view-svg hidden" viewBox="0 0 800 500" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100%" height="100%" fill="url(#grid-global)" rx="8" />
+
+                        <!-- Presentation Boundary -->
+                        <rect x="25" y="40" width="350" height="420" rx="12" fill="#f8fafc" stroke="#cbd5e1"
+                            stroke-width="1.5" />
+                        <text x="45" y="65" fill="#334155" font-size="11" font-weight="bold">Presentation &amp; Access
+                            Subsystem</text>
+
+                        <g transform="translate(45, 85)">
+                            <rect width="310" height="45" rx="6" fill="#ffffff" stroke="#94a3b8" />
+                            <text x="15" y="20" fill="#0f172a" font-size="10" font-weight="bold">Enterprise / System
+                                Admin Web UI</text>
+                            <text x="15" y="33" fill="#475569" font-size="8">Tenant onboarding, portal settings,
+                                schedules</text>
+                        </g>
+
+                        <g transform="translate(45, 145)">
+                            <rect width="310" height="45" rx="6" fill="#ffffff" stroke="#94a3b8" />
+                            <text x="15" y="20" fill="#0f172a" font-size="10" font-weight="bold">Candidate Exam
+                                Player</text>
+                            <text x="15" y="33" fill="#475569" font-size="8">Secure test taker browser client
+                                window</text>
+                        </g>
+
+                        <g transform="translate(45, 215)">
+                            <rect width="310" height="195" rx="8" fill="#ecfdf5" stroke="#10b981" stroke-width="2" />
+                            <text x="20" y="25" fill="#065f46" font-size="11" font-weight="bold">API Gateway (Go / Gin
+                                Router)</text>
+                            <text x="20" y="40" fill="#047857" font-size="8" font-family="monospace">Port :8080
+                                exposed</text>
+
+                            <!-- Gateway duties -->
+                            <rect x="20" y="55" width="270" height="25" rx="4" fill="#ffffff" stroke="#a7f3d0" />
+                            <text x="30" y="71" fill="#065f46" font-size="9" font-family="monospace">JWT &amp;
+                                Enrollment-token check filters</text>
+
+                            <rect x="20" y="85" width="270" height="25" rx="4" fill="#ffffff" stroke="#a7f3d0" />
+                            <text x="30" y="101" fill="#065f46" font-size="9" font-family="monospace">Role Policy
+                                verification (RBAC)</text>
+
+                            <rect x="20" y="115" width="270" height="25" rx="4" fill="#ffffff" stroke="#a7f3d0" />
+                            <text x="30" y="131" fill="#065f46" font-size="9" font-family="monospace">Tenant Rate
+                                Limiting &amp; CORS configs</text>
+                        </g>
+
+                        <!-- Identity Boundary -->
+                        <rect x="420" y="40" width="350" height="420" rx="12" fill="#f0f9ff" stroke="#3b82f6"
+                            stroke-width="1.5" />
+                        <text x="440" y="65" fill="#1e3a8a" font-size="11" font-weight="bold">Identity &amp; Tenant
+                            Subsystem</text>
+
+                        <!-- Auth service -->
+                        <g transform="translate(440, 85)">
+                            <rect width="310" height="85" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#1e40af" font-size="10.5" font-weight="bold">Auth Service</text>
+                            <text x="15" y="38" fill="#475569" font-size="8.5">Login, refresh, logout, JWT
+                                issuance,</text>
+                            <text x="15" y="50" fill="#475569" font-size="8.5">Session revocation pipelines</text>
+                            <rect x="15" y="60" width="100" height="16" rx="3" fill="#eff6ff" stroke="#bfdbfe" />
+                            <text x="20" y="71" fill="#1d4ed8" font-size="8" font-family="monospace">Auth DB SQL</text>
+                        </g>
+
+                        <!-- Enterprise Service -->
+                        <g transform="translate(440, 185)">
+                            <rect width="310" height="85" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#1e40af" font-size="10.5" font-weight="bold">Enterprise
+                                Service</text>
+                            <text x="15" y="38" fill="#475569" font-size="8.5">Tenant onboarding, staff
+                                management,</text>
+                            <text x="15" y="50" fill="#475569" font-size="8.5">Enterprise life cycle and policy
+                                enforcements</text>
+                            <rect x="15" y="60" width="100" height="16" rx="3" fill="#eff6ff" stroke="#bfdbfe" />
+                            <text x="20" y="71" fill="#1d4ed8" font-size="8" font-family="monospace">Enterprise DB
+                                SQL</text>
+                        </g>
+
+                        <!-- Local Persistence -->
+                        <g transform="translate(440, 310)">
+                            <rect width="310" height="100" rx="6" fill="#f8fafc" stroke="#64748b" stroke-width="1" />
+                            <text x="15" y="22" fill="#334155" font-size="9" font-weight="700">PERSISTENCE LAYER
+                                (ISOLATED DBs)</text>
+
+                            <!-- Auth DB cylindrical node -->
+                            <g transform="translate(15, 35)">
+                                <path
+                                    d="M 0 3 A 20 5 0 1 1 40 3 A 20 5 0 1 1 0 3 Z M 0 3 L 0 20 A 20 5 0 0 0 40 20 L 40 3"
+                                    fill="#ffffff" stroke="#475569" />
+                                <text x="20" y="14" text-anchor="middle" fill="#0f172a" font-size="7"
+                                    font-weight="bold">Auth DB</text>
+                            </g>
+
+                            <!-- Enterprise DB cylindrical node -->
+                            <g transform="translate(160, 35)">
+                                <path
+                                    d="M 0 3 A 20 5 0 1 1 40 3 A 20 5 0 1 1 0 3 Z M 0 3 L 0 20 A 20 5 0 0 0 40 20 L 40 3"
+                                    fill="#ffffff" stroke="#475569" />
+                                <text x="20" y="14" text-anchor="middle" fill="#0f172a" font-size="7"
+                                    font-weight="bold">Ent DB</text>
+                            </g>
+                        </g>
+
+                        <!-- Connections map -->
+                        <path d="M 185 110 L 185 145" stroke="#94a3b8" stroke-width="1.2"
+                            marker-end="url(#arrow-blue)" />
+                        <path d="M 355 260 L 440 135" stroke="#059669" stroke-width="1.2"
+                            marker-end="url(#arrow-blue)" />
+                        <path d="M 355 260 L 440 220" stroke="#059669" stroke-width="1.2"
+                            marker-end="url(#arrow-blue)" />
+                    </svg>
+
+                    <!-- VIEW 3: SUBSYSTEM FOCUS - ASSESSMENT & AI -->
+                    <svg id="svg-assessment" class="view-svg hidden" viewBox="0 0 800 500" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100%" height="100%" fill="url(#grid-global)" rx="8" />
+
+                        <!-- Assessment Boundary -->
+                        <rect x="25" y="40" width="350" height="420" rx="12" fill="#eff6ff" stroke="#2563eb"
+                            stroke-width="1.5" />
+                        <text x="45" y="65" fill="#1e40af" font-size="11" font-weight="bold">Assessment &amp; Sessions
+                            Subsystem</text>
+
+                        <!-- Exam service -->
+                        <g transform="translate(45, 85)">
+                            <rect width="310" height="140" rx="6" fill="#ffffff" stroke="#2563eb" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#1e3a8a" font-size="11" font-weight="bold">Exam Service</text>
+                            <text x="15" y="42" fill="#475569" font-size="9" font-weight="bold">Bounded Domain
+                                Functions:</text>
+                            <text x="15" y="58" fill="#556475" font-size="8.5">• Question bank management</text>
+                            <text x="15" y="71" fill="#556475" font-size="8.5">• Exam scheduling &amp; status
+                                transitions</text>
+                            <text x="15" y="84" fill="#556475" font-size="8.5">• Question media links injection</text>
+                            <!-- database -->
+                            <g transform="translate(240, 75)">
+                                <path
+                                    d="M 0 3 A 20 5 0 1 1 40 3 A 20 5 0 1 1 0 3 Z M 0 3 L 0 20 A 20 5 0 0 0 40 20 L 40 3"
+                                    fill="#ffffff" stroke="#475569" />
+                                <text x="20" y="14" text-anchor="middle" fill="#0f172a" font-size="7"
+                                    font-weight="bold">Exam DB</text>
+                            </g>
+                        </g>
+
+                        <!-- Candidate service -->
+                        <g transform="translate(45, 250)">
+                            <rect width="310" height="180" rx="6" fill="#ffffff" stroke="#2563eb" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#1e3a8a" font-size="11" font-weight="bold">Candidate
+                                Service</text>
+                            <text x="15" y="42" fill="#475569" font-size="9" font-weight="bold">Bounded Domain
+                                Functions:</text>
+                            <text x="15" y="58" fill="#556475" font-size="8.5">• Candidate registries &amp; enrollment
+                                logs</text>
+                            <text x="15" y="71" fill="#556475" font-size="8.5">• Access-token issuance &amp;
+                                verification</text>
+                            <text x="15" y="84" fill="#556475" font-size="8.5">• Active exam sessions state
+                                matrices</text>
+                            <text x="15" y="97" fill="#556475" font-size="8.5">• Answer collection schemas
+                                persistence</text>
+                            <!-- database -->
+                            <g transform="translate(240, 105)">
+                                <path
+                                    d="M 0 3 A 20 5 0 1 1 40 3 A 20 5 0 1 1 0 3 Z M 0 3 L 0 20 A 20 5 0 0 0 40 20 L 40 3"
+                                    fill="#ffffff" stroke="#475569" />
+                                <text x="20" y="14" text-anchor="middle" fill="#0f172a" font-size="7"
+                                    font-weight="bold">Cand DB</text>
+                            </g>
+                        </g>
+
+                        <!-- AI Subsystem Boundary -->
+                        <rect x="420" y="40" width="350" height="420" rx="12" fill="#fff7ed" stroke="#f97316"
+                            stroke-width="1.5" />
+                        <text x="440" y="65" fill="#7c2d12" font-size="11" font-weight="bold">AI Proctoring &amp;
+                            Grading Subsystem</text>
+
+                        <!-- Proctoring service -->
+                        <g transform="translate(440, 85)">
+                            <rect width="310" height="140" rx="6" fill="#ffffff" stroke="#f97316" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#7c2d12" font-size="11" font-weight="bold">Proctoring AI
+                                Service</text>
+                            <text x="15" y="42" fill="#475569" font-size="9" font-weight="bold">Proctoring Tasks:</text>
+                            <text x="15" y="58" fill="#556475" font-size="8.5">• Gaze &amp; biometric comparison
+                                audits</text>
+                            <text x="15" y="71" fill="#556475" font-size="8.5">• Identity registration image
+                                lookup</text>
+                            <text x="15" y="84" fill="#556475" font-size="8.5">• Event logging and cheating
+                                aggregators</text>
+                            <!-- database -->
+                            <g transform="translate(240, 75)">
+                                <path
+                                    d="M 0 3 A 20 5 0 1 1 40 3 A 20 5 0 1 1 0 3 Z M 0 3 L 0 20 A 20 5 0 0 0 40 20 L 40 3"
+                                    fill="#ffffff" stroke="#475569" />
+                                <text x="20" y="14" text-anchor="middle" fill="#0f172a" font-size="7"
+                                    font-weight="bold">Proc DB</text>
+                            </g>
+                        </g>
+
+                        <!-- Grading service -->
+                        <g transform="translate(440, 250)">
+                            <rect width="310" height="180" rx="6" fill="#ffffff" stroke="#f97316" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#7c2d12" font-size="11" font-weight="bold">Grading Service</text>
+                            <text x="15" y="42" fill="#475569" font-size="9" font-weight="bold">AI Grading Tasks:</text>
+                            <text x="15" y="58" fill="#556475" font-size="8.5">• Short textual answer semantic
+                                checks</text>
+                            <text x="15" y="71" fill="#556475" font-size="8.5">• Automatic score evaluation
+                                algorithms</text>
+                            <text x="15" y="84" fill="#556475" font-size="8.5">• Manual grading overrides metrics</text>
+                            <text x="15" y="97" fill="#556475" font-size="8.5">• Final grading and audit log
+                                storage</text>
+                            <!-- database -->
+                            <g transform="translate(240, 105)">
+                                <path
+                                    d="M 0 3 A 20 5 0 1 1 40 3 A 20 5 0 1 1 0 3 Z M 0 3 L 0 20 A 20 5 0 0 0 40 20 L 40 3"
+                                    fill="#ffffff" stroke="#475569" />
+                                <text x="20" y="14" text-anchor="middle" fill="#0f172a" font-size="7"
+                                    font-weight="bold">Grad DB</text>
+                            </g>
+                        </g>
+
+                        <!-- Cross domain lookup line -->
+                        <path d="M 440 180 L 355 270" stroke="#2563eb" stroke-width="1.2" stroke-dasharray="3 3"
+                            marker-end="url(#arrow-blue)" />
+                        <path d="M 355 125 L 355 250" stroke="#2563eb" stroke-width="1" stroke-dasharray="2 2"
+                            marker-end="url(#arrow-blue)" />
+                    </svg>
+
+                    <!-- VIEW 4: SUBSYSTEM FOCUS - BACKBONE & COMMS -->
+                    <svg id="svg-integration" class="view-svg hidden" viewBox="0 0 800 500" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100%" height="100%" fill="url(#grid-global)" rx="8" />
+
+                        <!-- Integration Boundary -->
+                        <rect x="25" y="40" width="350" height="420" rx="12" fill="#faf5ff" stroke="#8b5cf6"
+                            stroke-width="1.5" />
+                        <text x="45" y="65" fill="#5b21b6" font-size="11" font-weight="bold">Shared Integration
+                            Layer</text>
+
+                        <!-- Kafka -->
+                        <g transform="translate(45, 85)">
+                            <rect width="310" height="100" rx="6" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#5b21b6" font-size="10.5" font-weight="bold">Apache Kafka Event
+                                Bus</text>
+                            <text x="15" y="42" fill="#475569" font-size="8.5">Event topics mapping core domain
+                                events:</text>
+                            <rect x="15" y="55" width="280" height="32" rx="4" fill="#faf5ff" stroke="#e9d5ff" />
+                            <text x="25" y="74" fill="#6b21a8" font-size="8.5" font-family="monospace">auth.user.* |
+                                candidate.* | exam.submitted</text>
+                        </g>
+
+                        <!-- Redis -->
+                        <g transform="translate(45, 200)">
+                            <rect width="310" height="85" rx="6" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#5b21b6" font-size="10.5" font-weight="bold">Redis Cache
+                                Svc</text>
+                            <text x="15" y="38" fill="#475569" font-size="8.5">High efficiency rate-limiter, proctor
+                                session state</text>
+                            <rect x="15" y="50" width="280" height="22" rx="4" fill="#faf5ff" stroke="#e9d5ff" />
+                            <text x="25" y="64" fill="#6b21a8" font-size="8.5" font-family="monospace">Rate Limits Leaky
+                                Bucket cache</text>
+                        </g>
+
+                        <!-- Shared Go Module -->
+                        <g transform="translate(45, 300)">
+                            <rect width="310" height="135" rx="6" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#5b21b6" font-size="10.5" font-weight="bold">Shared Go Module
+                                (Utility Package)</text>
+                            <text x="15" y="42" fill="#475569" font-size="8.5">Core logic imported inside
+                                microservices:</text>
+                            <text x="15" y="58" fill="#556475" font-size="8">• Standard System Logger &amp; Global
+                                Middleware</text>
+                            <text x="15" y="71" fill="#556475" font-size="8">• HTTP client wrappers &amp; Kafka
+                                publishers helpers</text>
+                            <text x="15" y="84" fill="#556475" font-size="8">• Standard pagination, errors
+                                formats</text>
+                            <text x="15" y="97" fill="#556475" font-size="8">• Cloudinary media upload connectors</text>
+                        </g>
+
+                        <!-- Commercial Boundary -->
+                        <rect x="420" y="40" width="350" height="420" rx="12" fill="#fff7ed" stroke="#f97316"
+                            stroke-width="1.5" />
+                        <text x="440" y="65" fill="#7c2d12" font-size="11" font-weight="bold">Commercial &amp;
+                            Communications</text>
+
+                        <!-- Payments Svc -->
+                        <g transform="translate(440, 85)">
+                            <rect width="310" height="140" rx="6" fill="#ffffff" stroke="#f97316" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#7c2d12" font-size="11" font-weight="bold">Payment Service</text>
+                            <text x="15" y="42" fill="#475569" font-size="9" font-weight="bold">Stripe Payments
+                                Processor:</text>
+                            <text x="15" y="58" fill="#556475" font-size="8.5">• Subscription models &amp; pricing plans
+                                records</text>
+                            <text x="15" y="71" fill="#556475" font-size="8.5">• PDF invoice generator &amp; database
+                                schemas</text>
+                            <text x="15" y="84" fill="#556475" font-size="8.5">• Stripe webhook callback
+                                verifications</text>
+                            <!-- db -->
+                            <g transform="translate(240, 75)">
+                                <path
+                                    d="M 0 3 A 20 5 0 1 1 40 3 A 20 5 0 1 1 0 3 Z M 0 3 L 0 20 A 20 5 0 0 0 40 20 L 40 3"
+                                    fill="#ffffff" stroke="#475569" />
+                                <text x="20" y="14" text-anchor="middle" fill="#0f172a" font-size="7"
+                                    font-weight="bold">Pay DB</text>
+                            </g>
+                        </g>
+
+                        <!-- Notification service -->
+                        <g transform="translate(440, 250)">
+                            <rect width="310" height="180" rx="6" fill="#ffffff" stroke="#f97316" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#7c2d12" font-size="11" font-weight="bold">Notification
+                                Service</text>
+                            <text x="15" y="42" fill="#475569" font-size="9" font-weight="bold">Asynchronous Mail
+                                Deliveries:</text>
+                            <text x="15" y="58" fill="#556475" font-size="8.5">• Listens to event notification topics
+                                natively</text>
+                            <text x="15" y="71" fill="#556475" font-size="8.5">• Rich HTML-designed mail
+                                compilation</text>
+                            <text x="15" y="84" fill="#556475" font-size="8.5">• Outbound TLS-encrypted SMTP
+                                handshakes</text>
+                        </g>
+
+                        <!-- Notice links -->
+                        <path d="M 355 135 L 440 270" stroke="#8b5cf6" stroke-width="1.2" stroke-dasharray="3 3"
+                            marker-end="url(#arrow-purple)" />
+                    </svg>
+
+                </div>
+
+                <!-- Legend -->
+                <div
+                    class="mt-4 flex flex-wrap gap-4 items-center justify-between text-xs text-slate-500 border-t border-slate-200 pt-4">
+                    <div class="flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle text-[8px] text-indigo-600"></i> Global Map
+                        <span class="mx-1 text-slate-300">|</span>
+                        <i class="fa-solid fa-circle text-[8px] text-blue-600"></i> Core Services
+                        <span class="mx-1 text-slate-300">|</span>
+                        <i class="fa-solid fa-circle text-[8px] text-orange-600"></i> AI &amp; Graders
+                        <span class="mx-1 text-slate-300">|</span>
+                        <i class="fa-solid fa-circle text-[8px] text-purple-600"></i> Shared Backbone
+                    </div>
+                    <span class="font-mono text-[10px] text-slate-400">Veritas v2.1.0 Architecture</span>
+                </div>
+            </div>
+
+            <!-- Descriptive Sidebar Panel (4 cols) -->
+            <div class="lg:col-span-4 flex flex-col gap-6">
+
+                <!-- Component Directory Card -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-question text-indigo-600"></i> Subsystem Directory
+                    </h2>
+
+                    <!-- Dynamic sidebar notes based on active view -->
+                    <div id="dir-global" class="space-y-4">
+                        <p class="text-xs text-slate-500 leading-relaxed">
+                            Global breakdown of logical subsystems and bounded context limits:
+                        </p>
+                        <div class="space-y-3">
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <span
+                                    class="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-mono font-bold">PRESENTATION</span>
+                                <p class="text-[11px] text-slate-600 mt-1">Isolates administrative controls and proctor
+                                    candidate interfaces, decoupling logic routing via standard proxies.</p>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <span
+                                    class="text-[10px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-mono font-bold">CORES</span>
+                                <p class="text-[11px] text-slate-600 mt-1">Core transactional layers (Exams scheduling,
+                                    Tenants state records, Invoicing logic) are decoupled database-per-service.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="dir-identity" class="space-y-4 hidden">
+                        <p class="text-xs text-slate-500 leading-relaxed">
+                            Access limits, policies, and tenant validation metrics:
+                        </p>
+                        <div class="space-y-3">
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <span
+                                    class="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-mono font-bold">ROUTERS</span>
+                                <p class="text-[11px] text-slate-600 mt-1">Gin reverse proxy intercepts tokens and
+                                    performs active verification against the Session store without calling the DB.</p>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <span
+                                    class="text-[10px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-mono font-bold">TENANCY</span>
+                                <p class="text-[11px] text-slate-600 mt-1">Ensures absolute logical database isolation
+                                    between exam candidate tenants using structured UUID checks.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="dir-assessment" class="space-y-4 hidden">
+                        <p class="text-xs text-slate-500 leading-relaxed">
+                            Exam lifecycle processing and Machine Learning grading rules:
+                        </p>
+                        <div class="space-y-3">
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <span
+                                    class="text-[10px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-mono font-bold">SESSIONS</span>
+                                <p class="text-[11px] text-slate-600 mt-1">Logs candidate answers as key/value matrices.
+                                    Triggers ready-for-grading event topics on Kafka immediately upon exam submission.
+                                </p>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <span
+                                    class="text-[10px] bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded font-mono font-bold">GRADER</span>
+                                <p class="text-[11px] text-slate-600 mt-1">Offloads heavy natural language processes
+                                    asynchronously to specialized evaluator containers, avoiding core CPU locks.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="dir-integration" class="space-y-4 hidden">
+                        <p class="text-xs text-slate-500 leading-relaxed">
+                            Message queues and asynchronous notification pipelines:
+                        </p>
+                        <div class="space-y-3">
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <span
+                                    class="text-[10px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded font-mono font-bold">EVENT
+                                    BUS</span>
+                                <p class="text-[11px] text-slate-600 mt-1">Apache Kafka handles eventual database
+                                    consistency across domains and notifies the Email service to dispatch transactional
+                                    alerts.</p>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <span
+                                    class="text-[10px] bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded font-mono font-bold">STRIPE
+                                    WEBHOOKS</span>
+                                <p class="text-[11px] text-slate-600 mt-1">Verifies Stripe request payloads to prevent
+                                    fraudulent subscription state changes across tenant records.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Academic Helper -->
+                <div class="bg-gradient-to-br from-white to-slate-50 rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Report?</h3>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <h4 class="text-xs font-bold text-slate-700 mb-1">Suggested Figure Caption:</h4>
+                        <p class="text-[11px] text-slate-600 italic" id="suggested-caption">
+                            "Figure X.5: Overarching system subsystem decomposition boundaries of the Veritas Exam
+                            platform."
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Alert Toast (Failsafe notice display) -->
+        <div id="toast-standalone"
+            class="fixed bottom-6 right-6 px-4 py-3 bg-indigo-600 border border-indigo-500 text-white rounded-xl shadow-2xl flex items-center gap-2.5 transition-all duration-300 transform translate-y-24 opacity-0 z-50">
+            <i class="fa-solid fa-circle-check"></i>
+            <span class="text-xs font-medium" id="toast-message-standalone">Vector copied to clipboard!</span>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 bg-slate-50 py-6 px-6 mt-12 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>&copy; Veritas Exam Platform. Blueprints for formal reporting.</p>
+            <p class="font-mono text-[10px]">Veritas v2.1.0-RC-Alpha</p>
+        </div>
+    </footer>
+
+    <!-- Control Scripts -->
+    <script>
+        let activeView = 'global';
+
+        function switchView(viewName) {
+            activeView = viewName;
+
+            // Hide all SVGs
+            document.querySelectorAll('.view-svg').forEach(svg => svg.classList.add('hidden'));
+
+            // Hide all directory side panels
+            document.getElementById('dir-global').classList.add('hidden');
+            document.getElementById('dir-identity').classList.add('hidden');
+            document.getElementById('dir-assessment').classList.add('hidden');
+            document.getElementById('dir-integration').classList.add('hidden');
+
+            // Reset button classes
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn px-4 py-3 text-xs font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 text-slate-500 hover:text-slate-800 hover:bg-white/50";
+            });
+
+            // Activate selected view
+            if (viewName === 'global') {
+                document.getElementById('svg-global').classList.remove('hidden');
+                document.getElementById('dir-global').classList.remove('hidden');
+                document.getElementById('btn-global').className = "tab-btn px-4 py-3 text-xs font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 bg-indigo-50 text-indigo-700 border border-indigo-200/60 shadow-sm";
+                document.getElementById('current-view-title').innerText = "Global Overview Diagram";
+                document.getElementById('suggested-caption').innerText = '"Figure X.5: Overarching system subsystem decomposition boundaries of the Veritas Exam platform."';
+            } else if (viewName === 'identity') {
+                document.getElementById('svg-identity').classList.remove('hidden');
+                document.getElementById('dir-identity').classList.remove('hidden');
+                document.getElementById('btn-identity').className = "tab-btn px-4 py-3 text-xs font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 bg-indigo-50 text-indigo-700 border border-indigo-200/60 shadow-sm";
+                document.getElementById('current-view-title').innerText = "Subsystem 1: Access & Identity";
+                document.getElementById('suggested-caption').innerText = '"Figure X.6: Close-up view of the Access, Routing (API Gateway), and Identity (Auth/Enterprise database-per-service) boundaries."';
+            } else if (viewName === 'assessment') {
+                document.getElementById('svg-assessment').classList.remove('hidden');
+                document.getElementById('dir-assessment').classList.remove('hidden');
+                document.getElementById('btn-assessment').className = "tab-btn px-4 py-3 text-xs font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 bg-indigo-50 text-indigo-700 border border-indigo-200/60 shadow-sm";
+                document.getElementById('current-view-title').innerText = "Subsystem 2: Assessment & AI Proctoring";
+                document.getElementById('suggested-caption').innerText = '"Figure X.7: Detailed subsystem decomposition of core Exam, Candidate sessions, ML Proctoring, and semantic automatic assessment grading."';
+            } else if (viewName === 'integration') {
+                document.getElementById('svg-integration').classList.remove('hidden');
+                document.getElementById('dir-integration').classList.remove('hidden');
+                document.getElementById('btn-integration').className = "tab-btn px-4 py-3 text-xs font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 bg-indigo-50 text-indigo-700 border border-indigo-200/60 shadow-sm";
+                document.getElementById('current-view-title').innerText = "Subsystem 3: Shared Integration Backbone & Comms";
+                document.getElementById('suggested-caption').innerText = '"Figure X.8: Detailed logical map of the shared event brokers (Kafka), memory cache (Redis), common utility helper modules, and outbound SendGrid SMTP relays."';
+            }
+        }
+
+        function copySubsystemSVG() {
+            const activeSvgId = `svg-${activeView}`;
+            const svgElement = document.getElementById(activeSvgId);
+            if (!svgElement) return;
+
+            const serializer = new XMLSerializer();
+            let source = serializer.serializeToString(svgElement);
+            source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
+
+            const textArea = document.createElement("textarea");
+            textArea.value = source;
+            textArea.style.position = "fixed";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToastStandalone("Subsystem SVG vector copied to clipboard! Paste directly into Draw.io or report editors.");
+                } else {
+                    showToastStandalone("Failed to copy. Try using the Print options instead.", "error");
+                }
+            } catch (err) {
+                showToastStandalone("Copy process blocked by browser constraint.", "error");
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        function showToastStandalone(message, type = "success") {
+            const toast = document.getElementById('toast-standalone');
+            const toastMsg = document.getElementById('toast-message-standalone');
+
+            toastMsg.innerText = message;
+            if (type === "error") {
+                toast.className = toast.className.replace("bg-indigo-600", "bg-rose-600").replace("border-indigo-500", "border-rose-500");
+            } else {
+                toast.className = toast.className.replace("bg-rose-600", "bg-indigo-600").replace("border-rose-500", "border-indigo-500");
+            }
+
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 4000);
+        }
+    </script>
+</body>
+
+</html>

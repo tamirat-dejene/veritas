@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veritas Physical Deployment Topology</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for UI Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container svg {
+            width: 100%;
+            height: auto;
+            max-height: 550px;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="border-b border-slate-200 bg-white/80 backdrop-blur sticky top-0 z-50 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-xl bg-teal-50 flex items-center justify-center border border-teal-200">
+                    <i class="fa-solid fa-server text-teal-600 text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-slate-900">Veritas Deployment Topology</h1>
+                    <p class="text-xs text-slate-500">Physical microservice boundaries, container ports, and GCP hosting
+                        layers</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="copyDeploymentSVG()"
+                    class="px-4 py-2 text-xs font-medium bg-teal-600 hover:bg-teal-500 text-white rounded-lg transition-colors flex items-center gap-2 shadow-md shadow-teal-900/10">
+                    <i class="fa-solid fa-copy"></i> Copy SVG Vector
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 md:px-6 py-8">
+
+        <!-- Info Banner -->
+        <div class="mb-8 p-4 bg-teal-50/60 border border-teal-100 rounded-2xl flex gap-4 items-start">
+            <div class="p-2 bg-teal-100 text-teal-700 rounded-lg shrink-0 mt-0.5">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
+            <div>
+                <h3 class="text-sm font-semibold text-teal-900">Physical Deployment View (Light Mode)</h3>
+                <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                    This standalone canvas models the secure physical boundary mappings of the Veritas platform. It
+                    contrasts the local containerized multi-tenant Docker Compose private networks against
+                    high-performance, auto-scaling serverless structures (DeepFace proctoring on Google Cloud Run) and
+                    third-party SaaS pipelines.
+                </p>
+            </div>
+        </div>
+
+        <!-- Main Content Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            <!-- Vector Display (8 cols) -->
+            <div
+                class="lg:col-span-8 bg-white rounded-2xl border border-slate-200 p-6 flex flex-col shadow-sm relative overflow-hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center gap-2.5">
+                        <span class="h-2 w-2 rounded-full bg-teal-500 animate-pulse"></span>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Standalone Physical
+                            Mapping</span>
+                    </div>
+                    <span class="text-[11px] text-slate-400 font-mono">SVG 1.1 Vector Blueprint</span>
+                </div>
+
+                <!-- SVG Graphics Box -->
+                <div
+                    class="svg-container bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center justify-center min-h-[500px]">
+
+                    <svg id="svg-deployment-standalone" viewBox="0 0 800 500" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <!-- Definitions for Grid Patterns and Markers -->
+                        <defs>
+                            <pattern id="grid-pattern" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e2e8f0" stroke-width="0.75" />
+                            </pattern>
+                            <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6"
+                                markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb" />
+                            </marker>
+                            <marker id="arrow-teal" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6"
+                                markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#0d9488" />
+                            </marker>
+                            <marker id="arrow-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6"
+                                markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c" />
+                            </marker>
+                            <marker id="arrow-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6"
+                                markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#9333ea" />
+                            </marker>
+                        </defs>
+
+                        <rect width="100%" height="100%" fill="url(#grid-pattern)" rx="8" />
+
+                        <!-- Client Network / Internet Zone (Left) -->
+                        <rect x="15" y="55" width="160" height="390" rx="10" fill="#f8fafc" stroke="#cbd5e1"
+                            stroke-width="1.5" stroke-dasharray="4 2" />
+                        <text x="95" y="44" text-anchor="middle" fill="#475569" font-size="10" font-weight="700"
+                            letter-spacing="1">CLIENT NETWORK</text>
+
+                        <g transform="translate(25, 75)">
+                            <rect width="140" height="40" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+                            <text x="12" y="18" fill="#0f172a" font-size="9" font-weight="bold">Admin Browser</text>
+                            <text x="12" y="30" fill="#64748b" font-size="8">Enterprise Web App</text>
+                        </g>
+                        <g transform="translate(25, 130)">
+                            <rect width="140" height="40" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+                            <text x="12" y="18" fill="#0f172a" font-size="9" font-weight="bold">Candidate Browser</text>
+                            <text x="12" y="30" fill="#64748b" font-size="8">React Exam Client</text>
+                        </g>
+                        <g transform="translate(25, 185)">
+                            <rect width="140" height="40" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1"
+                                stroke-dasharray="2 2" />
+                            <text x="12" y="18" fill="#0f172a" font-size="9" font-weight="bold">Stripe Webhooks</text>
+                            <text x="12" y="30" fill="#64748b" font-size="8">Billing Event Callbacks</text>
+                        </g>
+
+                        <!-- Docker Compose Host Container (Middle) -->
+                        <rect x="195" y="25" width="410" height="450" rx="12" fill="#f0fdfa" fill-opacity="0.6"
+                            stroke="#0d9488" stroke-width="1.5" />
+                        <text x="400" y="42" text-anchor="middle" fill="#0f766e" font-size="11" font-weight="bold"
+                            letter-spacing="1">DOCKER COMPOSE HOST (PRIVATE NETWORK)</text>
+
+                        <!-- Public Edge -->
+                        <rect x="210" y="55" width="380" height="60" rx="8" fill="#ecfdf5" stroke="#10b981"
+                            stroke-width="1.5" />
+                        <text x="220" y="75" fill="#065f46" font-size="10" font-weight="bold">Public Edge Container (GIN
+                            GATEWAY)</text>
+                        <text x="220" y="90" fill="#047857" font-size="8" font-family="monospace">Host :8080 ->
+                            Container :8080 (Reverse Proxy Routing)</text>
+
+                        <!-- Go Services Subgrid -->
+                        <rect x="210" y="130" width="185" height="190" rx="8" fill="#eff6ff" stroke="#3b82f6"
+                            stroke-width="1" stroke-dasharray="2 2" />
+                        <text x="302" y="145" text-anchor="middle" fill="#1e3a8a" font-size="9" font-weight="bold">Go
+                            Services (:8080)</text>
+
+                        <g transform="translate(220, 155)">
+                            <rect width="165" height="25" rx="4" fill="#ffffff" stroke="#93c5fd" stroke-width="1" />
+                            <text x="8" y="16" fill="#1e40af" font-size="9" font-weight="600">Auth &amp; Enterprise
+                                Svc</text>
+                        </g>
+                        <g transform="translate(220, 185)">
+                            <rect width="165" height="25" rx="4" fill="#ffffff" stroke="#93c5fd" stroke-width="1" />
+                            <text x="8" y="16" fill="#1e40af" font-size="9" font-weight="600">Exam Service</text>
+                        </g>
+                        <g transform="translate(220, 215)">
+                            <rect width="165" height="25" rx="4" fill="#ffffff" stroke="#93c5fd" stroke-width="1" />
+                            <text x="8" y="16" fill="#1e40af" font-size="9" font-weight="600">Candidate Service</text>
+                        </g>
+                        <g transform="translate(220, 245)">
+                            <rect width="165" height="25" rx="4" fill="#ffffff" stroke="#93c5fd" stroke-width="1" />
+                            <text x="8" y="16" fill="#1e40af" font-size="9" font-weight="600">Payment &amp; Notice
+                                Svc</text>
+                        </g>
+
+                        <!-- Python AI Services Subgrid -->
+                        <rect x="405" y="130" width="185" height="110" rx="8" fill="#fff7ed" stroke="#f97316"
+                            stroke-width="1" stroke-dasharray="2 2" />
+                        <text x="497" y="145" text-anchor="middle" fill="#7c2d12" font-size="9"
+                            font-weight="bold">Python AI Services (:8000)</text>
+
+                        <g transform="translate(415, 155)">
+                            <rect width="165" height="25" rx="4" fill="#ffffff" stroke="#fdba74" stroke-width="1" />
+                            <text x="8" y="16" fill="#7c2d12" font-size="9" font-weight="600">Proctoring Svc
+                                (FastAPI)</text>
+                        </g>
+                        <g transform="translate(415, 185)">
+                            <rect width="165" height="25" rx="4" fill="#ffffff" stroke="#fdba74" stroke-width="1" />
+                            <text x="8" y="16" fill="#7c2d12" font-size="9" font-weight="600">Grading Svc
+                                (FastAPI)</text>
+                        </g>
+
+                        <!-- Local Infrastructure Services -->
+                        <rect x="210" y="335" width="380" height="125" rx="8" fill="#f8fafc" stroke="#64748b"
+                            stroke-width="1" />
+                        <text x="400" y="350" text-anchor="middle" fill="#334155" font-size="9"
+                            font-weight="bold">Platform Infrastructure Services</text>
+
+                        <g transform="translate(220, 360)">
+                            <rect width="115" height="40" rx="4" fill="#ffffff" stroke="#475569" stroke-width="1" />
+                            <text x="10" y="18" fill="#0f172a" font-size="9" font-weight="bold">PostgreSQL 15</text>
+                            <text x="10" y="30" fill="#64748b" font-size="8">Multi-Tenant DBs</text>
+                        </g>
+                        <g transform="translate(345, 360)">
+                            <rect width="110" height="40" rx="4" fill="#ffffff" stroke="#475569" stroke-width="1" />
+                            <text x="10" y="18" fill="#0f172a" font-size="9" font-weight="bold">Redis 7</text>
+                            <text x="10" y="30" fill="#64748b" font-size="8">Session/Limit Cache</text>
+                        </g>
+                        <g transform="translate(465, 360)">
+                            <rect width="115" height="40" rx="4" fill="#ffffff" stroke="#475569" stroke-width="1" />
+                            <text x="10" y="18" fill="#0f172a" font-size="9" font-weight="bold">Apache Kafka 4.2</text>
+                            <text x="10" y="30" fill="#64748b" font-size="8">Internal Event Bus</text>
+                        </g>
+
+                        <!-- Schema details (Polished card to fix visual overflow issue) -->
+                        <g transform="translate(220, 412)">
+                            <rect x="0" y="0" width="360" height="34" rx="6" fill="#ffffff" stroke="#e2e8f0"
+                                stroke-width="1" />
+                            <text x="10" y="14" fill="#0f172a" font-size="8" font-family="monospace"
+                                font-weight="bold">Logical Database Bindings:</text>
+                            <text x="10" y="25" fill="#475569" font-size="7.5" font-family="monospace">veritas_[auth |
+                                enterprise | exam | candidate | payment | proctor | grading]_db</text>
+                        </g>
+
+                        <!-- External Integrations (Right) -->
+                        <rect x="620" y="55" width="165" height="390" rx="10" fill="#faf5ff" stroke="#a855f7"
+                            stroke-width="1.5" stroke-dasharray="4 2" />
+                        <text x="702" y="44" text-anchor="middle" fill="#6b21a8" font-size="10" font-weight="700"
+                            letter-spacing="1">EXTERNAL CLOUDS</text>
+
+                        <g transform="translate(630, 75)">
+                            <rect width="145" height="35" rx="6" fill="#ffffff" stroke="#c084fc" stroke-width="1" />
+                            <text x="8" y="15" fill="#3b0764" font-size="9" font-weight="bold">Cloudinary SaaS</text>
+                            <text x="8" y="26" fill="#701a75" font-size="8">Static Media CDN</text>
+                        </g>
+                        <g transform="translate(630, 120)">
+                            <rect width="145" height="35" rx="6" fill="#ffffff" stroke="#c084fc" stroke-width="1" />
+                            <text x="8" y="15" fill="#3b0764" font-size="9" font-weight="bold">Stripe Payment</text>
+                            <text x="8" y="26" fill="#701a75" font-size="8">Gateway Checkout</text>
+                        </g>
+                        <g transform="translate(630, 165)">
+                            <rect width="145" height="35" rx="6" fill="#ffffff" stroke="#c084fc" stroke-width="1" />
+                            <text x="8" y="15" fill="#3b0764" font-size="9" font-weight="bold">SMTP Mail Relay</text>
+                            <text x="8" y="26" fill="#701a75" font-size="8">SendGrid / SES</text>
+                        </g>
+
+                        <!-- Google Cloud Run Node -->
+                        <g transform="translate(630, 220)">
+                            <rect width="145" height="65" rx="6" fill="#f0f9ff" stroke="#0284c7" stroke-width="1.5" />
+                            <rect x="0" y="0" width="145" height="15" rx="3" fill="#0284c7" />
+                            <text x="8" y="11" fill="#ffffff" font-size="8" font-weight="bold">Google Cloud Run</text>
+                            <text x="8" y="32" fill="#0369a1" font-size="9" font-weight="bold">DeepFace API</text>
+                            <text x="8" y="44" fill="#0284c7" font-size="8">Face Representation</text>
+                            <text x="8" y="55" fill="#0284c7" font-size="8">&amp; Verification</text>
+                        </g>
+
+                        <!-- Hugging Face Space Node -->
+                        <g transform="translate(630, 310)">
+                            <rect width="145" height="45" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1" />
+                            <text x="8" y="15" fill="#78350f" font-size="9" font-weight="bold">Hugging Face Space</text>
+                            <text x="8" y="27" fill="#92400e" font-size="8">Transformer Models</text>
+                            <text x="8" y="38" fill="#92400e" font-size="8">Short-Answer Scorer</text>
+                        </g>
+
+                        <!-- Connections Mapping -->
+                        <!-- Clients to Gateway -->
+                        <path d="M 165 95 L 210 95" stroke="#0d9488" stroke-width="1.2" marker-end="url(#arrow-teal)" />
+                        <path d="M 165 150 L 210 105" stroke="#0d9488" stroke-width="1.2"
+                            marker-end="url(#arrow-teal)" />
+                        <path d="M 165 205 L 180 205 L 180 115 L 210 115" stroke="#0d9488" stroke-width="1.2"
+                            marker-end="url(#arrow-teal)" />
+
+                        <!-- Gateway to Backend Network -->
+                        <path d="M 390 115 L 302 115 L 302 130" stroke="#475569" stroke-width="1" stroke-dasharray="2 2"
+                            marker-end="url(#arrow-blue)" />
+                        <path d="M 405 115 L 497 115 L 497 130" stroke="#475569" stroke-width="1" stroke-dasharray="2 2"
+                            marker-end="url(#arrow-orange)" />
+
+                        <!-- Outbound connects to Cloud Integrations -->
+                        <!-- Proctoring to Google Cloud Run -->
+                        <path d="M 580 170 L 605 170 L 605 252 L 630 252" stroke="#0284c7" stroke-width="1.2"
+                            marker-end="url(#arrow-blue)" />
+                        <!-- Grading to HF space -->
+                        <path d="M 580 200 L 615 200 L 615 332 L 630 332" stroke="#d97706" stroke-width="1.2"
+                            marker-end="url(#arrow-orange)" />
+
+                    </svg>
+
+                </div>
+
+                <!-- Legend -->
+                <div
+                    class="mt-4 flex flex-wrap gap-4 items-center justify-between text-xs text-slate-500 border-t border-slate-200 pt-4">
+                    <div class="flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle text-[8px] text-teal-600"></i> Docker Host Boundary
+                        <span class="mx-1 text-slate-300">|</span>
+                        <i class="fa-solid fa-circle text-[8px] text-blue-600"></i> Go Services
+                        <span class="mx-1 text-slate-300">|</span>
+                        <i class="fa-solid fa-circle text-[8px] text-orange-600"></i> FastAPI AI Services
+                        <span class="mx-1 text-slate-300">|</span>
+                        <i class="fa-solid fa-circle text-[8px] text-sky-600"></i> Serverless Cloud Run
+                    </div>
+                    <span class="font-mono text-[10px] text-slate-400">Veritas v2.1.0 Architecture</span>
+                </div>
+            </div>
+
+            <!-- Descriptive Sidebar Panel (4 cols) -->
+            <div class="lg:col-span-4 flex flex-col gap-6">
+
+                <!-- Component Directory Card -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-nodes text-teal-600"></i> Deployment Boundaries
+                    </h2>
+
+                    <div class="space-y-4">
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span
+                                    class="text-[10px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded font-mono font-bold">DOCKER
+                                    HOST</span>
+                                <span class="text-xs font-semibold text-slate-800">Compose Environment</span>
+                            </div>
+                            <p class="text-[11px] text-slate-600">Encapsulates the private local network where Gin edge,
+                                multi-tenant Postgres schemas, session stores, and message queues reside.</p>
+                        </div>
+
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span
+                                    class="text-[10px] bg-sky-50 text-sky-700 px-1.5 py-0.5 rounded font-mono font-bold">GCP
+                                    RUN</span>
+                                <span class="text-xs font-semibold text-slate-800">DeepFace proctoring</span>
+                            </div>
+                            <p class="text-[11px] text-slate-600">Offloads complex identity and face embedding
+                                comparison algorithms onto Google Cloud Run serverless endpoints, utilizing auto-scaling
+                                hardware under load.</p>
+                        </div>
+
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span
+                                    class="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-mono font-bold">HF
+                                    SPACES</span>
+                                <span class="text-xs font-semibold text-slate-800">Short-Answer Models</span>
+                            </div>
+                            <p class="text-[11px] text-slate-600">Hosts bulky natural language evaluation models on
+                                specialized infrastructure to prevent RAM constraints inside standard app containers.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Academic Helper -->
+                <div class="bg-gradient-to-br from-white to-slate-50 rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Report?</h3>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <h4 class="text-xs font-bold text-slate-700 mb-1">Suggested Figure Caption:</h4>
+                        <p class="text-[11px] text-slate-600 italic">
+                            "Figure X.4: Physical deployment topology mapping containerized Go/Python backends on Docker
+                            Compose private networks alongside isolated DeepFace microservices scaled on Google Cloud
+                            Run."
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Alert Toast (Failsafe notice display) -->
+        <div id="toast-standalone"
+            class="fixed bottom-6 right-6 px-4 py-3 bg-teal-600 border border-teal-500 text-white rounded-xl shadow-2xl flex items-center gap-2.5 transition-all duration-300 transform translate-y-24 opacity-0 z-50">
+            <i class="fa-solid fa-circle-check"></i>
+            <span class="text-xs font-medium" id="toast-message-standalone">Vector copied to clipboard!</span>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 bg-slate-50 py-6 px-6 mt-12 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>&copy; Veritas Exam Platform. Blueprints for formal reporting.</p>
+            <p class="font-mono text-[10px]">Veritas v2.1.0-RC-Alpha</p>
+        </div>
+    </footer>
+
+    <!-- Deployment Copy Controls -->
+    <script>
+        function copyDeploymentSVG() {
+            const svgElement = document.getElementById("svg-deployment-standalone");
+            if (!svgElement) return;
+
+            const serializer = new XMLSerializer();
+            let source = serializer.serializeToString(svgElement);
+            source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
+
+            const textArea = document.createElement("textarea");
+            textArea.value = source;
+            textArea.style.position = "fixed";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToastStandalone("Physical Deployment SVG vector copied to clipboard! Paste directly into Draw.io or editing suites.");
+                } else {
+                    showToastStandalone("Failed to copy. Try using the Print options.", "error");
+                }
+            } catch (err) {
+                showToastStandalone("Copy process blocked by browser constraint.", "error");
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        function showToastStandalone(message, type = "success") {
+            const toast = document.getElementById('toast-standalone');
+            const toastMsg = document.getElementById('toast-message-standalone');
+
+            toastMsg.innerText = message;
+            if (type === "error") {
+                toast.className = toast.className.replace("bg-teal-600", "bg-rose-600").replace("border-teal-500", "border-rose-500");
+            } else {
+                toast.className = toast.className.replace("bg-rose-600", "bg-teal-600").replace("border-rose-500", "border-teal-500");
+            }
+
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 4000);
+        }
+    </script>
+</body>
+
+</html>

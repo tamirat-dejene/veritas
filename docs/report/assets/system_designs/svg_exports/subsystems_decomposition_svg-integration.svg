@@ -1,0 +1,97 @@
+<svg id="svg-integration" class="view-svg" viewBox="0 0 800 500" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100%" height="100%" fill="url(#grid-global)" rx="8" />
+
+                        <!-- Integration Boundary -->
+                        <rect x="25" y="40" width="350" height="420" rx="12" fill="#faf5ff" stroke="#8b5cf6"
+                            stroke-width="1.5" />
+                        <text x="45" y="65" fill="#5b21b6" font-size="11" font-weight="bold">Shared Integration
+                            Layer</text>
+
+                        <!-- Kafka -->
+                        <g transform="translate(45, 85)">
+                            <rect width="310" height="100" rx="6" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#5b21b6" font-size="10.5" font-weight="bold">Apache Kafka Event
+                                Bus</text>
+                            <text x="15" y="42" fill="#475569" font-size="8.5">Event topics mapping core domain
+                                events:</text>
+                            <rect x="15" y="55" width="280" height="32" rx="4" fill="#faf5ff" stroke="#e9d5ff" />
+                            <text x="25" y="74" fill="#6b21a8" font-size="8.5" font-family="monospace">auth.user.* |
+                                candidate.* | exam.submitted</text>
+                        </g>
+
+                        <!-- Redis -->
+                        <g transform="translate(45, 200)">
+                            <rect width="310" height="85" rx="6" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#5b21b6" font-size="10.5" font-weight="bold">Redis Cache
+                                Svc</text>
+                            <text x="15" y="38" fill="#475569" font-size="8.5">High efficiency rate-limiter, proctor
+                                session state</text>
+                            <rect x="15" y="50" width="280" height="22" rx="4" fill="#faf5ff" stroke="#e9d5ff" />
+                            <text x="25" y="64" fill="#6b21a8" font-size="8.5" font-family="monospace">Rate Limits Leaky
+                                Bucket cache</text>
+                        </g>
+
+                        <!-- Shared Go Module -->
+                        <g transform="translate(45, 300)">
+                            <rect width="310" height="135" rx="6" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#5b21b6" font-size="10.5" font-weight="bold">Shared Go Module
+                                (Utility Package)</text>
+                            <text x="15" y="42" fill="#475569" font-size="8.5">Core logic imported inside
+                                microservices:</text>
+                            <text x="15" y="58" fill="#556475" font-size="8">• Standard System Logger &amp; Global
+                                Middleware</text>
+                            <text x="15" y="71" fill="#556475" font-size="8">• HTTP client wrappers &amp; Kafka
+                                publishers helpers</text>
+                            <text x="15" y="84" fill="#556475" font-size="8">• Standard pagination, errors
+                                formats</text>
+                            <text x="15" y="97" fill="#556475" font-size="8">• Cloudinary media upload connectors</text>
+                        </g>
+
+                        <!-- Commercial Boundary -->
+                        <rect x="420" y="40" width="350" height="420" rx="12" fill="#fff7ed" stroke="#f97316"
+                            stroke-width="1.5" />
+                        <text x="440" y="65" fill="#7c2d12" font-size="11" font-weight="bold">Commercial &amp;
+                            Communications</text>
+
+                        <!-- Payments Svc -->
+                        <g transform="translate(440, 85)">
+                            <rect width="310" height="140" rx="6" fill="#ffffff" stroke="#f97316" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#7c2d12" font-size="11" font-weight="bold">Payment Service</text>
+                            <text x="15" y="42" fill="#475569" font-size="9" font-weight="bold">Stripe Payments
+                                Processor:</text>
+                            <text x="15" y="58" fill="#556475" font-size="8.5">• Subscription models &amp; pricing plans
+                                records</text>
+                            <text x="15" y="71" fill="#556475" font-size="8.5">• PDF invoice generator &amp; database
+                                schemas</text>
+                            <text x="15" y="84" fill="#556475" font-size="8.5">• Stripe webhook callback
+                                verifications</text>
+                            <!-- db -->
+                            <g transform="translate(240, 75)">
+                                <path
+                                    d="M 0 3 A 20 5 0 1 1 40 3 A 20 5 0 1 1 0 3 Z M 0 3 L 0 20 A 20 5 0 0 0 40 20 L 40 3"
+                                    fill="#ffffff" stroke="#475569" />
+                                <text x="20" y="14" text-anchor="middle" fill="#0f172a" font-size="7"
+                                    font-weight="bold">Pay DB</text>
+                            </g>
+                        </g>
+
+                        <!-- Notification service -->
+                        <g transform="translate(440, 250)">
+                            <rect width="310" height="180" rx="6" fill="#ffffff" stroke="#f97316" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#7c2d12" font-size="11" font-weight="bold">Notification
+                                Service</text>
+                            <text x="15" y="42" fill="#475569" font-size="9" font-weight="bold">Asynchronous Mail
+                                Deliveries:</text>
+                            <text x="15" y="58" fill="#556475" font-size="8.5">• Listens to event notification topics
+                                natively</text>
+                            <text x="15" y="71" fill="#556475" font-size="8.5">• Rich HTML-designed mail
+                                compilation</text>
+                            <text x="15" y="84" fill="#556475" font-size="8.5">• Outbound TLS-encrypted SMTP
+                                handshakes</text>
+                        </g>
+
+                        <!-- Notice links -->
+                        <path d="M 355 135 L 440 270" stroke="#8b5cf6" stroke-width="1.2" stroke-dasharray="3 3"
+                            marker-end="url(#arrow-purple)" />
+                    </svg>

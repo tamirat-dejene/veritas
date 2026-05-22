@@ -1,0 +1,111 @@
+<svg id="svg-assessment" class="view-svg" viewBox="0 0 800 500" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100%" height="100%" fill="url(#grid-global)" rx="8" />
+
+                        <!-- Assessment Boundary -->
+                        <rect x="25" y="40" width="350" height="420" rx="12" fill="#eff6ff" stroke="#2563eb"
+                            stroke-width="1.5" />
+                        <text x="45" y="65" fill="#1e40af" font-size="11" font-weight="bold">Assessment &amp; Sessions
+                            Subsystem</text>
+
+                        <!-- Exam service -->
+                        <g transform="translate(45, 85)">
+                            <rect width="310" height="140" rx="6" fill="#ffffff" stroke="#2563eb" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#1e3a8a" font-size="11" font-weight="bold">Exam Service</text>
+                            <text x="15" y="42" fill="#475569" font-size="9" font-weight="bold">Bounded Domain
+                                Functions:</text>
+                            <text x="15" y="58" fill="#556475" font-size="8.5">• Question bank management</text>
+                            <text x="15" y="71" fill="#556475" font-size="8.5">• Exam scheduling &amp; status
+                                transitions</text>
+                            <text x="15" y="84" fill="#556475" font-size="8.5">• Question media links injection</text>
+                            <!-- database -->
+                            <g transform="translate(240, 75)">
+                                <path
+                                    d="M 0 3 A 20 5 0 1 1 40 3 A 20 5 0 1 1 0 3 Z M 0 3 L 0 20 A 20 5 0 0 0 40 20 L 40 3"
+                                    fill="#ffffff" stroke="#475569" />
+                                <text x="20" y="14" text-anchor="middle" fill="#0f172a" font-size="7"
+                                    font-weight="bold">Exam DB</text>
+                            </g>
+                        </g>
+
+                        <!-- Candidate service -->
+                        <g transform="translate(45, 250)">
+                            <rect width="310" height="180" rx="6" fill="#ffffff" stroke="#2563eb" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#1e3a8a" font-size="11" font-weight="bold">Candidate
+                                Service</text>
+                            <text x="15" y="42" fill="#475569" font-size="9" font-weight="bold">Bounded Domain
+                                Functions:</text>
+                            <text x="15" y="58" fill="#556475" font-size="8.5">• Candidate registries &amp; enrollment
+                                logs</text>
+                            <text x="15" y="71" fill="#556475" font-size="8.5">• Access-token issuance &amp;
+                                verification</text>
+                            <text x="15" y="84" fill="#556475" font-size="8.5">• Active exam sessions state
+                                matrices</text>
+                            <text x="15" y="97" fill="#556475" font-size="8.5">• Answer collection schemas
+                                persistence</text>
+                            <!-- database -->
+                            <g transform="translate(240, 105)">
+                                <path
+                                    d="M 0 3 A 20 5 0 1 1 40 3 A 20 5 0 1 1 0 3 Z M 0 3 L 0 20 A 20 5 0 0 0 40 20 L 40 3"
+                                    fill="#ffffff" stroke="#475569" />
+                                <text x="20" y="14" text-anchor="middle" fill="#0f172a" font-size="7"
+                                    font-weight="bold">Cand DB</text>
+                            </g>
+                        </g>
+
+                        <!-- AI Subsystem Boundary -->
+                        <rect x="420" y="40" width="350" height="420" rx="12" fill="#fff7ed" stroke="#f97316"
+                            stroke-width="1.5" />
+                        <text x="440" y="65" fill="#7c2d12" font-size="11" font-weight="bold">AI Proctoring &amp;
+                            Grading Subsystem</text>
+
+                        <!-- Proctoring service -->
+                        <g transform="translate(440, 85)">
+                            <rect width="310" height="140" rx="6" fill="#ffffff" stroke="#f97316" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#7c2d12" font-size="11" font-weight="bold">Proctoring AI
+                                Service</text>
+                            <text x="15" y="42" fill="#475569" font-size="9" font-weight="bold">Proctoring Tasks:</text>
+                            <text x="15" y="58" fill="#556475" font-size="8.5">• Gaze &amp; biometric comparison
+                                audits</text>
+                            <text x="15" y="71" fill="#556475" font-size="8.5">• Identity registration image
+                                lookup</text>
+                            <text x="15" y="84" fill="#556475" font-size="8.5">• Event logging and cheating
+                                aggregators</text>
+                            <!-- database -->
+                            <g transform="translate(240, 75)">
+                                <path
+                                    d="M 0 3 A 20 5 0 1 1 40 3 A 20 5 0 1 1 0 3 Z M 0 3 L 0 20 A 20 5 0 0 0 40 20 L 40 3"
+                                    fill="#ffffff" stroke="#475569" />
+                                <text x="20" y="14" text-anchor="middle" fill="#0f172a" font-size="7"
+                                    font-weight="bold">Proc DB</text>
+                            </g>
+                        </g>
+
+                        <!-- Grading service -->
+                        <g transform="translate(440, 250)">
+                            <rect width="310" height="180" rx="6" fill="#ffffff" stroke="#f97316" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#7c2d12" font-size="11" font-weight="bold">Grading Service</text>
+                            <text x="15" y="42" fill="#475569" font-size="9" font-weight="bold">AI Grading Tasks:</text>
+                            <text x="15" y="58" fill="#556475" font-size="8.5">• Short textual answer semantic
+                                checks</text>
+                            <text x="15" y="71" fill="#556475" font-size="8.5">• Automatic score evaluation
+                                algorithms</text>
+                            <text x="15" y="84" fill="#556475" font-size="8.5">• Manual grading overrides metrics</text>
+                            <text x="15" y="97" fill="#556475" font-size="8.5">• Final grading and audit log
+                                storage</text>
+                            <!-- database -->
+                            <g transform="translate(240, 105)">
+                                <path
+                                    d="M 0 3 A 20 5 0 1 1 40 3 A 20 5 0 1 1 0 3 Z M 0 3 L 0 20 A 20 5 0 0 0 40 20 L 40 3"
+                                    fill="#ffffff" stroke="#475569" />
+                                <text x="20" y="14" text-anchor="middle" fill="#0f172a" font-size="7"
+                                    font-weight="bold">Grad DB</text>
+                            </g>
+                        </g>
+
+                        <!-- Cross domain lookup line -->
+                        <path d="M 440 180 L 355 270" stroke="#2563eb" stroke-width="1.2" stroke-dasharray="3 3"
+                            marker-end="url(#arrow-blue)" />
+                        <path d="M 355 125 L 355 250" stroke="#2563eb" stroke-width="1" stroke-dasharray="2 2"
+                            marker-end="url(#arrow-blue)" />
+                    </svg>

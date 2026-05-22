@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veritas System Architecture - Report Figures</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for UI Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container svg {
+            width: 100%;
+            height: auto;
+            max-height: 520px;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="border-b border-slate-200 bg-white/80 backdrop-blur sticky top-0 z-50 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div
+                    class="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-200">
+                    <i class="fa-solid fa-network-wired text-emerald-600 text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-slate-900">Veritas Architecture Blueprint</h1>
+                    <p class="text-xs text-slate-500">Modular decompositions optimized for academic & technical
+                        reporting</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="copyCurrentSVG()"
+                    class="px-4 py-2 text-xs font-medium bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors flex items-center gap-2 shadow-md shadow-emerald-900/10">
+                    <i class="fa-solid fa-copy"></i> Copy Active SVG
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 md:px-6 py-8">
+
+        <!-- Info Banner -->
+        <div class="mb-8 p-4 bg-blue-50 border border-blue-100 rounded-2xl flex gap-4 items-start">
+            <div class="p-2 bg-blue-100 text-blue-600 rounded-lg shrink-0 mt-0.5">
+                <i class="fa-solid fa-circle-info"></i>
+            </div>
+            <div>
+                <h3 class="text-sm font-semibold text-blue-900">Deconstructed View Architecture</h3>
+                <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                    This dashboard offers three isolated views representing the core layers of the <strong>Veritas
+                        platform</strong>. Switch views below to review structural details or refer to the side notes.
+                </p>
+            </div>
+        </div>
+
+        <!-- View Switcher Tabs -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200 mb-8">
+            <button onclick="switchView('gateway')" id="btn-gateway"
+                class="tab-btn px-4 py-3 text-xs font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-sm">
+                <i class="fa-solid fa-right-to-bracket text-base"></i>
+                <div class="text-left">
+                    <div class="font-bold">1. Edge & API Routing</div>
+                    <div class="text-[10px] opacity-75">Gateway & Domain Dispatches</div>
+                </div>
+            </button>
+            <button onclick="switchView('async')" id="btn-async"
+                class="tab-btn px-4 py-3 text-xs font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 text-slate-500 hover:text-slate-800 hover:bg-white/50">
+                <i class="fa-solid fa-circle-nodes text-base"></i>
+                <div class="text-left">
+                    <div class="font-bold">2. Async Backbone</div>
+                    <div class="text-[10px] opacity-75">Kafka Message Streams</div>
+                </div>
+            </button>
+            <button onclick="switchView('storage')" id="btn-storage"
+                class="tab-btn px-4 py-3 text-xs font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 text-slate-500 hover:text-slate-800 hover:bg-white/50">
+                <i class="fa-solid fa-database text-base"></i>
+                <div class="text-left">
+                    <div class="font-bold">3. Database & Providers</div>
+                    <div class="text-[10px] opacity-75">Persistence & APIs</div>
+                </div>
+            </button>
+        </div>
+
+        <!-- Content Split Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            <!-- Visualizer (8 cols) -->
+            <div
+                class="lg:col-span-8 bg-white rounded-2xl border border-slate-200 p-6 flex flex-col shadow-sm relative overflow-hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center gap-2.5">
+                        <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500"
+                            id="current-view-title">Perspective 1: API Routing</span>
+                    </div>
+                    <div class="text-[11px] text-slate-400 font-mono">Vector SVG Display</div>
+                </div>
+
+                <!-- SVG Graphics Container -->
+                <div
+                    class="svg-container bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center justify-center min-h-[480px]">
+
+                    <!-- VIEW 1: GATEWAY & ROUTING -->
+                    <svg id="svg-gateway" class="view-svg" viewBox="0 0 800 500" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <!-- Background Grids -->
+                        <defs>
+                            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e2e8f0" stroke-width="0.75" />
+                            </pattern>
+                            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6"
+                                orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b" />
+                            </marker>
+                            <marker id="arrow-emerald" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6"
+                                markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#059669" />
+                            </marker>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#grid)" rx="8" />
+
+                        <!-- Group Borders/Context labels -->
+                        <rect x="230" y="20" width="160" height="460" rx="12" fill="#ecfdf5" fill-opacity="0.6"
+                            stroke="#10b981" stroke-width="1.5" stroke-dasharray="4 4" />
+                        <text x="310" y="44" text-anchor="middle" fill="#047857" font-size="11" font-weight="600"
+                            letter-spacing="1">GATEWAY LAYER</text>
+
+                        <rect x="420" y="20" width="350" height="460" rx="12" fill="#faf5ff" fill-opacity="0.6"
+                            stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4 4" />
+                        <text x="595" y="44" text-anchor="middle" fill="#6b21a8" font-size="11" font-weight="600"
+                            letter-spacing="1">CORE & AI MICROSERVICES</text>
+
+                        <!-- Actors -->
+                        <!-- Enterprise Admin -->
+                        <rect x="20" y="100" width="160" height="70" rx="8" fill="#ffffff" stroke="#94a3b8"
+                            stroke-width="1.5" />
+                        <text x="35" y="125" fill="#0f172a" font-size="12" font-weight="bold">Enterprise Admins</text>
+                        <text x="35" y="142" fill="#475569" font-size="10">System Admin & Staff</text>
+                        <text x="35" y="155" fill="#64748b" font-size="9" font-family="monospace">REST Clients /
+                            Browser</text>
+
+                        <!-- Candidates -->
+                        <rect x="20" y="250" width="160" height="70" rx="8" fill="#ffffff" stroke="#94a3b8"
+                            stroke-width="1.5" />
+                        <text x="35" y="275" fill="#0f172a" font-size="12" font-weight="bold">Candidates</text>
+                        <text x="35" y="292" fill="#475569" font-size="10">Web Exam Client</text>
+                        <text x="35" y="305" fill="#64748b" font-size="9" font-family="monospace">Browser Session
+                            UI</text>
+
+                        <!-- Stripe Webhook -->
+                        <rect x="20" y="390" width="160" height="50" rx="8" fill="#f8fafc" stroke="#94a3b8"
+                            stroke-width="1" stroke-dasharray="3 3" />
+                        <text x="35" y="413" fill="#0f172a" font-size="11" font-weight="bold">Stripe Webhooks</text>
+                        <text x="35" y="428" fill="#475569" font-size="9">Payment Callbacks</text>
+
+                        <!-- API Gateway -->
+                        <rect x="245" y="80" width="130" height="280" rx="10" fill="#ecfdf5" stroke="#10b981"
+                            stroke-width="2" />
+                        <text x="310" y="115" text-anchor="middle" fill="#065f46" font-size="13" font-weight="bold">API
+                            Gateway</text>
+                        <text x="310" y="132" text-anchor="middle" fill="#047857" font-size="10">Gin Reverse
+                            Proxy</text>
+                        <!-- Details -->
+                        <rect x="255" y="160" width="110" height="25" rx="4" fill="#ffffff" stroke="#a7f3d0"
+                            stroke-width="1" />
+                        <text x="310" y="176" text-anchor="middle" fill="#065f46" font-size="9"
+                            font-family="monospace">Auth Verification</text>
+                        <rect x="255" y="195" width="110" height="25" rx="4" fill="#ffffff" stroke="#a7f3d0"
+                            stroke-width="1" />
+                        <text x="310" y="211" text-anchor="middle" fill="#065f46" font-size="9"
+                            font-family="monospace">Rate Limiter</text>
+                        <rect x="255" y="230" width="110" height="25" rx="4" fill="#ffffff" stroke="#a7f3d0"
+                            stroke-width="1" />
+                        <text x="310" y="246" text-anchor="middle" fill="#065f46" font-size="9"
+                            font-family="monospace">Tenant Headers</text>
+                        <rect x="255" y="265" width="110" height="25" rx="4" fill="#ffffff" stroke="#a7f3d0"
+                            stroke-width="1" />
+                        <text x="310" y="281" text-anchor="middle" fill="#065f46" font-size="9"
+                            font-family="monospace">Circuit Breaker</text>
+
+                        <!-- Redis Cache -->
+                        <rect x="245" y="390" width="130" height="55" rx="8" fill="#f5f3ff" stroke="#8b5cf6"
+                            stroke-width="1.5" />
+                        <text x="310" y="413" text-anchor="middle" fill="#5b21b6" font-size="11"
+                            font-weight="bold">Redis Cache</text>
+                        <text x="310" y="428" text-anchor="middle" fill="#6d28d9" font-size="9">Rate Limits /
+                            Sessions</text>
+
+                        <!-- Core Services -->
+                        <!-- Auth & Tenant service -->
+                        <rect x="440" y="75" width="130" height="55" rx="8" fill="#eff6ff" stroke="#3b82f6"
+                            stroke-width="1.5" />
+                        <text x="505" y="96" text-anchor="middle" fill="#1e3a8a" font-size="11" font-weight="bold">Auth
+                            Service</text>
+                        <text x="505" y="112" text-anchor="middle" fill="#2563eb" font-size="9"
+                            font-family="monospace">/auth/*</text>
+
+                        <!-- Enterprise (Tenants) -->
+                        <rect x="440" y="145" width="130" height="55" rx="8" fill="#eff6ff" stroke="#3b82f6"
+                            stroke-width="1.5" />
+                        <text x="505" y="166" text-anchor="middle" fill="#1e3a8a" font-size="11"
+                            font-weight="bold">Enterprise Service</text>
+                        <text x="505" y="182" text-anchor="middle" fill="#2563eb" font-size="9"
+                            font-family="monospace">/enterprises/*</text>
+
+                        <!-- Exams (Question bank) -->
+                        <rect x="440" y="215" width="130" height="55" rx="8" fill="#eff6ff" stroke="#3b82f6"
+                            stroke-width="1.5" />
+                        <text x="505" y="236" text-anchor="middle" fill="#1e3a8a" font-size="11" font-weight="bold">Exam
+                            Service</text>
+                        <text x="505" y="252" text-anchor="middle" fill="#2563eb" font-size="9"
+                            font-family="monospace">/exams/* | /questions/*</text>
+
+                        <!-- Candidates (Assessments) -->
+                        <rect x="440" y="285" width="130" height="55" rx="8" fill="#eff6ff" stroke="#3b82f6"
+                            stroke-width="1.5" />
+                        <text x="505" y="306" text-anchor="middle" fill="#1e3a8a" font-size="11"
+                            font-weight="bold">Candidate Service</text>
+                        <text x="505" y="322" text-anchor="middle" fill="#2563eb" font-size="9"
+                            font-family="monospace">/candidates/*</text>
+
+                        <!-- Payments (Stripe billing) -->
+                        <rect x="440" y="355" width="130" height="55" rx="8" fill="#eff6ff" stroke="#3b82f6"
+                            stroke-width="1.5" />
+                        <text x="505" y="376" text-anchor="middle" fill="#1e3a8a" font-size="11"
+                            font-weight="bold">Payment Service</text>
+                        <text x="505" y="392" text-anchor="middle" fill="#2563eb" font-size="9"
+                            font-family="monospace">/subscriptions/*</text>
+
+                        <!-- Proctoring (AI Event Scoring) -->
+                        <rect x="615" y="180" width="130" height="55" rx="8" fill="#fff7ed" stroke="#f97316"
+                            stroke-width="1.5" />
+                        <text x="680" y="201" text-anchor="middle" fill="#7c2d12" font-size="11"
+                            font-weight="bold">Proctoring AI</text>
+                        <text x="680" y="217" text-anchor="middle" fill="#c2410c" font-size="9"
+                            font-family="monospace">/face/* | /proctoring/*</text>
+
+                        <!-- Grading (AI Automatic scoring) -->
+                        <rect x="615" y="285" width="130" height="55" rx="8" fill="#fff7ed" stroke="#f97316"
+                            stroke-width="1.5" />
+                        <text x="680" y="306" text-anchor="middle" fill="#7c2d12" font-size="11"
+                            font-weight="bold">Grading AI</text>
+                        <text x="680" y="322" text-anchor="middle" fill="#c2410c" font-size="9"
+                            font-family="monospace">/grading/* | /results/*</text>
+
+                        <!-- Connecting Lines -->
+                        <!-- Admins/Candidates to Gateway -->
+                        <path d="M 180 135 L 245 150" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)" />
+                        <path d="M 180 285 L 245 230" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)" />
+                        <path d="M 180 415 L 220 415 L 220 300 L 245 280" stroke="#64748b" stroke-dasharray="3 3"
+                            stroke-width="1.2" marker-end="url(#arrow)" />
+
+                        <!-- Redis cache flow -->
+                        <path d="M 290 360 L 290 390" stroke="#059669" stroke-width="1.5"
+                            marker-end="url(#arrow-emerald)" />
+                        <path d="M 320 390 L 320 360" stroke="#059669" stroke-width="1.5"
+                            marker-end="url(#arrow-emerald)" />
+
+                        <!-- Dispatch lines from Gateway to services -->
+                        <path d="M 375 140 L 410 140 L 410 102 L 440 102" stroke="#4f46e5" stroke-width="1.5"
+                            marker-end="url(#arrow)" />
+                        <path d="M 375 180 L 440 180" stroke="#4f46e5" stroke-width="1.5" marker-end="url(#arrow)" />
+                        <path d="M 375 220 L 440 240" stroke="#4f46e5" stroke-width="1.5" marker-end="url(#arrow)" />
+                        <path d="M 375 260 L 410 260 L 410 312 L 440 312" stroke="#4f46e5" stroke-width="1.5"
+                            marker-end="url(#arrow)" />
+                        <path d="M 375 300 L 400 300 L 400 382 L 440 382" stroke="#4f46e5" stroke-width="1.5"
+                            marker-end="url(#arrow)" />
+
+                        <!-- AI Routes Dispatch bypass -->
+                        <path d="M 375 320 L 400 320 L 400 440 L 590 440 L 590 210 L 615 210" stroke="#f97316"
+                            stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arrow)" />
+                        <path d="M 375 340 L 385 340 L 385 460 L 600 460 L 600 312 L 615 312" stroke="#f97316"
+                            stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arrow)" />
+
+                        <!-- Internal Context Connections -->
+                        <path d="M 505 130 L 505 145" stroke="#64748b" stroke-width="1" stroke-dasharray="2 2"
+                            marker-end="url(#arrow)" />
+                        <path d="M 680 235 L 680 285" stroke="#f97316" stroke-width="1.2" stroke-dasharray="4 4"
+                            marker-end="url(#arrow)" />
+                    </svg>
+
+                    <!-- VIEW 2: ASYNC BACKBONE -->
+                    <svg id="svg-async" class="view-svg hidden" viewBox="0 0 800 500" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100%" height="100%" fill="url(#grid)" rx="8" />
+
+                        <!-- Left column: Publishers -->
+                        <text x="110" y="44" text-anchor="middle" fill="#1e3a8a" font-size="11" font-weight="600"
+                            letter-spacing="1">EVENT PUBLISHERS</text>
+                        <rect x="20" y="60" width="180" height="380" rx="12" fill="#eff6ff" fill-opacity="0.6"
+                            stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4 4" />
+
+                        <g transform="translate(35, 80)">
+                            <rect width="150" height="40" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1" />
+                            <text x="75" y="24" text-anchor="middle" fill="#1e3a8a" font-size="10"
+                                font-weight="bold">Auth Service</text>
+                        </g>
+                        <g transform="translate(35, 140)">
+                            <rect width="150" height="40" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1" />
+                            <text x="75" y="24" text-anchor="middle" fill="#1e3a8a" font-size="10"
+                                font-weight="bold">Enterprise Service</text>
+                        </g>
+                        <g transform="translate(35, 200)">
+                            <rect width="150" height="40" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1" />
+                            <text x="75" y="24" text-anchor="middle" fill="#1e3a8a" font-size="10"
+                                font-weight="bold">Exam Service</text>
+                        </g>
+                        <g transform="translate(35, 260)">
+                            <rect width="150" height="40" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1" />
+                            <text x="75" y="24" text-anchor="middle" fill="#1e3a8a" font-size="10"
+                                font-weight="bold">Candidate Service</text>
+                        </g>
+                        <g transform="translate(35, 320)">
+                            <rect width="150" height="40" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1" />
+                            <text x="75" y="24" text-anchor="middle" fill="#1e3a8a" font-size="10"
+                                font-weight="bold">Payment Service</text>
+                        </g>
+                        <g transform="translate(35, 380)">
+                            <rect width="150" height="40" rx="6" fill="#fff7ed" stroke="#f97316" stroke-dasharray="2 2"
+                                stroke-width="1" />
+                            <text x="75" y="24" text-anchor="middle" fill="#7c2d12" font-size="10"
+                                font-weight="bold">Proctoring AI</text>
+                        </g>
+
+                        <!-- Center column: Message Broker -->
+                        <rect x="290" y="60" width="220" height="380" rx="12" fill="#faf5ff" fill-opacity="0.6"
+                            stroke="#8b5cf6" stroke-width="2" />
+                        <text x="400" y="44" text-anchor="middle" fill="#6b21a8" font-size="11" font-weight="600"
+                            letter-spacing="1">KAFKA EVENT LOG</text>
+
+                        <!-- Topics -->
+                        <g id="topic-auth" transform="translate(305, 80)">
+                            <rect width="190" height="35" rx="4" fill="#ffffff" stroke="#c084fc" stroke-width="1" />
+                            <text x="15" y="21" fill="#5b21b6" font-size="9"
+                                font-family="monospace">auth.user.login</text>
+                        </g>
+                        <g id="topic-lifecycle" transform="translate(305, 125)">
+                            <rect width="190" height="35" rx="4" fill="#ffffff" stroke="#c084fc" stroke-width="1" />
+                            <text x="15" y="21" fill="#5b21b6" font-size="9"
+                                font-family="monospace">enterprise.lifecycle</text>
+                        </g>
+                        <g id="topic-exams" transform="translate(305, 170)">
+                            <rect width="190" height="35" rx="4" fill="#ffffff" stroke="#c084fc" stroke-width="1" />
+                            <text x="15" y="21" fill="#5b21b6" font-size="9"
+                                font-family="monospace">exam.lifecycle</text>
+                        </g>
+                        <g id="topic-candidate" transform="translate(305, 215)">
+                            <rect width="190" height="35" rx="4" fill="#ffffff" stroke="#c084fc" stroke-width="1" />
+                            <text x="15" y="21" fill="#5b21b6" font-size="9"
+                                font-family="monospace">candidate.enrollment</text>
+                        </g>
+                        <g id="topic-examsub" transform="translate(305, 260)">
+                            <rect width="190" height="35" rx="4" fill="#ffffff" stroke="#c084fc" stroke-width="1" />
+                            <text x="15" y="21" fill="#5b21b6" font-size="9"
+                                font-family="monospace">exam.submitted</text>
+                        </g>
+                        <g id="topic-ready" transform="translate(305, 305)">
+                            <rect width="190" height="35" rx="4" fill="#ffffff" stroke="#c084fc" stroke-width="1" />
+                            <text x="15" y="21" fill="#5b21b6" font-size="9"
+                                font-family="monospace">exam.ready_for_grading</text>
+                        </g>
+                        <g id="topic-billing" transform="translate(305, 350)">
+                            <rect width="190" height="35" rx="4" fill="#ffffff" stroke="#c084fc" stroke-width="1" />
+                            <text x="15" y="21" fill="#5b21b6" font-size="9"
+                                font-family="monospace">billing.subscription</text>
+                        </g>
+                        <g id="topic-notification" transform="translate(305, 395)">
+                            <rect width="190" height="35" rx="4" fill="#ffffff" stroke="#c084fc" stroke-width="1" />
+                            <text x="15" y="21" fill="#5b21b6" font-size="9"
+                                font-family="monospace">notification.email</text>
+                        </g>
+
+                        <!-- Right column: Consumers -->
+                        <text x="690" y="44" text-anchor="middle" fill="#047857" font-size="11" font-weight="600"
+                            letter-spacing="1">EVENT CONSUMERS</text>
+                        <rect x="600" y="60" width="180" height="380" rx="12" fill="#ecfdf5" fill-opacity="0.6"
+                            stroke="#059669" stroke-width="1.5" stroke-dasharray="4 4" />
+
+                        <g transform="translate(615, 80)">
+                            <rect width="150" height="45" rx="6" fill="#ffffff" stroke="#059669" stroke-width="1" />
+                            <text x="75" y="21" text-anchor="middle" fill="#065f46" font-size="10"
+                                font-weight="bold">Auth Service</text>
+                            <text x="75" y="34" text-anchor="middle" fill="#047857" font-size="8">Ensures session
+                                sync</text>
+                        </g>
+                        <g transform="translate(615, 145)">
+                            <rect width="150" height="45" rx="6" fill="#ffffff" stroke="#059669" stroke-width="1" />
+                            <text x="75" y="21" text-anchor="middle" fill="#065f46" font-size="10"
+                                font-weight="bold">Enterprise Service</text>
+                            <text x="75" y="34" text-anchor="middle" fill="#047857" font-size="8">Billing fail
+                                updates</text>
+                        </g>
+                        <g transform="translate(615, 210)">
+                            <rect width="150" height="45" rx="6" fill="#ffffff" stroke="#059669" stroke-width="1" />
+                            <text x="75" y="21" text-anchor="middle" fill="#065f46" font-size="10"
+                                font-weight="bold">Grading AI Service</text>
+                            <text x="75" y="34" text-anchor="middle" fill="#047857" font-size="8">Triggers ML
+                                grading</text>
+                        </g>
+                        <g transform="translate(615, 275)">
+                            <rect width="150" height="45" rx="6" fill="#ffffff" stroke="#059669" stroke-width="1" />
+                            <text x="75" y="21" text-anchor="middle" fill="#065f46" font-size="10"
+                                font-weight="bold">Proctoring AI</text>
+                            <text x="75" y="34" text-anchor="middle" fill="#047857" font-size="8">Binds score
+                                events</text>
+                        </g>
+                        <g transform="translate(615, 340)">
+                            <rect width="150" height="65" rx="6" fill="#f5f3ff" stroke="#6366f1" stroke-width="1.5" />
+                            <text x="75" y="22" text-anchor="middle" fill="#312e81" font-size="11"
+                                font-weight="bold">Notification Worker</text>
+                            <text x="75" y="38" text-anchor="middle" fill="#4338ca" font-size="9">Dedicated SMTP
+                                worker</text>
+                            <text x="75" y="50" text-anchor="middle" fill="#4f46e5" font-size="8"
+                                font-family="monospace">Listens: notification.*</text>
+                        </g>
+
+                        <!-- Publish Connections (Left to Center) -->
+                        <path d="M 185 100 L 305 100" stroke="#3b82f6" stroke-width="1" marker-end="url(#arrow)" />
+                        <path d="M 185 160 L 305 142" stroke="#3b82f6" stroke-width="1" marker-end="url(#arrow)" />
+                        <path d="M 185 220 L 305 188" stroke="#3b82f6" stroke-width="1" marker-end="url(#arrow)" />
+
+                        <path d="M 185 280 L 250 280 L 250 232 L 305 232" stroke="#3b82f6" stroke-width="1"
+                            marker-end="url(#arrow)" />
+                        <path d="M 185 280 L 250 280 L 250 277 L 305 277" stroke="#3b82f6" stroke-width="1"
+                            marker-end="url(#arrow)" />
+
+                        <path d="M 185 340 L 305 367" stroke="#3b82f6" stroke-width="1" marker-end="url(#arrow)" />
+                        <path d="M 185 400 L 270 400 L 270 322 L 305 322" stroke="#3b82f6" stroke-width="1"
+                            stroke-dasharray="2 2" marker-end="url(#arrow)" />
+
+                        <!-- Subscribe Connections (Center to Right) -->
+                        <path d="M 495 100 L 615 100" stroke="#059669" stroke-width="1" marker-end="url(#arrow)" />
+                        <path d="M 495 367 L 550 367 L 550 167 L 615 167" stroke="#059669" stroke-width="1"
+                            marker-end="url(#arrow)" />
+                        <path d="M 495 322 L 615 232" stroke="#059669" stroke-width="1" marker-end="url(#arrow)" />
+                        <path d="M 495 277 L 570 277 L 570 297 L 615 297" stroke="#059669" stroke-width="1"
+                            marker-end="url(#arrow)" />
+
+                        <!-- All channels can route notices to notification worker -->
+                        <path d="M 495 412 L 615 372" stroke="#6366f1" stroke-width="1.2" stroke-dasharray="2 1"
+                            marker-end="url(#arrow)" />
+                    </svg>
+
+                    <!-- VIEW 3: DATA & PROVIDERS -->
+                    <svg id="svg-storage" class="view-svg hidden" viewBox="0 0 800 500" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100%" height="100%" fill="url(#grid)" rx="8" />
+
+                        <!-- Service Layer Panel -->
+                        <rect x="230" y="30" width="340" height="440" rx="12" fill="#f8fafc" stroke="#94a3b8"
+                            stroke-width="1.5" />
+                        <text x="400" y="52" text-anchor="middle" fill="#0f172a" font-size="12" font-weight="bold"
+                            letter-spacing="1.2">SYSTEM SERVICES</text>
+
+                        <!-- Service Nodes -->
+                        <g transform="translate(250, 70)">
+                            <rect width="300" height="45" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5" />
+                            <text x="20" y="27" fill="#1e3a8a" font-size="11" font-weight="bold">Auth, Enterprise &
+                                Payments</text>
+                        </g>
+                        <g transform="translate(250, 150)">
+                            <rect width="300" height="45" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5" />
+                            <text x="20" y="27" fill="#1e3a8a" font-size="11" font-weight="bold">Exam Service</text>
+                        </g>
+                        <g transform="translate(250, 230)">
+                            <rect width="300" height="45" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5" />
+                            <text x="20" y="27" fill="#1e3a8a" font-size="11" font-weight="bold">Candidate
+                                Service</text>
+                        </g>
+                        <g transform="translate(250, 310)">
+                            <rect width="300" height="45" rx="6" fill="#fff7ed" stroke="#f97316" stroke-width="1.5" />
+                            <text x="20" y="27" fill="#7c2d12" font-size="11" font-weight="bold">Proctoring AI
+                                Service</text>
+                        </g>
+                        <g transform="translate(250, 390)">
+                            <rect width="300" height="45" rx="6" fill="#fff7ed" stroke="#f97316" stroke-width="1.5" />
+                            <text x="20" y="27" fill="#7c2d12" font-size="11" font-weight="bold">Grading AI
+                                Service</text>
+                        </g>
+
+                        <!-- Databases (Left column) -->
+                        <text x="110" y="52" text-anchor="middle" fill="#475569" font-size="11" font-weight="600"
+                            letter-spacing="1">PERSISTENCE</text>
+                        <rect x="20" y="65" width="180" height="405" rx="12" fill="#f1f5f9" fill-opacity="0.4"
+                            stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 4" />
+
+                        <!-- DB cylinders (custom path drawing) -->
+                        <g transform="translate(45, 80)">
+                            <path
+                                d="M 0 5 A 40 10 0 1 1 80 5 A 40 10 0 1 1 0 5 Z M 0 5 L 0 25 A 40 10 0 0 0 80 25 L 80 5"
+                                fill="#ffffff" stroke="#475569" stroke-width="1.2" />
+                            <text x="40" y="20" text-anchor="middle" fill="#0f172a" font-size="9" font-weight="600">Core
+                                DBs</text>
+                            <text x="40" y="44" text-anchor="middle" fill="#475569" font-size="8">Auth/Tenant/Pay</text>
+                        </g>
+                        <g transform="translate(45, 160)">
+                            <path
+                                d="M 0 5 A 40 10 0 1 1 80 5 A 40 10 0 1 1 0 5 Z M 0 5 L 0 25 A 40 10 0 0 0 80 25 L 80 5"
+                                fill="#ffffff" stroke="#475569" stroke-width="1.2" />
+                            <text x="40" y="20" text-anchor="middle" fill="#0f172a" font-size="9" font-weight="600">Exam
+                                DB</text>
+                            <text x="40" y="44" text-anchor="middle" fill="#475569" font-size="8">Questions/Exam</text>
+                        </g>
+                        <g transform="translate(45, 240)">
+                            <path
+                                d="M 0 5 A 40 10 0 1 1 80 5 A 40 10 0 1 1 0 5 Z M 0 5 L 0 25 A 40 10 0 0 0 80 25 L 80 5"
+                                fill="#ffffff" stroke="#475569" stroke-width="1.2" />
+                            <text x="40" y="20" text-anchor="middle" fill="#0f172a" font-size="9"
+                                font-weight="600">Candidate DB</text>
+                            <text x="40" y="44" text-anchor="middle" fill="#475569" font-size="8">Sessions/Logs</text>
+                        </g>
+                        <g transform="translate(45, 320)">
+                            <path
+                                d="M 0 5 A 40 10 0 1 1 80 5 A 40 10 0 1 1 0 5 Z M 0 5 L 0 25 A 40 10 0 0 0 80 25 L 80 5"
+                                fill="#ffffff" stroke="#475569" stroke-width="1" stroke-dasharray="2 1" />
+                            <text x="40" y="20" text-anchor="middle" fill="#0f172a" font-size="9"
+                                font-weight="600">Proctor DB</text>
+                            <text x="40" y="44" text-anchor="middle" fill="#475569" font-size="8">Identity Logs</text>
+                        </g>
+                        <g transform="translate(45, 400)">
+                            <path
+                                d="M 0 5 A 40 10 0 1 1 80 5 A 40 10 0 1 1 0 5 Z M 0 5 L 0 25 A 40 10 0 0 0 80 25 L 80 5"
+                                fill="#ffffff" stroke="#475569" stroke-width="1" stroke-dasharray="2 1" />
+                            <text x="40" y="20" text-anchor="middle" fill="#0f172a" font-size="9"
+                                font-weight="600">Grading DB</text>
+                            <text x="40" y="44" text-anchor="middle" fill="#475569"
+                                font-size="8">Scores/Overrides</text>
+                        </g>
+
+                        <!-- External Integrations (Right column) -->
+                        <text x="690" y="52" text-anchor="middle" fill="#475569" font-size="11" font-weight="600"
+                            letter-spacing="1">EXTERNAL APIs</text>
+                        <rect x="600" y="65" width="180" height="405" rx="12" fill="#f8fafc" fill-opacity="0.4"
+                            stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4" />
+
+                        <!-- Cloudinary -->
+                        <g transform="translate(620, 80)">
+                            <rect width="140" height="40" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1"
+                                stroke-dasharray="3 3" />
+                            <text x="70" y="21" text-anchor="middle" fill="#0f172a" font-size="10"
+                                font-weight="600">Cloudinary</text>
+                            <text x="70" y="32" text-anchor="middle" fill="#475569" font-size="8">Media Storage</text>
+                        </g>
+                        <!-- Stripe -->
+                        <g transform="translate(620, 150)">
+                            <rect width="140" height="40" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1"
+                                stroke-dasharray="3 3" />
+                            <text x="70" y="21" text-anchor="middle" fill="#0f172a" font-size="10"
+                                font-weight="600">Stripe Integration</text>
+                            <text x="70" y="32" text-anchor="middle" fill="#475569" font-size="8">Payments</text>
+                        </g>
+                        <!-- SMTP Mail Relay -->
+                        <g transform="translate(620, 220)">
+                            <rect width="140" height="40" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1"
+                                stroke-dasharray="3 3" />
+                            <text x="70" y="21" text-anchor="middle" fill="#0f172a" font-size="10"
+                                font-weight="600">SMTP Relay</text>
+                            <text x="70" y="32" text-anchor="middle" fill="#475569" font-size="8">Transactional
+                                Emails</text>
+                        </g>
+                        <!-- DeepFace API -->
+                        <g transform="translate(620, 290)">
+                            <rect width="140" height="45" rx="6" fill="#fff7ed" stroke="#f97316" stroke-width="1" />
+                            <text x="70" y="21" text-anchor="middle" fill="#7c2d12" font-size="10"
+                                font-weight="600">DeepFace AI API</text>
+                            <text x="70" y="34" text-anchor="middle" fill="#c2410c" font-size="8">Verification
+                                Engine</text>
+                        </g>
+                        <!-- Hugging Face evaluator -->
+                        <g transform="translate(620, 380)">
+                            <rect width="140" height="45" rx="6" fill="#fff7ed" stroke="#f97316" stroke-width="1" />
+                            <text x="70" y="21" text-anchor="middle" fill="#7c2d12" font-size="10"
+                                font-weight="600">Hugging Face ML</text>
+                            <text x="70" y="34" text-anchor="middle" fill="#c2410c" font-size="8">Short-Answer
+                                Models</text>
+                        </g>
+
+                        <!-- Connections to DB (Center to Left) -->
+                        <path d="M 250 92 L 125 92" stroke="#475569" stroke-width="1.2" marker-end="url(#arrow)" />
+                        <path d="M 250 172 L 125 172" stroke="#475569" stroke-width="1.2" marker-end="url(#arrow)" />
+                        <path d="M 250 252 L 125 252" stroke="#475569" stroke-width="1.2" marker-end="url(#arrow)" />
+                        <path d="M 250 332 L 125 332" stroke="#f97316" stroke-dasharray="2 2" stroke-width="1.2"
+                            marker-end="url(#arrow)" />
+                        <path d="M 250 412 L 125 412" stroke="#f97316" stroke-dasharray="2 2" stroke-width="1.2"
+                            marker-end="url(#arrow)" />
+
+                        <!-- Connections to External APIs (Center to Right) -->
+                        <!-- Exam service to Cloudinary -->
+                        <path d="M 550 160 L 590 160 L 590 100 L 620 100" stroke="#64748b" stroke-width="1"
+                            marker-end="url(#arrow)" />
+                        <!-- Candidate to Cloudinary (for registration photos) -->
+                        <path d="M 550 240 L 590 240 L 590 115 L 620 115" stroke="#64748b" stroke-width="1"
+                            marker-end="url(#arrow)" />
+                        <!-- Stripe payment routes -->
+                        <path d="M 550 92 L 600 92 L 600 170 L 620 170" stroke="#64748b" stroke-width="1"
+                            marker-end="url(#arrow)" />
+                        <!-- AI Services Outbound integrations -->
+                        <path d="M 550 332 L 620 312" stroke="#f97316" stroke-width="1.2" marker-end="url(#arrow)" />
+                        <path d="M 550 412 L 620 402" stroke="#f97316" stroke-width="1.2" marker-end="url(#arrow)" />
+                    </svg>
+
+                </div>
+
+                <div
+                    class="mt-4 flex flex-wrap gap-4 items-center justify-between text-xs text-slate-500 border-t border-slate-200 pt-4">
+                    <div class="flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle text-[8px] text-emerald-600"></i> Gateway
+                        <span class="mx-1 text-slate-300">|</span>
+                        <i class="fa-solid fa-circle text-[8px] text-blue-600"></i> Core Domains
+                        <span class="mx-1 text-slate-300">|</span>
+                        <i class="fa-solid fa-circle text-[8px] text-orange-600"></i> AI Microservices
+                    </div>
+                    <span class="font-mono text-[10px] text-slate-400">SVG Format 1.1 Vector Assets</span>
+                </div>
+            </div>
+
+            <!-- Descriptive Side Panel (4 cols) -->
+            <div class="lg:col-span-4 flex flex-col gap-6">
+
+                <!-- Explanation Card -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-question text-emerald-600"></i> Component Directory
+                    </h2>
+
+                    <!-- Switchable Dynamic Directories -->
+                    <div id="dir-gateway" class="space-y-4">
+                        <p class="text-xs text-slate-500 leading-relaxed">
+                            Details on Gateway and Core domain dispatching paths:
+                        </p>
+                        <div class="space-y-3">
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span
+                                        class="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-mono font-bold">GIN
+                                        PROXY</span>
+                                    <span class="text-xs font-semibold text-slate-800">API Gateway</span>
+                                </div>
+                                <p class="text-[11px] text-slate-600">Processes token verification, tenancy injection,
+                                    and route-level rate limiting using high-efficiency Go Gin middleware.</p>
+                            </div>
+
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span
+                                        class="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-mono font-bold">REDIS</span>
+                                    <span class="text-xs font-semibold text-slate-800">Leaky-Bucket Limiter</span>
+                                </div>
+                                <p class="text-[11px] text-slate-600">Synchronously queries Redis to evaluate tenant
+                                    rate limits, request thresholds, and active session validation states.</p>
+                            </div>
+
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span
+                                        class="text-[10px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-mono font-bold">DOMAINS</span>
+                                    <span class="text-xs font-semibold text-slate-800">Bounded Contexts</span>
+                                </div>
+                                <p class="text-[11px] text-slate-600">Discrete services (Auth, Enterprise, Exam,
+                                    Candidate, Payments) manage their logic isolations independently with REST APIs.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="dir-async" class="space-y-4 hidden">
+                        <p class="text-xs text-slate-505 leading-relaxed">
+                            Details on asynchronous system coordination using Kafka broker topics:
+                        </p>
+                        <div class="space-y-3">
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span
+                                        class="text-[10px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded font-mono font-bold">PUB-SUB</span>
+                                    <span class="text-xs font-semibold text-slate-800">Loose Coupling</span>
+                                </div>
+                                <p class="text-[11px] text-slate-600">Prevents cascading service failures. Core services
+                                    publish mutations immediately then complete synchronous request cycles.</p>
+                            </div>
+
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span
+                                        class="text-[10px] bg-cyan-50 text-cyan-700 px-1.5 py-0.5 rounded font-mono font-bold">WORKER</span>
+                                    <span class="text-xs font-semibold text-slate-800">Notification Dispatcher</span>
+                                </div>
+                                <p class="text-[11px] text-slate-600">An event consumer dedicated to sending transaction
+                                    and status updates to users, avoiding latency bottlenecks during exams.</p>
+                            </div>
+
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span
+                                        class="text-[10px] bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded font-mono font-bold">ML
+                                        GRADERS</span>
+                                    <span class="text-xs font-semibold text-slate-800">Asynchronous Scoring</span>
+                                </div>
+                                <p class="text-[11px] text-slate-600">Subscribed to <code>ready_for_grading</code>, the
+                                    scoring service triggers heavy deep learning evaluations sequentially without
+                                    locking databases.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="dir-storage" class="space-y-4 hidden">
+                        <p class="text-xs text-slate-505 leading-relaxed">
+                            Persistence architectures and system third-party API dependencies:
+                        </p>
+                        <div class="space-y-3">
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span
+                                        class="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-mono font-bold">DB-PER-SVC</span>
+                                    <span class="text-xs font-semibold text-slate-800">Isolated Data Stores</span>
+                                </div>
+                                <p class="text-[11px] text-slate-600">Forces clean service decoupling. No database
+                                    sharing allowed; references must cross-query APIs or depend on Kafka consistency.
+                                </p>
+                            </div>
+
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span
+                                        class="text-[10px] bg-red-50 text-red-700 px-1.5 py-0.5 rounded font-mono font-bold">DEEPFACE</span>
+                                    <span class="text-xs font-semibold text-slate-800">Visual Audits</span>
+                                </div>
+                                <p class="text-[11px] text-slate-600">Proctoring layer sends frame slices to the
+                                    DeepFace endpoint for identity and gaze verification against reference registration
+                                    images.</p>
+                            </div>
+
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span
+                                        class="text-[10px] bg-yellow-50 text-yellow-700 px-1.5 py-0.5 rounded font-mono font-bold">HUGGING
+                                        FACE</span>
+                                    <span class="text-xs font-semibold text-slate-800">NLP Scoring Engines</span>
+                                </div>
+                                <p class="text-[11px] text-slate-600">Automates the parsing of short textual answers,
+                                    computing deep semantic similarities against dynamic model guidelines.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Documentation Helper -->
+                <div class="bg-gradient-to-br from-white to-slate-50 rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Report?</h3>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <h4 class="text-xs font-bold text-slate-700 mb-1">Suggested Caption:</h4>
+                        <p class="text-[11px] text-slate-600 italic" id="suggested-caption">
+                            "Figure X.1: Architectural Blueprint of Veritas Edge, Gateway Layer and Routing Mechanics,
+                            deploying high throughput Gin reverse proxy routers."
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Alert Toast notification (replaces browser alert) -->
+        <div id="toast"
+            class="fixed bottom-6 right-6 px-4 py-3 bg-emerald-600 border border-emerald-500 text-white rounded-xl shadow-2xl flex items-center gap-2.5 transition-all duration-300 transform translate-y-24 opacity-0 z-50">
+            <i class="fa-solid fa-circle-check"></i>
+            <span class="text-xs font-medium" id="toast-message">Copied to clipboard!</span>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 bg-slate-50 py-6 px-6 mt-12 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>&copy; Veritas Exam Platform. Architectural design blueprints for publication.</p>
+            <p class="font-mono text-[10px]">Veritas v2.1.0-RC-Alpha</p>
+        </div>
+    </footer>
+
+    <!-- Control Scripts -->
+    <script>
+        let activeView = 'gateway';
+
+        function switchView(viewName) {
+            activeView = viewName;
+
+            // Hide all SVGs
+            document.querySelectorAll('.view-svg').forEach(svg => svg.classList.add('hidden'));
+            // Hide all directory details
+            document.getElementById('dir-gateway').classList.add('hidden');
+            document.getElementById('dir-async').classList.add('hidden');
+            document.getElementById('dir-storage').classList.add('hidden');
+
+            // Reset button styles
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn px-4 py-3 text-xs font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 text-slate-500 hover:text-slate-800 hover:bg-white/50";
+            });
+
+            // Show requested SVG and corresponding directory notes
+            if (viewName === 'gateway') {
+                document.getElementById('svg-gateway').classList.remove('hidden');
+                document.getElementById('dir-gateway').classList.remove('hidden');
+                document.getElementById('btn-gateway').className = "tab-btn px-4 py-3 text-xs font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-sm";
+                document.getElementById('current-view-title').innerText = "Perspective 1: API Routing";
+                document.getElementById('suggested-caption').innerText = '"Figure X.1: Architectural Blueprint of Veritas Edge, Gateway Layer and Routing Mechanics, deploying high throughput Gin reverse proxy routers."';
+            } else if (viewName === 'async') {
+                document.getElementById('svg-async').classList.remove('hidden');
+                document.getElementById('dir-async').classList.remove('hidden');
+                document.getElementById('btn-async').className = "tab-btn px-4 py-3 text-xs font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 bg-purple-50 text-purple-700 border border-purple-200/60 shadow-sm";
+                document.getElementById('current-view-title').innerText = "Perspective 2: Async Backbone";
+                document.getElementById('suggested-caption').innerText = '"Figure X.2: Decentralized Event Processing topology using Apache Kafka message topics and dedicated asynchronous notification consumers."';
+            } else if (viewName === 'storage') {
+                document.getElementById('svg-storage').classList.remove('hidden');
+                document.getElementById('dir-storage').classList.remove('hidden');
+                document.getElementById('btn-storage').className = "tab-btn px-4 py-3 text-xs font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 bg-blue-50 text-blue-700 border border-blue-200/60 shadow-sm";
+                document.getElementById('current-view-title').innerText = "Perspective 3: Persistence & Providers";
+                document.getElementById('suggested-caption').innerText = '"Figure X.3: Bounded database-per-service isolation maps alongside third-party API configurations (DeepFace, Stripe, Cloudinary)."';
+            }
+        }
+
+        // Modern clipboard copy logic
+        function copyCurrentSVG() {
+            const activeSvgId = `svg-${activeView}`;
+            const svgElement = document.getElementById(activeSvgId);
+
+            if (!svgElement) return;
+
+            // Extract raw serializable string of the SVG node
+            const serializer = new XMLSerializer();
+            let source = serializer.serializeToString(svgElement);
+
+            // Clean metadata and class elements to ensure compatibility
+            source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
+
+            // Temporary text area fallback
+            const textArea = document.createElement("textarea");
+            textArea.value = source;
+            textArea.style.position = "fixed";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast("Active SVG vector copied to clipboard! You can paste this directly into illustrator, draw.io, or online markdown compilers.");
+                } else {
+                    showToast("Failed to copy. Please try printing or exporting the page instead.", "error");
+                }
+            } catch (err) {
+                showToast("Error copying content. Browser constraints blocked clipboard write.", "error");
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        function showToast(message, type = "success") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+
+            toastMsg.innerText = message;
+            if (type === "error") {
+                toast.className = toast.className.replace("bg-emerald-600", "bg-rose-600").replace("border-emerald-500", "border-rose-500");
+            } else {
+                toast.className = toast.className.replace("bg-rose-600", "bg-emerald-600").replace("border-rose-500", "border-emerald-500");
+            }
+
+            // Slide In animation
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            // Slide out timer
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 4000);
+        }
+    </script>
+</body>
+
+</html>
