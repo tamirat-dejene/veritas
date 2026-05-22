@@ -19,6 +19,14 @@ Veritas utilizes a hybrid communication model designed for scale, isolation, and
   - `pagination`: Standardized paging parameter parsing and response formats.
   - `storage`: Media upload client wrapper (e.g., Cloudinary integration).
 
+## System Design Figures
+
+System design diagrams are available as markdown pages with embedded HTML figures:
+
+- [System Architecture](docs/report/assets/system_designs/system_architecture.md)
+- [Subsystems Decomposition](docs/report/assets/system_designs/subsystems_decomposition.md)
+- [Deployment Diagram](docs/report/assets/system_designs/deployment_diagram.md)
+
 ## Core Services
 
 ### Go Services (Port 8080 internal)
