@@ -20,10 +20,9 @@ END $$;
 -- 1. Exam Grade Results (one row per graded session)
 --
 -- Security features:
---   • row_checksum — SHA-256 over immutable scoring fields;
+--   • row_checksum — HMAC-SHA256 checksum over immutable scoring fields;
 --     any direct UPDATE to score columns without updating the
 --     checksum will be caught by the application layer.
---   • graded_by — tracks whether the system or a human reviewed.
 --   • version — optimistic-concurrency control; every legitimate
 --     update bumps the version. Stale writes are rejected.
 -- =========================================================
@@ -94,19 +93,17 @@ CREATE INDEX IF NOT EXISTS idx_grading_qr_question
 -- =========================================================
 -- 3. Grade Audit Log (tamper detection)
 --
--- Every UPDATE to grading_results is captured here
--- automatically by a trigger. This table is APPEND-ONLY;
--- the application layer must never DELETE or UPDATE rows.
+-- Every INSERT/UPDATE/DELETE to grading_results is captured here
+-- automatically by a trigger. This table is APPEND-ONLY.
 --
--- Stores a JSON snapshot of the OLD and NEW row values,
--- who made the change, and a timestamp.
+-- Stores session parameters set by the application during the transaction.
 -- =========================================================
 
 CREATE TABLE IF NOT EXISTS grading_audit_log (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     grading_result_id UUID NOT NULL,
     action          VARCHAR(20) NOT NULL,       -- 'INSERT' | 'UPDATE' | 'DELETE'
-    actor_id        UUID,                        -- who made the change (NULL = system)
+    actor_id        UUID,                        -- who made the change
     actor_role      VARCHAR(50) DEFAULT 'system',
     old_values      JSONB,
     new_values      JSONB NOT NULL,
@@ -119,12 +116,6 @@ CREATE TABLE IF NOT EXISTS grading_audit_log (
 CREATE INDEX IF NOT EXISTS idx_grading_audit_result
     ON grading_audit_log (grading_result_id, created_at DESC);
 
-CREATE INDEX IF NOT EXISTS idx_grading_audit_actor
-    ON grading_audit_log (actor_id);
-
-CREATE INDEX IF NOT EXISTS idx_grading_audit_action
-    ON grading_audit_log (action);
-
 -- =========================================================
 -- 4. Audit trigger — auto-log every INSERT/UPDATE/DELETE
 --    on grading_results.
@@ -134,8 +125,34 @@ CREATE OR REPLACE FUNCTION grading_results_audit_trigger()
 RETURNS TRIGGER AS $$
 DECLARE
     changed TEXT[] := '{}';
-    col TEXT;
+    actor_id_val UUID := NULL;
+    actor_role_val VARCHAR(50) := 'system';
+    ip_address_val VARCHAR(45) := NULL;
+    reason_val TEXT := NULL;
+    session_actor_id TEXT;
+    session_actor_role TEXT;
+    session_ip TEXT;
+    session_reason TEXT;
 BEGIN
+    -- Read session parameters if available
+    session_actor_id := current_setting('veritas.current_actor_id', true);
+    session_actor_role := current_setting('veritas.current_actor_role', true);
+    session_ip := current_setting('veritas.current_ip', true);
+    session_reason := current_setting('veritas.current_reason', true);
+
+    IF session_actor_id IS NOT NULL AND session_actor_id <> '' THEN
+        actor_id_val := session_actor_id::UUID;
+    END IF;
+    IF session_actor_role IS NOT NULL AND session_actor_role <> '' THEN
+        actor_role_val := session_actor_role;
+    END IF;
+    IF session_ip IS NOT NULL AND session_ip <> '' THEN
+        ip_address_val := session_ip;
+    END IF;
+    IF session_reason IS NOT NULL AND session_reason <> '' THEN
+        reason_val := session_reason;
+    END IF;
+
     IF TG_OP = 'UPDATE' THEN
         -- Detect which columns actually changed
         IF OLD.total_max_points IS DISTINCT FROM NEW.total_max_points THEN
@@ -158,13 +175,17 @@ BEGIN
         END IF;
 
         INSERT INTO grading_audit_log (
-            grading_result_id, action, old_values, new_values, changed_fields
+            grading_result_id, action, actor_id, actor_role, old_values, new_values, changed_fields, ip_address, reason
         ) VALUES (
             NEW.id,
             'UPDATE',
+            actor_id_val,
+            actor_role_val,
             to_jsonb(OLD),
             to_jsonb(NEW),
-            changed
+            changed,
+            ip_address_val,
+            reason_val
         );
 
         -- Enforce version bump
@@ -175,22 +196,31 @@ BEGIN
 
     ELSIF TG_OP = 'INSERT' THEN
         INSERT INTO grading_audit_log (
-            grading_result_id, action, new_values
+            grading_result_id, action, actor_id, actor_role, old_values, new_values, ip_address, reason
         ) VALUES (
             NEW.id,
             'INSERT',
-            to_jsonb(NEW)
+            actor_id_val,
+            actor_role_val,
+            NULL,
+            to_jsonb(NEW),
+            ip_address_val,
+            reason_val
         );
         RETURN NEW;
 
     ELSIF TG_OP = 'DELETE' THEN
         INSERT INTO grading_audit_log (
-            grading_result_id, action, old_values, new_values
+            grading_result_id, action, actor_id, actor_role, old_values, new_values, ip_address, reason
         ) VALUES (
             OLD.id,
             'DELETE',
+            actor_id_val,
+            actor_role_val,
             to_jsonb(OLD),
-            '{}'::jsonb
+            '{}'::jsonb,
+            ip_address_val,
+            reason_val
         );
         RETURN OLD;
     END IF;

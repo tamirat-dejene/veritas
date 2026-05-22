@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eu
 
 # ANSI color codes for pretty printing
 RED='\033[0;31m'
