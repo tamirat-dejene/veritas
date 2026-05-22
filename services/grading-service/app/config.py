@@ -16,16 +16,11 @@ class Settings(BaseSettings):
     KAFKA_BROKERS: str = "kafka:9092"
 
     # Hugging Face AI Space
-    HF_EVALUATE_URL: str = (
-        "https://cheifo-veritasgradertransformer.hf.space/evaluate"
-    )
+    HF_EVALUATE_URL: str = ("https://cheifo-YYYYYYYYYYYYY.hf.space/evaluate")
     HF_TIMEOUT_SECONDS: float = 120.0
     HF_TOKEN: str | None = None
 
-    # Security
-    JWT_SECRET: str = "supersecretkey123"
-    # Cryptographic key to generate HMAC for row-tampering verification
-    GRADING_SECRET_KEY: str = "grading-service-hmac-secret-key-12345"
+    GRADING_SECRET_KEY: str = "supersecretkey123"
 
     model_config = SettingsConfigDict(env_file=".env.dev", extra="ignore")
 
