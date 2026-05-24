@@ -1396,6 +1396,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/internal/sessions/{sessionId}/grading-payload": {
+            "get": {
+                "description": "Internal endpoint — returns the aggregated grading data for a session.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "internal"
+                ],
+                "summary": "Get grading payload",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Enterprise ID",
+                        "name": "X-Enterprise-Id",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Session ID (UUID)",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/GradingPayload"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/sessions/me/active": {
             "get": {
                 "description": "Return the active session for the authenticated candidate.",
@@ -2102,6 +2156,20 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "CandidateAnswerData": {
+            "type": "object",
+            "properties": {
+                "selectedOptionIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        },
         "CandidateProfile": {
             "type": "object",
             "properties": {
@@ -2289,6 +2357,104 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "submittedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "GradingItem": {
+            "type": "object",
+            "properties": {
+                "candidate_answer": {
+                    "$ref": "#/definitions/CandidateAnswerData"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "correct_option_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "evaluation_criteria": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "expected_answer": {
+                    "description": "True Evaluation Criteria (from Exam Service)",
+                    "type": "string"
+                },
+                "has_answer": {
+                    "description": "Candidate's Actual Answer (from Candidate Service)",
+                    "type": "boolean"
+                },
+                "media_url": {
+                    "type": "string"
+                },
+                "negative_points": {
+                    "type": "number"
+                },
+                "points": {
+                    "description": "Scoring",
+                    "type": "integer"
+                },
+                "question_id": {
+                    "type": "string"
+                },
+                "question_type": {
+                    "type": "string"
+                },
+                "session_question_id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "topic": {
+                    "type": "string"
+                }
+            }
+        },
+        "GradingPayload": {
+            "type": "object",
+            "properties": {
+                "auto_submitted": {
+                    "type": "boolean"
+                },
+                "candidate_id": {
+                    "type": "string"
+                },
+                "enrollment_id": {
+                    "type": "string"
+                },
+                "enterprise_id": {
+                    "type": "string"
+                },
+                "exam_id": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/GradingItem"
+                    }
+                },
+                "session_id": {
+                    "type": "string"
+                },
+                "started_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "submitted_at": {
+                    "type": "string"
+                },
+                "terminated_at": {
+                    "type": "string"
+                },
+                "termination_reason": {
                     "type": "string"
                 }
             }
