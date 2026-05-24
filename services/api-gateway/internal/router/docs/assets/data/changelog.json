@@ -1,5 +1,40 @@
 [
   {
+    "date": "2026-05-25",
+    "changes": [
+      {
+        "type": "new",
+        "service": "grading",
+        "summary": "Grading Status Polling Endpoint",
+        "description": "Added a lightweight status endpoint to poll grading progress after exam submission. A 'pending' placeholder row is now written to the database the moment the trigger event is received, so callers always get a meaningful response instead of a 404 while automated grading is still in progress.",
+        "endpoints": [
+          "GET /grading/results/:sessionId/status (NEW: poll exam grading status — returns pending | graded | reviewed | disputed)"
+        ]
+      },
+      {
+        "type": "breaking",
+        "service": "candidate",
+        "summary": "Grading Event Refactored: Fat Event → Slim Trigger (v3.0)",
+        "description": "The exam.session.ready_for_grading Kafka event has been redesigned from a 'Fat Event' (v1.0/v2.0) carrying the full grading payload into a 'Slim Trigger' (v3.0) containing only session identifiers and metadata. The grading-service now pulls the complete evaluation payload — master questions, correct answers, and candidate responses — via an internal HTTP call to the candidate-service after receiving the trigger. Events with version other than '3.0' are rejected. The Kafka topic has been renamed from candidate.exam.ready_for_grading to exam.session.ready_for_grading.",
+        "migration": [
+          {
+            "before": "Topic: candidate.exam.ready_for_grading (v1.0/v2.0) — contained full items[] array with questions, correct answers, and candidate answers embedded in the event.",
+            "after": "Topic: exam.session.ready_for_grading (v3.0) — contains only identifiers (session_id, exam_id, candidate_id, enterprise_id, enrollment_id) and session metadata. The grading-service fetches the full payload via GET /internal/sessions/:sessionId/grading-payload."
+          }
+        ]
+      },
+      {
+        "type": "new",
+        "service": "candidate",
+        "summary": "Internal Grading Payload Endpoint",
+        "description": "Introduced a new internal HTTP endpoint that aggregates the full grading payload for a session on demand. It fetches master questions with evaluation criteria from the exam-service, joins them with the candidate's session question snapshots and answers, and returns a unified GradingPayload structure. This endpoint is not proxied via the API Gateway and is exclusively for internal service-to-service communication.",
+        "endpoints": [
+          "GET /internal/sessions/:sessionId/grading-payload (INTERNAL: not proxied by API Gateway)"
+        ]
+      }
+    ]
+  },
+  {
     "date": "2026-05-22",
     "changes": [
       {

@@ -1,5 +1,11 @@
 services:
   # --- Infrastructure ---
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"   # SMTP port
+      - "8025:8025"   # Web UI
+
   postgres:
     image: postgres:15-alpine
     env_file:
@@ -172,9 +178,16 @@ services:
       - go_pkg_cache:/go/pkg/mod
     env_file:
       - .env.dev
+    environment:
+      SMTP_HOST: mailhog
+      SMTP_PORT: "1025"
+      SMTP_USER: ""
+      SMTP_PASS: ""
     depends_on:
       kafka:
         condition: service_healthy
+      mailhog:
+        condition: service_started
 
   payment-service:
     build:

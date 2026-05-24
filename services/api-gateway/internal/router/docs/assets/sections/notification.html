@@ -75,12 +75,12 @@
             Triggered when a candidate submits their exam session. Delivers a confirmation email detailing the exam title and submission time.
         </event-item>
 
-        <event-item topic="candidate.exam.ready_for_grading" 
+        <event-item topic="exam.session.ready_for_grading"
             payload='{
   "event_id": "9f1c2d3e-4a5b-678c-9d01-23456789abcd",
-  "event_type": "candidate.exam.ready_for_grading",
-  "version": "1.0",
-  "timestamp": "2026-05-06T10:15:30Z",
+  "event_type": "exam.session.ready_for_grading",
+  "version": "3.0",
+  "timestamp": "2026-05-24T10:15:30Z",
   "trace_id": "trace-12345",
 
   "enterprise_id": "11111111-2222-3333-4444-555555555555",
@@ -89,88 +89,14 @@
   "candidate_id": "99999999-8888-7777-6666-555555555555",
   "enrollment_id": "abcdefab-cdef-abcd-efab-cdefabcdefab",
 
-  "status": "Submitted",
-  "started_at": "2026-05-06T09:00:00Z",
-  "submitted_at": "2026-05-06T10:10:00Z",
+  "status": "submitted",
+  "started_at": "2026-05-24T09:00:00Z",
+  "submitted_at": "2026-05-24T10:10:00Z",
   "terminated_at": null,
   "auto_submitted": false,
-  "termination_reason": null,
-
-  "items": [
-    {
-      "question_id": "q1111111-1111-1111-1111-111111111111",
-      "session_question_id": "sq111111-1111-1111-1111-111111111111",
-      "question_type": "multiple_choice",
-      "content": "What is the capital of France?",
-      "title": "Geography Question",
-      "topic": "Geography",
-      "media_url": null,
-
-      "points": 5,
-      "negative_points": 1.0,
-
-      "expected_answer": null,
-      "evaluation_criteria": null,
-      "correct_option_ids": [
-        "opt-1a2b3c4d-0000-0000-0000-000000000001"
-      ],
-
-      "has_answer": true,
-      "candidate_answer": {
-        "selectedOptionIds": [
-          "opt-1a2b3c4d-0000-0000-0000-000000000001"
-        ]
-      }
-    },
-    {
-      "question_id": "q2222222-2222-2222-2222-222222222222",
-      "session_question_id": "sq222222-2222-2222-2222-222222222222",
-      "question_type": "short_answer",
-      "content": "Explain the concept of polymorphism in OOP.",
-      "title": "Programming Concept",
-      "topic": "Computer Science",
-      "media_url": null,
-
-      "points": 10,
-      "negative_points": 0.0,
-
-      "expected_answer": "Polymorphism allows objects to take multiple forms...",
-      "evaluation_criteria": {
-        "keywords": ["inheritance", "overriding", "overloading"],
-        "min_length": 50
-      },
-      "correct_option_ids": null,
-
-      "has_answer": true,
-      "candidate_answer": {
-        "text": "Polymorphism in OOP allows methods to behave differently based on the object..."
-      }
-    },
-    {
-      "question_id": "q3333333-3333-3333-3333-333333333333",
-      "session_question_id": "sq333333-3333-3333-3333-333333333333",
-      "question_type": "multiple_choice",
-      "content": "Which of the following are prime numbers?",
-      "title": "Math Question",
-      "topic": "Mathematics",
-      "media_url": null,
-
-      "points": 5,
-      "negative_points": 0.5,
-
-      "expected_answer": null,
-      "evaluation_criteria": null,
-      "correct_option_ids": [
-        "opt-a",
-        "opt-c"
-      ],
-
-      "has_answer": false,
-      "candidate_answer": null
-    }
-  ]
+  "termination_reason": null
 }'>
-            Published when an exam session is ready for evaluation. This is a <strong>Fat Event</strong> containing the master grading criteria merged with the candidate's answers.
+            Published when an exam session is ready for evaluation. This is a <strong>Slim Trigger Event</strong> (v3.0) — it carries only session identifiers and metadata. The grading-service fetches the full evaluation payload (questions, correct answers, and candidate responses) via an internal HTTP call to <code>GET /internal/sessions/:sessionId/grading-payload</code> on the candidate-service. Only events with <code>version: "3.0"</code> are accepted; older versions are rejected.
         </event-item>
 
         <h3 class="endpoint-group-title" style="margin-top: 16px;">Proctoring Events (Kafka)</h3>

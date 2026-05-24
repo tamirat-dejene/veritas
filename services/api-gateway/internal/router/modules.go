@@ -213,6 +213,7 @@ func (g *RouterGroup) RegisterGradingRoutes(proxy http.Handler) {
 	// New Grading Service endpoints
 	g.register("GET", "/grading/results", proxy, staffOrAdmin...)
 	g.register("GET", "/grading/results/:sessionId", proxy, staffOrAdmin...)
+	g.register("GET", "/grading/results/:sessionId/status", proxy, staffOrAdmin...)
 	g.register("POST", "/grading/results/:sessionId/override", proxy, adminRole...)
 	g.register("GET", "/grading/results/:sessionId/logs", proxy, staffOrAdmin...)
 }
