@@ -15,6 +15,7 @@ func NewRouter(
 	eh *c_http.EnrollmentHandler,
 	sh *c_http.SessionHandler,
 	mh *c_http.MonitoringHandler,
+	ih *c_http.InternalSessionHandler,
 ) *gin.Engine {
 	engine := gin.New()
 	engine.Use(
@@ -108,6 +109,7 @@ func NewRouter(
 	{
 		internal.GET("/candidates/emails", ch.GetEmailsForExam)
 		internal.GET("/enterprises/:enterpriseId/counts", mh.GetCounts)
+		internal.GET("/sessions/:sessionId/grading-payload", ih.GetGradingPayload)
 	}
 
 	// Swagger UI — available at /swagger/index.html
