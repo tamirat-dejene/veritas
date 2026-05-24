@@ -22,6 +22,10 @@ class Settings(BaseSettings):
 
     GRADING_SECRET_KEY: str = "supersecretkey123"
 
+    # Candidate service (internal service-to-service calls)
+    CANDIDATE_SERVICE_URL: str = "http://candidate-service:8080"
+    CANDIDATE_SERVICE_TIMEOUT_SECONDS: float = 30.0
+
     model_config = SettingsConfigDict(env_file=".env.dev", extra="ignore")
 
     @property
