@@ -7,7 +7,8 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
+# pyrefly: ignore [missing-import]
+import pytest 
 
 # ---------------------------------------------------------------------------
 # Override settings BEFORE any app code imports them
@@ -43,11 +44,11 @@ SQ_ID_3 = str(uuid.UUID("44444444-4444-4444-4444-444444444443"))
 # ---------------------------------------------------------------------------
 
 def _base_event(**overrides) -> Dict[str, Any]:
-    """Build a minimal valid ``candidate.exam.ready_for_grading`` payload."""
+    """Build a minimal valid ``exam.session.ready_for_grading`` payload."""
     event: Dict[str, Any] = {
         "event_id": EVENT_ID,
-        "event_type": "candidate.exam.ready_for_grading",
-        "version": "1.0",
+        "event_type": "exam.session.ready_for_grading",
+        "version": "3.0",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "enterprise_id": ENTERPRISE_ID,
         "exam_id": EXAM_ID,
