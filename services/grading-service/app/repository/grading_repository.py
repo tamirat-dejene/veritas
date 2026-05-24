@@ -1,3 +1,4 @@
+import json
 import logging
 from uuid import UUID
 from typing import Any, Optional, Dict, List, Tuple
@@ -381,4 +382,73 @@ class GradingRepository:
             """,
             grading_result_id
         )
-        return [dict(row) for row in rows]
+
+        result = []
+        for row in rows:
+            record = dict(row)
+            for field in ("old_values", "new_values"):
+                val = record.get(field)
+                if isinstance(val, str):
+                    record[field] = json.loads(val)
+            result.append(record)
+        return result
+
+    async def create_pending_result(
+        self,
+        session_id: UUID,
+        exam_id: UUID,
+        candidate_id: UUID,
+        enterprise_id: UUID,
+        enrollment_id: UUID,
+    ) -> None:
+        """Insert a 'pending' placeholder row before grading begins.
+
+        Idempotent: ON CONFLICT (session_id) DO NOTHING means re-delivered
+        Kafka messages will not raise an error or overwrite a row that is
+        already graded (e.g. from a prior successful run).
+
+        The row checksum is computed for the zero-score values at version=1 so
+        that save_grading_report can verify and then UPDATE the row cleanly.
+        """
+        checksum = calculate_row_checksum(
+            session_id=str(session_id),
+            candidate_id=str(candidate_id),
+            total_max_points=0.0,
+            total_awarded_points=0.0,
+            percentage=0.0,
+            version=1,
+        )
+        await self._pool.execute(
+            """
+            INSERT INTO grading_results (
+                session_id, exam_id, candidate_id, enterprise_id, enrollment_id,
+                total_max_points, total_awarded_points, percentage,
+                status, graded_by, row_checksum, version
+            ) VALUES ($1, $2, $3, $4, $5, 0, 0, 0, 'pending', 'system', $6, 1)
+            ON CONFLICT (session_id) DO NOTHING
+            """,
+            session_id,
+            exam_id,
+            candidate_id,
+            enterprise_id,
+            enrollment_id,
+            checksum,
+        )
+        logger.info("Pending grading placeholder created for session=%s", session_id)
+
+    async def get_grading_status(self, session_id: UUID) -> Optional[Dict[str, Any]]:
+        """Lightweight status query — returns only the fields needed for polling.
+
+        Includes enterprise_id so the handler can enforce tenant isolation
+        without issuing a second full-detail query.
+        Returns None if no grading record exists yet.
+        """
+        row = await self._pool.fetchrow(
+            """
+            SELECT session_id, enterprise_id, status, graded_by, percentage, updated_at
+            FROM grading_results
+            WHERE session_id = $1
+            """,
+            session_id,
+        )
+        return dict(row) if row else None
