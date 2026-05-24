@@ -8,7 +8,8 @@ from app.domain.models import (
     GradeDetailResponse,
     ManualOverrideRequest,
     ManualOverrideResponse,
-    AuditLogResponse
+    AuditLogResponse,
+    GradingStatusResponse,
 )
 from app.middleware.context import get_enterprise_id, get_user_id, get_user_role
 from app.repository.grading_repository import DataTamperingError
@@ -124,6 +125,31 @@ async def override_grade(
         new_percentage=update_result["new_percentage"],
         status=update_result["status"]
     )
+
+
+@router.get("/{session_id}/status", response_model=GradingStatusResponse)
+async def get_grading_status(session_id: UUID, request: Request):
+    """
+    Lightweight status check — poll this after exam submission.
+
+    Returns the current ``GradingStatus`` for the session:
+    - ``pending``  — grading worker received the event and is processing
+    - ``graded``   — automated grading is complete
+    - ``reviewed`` — a human manually overrode the score
+    - ``disputed`` — the result is under dispute
+    - 404          — no grading record exists (event not yet received)
+    """
+    enterprise_id = get_enterprise_id(request)
+    grading_uc = request.app.state.grading_uc
+
+    status = await grading_uc.get_grading_status(session_id)
+    if not status:
+        raise HTTPException(status_code=404, detail="Grading not started for this session")
+
+    if status["enterprise_id"] != enterprise_id:
+        raise HTTPException(status_code=403, detail="Access denied to this resource")
+
+    return status
 
 
 @router.get("/{session_id}/logs", response_model=List[AuditLogResponse])

@@ -2,7 +2,21 @@ from pydantic import BaseModel, Field
 from uuid import UUID
 from datetime import datetime
 from typing import List, Optional, Any
+from enum import Enum
 
+
+class GradingStatus(str, Enum):
+    pending = "pending"
+    graded = "graded"
+    reviewed = "reviewed"
+    disputed = "disputed"
+
+class QuestionGradingStatus(str, Enum):
+    correct = "correct"
+    incorrect = "incorrect"
+    partial = "partial"
+    skipped = "skipped"
+    ai_graded = "ai_graded"
 
 class QuestionGradeResponse(BaseModel):
     question_id: UUID
@@ -11,7 +25,7 @@ class QuestionGradeResponse(BaseModel):
     title: str
     max_points: float
     awarded_points: float
-    status: str
+    status: QuestionGradingStatus
 
 
 class GradeResultResponse(BaseModel):
@@ -23,7 +37,7 @@ class GradeResultResponse(BaseModel):
     total_max_points: float
     total_awarded_points: float
     percentage: float
-    status: str
+    status: GradingStatus
     graded_by: str
     is_tampered: bool
     version: int
@@ -47,7 +61,7 @@ class GradeDetailResponse(BaseModel):
     total_max_points: float
     total_awarded_points: float
     percentage: float
-    status: str
+    status: GradingStatus
     graded_by: str
     is_tampered: bool
     version: int
@@ -66,7 +80,7 @@ class ManualOverrideResponse(BaseModel):
     previous_score: float
     new_score: float
     new_percentage: float
-    status: str
+    status: GradingStatus
     message: str = "Grade manually overridden successfully."
 
 
@@ -81,3 +95,20 @@ class AuditLogResponse(BaseModel):
     ip_address: Optional[str] = None
     reason: Optional[str] = None
     created_at: datetime
+
+
+class GradingStatusResponse(BaseModel):
+    """Lightweight response for the status-polling endpoint.
+
+    Callers can poll ``GET /grading/results/{session_id}/status`` after
+    exam submission.  The ``status`` field progresses:
+      pending  → grading is still in progress
+      graded   → automated grading finished
+      reviewed → a human manually overrode the score
+      disputed → the result is under dispute
+    """
+    session_id: UUID
+    status: GradingStatus
+    graded_by: str
+    percentage: float
+    updated_at: datetime

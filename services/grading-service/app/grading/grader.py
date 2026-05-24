@@ -20,7 +20,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
-from .models import ExamReadyForGradingEvent, GradingItem
+from .models import GradingPayload, GradingItem
 from .ai_client import evaluate_short_answers
 
 logger = logging.getLogger("grading.grader")
@@ -150,55 +150,62 @@ def _prepare_sa_batch_item(item: GradingItem) -> dict[str, Any] | None:
 # Main grading pipeline
 # ---------------------------------------------------------------------------
 
-async def grade_exam(payload: dict[str, Any]) -> ExamGradeReport:
+async def grade_exam(event_id: str, payload: GradingPayload) -> ExamGradeReport:
     """
-    Full grading pipeline for a single ``candidate.exam.ready_for_grading``
-    event payload.
+    Full grading pipeline for a single exam session.
+
+    Accepts a ``GradingPayload`` fetched from the candidate-service internal
+    endpoint and an ``event_id`` from the original slim trigger event.
 
     Steps:
-      1. Parse & validate the payload with Pydantic.
-      2. Grade MCQs deterministically.
-      3. Collect short-answer items → single AI batch request.
-      4. Merge AI scores back and build the final report.
+      1. Grade MCQs deterministically.
+      2. Collect short-answer items → single AI batch request.
+      3. Merge AI scores back and build the final report.
     """
-    # ----- 1. Parse --------------------------------------------------------
-    event = ExamReadyForGradingEvent.model_validate(payload)
     logger.info(
         "Grading exam session=%s  exam=%s  candidate=%s  items=%d",
-        event.session_id,
-        event.exam_id,
-        event.candidate_id,
-        len(event.items),
+        payload.session_id,
+        payload.exam_id,
+        payload.candidate_id,
+        len(payload.items),
     )
 
     report = ExamGradeReport(
-        event_id=event.event_id,
-        session_id=event.session_id,
-        candidate_id=event.candidate_id,
-        exam_id=event.exam_id,
-        enterprise_id=event.enterprise_id,
-        enrollment_id=event.enrollment_id,
+        event_id=event_id,
+        session_id=payload.session_id,
+        candidate_id=payload.candidate_id,
+        exam_id=payload.exam_id,
+        enterprise_id=payload.enterprise_id,
+        enrollment_id=payload.enrollment_id,
     )
 
-    # ----- 2. Deterministic MCQ pass ---------------------------------------
-    sa_items: list[GradingItem] = []
-    sa_batch: list[dict[str, Any]] = []
+    # ----- 1. Deterministic MCQ pass ---------------------------------------
+    sa_items: list = []
+    sa_batch: list[dict] = []
+    mcq_count = 0
+    sa_count = 0
 
-    for item in event.items:
-        if item.question_type == "multiple_choice":
+    for item in payload.items:
+        if item.question_type in ("multiple_choice", "MCQ", "TrueFalse"):
+            if not item.correct_option_ids:
+                logger.warning(
+                    "MCQ/TF  q=%s  has no correct_option_ids — will be graded as incorrect",
+                    item.question_id,
+                )
             result = _grade_mcq(item)
             report.question_results.append(result)
             report.total_max_points += item.points
             report.total_awarded_points += result.awarded_points
+            mcq_count += 1
             logger.debug(
-                "MCQ  q=%s  status=%s  awarded=%.2f / %.2f",
+                "MCQ/TF  q=%s  status=%s  awarded=%.2f / %.2f",
                 item.question_id,
                 result.status,
                 result.awarded_points,
                 item.points,
             )
 
-        elif item.question_type == "short_answer":
+        elif item.question_type in ("short_answer", "ShortAnswer", "Essay"):
             # Immediate skip for unanswered
             if not item.has_answer or item.candidate_answer is None:
                 result = QuestionResult(
@@ -212,12 +219,16 @@ async def grade_exam(payload: dict[str, Any]) -> ExamGradeReport:
                 )
                 report.question_results.append(result)
                 report.total_max_points += item.points
-                logger.debug("SA   q=%s  skipped (no answer)", item.question_id)
+                logger.debug("SA/Essay   q=%s  skipped (no answer)", item.question_id)
                 continue
 
             batch_item = _prepare_sa_batch_item(item)
             if batch_item is None:
                 # candidate_answer exists but has no text
+                logger.warning(
+                    "SA/Essay   q=%s  has answer but empty text — scoring as skipped",
+                    item.question_id,
+                )
                 result = QuestionResult(
                     question_id=item.question_id,
                     session_question_id=item.session_question_id,
@@ -231,6 +242,7 @@ async def grade_exam(payload: dict[str, Any]) -> ExamGradeReport:
                 report.total_max_points += item.points
                 continue
 
+            sa_count += 1
             sa_items.append(item)
             sa_batch.append(batch_item)
 
@@ -276,7 +288,11 @@ async def grade_exam(payload: dict[str, Any]) -> ExamGradeReport:
         )
 
     logger.info(
-        "Grading complete — total=%.2f / %.2f  (%.1f%%)",
+        "Grading complete  session=%s  mcq=%d  sa=%d  "
+        "total=%.2f / %.2f  (%.1f%%)",
+        payload.session_id,
+        mcq_count,
+        sa_count,
         report.total_awarded_points,
         report.total_max_points,
         report.percentage,

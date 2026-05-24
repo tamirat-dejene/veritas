@@ -56,3 +56,12 @@ class GradingUseCase:
     async def get_audit_logs(self, session_id: UUID) -> List[Dict[str, Any]]:
         """Get the full immutable history/audit logs of edits for a session's grade."""
         return await self._repository.get_audit_logs(session_id)
+
+    async def get_grading_status(self, session_id: UUID) -> Optional[Dict[str, Any]]:
+        """Return the current grading status for a session.
+
+        Returns a dict with ``status``, ``graded_by``, ``percentage``, and
+        ``enterprise_id`` (for tenant checks), or None if grading has not
+        started yet (event not yet received).
+        """
+        return await self._repository.get_grading_status(session_id)
