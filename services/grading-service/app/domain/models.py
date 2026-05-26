@@ -9,9 +9,16 @@ class QuestionGradeResponse(BaseModel):
     session_question_id: UUID
     question_type: str
     title: str
+    content: str
+    candidate_answer: Optional[Any] = None
     max_points: float
     awarded_points: float
     status: str
+
+
+class GraderInfo(BaseModel):
+    id: str
+    type: str  # "system" or "human"
 
 
 class GradeResultResponse(BaseModel):
@@ -24,7 +31,7 @@ class GradeResultResponse(BaseModel):
     total_awarded_points: float
     percentage: float
     status: str
-    graded_by: str
+    graded_by: GraderInfo
     is_tampered: bool
     version: int
     created_at: datetime
@@ -48,7 +55,7 @@ class GradeDetailResponse(BaseModel):
     total_awarded_points: float
     percentage: float
     status: str
-    graded_by: str
+    graded_by: GraderInfo
     is_tampered: bool
     version: int
     created_at: datetime
@@ -59,6 +66,23 @@ class GradeDetailResponse(BaseModel):
 class ManualOverrideRequest(BaseModel):
     new_score: float = Field(..., ge=0.0, description="The new total awarded score.")
     reason: str = Field(..., min_length=5, max_length=500, description="Reason for updating the student's score.")
+
+
+class QuestionManualOverrideRequest(BaseModel):
+    new_score: float = Field(..., ge=0.0, description="The new awarded score for this question.")
+    reason: str = Field(..., min_length=5, max_length=500, description="Reason for updating the student's question score.")
+
+
+class QuestionManualOverrideResponse(BaseModel):
+    session_id: UUID
+    session_question_id: UUID
+    previous_question_score: float
+    new_question_score: float
+    previous_total_score: float
+    new_total_score: float
+    new_percentage: float
+    status: str
+    message: str = "Question grade manually overridden successfully."
 
 
 class ManualOverrideResponse(BaseModel):

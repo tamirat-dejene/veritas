@@ -45,6 +45,8 @@ def _sample_report(**overrides) -> ExamGradeReport:
                 session_question_id=SQ_ID_1,
                 question_type="multiple_choice",
                 title="Q1",
+                content="What is Python?",
+                candidate_answer={"selectedOptionIds": ["opt_1"]},
                 max_points=100.0,
                 awarded_points=75.0,
                 status="correct",

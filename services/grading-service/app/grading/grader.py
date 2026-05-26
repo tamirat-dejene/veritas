@@ -37,6 +37,8 @@ class QuestionResult:
     session_question_id: str
     question_type: str
     title: str
+    content: str
+    candidate_answer: Any
     max_points: float
     awarded_points: float
     status: str  # "correct" | "incorrect" | "partial" | "skipped" | "ai_graded"
@@ -84,6 +86,8 @@ def _grade_mcq(item: GradingItem) -> QuestionResult:
             session_question_id=item.session_question_id,
             question_type=item.question_type,
             title=item.title,
+            content=item.content,
+            candidate_answer=item.candidate_answer,
             max_points=item.points,
             awarded_points=0.0,
             status="skipped",
@@ -98,6 +102,8 @@ def _grade_mcq(item: GradingItem) -> QuestionResult:
             session_question_id=item.session_question_id,
             question_type=item.question_type,
             title=item.title,
+            content=item.content,
+            candidate_answer=item.candidate_answer,
             max_points=item.points,
             awarded_points=item.points,
             status="correct",
@@ -112,6 +118,8 @@ def _grade_mcq(item: GradingItem) -> QuestionResult:
         session_question_id=item.session_question_id,
         question_type=item.question_type,
         title=item.title,
+        content=item.content,
+        candidate_answer=item.candidate_answer,
         max_points=item.points,
         awarded_points=awarded,
         status="incorrect",
@@ -206,6 +214,8 @@ async def grade_exam(payload: dict[str, Any]) -> ExamGradeReport:
                     session_question_id=item.session_question_id,
                     question_type=item.question_type,
                     title=item.title,
+                    content=item.content,
+                    candidate_answer=item.candidate_answer,
                     max_points=item.points,
                     awarded_points=0.0,
                     status="skipped",
@@ -223,6 +233,8 @@ async def grade_exam(payload: dict[str, Any]) -> ExamGradeReport:
                     session_question_id=item.session_question_id,
                     question_type=item.question_type,
                     title=item.title,
+                    content=item.content,
+                    candidate_answer=item.candidate_answer,
                     max_points=item.points,
                     awarded_points=0.0,
                     status="skipped",
@@ -260,6 +272,8 @@ async def grade_exam(payload: dict[str, Any]) -> ExamGradeReport:
             session_question_id=item.session_question_id,
             question_type=item.question_type,
             title=item.title,
+            content=item.content,
+            candidate_answer=item.candidate_answer,
             max_points=item.points,
             awarded_points=awarded,
             status="ai_graded" if item.question_id in ai_scores else "skipped",
