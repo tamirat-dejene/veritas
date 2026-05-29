@@ -20,7 +20,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
-from .models import GradingPayload, GradingItem
+from app.domain.models import QuestionType, QuestionGradingStatus
+from app.grading.models import GradingPayload, GradingItem
 from .ai_client import evaluate_short_answers
 
 logger = logging.getLogger("grading.grader")
@@ -35,11 +36,11 @@ class QuestionResult:
     """Grade result for a single question."""
     question_id: str
     session_question_id: str
-    question_type: str
+    question_type: QuestionType
     title: str
     max_points: float
     awarded_points: float
-    status: str  # "correct" | "incorrect" | "partial" | "skipped" | "ai_graded"
+    status: QuestionGradingStatus  # "correct" | "incorrect" | "partial" | "skipped" | "ai_graded"
 
 
 @dataclass
@@ -86,7 +87,7 @@ def _grade_mcq(item: GradingItem) -> QuestionResult:
             title=item.title,
             max_points=item.points,
             awarded_points=0.0,
-            status="skipped",
+            status=QuestionGradingStatus.skipped,
         )
 
     selected = set(item.candidate_answer.get("selectedOptionIds", []))
@@ -100,7 +101,7 @@ def _grade_mcq(item: GradingItem) -> QuestionResult:
             title=item.title,
             max_points=item.points,
             awarded_points=item.points,
-            status="correct",
+            status=QuestionGradingStatus.correct,
         )
 
     # Incorrect — wrong answer starts at 0 and subtracts negative_points.
@@ -114,7 +115,7 @@ def _grade_mcq(item: GradingItem) -> QuestionResult:
         title=item.title,
         max_points=item.points,
         awarded_points=awarded,
-        status="incorrect",
+        status=QuestionGradingStatus.incorrect,
     )
 
 
@@ -186,7 +187,7 @@ async def grade_exam(event_id: str, payload: GradingPayload) -> ExamGradeReport:
     sa_count = 0
 
     for item in payload.items:
-        if item.question_type in ("multiple_choice", "MCQ", "TrueFalse"):
+        if item.question_type in (QuestionType.MCQ, QuestionType.TrueFalse):
             if not item.correct_option_ids:
                 logger.warning(
                     "MCQ/TF  q=%s  has no correct_option_ids — will be graded as incorrect",
@@ -205,7 +206,7 @@ async def grade_exam(event_id: str, payload: GradingPayload) -> ExamGradeReport:
                 item.points,
             )
 
-        elif item.question_type in ("short_answer", "ShortAnswer", "Essay"):
+        elif item.question_type == QuestionType.ShortAnswer:
             # Immediate skip for unanswered
             if not item.has_answer or item.candidate_answer is None:
                 result = QuestionResult(
@@ -215,7 +216,7 @@ async def grade_exam(event_id: str, payload: GradingPayload) -> ExamGradeReport:
                     title=item.title,
                     max_points=item.points,
                     awarded_points=0.0,
-                    status="skipped",
+                    status=QuestionGradingStatus.skipped,
                 )
                 report.question_results.append(result)
                 report.total_max_points += item.points
@@ -236,7 +237,7 @@ async def grade_exam(event_id: str, payload: GradingPayload) -> ExamGradeReport:
                     title=item.title,
                     max_points=item.points,
                     awarded_points=0.0,
-                    status="skipped",
+                    status=QuestionGradingStatus.skipped,
                 )
                 report.question_results.append(result)
                 report.total_max_points += item.points
@@ -246,6 +247,24 @@ async def grade_exam(event_id: str, payload: GradingPayload) -> ExamGradeReport:
             sa_items.append(item)
             sa_batch.append(batch_item)
 
+        elif item.question_type == QuestionType.Essay:
+            # Come back to this
+            logger.info(
+                "Essay q=%s — skipping for now",
+                item.question_id,
+            )
+            result = QuestionResult(
+                question_id=item.question_id,
+                session_question_id=item.session_question_id,
+                question_type=item.question_type,
+                title=item.title,
+                max_points=item.points,
+                awarded_points=0.0,
+                status=QuestionGradingStatus.skipped,
+            )
+            report.question_results.append(result)
+            report.total_max_points += item.points
+            continue
         else:
             logger.warning(
                 "Unknown question_type '%s' for q=%s — skipping.",
@@ -274,7 +293,7 @@ async def grade_exam(event_id: str, payload: GradingPayload) -> ExamGradeReport:
             title=item.title,
             max_points=item.points,
             awarded_points=awarded,
-            status="ai_graded" if item.question_id in ai_scores else "skipped",
+            status=QuestionGradingStatus.ai_graded,
         )
         report.question_results.append(result)
         report.total_max_points += item.points

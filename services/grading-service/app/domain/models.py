@@ -18,10 +18,16 @@ class QuestionGradingStatus(str, Enum):
     skipped = "skipped"
     ai_graded = "ai_graded"
 
+class QuestionType(str, Enum):
+    MCQ = "MCQ"
+    TrueFalse = "TrueFalse"
+    ShortAnswer = "ShortAnswer"
+    Essay = "Essay"
+
 class QuestionGradeResponse(BaseModel):
     question_id: UUID
     session_question_id: UUID
-    question_type: str
+    question_type: QuestionType
     title: str
     max_points: float
     awarded_points: float

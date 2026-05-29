@@ -6,6 +6,7 @@ import asyncpg
 
 from app.grading.grader import ExamGradeReport, QuestionResult
 from app.grading.security import calculate_row_checksum
+from app.domain.models import GradingStatus
 
 logger = logging.getLogger("grading.repository")
 
@@ -107,15 +108,16 @@ class GradingRepository:
                             total_max_points = $1,
                             total_awarded_points = $2,
                             percentage = $3,
-                            status = 'graded',
-                            graded_by = $4,
-                            row_checksum = $5,
+                            status = $4,
+                            graded_by = $5,
+                            row_checksum = $6,
                             updated_at = NOW()
-                        WHERE session_id = $6 AND version = $7
+                        WHERE session_id = $7 AND version = $8
                         """,
                         report.total_max_points,
                         report.total_awarded_points,
                         report.percentage,
+                        GradingStatus.graded.value,
                         graded_by,
                         new_checksum,
                         UUID(report.session_id),
@@ -149,7 +151,7 @@ class GradingRepository:
                             session_id, exam_id, candidate_id, enterprise_id, enrollment_id,
                             total_max_points, total_awarded_points, percentage, status, graded_by,
                             row_checksum, version
-                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'graded', $9, $10, $11)
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                         RETURNING id
                         """,
                         UUID(report.session_id),
@@ -160,6 +162,7 @@ class GradingRepository:
                         report.total_max_points,
                         report.total_awarded_points,
                         report.percentage,
+                        GradingStatus.graded.value,
                         graded_by,
                         new_checksum,
                         version
@@ -339,14 +342,15 @@ class GradingRepository:
                     UPDATE grading_results SET
                         total_awarded_points = $1,
                         percentage = $2,
-                        status = 'reviewed',
-                        graded_by = $3,
-                        row_checksum = $4,
+                        status = $3,
+                        graded_by = $4,
+                        row_checksum = $5,
                         updated_at = NOW()
-                    WHERE session_id = $5 AND version = $6
+                    WHERE session_id = $6 AND version = $7
                     """,
                     new_awarded_points,
                     new_pct,
+                    GradingStatus.reviewed.value,
                     f"user:{str(actor_id)}",
                     new_checksum,
                     session_id,
@@ -361,7 +365,7 @@ class GradingRepository:
                     "previous_score": float(row["total_awarded_points"]),
                     "new_score": new_awarded_points,
                     "new_percentage": new_pct,
-                    "status": "reviewed"
+                    "status": GradingStatus.reviewed.value
                 }
 
     async def get_audit_logs(self, session_id: UUID) -> List[Dict[str, Any]]:
@@ -424,7 +428,7 @@ class GradingRepository:
                 session_id, exam_id, candidate_id, enterprise_id, enrollment_id,
                 total_max_points, total_awarded_points, percentage,
                 status, graded_by, row_checksum, version
-            ) VALUES ($1, $2, $3, $4, $5, 0, 0, 0, 'pending', 'system', $6, 1)
+            ) VALUES ($1, $2, $3, $4, $5, 0, 0, 0, $6, 'system', $7, 1)
             ON CONFLICT (session_id) DO NOTHING
             """,
             session_id,
@@ -432,6 +436,7 @@ class GradingRepository:
             candidate_id,
             enterprise_id,
             enrollment_id,
+            GradingStatus.pending.value,
             checksum,
         )
         logger.info("Pending grading placeholder created for session=%s", session_id)
