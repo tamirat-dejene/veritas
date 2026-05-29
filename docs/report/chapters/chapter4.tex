@@ -2,32 +2,34 @@
 \section{System Design}
 
 \subsection{Overview}
-This chapter documents the implemented system design of the Veritas online assessment platform. The design is grounded in the architecture and codebase described in Chapters 1--3, and it reflects the actual deployment topology, data ownership boundaries, and runtime workflows realized in the current implementation. The system follows a hybrid communication model (synchronous REST and asynchronous Kafka events), isolates data per service, and integrates AI-assisted proctoring and grading. The design decisions emphasize scalability, security, and resilience under constrained network conditions.
+This chapter documents the system design of the Veritas online assessment platform, detailing the architectural patterns, communication models, and data tier configurations. The system adopts a hybrid communication topology, combining synchronous REST APIs for interactive actions and asynchronous Apache Kafka event queues for background workflows. Rationale for this hybrid model centers on protecting critical candidate workflows from network latency and slow downstream services (such as third-party payment APIs or machine learning loops), which is vital given Ethiopia's constrained and highly volatile network conditions. Data is isolated per service via a Database-per-Service architecture, eliminating database-level coupling and ensuring that schemas can evolve independently. Real-time proctoring and grading are assisted by AI subsystems to reduce human operational bottlenecks and accelerate scoring feedback.
 
 \subsection{Specifying the Design Goals}
-The system design is guided by the objectives and constraints established in Chapter 1 and the modeling artifacts in Chapter 3. The following goals are reflected in the implemented architecture:
+The system design is guided by the objectives and constraints established in Chapter 1 and the modeling artifacts in Chapter 3. The following architectural design goals were formulated, and the rationale behind each decision is as follows:
 
 \begin{itemize}
-    \item \textbf{Multi-tenant isolation:} Each enterprise operates within a logically isolated environment, with data stored per service and scoped by enterprise identifiers.
-    \item \textbf{Hybrid communication:} Critical operations use synchronous REST calls, while domain events and consistency workflows are propagated through Kafka.
-    \item \textbf{Scalability and fault tolerance:} The gateway enforces rate limits and circuit breakers, and asynchronous workflows decouple slow tasks from user-facing flows.
-    \item \textbf{Integrity and auditability:} Proctoring and grading workflows generate structured evidence and enforce tamper detection in grading results.
-    \item \textbf{Security-by-design:} JWT-based access control, role-based authorization, and secure token handling are applied across services.
-    \item \textbf{Operational portability:} The platform runs in containerized environments including Docker Compose and Kubernetes, enabling  reproducible deployment.
+    \item \textbf{Multi-tenant isolation (Rationale):} To comply with emerging data residency standards and Ethiopia's Personal Data Protection Proclamation, the platform must guarantee that enterprise-specific candidate lists, assessment templates, and proctoring metrics never leak across organizational boundaries. Logical scoping by enterprise identifiers ensures data-tier security without incurring the vast infrastructure overhead of completely isolated hardware stacks.
+    \item \textbf{Hybrid communication (Rationale):} Synchronous REST provides immediate consistency and instant feedback for critical user operations (e.g., retrieving exam questions or submitting answers). Conversely, slow operations like dispatching email invitations or recomputing behavioral cheating scores are offloaded asynchronously to Kafka, preventing network latency or external system outages from blocking candidate-facing applications.
+    \item \textbf{Scalability and fault tolerance (Rationale):} During national civil service exams or university entrance assessments, the platform encounters massive surges in concurrent sessions. Centralizing rate limiting and circuit breakers at the API Gateway protects downstream microservices from CPU starvation or memory exhaustion, while asynchronous Kafka queues buffer spikes in write operations.
+    \item \textbf{Integrity and auditability (Rationale):} Academic and recruitment examinations are high-stakes events prone to collusion or direct database manipulation. Implementing row-level HMAC checksums and automatic PL/pgSQL database triggers enforces a strict audit trail, guaranteeing that no grade can be modified out-of-band without detection.
+    \item \textbf{Security-by-design (Rationale):} Operating in public, untrusted internet environments requires stateless identity validation. Implementing short-lived JSON Web Tokens (JWT) with role-based claims centralizes access controls at the gateway, avoiding the need for microservices to share session states or make repeated round-trips to a central session store.
+    \item \textbf{Operational portability (Rationale):} Veritas must accommodate both lightweight regional test centers running on local servers and global high-availability deployments on public clouds. Standardizing on containerized microservices enables seamless transitions between Docker Compose and Kubernetes environments.
 \end{itemize}
 
 \subsection{System Design}
 
 \subsubsection{Proposed Software Architecture}
-The implemented architecture follows a highly resilient microservices pattern with an API Gateway acting as the unified ingress entry point. The gateway manages security and edge operations, including token validation, tenant context resolution, rate limiting, and reverse-proxy routing to downstream internal microservices. Backend services are carefully decoupled by their bounded contexts: identity authorization (\texttt{auth-service}), corporate onboarding (\texttt{enterprise-service}), test authoring and schedules (\texttt{exam-service}), active participant environments (\texttt{candidate-service}), automated AI assessment \linebreak (\texttt{grading-service}), behavioral validation (\texttt{proctoring-service}), commercial licensing (\texttt{payment-service}), and asynchronous communications (\texttt{notification-service}). Figure \ref{fig:system-architecture} presents the architecture overview.
+The implemented architecture follows a highly resilient microservices pattern with an API Gateway acting as the unified ingress entry point. Rationale for selecting the microservices pattern rather than a monolithic structure includes:
+\begin{itemize}
+    \item \textbf{Independent Scalability:} The \texttt{candidate-service} (which handles massive candidate request concurrency during active tests) can be scaled horizontally independent of slow, heavy machine learning components like the \texttt{grading-service} or administrative tools.
+    \item \textbf{Polyglot Programming:} Go was selected for performance-critical, highly concurrent edge and business services, while Python was chosen for the AI grading and face verification workloads due to its mature ML ecosystem (PyTorch, DeepFace).
+    \item \textbf{Centralized Gateway Control:} The API Gateway acts as the unified boundary. Rationale for this design is to shield internal microservices from direct public access, centralize cross-cutting edge concerns (CORS, tracing, TLS termination, and DDoS protection), and prevent security token verification logic from being duplicated across internal services.
+\end{itemize}
+Backend services are carefully decoupled by their bounded contexts: identity authorization (\texttt{auth-service}), corporate onboarding (\texttt{enterprise-service}), test authoring and schedules (\texttt{exam-service}), active participant environments (\texttt{candidate-service}), automated AI assessment (\texttt{grading-service}), behavioral validation (\texttt{proctoring-service}), commercial licensing (\texttt{payment-service}), and asynchronous communications (\texttt{notification-service}). Figure \ref{fig:system-architecture} presents the architecture overview.
 
 \begin{figure}[H]
 \centering
-\IfFileExists{assets/system_designs/svg_exports/system_architecture_svg-gateway.pdf}{
-\includegraphics[width=1\linewidth,keepaspectratio]{assets/system_designs/svg_exports/system_architecture_svg-gateway.pdf}
-}{
-\fbox{\parbox{0.9\linewidth}{\centering Placeholder: System Architecture Diagram (convert SVG to PDF for final build)}}
-}
+\includegraphics[width=1\linewidth,keepaspectratio]{assets/system_designs/png_exports/system_architecture_svg-gateway.png}
 \caption{System Architecture: Edge Routing and Service Interaction}
 \label{fig:system-architecture}
 \end{figure}
@@ -47,53 +49,50 @@ The system is decomposed into cohesive subsystems that map to service boundaries
 
 \begin{figure}[H]
 \centering
-\IfFileExists{assets/system_designs/svg_exports/subsystems_decomposition_svg-global.pdf}{
-\includegraphics[width=1\linewidth,keepaspectratio]{assets/system_designs/svg_exports/subsystems_decomposition_svg-global.pdf}
-}{
-\fbox{\parbox{0.9\linewidth}{\centering Placeholder: Subsystem Decomposition (Global) Diagram (convert SVG to PDF for final build)}}
-}
+\includegraphics[width=1\linewidth,keepaspectratio]{assets/system_designs/png_exports/subsystems_decomposition_svg-global.png}
 \caption{Subsystem Decomposition: Global View}
 \label{fig:subsystem-decomposition}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\IfFileExists{assets/system_designs/svg_exports/subsystems_decomposition_svg-assessment.pdf}{
-\includegraphics[width=1\linewidth,keepaspectratio]{assets/system_designs/svg_exports/subsystems_decomposition_svg-assessment.pdf}
-}{
-\fbox{\parbox{0.9\linewidth}{\centering Placeholder: Subsystem Decomposition (Assessment) Diagram (convert SVG to PDF for final build)}}
-}
+\includegraphics[width=1\linewidth,keepaspectratio]{assets/system_designs/png_exports/subsystems_decomposition_svg-assessment.png}
 \caption{Subsystem Decomposition: Assessment and Session Subsystem}
 \label{fig:subsystem-assessment}
 \end{figure}
 
 \paragraph{Identity and Tenant Subsystem}
-This subsystem includes Auth Service and Enterprise Service. Auth issues and refreshes JWTs, while Enterprise manages tenant onboarding, user management, and enterprise lifecycle states. Enterprise lifecycle events (suspend, delete, restore) are published to Kafka and consumed by other services to enforce cross-service consistency.
+This subsystem includes \texttt{auth-service} and \texttt{enterprise-service}. Rationale for splitting identity into two services is to decouple core auth operations (which must be lightweight and operate with sub-millisecond latency using temporary tokens) from administrative onboarding and tenant metadata (which require complex, heavy PostgreSQL table relationships and audit logging). The \texttt{enterprise-service} publishes lifecycle events (suspend, reactivate, delete) to Kafka, allowing other services to lock tenant access asynchronously without locking active transactions during administrative tasks.
 
 \paragraph{Assessment and Session Subsystem}
-This subsystem includes Exam Service and Candidate Service. Exam Service manages question banks, exam templates, and scheduling. Candidate Service manages enrollments, session creation, answer storage, submissions, and access redemption. During submission, Candidate Service emits a slim grading trigger event, and Grading Service pulls the full payload via an internal API.
+This subsystem includes \texttt{exam-service} and \texttt{candidate-service}. Rationale for this division is that test authoring (which is write-infrequent but requires rich templates and question-bank logic) is structurally distinct from test delivery. The \texttt{candidate-service} requires highly optimized write workflows (recording candidates' answers every few seconds to prevent loss during internet outages). It delivers questions incrementally to prevent candidates from scraping or leaking full exam packages. Upon exam submission, the candidate service emits a v3.0 slim grading trigger to Kafka rather than a massive payload, preventing message broker bloat under low-bandwidth constraints.
 
 \paragraph{AI Proctoring and Grading Subsystem}
-Proctoring Service handles face verification and behavioral events, aggregating cheating scores per session and publishing score updates. Grading Service consumes grading trigger events, fetches the grading payload, evaluates answers, and writes results with tamper detection and audit logging.
+This subsystem contains the heavy machine learning workloads, including \texttt{proctoring-service} and \texttt{grading-service}. Rationale for isolating proctoring from grading is that the proctoring engine must ingest thousands of high-frequency behavioral signals (tab changes, blur events, webcam face checks) per candidate session, calling for high-throughput stream ingestion. Grading, on the other hand, is a high-consistency terminal execution that runs once upon exam completion. Separating these ensures that proctoring signal spikes do not resource-starve the critical scoring and grading transaction pipeline.
 
 \paragraph{Commercial and Communication Subsystem}
-Payment Service manages subscription plans, invoices, and webhooks. Notification Service consumes Kafka events and sends transactional emails for onboarding and exam events.
+This subsystem consists of \texttt{payment-service} and \texttt{notification-service}. Rationale for decoupling the notification service is that sending transactional emails via SMTP is slow and prone to network timeouts. Delegating notification dispatching to an asynchronous Kafka consumer prevents outbound network delays from blocking candidate logins or exam submissions. The payment service isolates Stripe API credentials and webhook integrations, ensuring that subscription updates propagate asynchronously.
 
 \subsubsection{Database Design}
-The Veritas platform implements a strict \textbf{Database-per-Service} architecture to guarantee service autonomy, domain boundary enforcement, and scalable horizontal database scaling. In the current development and staging topologies, this model is implemented using logically isolated schemas within a shared PostgreSQL instance. Each service manages its own database migrations, owns its schema lifecycle, and exposes domain data exclusively through structured REST APIs or serialized Kafka messages, strictly prohibiting cross-service database joins or foreign key constraints. 
+The Veritas platform implements a strict \textbf{Database-per-Service} architecture. Rationale for this design decision includes:
+\begin{itemize}
+    \item \textbf{Autonomy and Schema Safety:} Direct cross-service database querying or sharing tables creates coupling where a schema change in one service could break another. Forcing services to access data only through APIs ensures strict boundary contracts.
+    \item \textbf{Operational Flexibility:} In the local development stack, services utilize logically isolated schemas within a single shared PostgreSQL container to conserve system memory and CPU resources. In production (Kubernetes/GKE), these schemas are physically deployed onto separate, dedicated database servers, which allows for horizontal database scaling and limits the blast radius of database failures.
+    \item \textbf{Elimination of Distributed Locks:} By avoiding cross-service database joins and foreign key constraints, Veritas shifts the responsibility of data consistency to asynchronous eventual consistency models. This design prevents database locks from propagating across services, keeping individual service performance fast and deterministic.
+\end{itemize}
 
 Figures \ref{fig:erd-auth} to \ref{fig:erd-proctoring} illustrate the logical Entity-Relationship Diagrams (ERD) mapping the schemas of the respective microservices.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.95\linewidth,keepaspectratio]{assets/database_erds/auth_svc_db.png}
+\includegraphics[width=0.60\linewidth,keepaspectratio]{assets/database_erds/auth_svc_db.png}
 \caption{Auth Service Database ERD}
 \label{fig:erd-auth}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.95\linewidth,keepaspectratio]{assets/database_erds/enterprise_svc_db.png}
+\includegraphics[width=0.85\linewidth,keepaspectratio]{assets/database_erds/enterprise_svc_db.png}
 \caption{Enterprise Service Database ERD}
 \label{fig:erd-enterprise}
 \end{figure}
@@ -152,24 +151,21 @@ The system is deployed as containerized services behind the API Gateway. Postgre
 
 \begin{figure}[H]
 \centering
-\IfFileExists{assets/system_designs/svg_exports/deployment_diagram_svg-deployment-standalone.pdf}{
-\includegraphics[width=1\linewidth,keepaspectratio]{assets/system_designs/svg_exports/deployment_diagram_svg-deployment-standalone.pdf}
-}{
-\fbox{\parbox{0.9\linewidth}{\centering Placeholder: Deployment Diagram (convert SVG to PDF for final build)}}
-}
+\includegraphics[width=1\linewidth,keepaspectratio]{assets/system_designs/png_exports/deployment_diagram_svg-deployment-standalone.png}
 \caption{Deployment Architecture of the Veritas Platform}
 \label{fig:deployment}
 \end{figure}
 
-\paragraph{Deployment Notes}
+\paragraph{Deployment Rationale and Notes}
 \begin{itemize}
-    \item Docker Compose is used for local development, enabling rapid startup of all services.
-    \item Kubernetes manifests in the infrastructure directory provide a production-ready deployment model.
-    \item Internal service discovery uses DNS and service names within the cluster.
+    \item \textbf{Docker Compose (Local Development Rationale):} Local development requires a lightweight, rapid feedback loop. Docker Compose starts application services and stateful infrastructure containers (Postgres, Redis, Kafka) with a single command, mounting local workspaces to support hot-reloading and avoiding the massive CPU and memory footprint of running a local Kubernetes cluster.
+    \item \textbf{Kubernetes (Production Rationale):} For production environments, Kubernetes is selected to handle automated horizontal pod autoscaling (HPA) during high-stakes national exams, enable zero-downtime rolling upgrades, and provide resilient self-healing mechanisms that restart failing container instances automatically.
+    \item \textbf{Kustomize \& InitContainers (Configuration Rationale):} Production manifests utilize Kustomize overlays to inject environment-specific environment configurations (dev, staging, prod) without code duplication. \texttt{initContainers} are configured on dependent service deployments to enforce sequence orchestration, ensuring that application services do not start until their target database migrations have been successfully executed by the migration runner, preventing startup panic loops.
+    \item \textbf{Internal Service Discovery:} Internal communications utilize Kubernetes DNS and standard cluster service names, isolating microservices in private cluster networks to avoid exposed endpoints.
 \end{itemize}
 
 \subsubsection{User Interface Design}
-This section documents the primary user-facing screens and interfaces developed for the Veritas platform. The UI is built using responsive layouts, adhering to accessibility standards (WCAG 2.1) and incorporating cohesive enterprise branding. Since the final visual design iterations are undergoing final usability checks, high-fidelity placeholder wireframes have been mapped below to outline the operational layout, user flows, and key interactive components.
+This section documents the primary user-facing screens and interfaces developed for the Veritas platform. The UI is built using responsive layouts, adhering to accessibility standards (WCAG 2.1) and incorporating cohesive enterprise branding. The mapped out UIs below outline the operational layout, user flows, and key interactive components.
 
 \begin{figure}[H]
 \centering
@@ -286,13 +282,14 @@ To maintain absolute auditability and detect malicious manipulation of records, 
 \end{itemize}
 
 \subsection{Kafka Event Catalogue}
-Veritas utilizes an asynchronous message-driven pattern built on Apache Kafka to propagate events across services and process high-latency workloads without direct coupling. Table~\ref{tab:kafka-catalogue} provides the formal event catalog, listing active topics, publishers, consumers, and their structural data contract version.
+Veritas utilizes an asynchronous message-driven pattern built on Apache Kafka to propagate events across services and process high-latency workloads without direct coupling. Table~\ref{tab:kafka-catalogue} provides the formal event catalog.
 
 \begin{landscape}
 \begingroup
-\small
-\setlength{\tabcolsep}{3pt}
-\begin{longtable}{|>{\raggedright\arraybackslash}p{3.3cm}|>{\raggedright\arraybackslash}p{2.4cm}|>{\raggedright\arraybackslash}p{2.7cm}|>{\raggedright\arraybackslash}p{5.0cm}|}
+\singlespacing
+\renewcommand{\arraystretch}{1.5}
+\setlength{\tabcolsep}{6pt}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{4.0cm}|>{\raggedright\arraybackslash}p{3.2cm}|>{\raggedright\arraybackslash}p{3.5cm}|>{\raggedright\arraybackslash}p{9.0cm}|}
 \caption{Veritas Platform Kafka Event Catalogue} \label{tab:kafka-catalogue} \\
 \hline
 \textbf{Topic Name} & \textbf{Publisher} & \textbf{Consumer(s)} & \textbf{Payload Summary and Purpose} \\ \hline
@@ -319,6 +316,7 @@ Veritas utilizes an asynchronous message-driven pattern built on Apache Kafka to
 \end{longtable}
 \endgroup
 \end{landscape}
+\clearpage
 
 \subsection{Resilience and Failure Handling}
 This subsection describes the strategies implemented in Veritas to survive transient hardware, software, or network failures.
@@ -329,14 +327,6 @@ To prevent cascading failures when downstream microservices experience performan
     \item \textbf{Closed State:} Normal operation. All requests are routed downstream. If consecutive failures to a microservice exceed 5 (configured threshold) within a 60-second window, the circuit trips.
     \item \textbf{Open State:} The gateway immediately intercepts and rejects requests targeting the failing microservice, returning an \texttt{HTTP 503 Service Unavailable} error, thereby giving the microservice time to recover.
     \item \textbf{Half-Open State:} After a 30-second cooling-off period, the circuit enters a half-open state, allowing up to 3 test requests through. If all 3 test requests succeed, the breaker returns to the \texttt{Closed} state; if any fail, it trips back to \texttt{Open}.
-\end{itemize}
-
-\subsubsection{Slim-Trigger Event Pattern}
-Under constrained network conditions (common in regional deployments), transmitting fat messages with large payloads (e.g., full exam templates, candidate responses, and media logs) through Kafka causes network bottlenecks and consumer timeouts. Veritas mitigates this by implementing a \textbf{Slim-Trigger Event Pattern} (v3.0):
-\begin{itemize}
-    \item When a candidate submits an exam, the \texttt{candidate-service} publishes a minimal event (\texttt{exam.session.ready\_for\_grading}) consisting solely of critical UUID references and versioning tags.
-    \item Upon consumption, the \texttt{grading-service} immediately inserts a shell row with \texttt{pending} status into \texttt{grading\_results}. This guarantees that if the candidate or staff calls the status-polling endpoint, they receive a positive acknowledgment (\texttt{pending}) rather than a database \texttt{404 Not Found} error.
-    \item The \texttt{grading-service} then issues a lightweight internal synchronous HTTP request to the \texttt{candidate-service} to retrieve the aggregated, target grading payload, evaluating it asynchronously.
 \end{itemize}
 
 \subsubsection{Resilient Kafka Consumers}
