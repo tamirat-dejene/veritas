@@ -4,6 +4,7 @@ Unit tests for app.grading.worker — Kafka consumer message handling.
 import json
 # pyrefly: ignore [missing-import]  
 import pytest
+from app.domain.models import GradingStatus, QuestionGradingStatus, QuestionType
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.grading.worker import _handle_message, process_incoming_event

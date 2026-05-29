@@ -3,6 +3,7 @@ Unit tests for app.repository.grading_repository — data layer with mocked asyn
 """
 import uuid
 import pytest
+from app.domain.models import GradingStatus, QuestionGradingStatus, QuestionType
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -47,7 +48,7 @@ def _sample_report(**overrides) -> ExamGradeReport:
                 title="Q1",
                 max_points=100.0,
                 awarded_points=75.0,
-                status="correct",
+                status=QuestionGradingStatus.correct.value,
             )
         ],
     )
@@ -83,7 +84,7 @@ def _make_db_row(
         total_max_points=total_max_points,
         total_awarded_points=total_awarded_points,
         percentage=percentage,
-        status="graded",
+        status=GradingStatus.graded.value,
         graded_by="system",
         row_checksum=checksum,
         version=version,
@@ -219,7 +220,7 @@ class TestGetBySession:
                 title="Q1",
                 max_points=10.0,
                 awarded_points=10.0,
-                status="correct",
+                status=QuestionGradingStatus.correct.value,
             )
         ]
 
@@ -257,7 +258,7 @@ class TestUpdateGradeManually:
         assert result["previous_score"] == 75.0
         assert result["new_score"] == 90.0
         assert result["new_percentage"] == 90.0
-        assert result["status"] == "reviewed"
+        assert result["status"] == GradingStatus.reviewed.value
 
     @pytest.mark.asyncio
     async def test_not_found_raises(self, mock_pool):

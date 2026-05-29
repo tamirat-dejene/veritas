@@ -6,6 +6,7 @@ database or Kafka connection (lifespan is replaced by a no-op).
 """
 import uuid
 import pytest
+from app.domain.models import GradingStatus, QuestionGradingStatus, QuestionType
 from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -124,7 +125,7 @@ class TestGetGradeDetail:
             "total_max_points": 100,
             "total_awarded_points": 80,
             "percentage": 80.0,
-            "status": "graded",
+            "status": GradingStatus.graded.value,
             "graded_by": "system",
             "is_tampered": False,
             "version": 1,
@@ -147,7 +148,7 @@ class TestGetGradeDetail:
             "total_max_points": 100,
             "total_awarded_points": 85,
             "percentage": 85.0,
-            "status": "graded",
+            "status": GradingStatus.graded.value,
             "graded_by": "system",
             "is_tampered": False,
             "version": 1,
@@ -157,11 +158,11 @@ class TestGetGradeDetail:
                 {
                     "question_id": uuid.UUID(QUESTION_ID_1),
                     "session_question_id": uuid.UUID(SQ_ID_1),
-                    "question_type": "multiple_choice",
+                    "question_type": QuestionType.MCQ,
                     "title": "Q1",
                     "max_points": 100.0,
                     "awarded_points": 85.0,
-                    "status": "correct",
+                    "status": QuestionGradingStatus.correct.value,
                 }
             ],
         }
@@ -198,7 +199,7 @@ class TestOverrideGrade:
             "total_max_points": 100,
             "total_awarded_points": 75,
             "percentage": 75.0,
-            "status": "graded",
+            "status": GradingStatus.graded.value,
             "graded_by": "system",
             "is_tampered": False,
             "version": 1,
@@ -215,7 +216,7 @@ class TestOverrideGrade:
             "previous_score": 75.0,
             "new_score": 90.0,
             "new_percentage": 90.0,
-            "status": "reviewed",
+            "status": GradingStatus.reviewed.value,
         }
         client = TestClient(_create_test_app(uc))
         resp = client.post(
@@ -226,7 +227,7 @@ class TestOverrideGrade:
         assert resp.status_code == 200
         body = resp.json()
         assert body["new_score"] == 90.0
-        assert body["status"] == "reviewed"
+        assert body["status"] == GradingStatus.reviewed.value
 
     def test_not_found_returns_404(self):
         uc = AsyncMock()
@@ -280,7 +281,7 @@ class TestGetAuditLogs:
             "total_max_points": 100,
             "total_awarded_points": 75,
             "percentage": 75.0,
-            "status": "graded",
+            "status": GradingStatus.graded.value,
             "graded_by": "system",
             "is_tampered": False,
             "version": 1,

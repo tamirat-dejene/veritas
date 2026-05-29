@@ -8,7 +8,8 @@ from typing import Any, Dict, List
 from unittest.mock import AsyncMock, MagicMock, patch
 
 # pyrefly: ignore [missing-import]
-import pytest 
+import pytest
+from app.domain.models import GradingStatus, QuestionGradingStatus, QuestionType 
 
 # ---------------------------------------------------------------------------
 # Override settings BEFORE any app code imports them
@@ -79,7 +80,7 @@ def _mcq_item(
     item: Dict[str, Any] = {
         "question_id": question_id,
         "session_question_id": session_question_id,
-        "question_type": "multiple_choice",
+        "question_type": QuestionType.MCQ,
         "content": "Pick the right options",
         "title": "MCQ Question",
         "topic": "general",
@@ -109,7 +110,7 @@ def _sa_item(
     item: Dict[str, Any] = {
         "question_id": question_id,
         "session_question_id": session_question_id,
-        "question_type": "short_answer",
+        "question_type": QuestionType.ShortAnswer,
         "content": "Describe the mitochondria",
         "title": "SA Question",
         "topic": "biology",
