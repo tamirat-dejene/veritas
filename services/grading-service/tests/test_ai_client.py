@@ -2,6 +2,7 @@
 Unit tests for app.grading.ai_client — HTTP interactions with HF grading space.
 """
 import pytest
+from app.domain.models import GradingStatus, QuestionGradingStatus, QuestionType
 import httpx
 import respx
 from unittest.mock import patch

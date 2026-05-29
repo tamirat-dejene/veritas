@@ -9,6 +9,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Optional
 
+from app.domain.models import QuestionType
 from pydantic import BaseModel, Field
 
 
@@ -47,7 +48,7 @@ class GradingItem(BaseModel):
     """One question/answer pair inside the grading payload."""
     question_id: str
     session_question_id: str
-    question_type: str  # "multiple_choice" | "short_answer"
+    question_type: QuestionType
     content: str
     title: str
     topic: str
