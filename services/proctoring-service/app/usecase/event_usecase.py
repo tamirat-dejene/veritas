@@ -11,7 +11,7 @@ Responsibilities:
 from datetime import datetime
 from uuid import UUID
 
-from app.domain.enums import EVENT_SEVERITY, EVENT_SCORE_WEIGHT
+from app.domain.enums import EVENT_SEVERITY, EVENT_SCORE_WEIGHT, EVENT_SCORE_CAPS, COOLDOWN_WINDOW_SECONDS
 from app.domain.models import IngestEventRequest, ProctoringEvent, SessionScore
 from app.repository.event_repository import EventRepository
 from app.repository.score_repository import ScoreRepository
@@ -85,8 +85,45 @@ class EventUseCase:
         self, session_id: UUID, candidate_id: UUID, enterprise_id: UUID
     ) -> SessionScore:
         events = await self._event_repo.list_by_session(session_id)
-        raw = sum(EVENT_SCORE_WEIGHT.get(e.event_type, 0.0) for e in events)
-        score = round(min(100.0, raw), 2)
+
+        # Sort chronologically (list_by_session already orders ASC, but be explicit)
+        sorted_events = sorted(events, key=lambda e: e.occurred_at)
+
+        # --- Deduplication: track the last accepted timestamp per event type ---
+        last_accepted: dict = {}
+
+        # --- Per-type cumulative contribution (for capping) ---
+        type_contribution: dict = {}
+
+        raw = 0.0
+        for event in sorted_events:
+            etype = event.event_type
+            weight = EVENT_SCORE_WEIGHT.get(etype, 0.0)
+
+            # Only enforce cooldown for penalty events (positive weight)
+            if weight > 0:
+                last_ts = last_accepted.get(etype)
+                if last_ts is not None:
+                    delta = (event.occurred_at - last_ts).total_seconds()
+                    if delta < COOLDOWN_WINDOW_SECONDS:
+                        continue  # skip — too soon after last same-type event
+
+            # Apply per-type cap (only for penalty events with a defined cap)
+            if weight > 0 and etype in EVENT_SCORE_CAPS:
+                cap = EVENT_SCORE_CAPS[etype]
+                current = type_contribution.get(etype, 0.0)
+                allowed = min(weight, max(0.0, cap - current))
+                type_contribution[etype] = current + allowed
+                raw += allowed
+            else:
+                # Critical/high events (no cap) and recovery events go straight in
+                raw += weight
+
+            last_accepted[etype] = event.occurred_at
+
+        # Clamp final score to [0.0, 100.0]
+        score = round(max(0.0, min(100.0, raw)), 2)
+
         return await self._score_repo.upsert(
             session_id=session_id,
             candidate_id=candidate_id,
