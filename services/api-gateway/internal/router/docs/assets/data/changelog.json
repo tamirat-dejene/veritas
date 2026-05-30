@@ -1,5 +1,44 @@
 [
   {
+    "date": "2026-05-26",
+    "changes": [
+      {
+        "type": "breaking",
+        "service": "grading",
+        "summary": "graded_by field changed from string to object",
+        "description": "The graded_by field on grading result records has been refactored from a plain string (e.g. \"system\") into a structured object containing an id and a type discriminator (e.g. {\"id\": \"system\", \"type\": \"system\"} or {\"id\": \"<uuid>\", \"type\": \"user\"}). Consumers reading GET /grading/results or GET /grading/results/:sessionId must update their deserialization logic accordingly.",
+        "endpoints": [
+          "GET /grading/results (UPDATED: graded_by is now {id, type} object)",
+          "GET /grading/results/:sessionId (UPDATED: graded_by is now {id, type} object)"
+        ],
+        "migration": [
+          {
+            "before": "graded_by: \"system\" or graded_by: \"user:<uuid>\"",
+            "after": "graded_by: {\"id\": \"system\", \"type\": \"system\"} or graded_by: {\"id\": \"<uuid>\", \"type\": \"user\"}"
+          }
+        ]
+      },
+      {
+        "type": "new",
+        "service": "grading",
+        "summary": "Per-question manual score override endpoint",
+        "description": "Introduced a dedicated endpoint allowing authorized staff to override the score for an individual question within a grading session. The operation recalculates the session's total awarded points, percentage, and HMAC integrity checksum atomically. An immutable audit record is created for every override, capturing the actor, reason, previous score, and new score. The question status transitions to 'human_review' and the overall session status transitions to 'reviewed'.",
+        "endpoints": [
+          "POST /grading/results/:sessionId/questions/:sessionQuestionId/override (NEW: override a single question score with audit trail)"
+        ]
+      },
+      {
+        "type": "changed",
+        "service": "grading",
+        "summary": "grading_question_results schema extended with content and candidate_answer",
+        "description": "Two new columns have been added to the grading_question_results table: content (TEXT) stores the original question body text, and candidate_answer (JSONB) stores the candidate's raw answer payload. These fields are now included in detailed grading result responses and enable richer human-review workflows.",
+        "endpoints": [
+          "GET /grading/results/:sessionId (UPDATED: question objects now include content and candidateAnswer fields)"
+        ]
+      }
+    ]
+  },
+  {
     "date": "2026-05-25",
     "changes": [
       {

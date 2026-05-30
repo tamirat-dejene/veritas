@@ -216,4 +216,7 @@ func (g *RouterGroup) RegisterGradingRoutes(proxy http.Handler) {
 	g.register("GET", "/grading/results/:sessionId/status", proxy, staffOrAdmin...)
 	g.register("POST", "/grading/results/:sessionId/override", proxy, adminRole...)
 	g.register("GET", "/grading/results/:sessionId/logs", proxy, staffOrAdmin...)
+
+	// Per-question manual score override (added 2026-05-26)
+	g.register("POST", "/grading/results/:sessionId/questions/:sessionQuestionId/override", proxy, staffOrAdmin...)
 }
