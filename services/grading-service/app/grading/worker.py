@@ -1,10 +1,13 @@
 """
-Grading Worker — Kafka consumer for ``candidate.exam.ready_for_grading`` events.
+Grading Worker — Kafka consumer for ``exam.session.ready_for_grading`` events.
 
 This module is the event-driven entry point. It:
-  1. Subscribes to the ``candidate.exam.ready_for_grading`` Kafka topic.
-  2. Deserialises each message and delegates to the grading pipeline.
-  3. Persists the result using the secure GradingRepository.
+  1. Subscribes to the ``exam.session.ready_for_grading`` Kafka topic.
+  2. Validates that the event is version "3.0" (rejects older fat events).
+  3. Calls the candidate-service internal HTTP endpoint to fetch the full
+     grading payload (questions + answers + evaluation criteria).
+  4. Delegates to the grading pipeline.
+  5. Persists the result using the secure GradingRepository.
 
 Runs as a long-lived asyncio background task spawned during FastAPI lifespan.
 """
@@ -13,13 +16,18 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import time
 from typing import Any
+from uuid import UUID
 import asyncpg
 
 from aiokafka import AIOKafkaConsumer
+from pydantic import ValidationError
 
 from app.config import settings
+from app.grading.candidate_client import CandidateServiceClient, CandidateServiceError
 from app.grading.grader import grade_exam, ExamGradeReport
+from app.grading.models import ExamReadyForGradingEvent
 from app.repository.grading_repository import GradingRepository
 
 logger = logging.getLogger("grading.worker")
@@ -28,28 +36,86 @@ logger = logging.getLogger("grading.worker")
 # Kafka topic
 # ---------------------------------------------------------------------------
 
-GRADING_TOPIC = "candidate.exam.ready_for_grading"
+GRADING_TOPIC = "exam.session.ready_for_grading"
 CONSUMER_GROUP = "grading-service-group"
+ACCEPTED_VERSION = "3.0"
 
 
 # ---------------------------------------------------------------------------
 # Public entry point (also usable in tests / manual invocations)
 # ---------------------------------------------------------------------------
 
-async def process_incoming_event(payload: dict[str, Any], pool: asyncpg.Pool) -> ExamGradeReport:
+async def process_incoming_event(
+    payload: dict[str, Any],
+    pool: asyncpg.Pool,
+    candidate_client: CandidateServiceClient,
+) -> ExamGradeReport:
     """
-    Top-level handler: parse → grade → persist to database.
+    Top-level handler: parse slim trigger → fetch grading payload → grade → persist.
 
     Can be called directly (e.g. from an HTTP endpoint or test harness)
-    by passing a database pool.
+    by passing a database pool and a pre-started CandidateServiceClient.
     """
-    report = await grade_exam(payload)
-    
-    # Secure database storage step
+    t_start = time.monotonic()
+
+    # 1. Parse and validate the slim trigger event
+    event = ExamReadyForGradingEvent.model_validate(payload)
+
+    # 2. Reject legacy fat events (version != "3.0")
+    if event.version != ACCEPTED_VERSION:
+        logger.warning(
+            "Rejecting event with unsupported version=%s  event_id=%s  session=%s",
+            event.version,
+            event.event_id,
+            event.session_id,
+        )
+        raise ValueError(
+            f"Unsupported event version '{event.version}'. "
+            f"Only version '{ACCEPTED_VERSION}' is accepted."
+        )
+
     repo = GradingRepository(pool)
+
+    # 3. Mark this session as 'pending' so status polls return a meaningful
+    #    response while grading is still in progress instead of a 404.
+    await repo.create_pending_result(
+        session_id=UUID(event.session_id),
+        exam_id=UUID(event.exam_id),
+        candidate_id=UUID(event.candidate_id),
+        enterprise_id=UUID(event.enterprise_id),
+        enrollment_id=UUID(event.enrollment_id),
+    )
+
+    # 4. Fetch full grading payload from candidate-service internal endpoint
+    logger.info(
+        "Fetching grading payload  event_id=%s  session=%s",
+        event.event_id,
+        event.session_id,
+    )
+    grading_payload = await candidate_client.fetch_grading_payload(
+        session_id=event.session_id,
+        enterprise_id=event.enterprise_id,
+    )
+
+    # 5. Grade the exam
+    report = await grade_exam(event_id=event.event_id, payload=grading_payload)
+
+    # 6. Secure database storage (updates the pending row → graded)
     logger.info("Saving grading report securely to database for session=%s", report.session_id)
     await repo.save_grading_report(report, graded_by="system")
-    
+
+    elapsed_ms = (time.monotonic() - t_start) * 1000
+    logger.info(
+        "Grading pipeline complete  event_id=%s  session=%s  "
+        "score=%.2f/%.2f (%.1f%%)  elapsed_ms=%.0f",
+        event.event_id,
+        event.session_id,
+        report.total_awarded_points,
+        report.total_max_points,
+        report.percentage,
+        elapsed_ms,
+    )
+
     return report
 
 
@@ -57,7 +123,10 @@ async def process_incoming_event(payload: dict[str, Any], pool: asyncpg.Pool) ->
 # Kafka consumer loop
 # ---------------------------------------------------------------------------
 
-async def run_grading_consumer(pool: asyncpg.Pool) -> None:
+async def run_grading_consumer(
+    pool: asyncpg.Pool,
+    candidate_client: CandidateServiceClient,
+) -> None:
     """
     Long-running Kafka consumer coroutine.
 
@@ -82,7 +151,7 @@ async def run_grading_consumer(pool: asyncpg.Pool) -> None:
             )
 
             async for msg in consumer:
-                await _handle_message(msg, pool)
+                await _handle_message(msg, pool, candidate_client)
 
         except asyncio.CancelledError:
             logger.info("Kafka consumer received shutdown signal.")
@@ -99,33 +168,83 @@ async def run_grading_consumer(pool: asyncpg.Pool) -> None:
                 pass
 
 
-async def _handle_message(msg: Any, pool: asyncpg.Pool) -> None:
+async def _handle_message(
+    msg: Any,
+    pool: asyncpg.Pool,
+    candidate_client: CandidateServiceClient,
+) -> None:
     """Process a single Kafka message."""
     try:
         payload: dict[str, Any] = json.loads(msg.value)
 
         event_type = payload.get("event_type", "unknown")
         event_id = payload.get("event_id", "n/a")
+        version = payload.get("version", "unknown")
+        session_id = payload.get("session_id", "n/a")
 
-        if event_type != "candidate.exam.ready_for_grading":
+        if event_type != "exam.session.ready_for_grading":
             logger.warning(
-                "Ignoring unexpected event_type=%s  event_id=%s",
+                "Ignoring unexpected event_type=%s  event_id=%s  "
+                "topic=%s  partition=%s  offset=%s",
                 event_type,
                 event_id,
+                msg.topic,
+                msg.partition,
+                msg.offset,
+            )
+            return
+
+        if version != ACCEPTED_VERSION:
+            logger.warning(
+                "Ignoring event with unsupported version=%s  event_id=%s  session=%s  "
+                "(only version %s is accepted)",
+                version,
+                event_id,
+                session_id,
+                ACCEPTED_VERSION,
             )
             return
 
         logger.info(
-            "Received grading event  event_id=%s  session=%s",
+            "Received grading trigger  event_id=%s  session=%s  version=%s  "
+            "topic=%s  partition=%s  offset=%s",
             event_id,
-            payload.get("session_id", "n/a"),
+            session_id,
+            version,
+            msg.topic,
+            msg.partition,
+            msg.offset,
         )
 
-        await process_incoming_event(payload, pool)
+        await process_incoming_event(payload, pool, candidate_client)
 
     except json.JSONDecodeError as exc:
-        logger.error("Failed to decode Kafka message as JSON: %s", exc)
+        logger.error(
+            "Failed to decode Kafka message as JSON  "
+            "topic=%s  partition=%s  offset=%s  error=%s",
+            msg.topic,
+            msg.partition,
+            msg.offset,
+            exc,
+        )
+    except ValidationError as exc:
+        logger.error(
+            "Event payload failed schema validation  session=%s  errors=%s",
+            payload.get("session_id", "n/a") if isinstance(payload, dict) else "n/a",
+            exc.errors(),
+        )
+    except CandidateServiceError as exc:
+        logger.error(
+            "Failed to fetch grading payload from candidate-service  session=%s  error=%s",
+            payload.get("session_id", "n/a") if isinstance(payload, dict) else "n/a",
+            exc,
+        )
     except Exception as exc:
         logger.exception(
-            "Unhandled error processing grading message: %s", exc,
+            "Unhandled error processing grading message  "
+            "topic=%s  partition=%s  offset=%s  error=%s",
+            msg.topic,
+            msg.partition,
+            msg.offset,
+            exc,
         )

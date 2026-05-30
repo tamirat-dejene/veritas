@@ -147,11 +147,16 @@ func (r *examRepository) Update(ctx context.Context, e *sdomain.Exam) error {
 	return err
 }
 
-func (r *examRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params, search string) (pagination.PaginatedResponse[*sdomain.Exam], error) {
+func (r *examRepository) ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params, search string, archived bool, archivedOnly bool) (pagination.PaginatedResponse[*sdomain.Exam], error) {
 	args := []any{enterpriseID}
 
-	// Base filter — always exclude archived exams.
-	whereClause := "enterprise_id = $1 AND status != 'Archived'"
+	// Apply archived option
+	whereClause := "enterprise_id = $1"
+	if archivedOnly {
+		whereClause += " AND status = 'Archived'"
+	} else if !archived {
+		whereClause += " AND status != 'Archived'"
+	}
 
 	// Optional title search — append only when a non-empty search term is provided.
 	if search != "" {

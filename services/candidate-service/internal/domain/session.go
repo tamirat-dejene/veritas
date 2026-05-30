@@ -125,7 +125,7 @@ type SessionRepository interface {
 	WithTx(tx pgx.Tx) SessionRepository
 }
 
-// SessionUseCase covers Candidate Access Flow
+// SessionUseCase covers Candidate Access Flow and internal service-to-service data access.
 type SessionUseCase interface {
 	ValidateAccessToken(ctx context.Context, enrollmentID, enterpriseID uuid.UUID) (*ValidateAccessTokenResponse, error)
 	StartSession(ctx context.Context, enrollmentID, enterpriseID uuid.UUID, clientIP, userAgent string, faceImage io.Reader) (*ExamSession, error)
@@ -138,6 +138,7 @@ type SessionUseCase interface {
 	SubmitExam(ctx context.Context, sessionID uuid.UUID, candidateID uuid.UUID, autoSubmitted bool) (*ExamSubmission, error)
 	TerminateSession(ctx context.Context, sessionID uuid.UUID, enterpriseID uuid.UUID, reason string) error
 	ForceExpireSession(ctx context.Context, sessionID uuid.UUID, enterpriseID uuid.UUID) error
+	InternalUseCase
 }
 
 type MonitoringUseCase interface {
@@ -190,7 +191,9 @@ type GradingItem struct {
 	CandidateAnswer *CandidateAnswerData `json:"candidate_answer,omitempty"`
 }
 
-// ExamReadyForGradingEvent is the Kafka payload published on topic candidate.exam.ready_for_grading
+// ExamReadyForGradingEvent is the slim Kafka trigger published on topic exam.session.ready_for_grading (v3.0).
+// It carries only identifiers and session metadata; the grading-service fetches the full
+// grading payload via the candidate-service internal HTTP endpoint.
 type ExamReadyForGradingEvent struct {
 	EventID   uuid.UUID `json:"event_id"`
 	EventType string    `json:"event_type"`
@@ -212,7 +215,27 @@ type ExamReadyForGradingEvent struct {
 	TerminatedAt      *time.Time `json:"terminated_at,omitempty"`
 	AutoSubmitted     bool       `json:"auto_submitted"`
 	TerminationReason *string    `json:"termination_reason,omitempty"`
+}
 
-	// Payload
-	Items []GradingItem `json:"items"`
+// GradingPayload is the response body returned by the internal grading-payload endpoint.
+// It aggregates session questions, candidate answers, and master question evaluation
+// criteria so the grading-service can grade the exam in a single HTTP call.
+type GradingPayload struct {
+	SessionID         uuid.UUID  `json:"session_id"`
+	EnterpriseID      uuid.UUID  `json:"enterprise_id"`
+	ExamID            uuid.UUID  `json:"exam_id"`
+	CandidateID       uuid.UUID  `json:"candidate_id"`
+	EnrollmentID      uuid.UUID  `json:"enrollment_id"`
+	Status            string     `json:"status"`
+	StartedAt         time.Time  `json:"started_at"`
+	SubmittedAt       *time.Time `json:"submitted_at,omitempty"`
+	TerminatedAt      *time.Time `json:"terminated_at,omitempty"`
+	AutoSubmitted     bool       `json:"auto_submitted"`
+	TerminationReason *string    `json:"termination_reason,omitempty"`
+	Items             []GradingItem `json:"items"`
+}
+
+// InternalUseCase covers service-to-service data access.
+type InternalUseCase interface {
+	BuildGradingPayload(ctx context.Context, sessionID uuid.UUID, enterpriseID uuid.UUID) (*GradingPayload, error)
 }

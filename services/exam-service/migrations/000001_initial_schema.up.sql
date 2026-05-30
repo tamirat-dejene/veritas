@@ -45,17 +45,9 @@ CREATE TABLE IF NOT EXISTS veritas_questions (
 
     created_by          UUID NOT NULL,
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 
-    CONSTRAINT fk_question_enterprise
-        FOREIGN KEY (enterprise_id)
-        REFERENCES veritas_enterprise(id)
-        ON DELETE CASCADE,
 
-    CONSTRAINT fk_question_creator
-        FOREIGN KEY (created_by)
-        REFERENCES veritas_users(id)
-        ON DELETE RESTRICT
 );
 
 -- 3. MCQ Options Table
@@ -119,15 +111,7 @@ CREATE TABLE IF NOT EXISTS veritas_exams (
     created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-    CONSTRAINT fk_exam_enterprise
-        FOREIGN KEY (enterprise_id)
-        REFERENCES veritas_enterprise(id)
-        ON DELETE CASCADE,
 
-    CONSTRAINT fk_exam_creator
-        FOREIGN KEY (created_by)
-        REFERENCES veritas_users(id)
-        ON DELETE RESTRICT,
 
     CONSTRAINT fk_exam_template
         FOREIGN KEY (template_source_id)

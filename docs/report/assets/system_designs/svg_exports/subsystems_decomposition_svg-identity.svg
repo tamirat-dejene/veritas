@@ -1,0 +1,111 @@
+<svg id="svg-identity" class="view-svg" viewBox="0 0 800 500" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100%" height="100%" fill="url(#grid-global)" rx="8" />
+
+                        <!-- Presentation Boundary -->
+                        <rect x="25" y="40" width="350" height="420" rx="12" fill="#f8fafc" stroke="#cbd5e1"
+                            stroke-width="1.5" />
+                        <text x="45" y="65" fill="#334155" font-size="11" font-weight="bold">Presentation &amp; Access
+                            Subsystem</text>
+
+                        <g transform="translate(45, 85)">
+                            <rect width="310" height="45" rx="6" fill="#ffffff" stroke="#94a3b8" />
+                            <text x="15" y="20" fill="#0f172a" font-size="10" font-weight="bold">Enterprise / System
+                                Admin Web UI</text>
+                            <text x="15" y="33" fill="#475569" font-size="8">Tenant onboarding, portal settings,
+                                schedules</text>
+                        </g>
+
+                        <g transform="translate(45, 145)">
+                            <rect width="310" height="45" rx="6" fill="#ffffff" stroke="#94a3b8" />
+                            <text x="15" y="20" fill="#0f172a" font-size="10" font-weight="bold">Candidate Exam
+                                Player</text>
+                            <text x="15" y="33" fill="#475569" font-size="8">Secure test taker browser client
+                                window</text>
+                        </g>
+
+                        <g transform="translate(45, 215)">
+                            <rect width="310" height="195" rx="8" fill="#ecfdf5" stroke="#10b981" stroke-width="2" />
+                            <text x="20" y="25" fill="#065f46" font-size="11" font-weight="bold">API Gateway (Go / Gin
+                                Router)</text>
+                            <text x="20" y="40" fill="#047857" font-size="8" font-family="monospace">Port :8080
+                                exposed</text>
+
+                            <!-- Gateway duties -->
+                            <rect x="20" y="55" width="270" height="25" rx="4" fill="#ffffff" stroke="#a7f3d0" />
+                            <text x="30" y="71" fill="#065f46" font-size="9" font-family="monospace">JWT &amp;
+                                Enrollment-token check filters</text>
+
+                            <rect x="20" y="85" width="270" height="25" rx="4" fill="#ffffff" stroke="#a7f3d0" />
+                            <text x="30" y="101" fill="#065f46" font-size="9" font-family="monospace">Role Policy
+                                verification (RBAC)</text>
+
+                            <rect x="20" y="115" width="270" height="25" rx="4" fill="#ffffff" stroke="#a7f3d0" />
+                            <text x="30" y="131" fill="#065f46" font-size="9" font-family="monospace">Tenant Rate
+                                Limiting &amp; CORS configs</text>
+                        </g>
+
+                        <!-- Identity Boundary -->
+                        <rect x="420" y="40" width="350" height="420" rx="12" fill="#f0f9ff" stroke="#3b82f6"
+                            stroke-width="1.5" />
+                        <text x="440" y="65" fill="#1e3a8a" font-size="11" font-weight="bold">Identity &amp; Tenant
+                            Subsystem</text>
+
+                        <!-- Auth service -->
+                        <g transform="translate(440, 85)">
+                            <rect width="310" height="85" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#1e40af" font-size="10.5" font-weight="bold">Auth Service</text>
+                            <text x="15" y="38" fill="#475569" font-size="8.5">Login, refresh, logout, JWT
+                                issuance,</text>
+                            <text x="15" y="50" fill="#475569" font-size="8.5">Session revocation pipelines</text>
+                            <rect x="15" y="60" width="100" height="16" rx="3" fill="#eff6ff" stroke="#bfdbfe" />
+                            <text x="20" y="71" fill="#1d4ed8" font-size="8" font-family="monospace">Auth DB SQL</text>
+                        </g>
+
+                        <!-- Enterprise Service -->
+                        <g transform="translate(440, 185)">
+                            <rect width="310" height="85" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5" />
+                            <text x="15" y="22" fill="#1e40af" font-size="10.5" font-weight="bold">Enterprise
+                                Service</text>
+                            <text x="15" y="38" fill="#475569" font-size="8.5">Tenant onboarding, staff
+                                management,</text>
+                            <text x="15" y="50" fill="#475569" font-size="8.5">Enterprise life cycle and policy
+                                enforcements</text>
+                            <rect x="15" y="60" width="100" height="16" rx="3" fill="#eff6ff" stroke="#bfdbfe" />
+                            <text x="20" y="71" fill="#1d4ed8" font-size="8" font-family="monospace">Enterprise DB
+                                SQL</text>
+                        </g>
+
+                        <!-- Local Persistence -->
+                        <g transform="translate(440, 310)">
+                            <rect width="310" height="100" rx="6" fill="#f8fafc" stroke="#64748b" stroke-width="1" />
+                            <text x="15" y="22" fill="#334155" font-size="9" font-weight="700">PERSISTENCE LAYER
+                                (ISOLATED DBs)</text>
+
+                            <!-- Auth DB cylindrical node -->
+                            <g transform="translate(15, 35)">
+                                <path
+                                    d="M 0 3 A 20 5 0 1 1 40 3 A 20 5 0 1 1 0 3 Z M 0 3 L 0 20 A 20 5 0 0 0 40 20 L 40 3"
+                                    fill="#ffffff" stroke="#475569" />
+                                <text x="20" y="14" text-anchor="middle" fill="#0f172a" font-size="7"
+                                    font-weight="bold">Auth DB</text>
+                            </g>
+
+                            <!-- Enterprise DB cylindrical node -->
+                            <g transform="translate(160, 35)">
+                                <path
+                                    d="M 0 3 A 20 5 0 1 1 40 3 A 20 5 0 1 1 0 3 Z M 0 3 L 0 20 A 20 5 0 0 0 40 20 L 40 3"
+                                    fill="#ffffff" stroke="#475569" />
+                                <text x="20" y="14" text-anchor="middle" fill="#0f172a" font-size="7"
+                                    font-weight="bold">Ent DB</text>
+                            </g>
+                        </g>
+
+                        <!-- Connections map -->
+                        <path d="M 185 110 L 185 145" stroke="#94a3b8" stroke-width="1.2"
+                            marker-end="url(#arrow-blue)" />
+                        <path d="M 355 260 L 440 135" stroke="#059669" stroke-width="1.2"
+                            marker-end="url(#arrow-blue)" />
+                        <path d="M 355 260 L 440 220" stroke="#059669" stroke-width="1.2"
+                            marker-end="url(#arrow-blue)" />
+                    </svg>

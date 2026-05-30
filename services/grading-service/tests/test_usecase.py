@@ -3,6 +3,7 @@ Unit tests for app.usecase.grading_usecase — verifies delegation to the reposi
 """
 import uuid
 import pytest
+from app.domain.models import GradingStatus, QuestionGradingStatus, QuestionType
 from unittest.mock import AsyncMock, MagicMock
 
 from app.usecase.grading_usecase import GradingUseCase
@@ -65,7 +66,7 @@ class TestGradingUseCase:
             "previous_score": 75.0,
             "new_score": 90.0,
             "new_percentage": 90.0,
-            "status": "reviewed",
+            "status": GradingStatus.reviewed.value,
         }
         result = await usecase.update_grade_manually(
             session_id=uuid.UUID(SESSION_ID),

@@ -1,5 +1,14 @@
 basePath: /
 definitions:
+  CandidateAnswerData:
+    properties:
+      selectedOptionIds:
+        items:
+          type: string
+        type: array
+      text:
+        type: string
+    type: object
   CandidateProfile:
     properties:
       createdAt:
@@ -131,6 +140,72 @@ definitions:
       sessionId:
         type: string
       submittedAt:
+        type: string
+    type: object
+  GradingItem:
+    properties:
+      candidate_answer:
+        $ref: '#/definitions/CandidateAnswerData'
+      content:
+        type: string
+      correct_option_ids:
+        items:
+          type: string
+        type: array
+      evaluation_criteria:
+        additionalProperties: {}
+        type: object
+      expected_answer:
+        description: True Evaluation Criteria (from Exam Service)
+        type: string
+      has_answer:
+        description: Candidate's Actual Answer (from Candidate Service)
+        type: boolean
+      media_url:
+        type: string
+      negative_points:
+        type: number
+      points:
+        description: Scoring
+        type: integer
+      question_id:
+        type: string
+      question_type:
+        type: string
+      session_question_id:
+        type: string
+      title:
+        type: string
+      topic:
+        type: string
+    type: object
+  GradingPayload:
+    properties:
+      auto_submitted:
+        type: boolean
+      candidate_id:
+        type: string
+      enrollment_id:
+        type: string
+      enterprise_id:
+        type: string
+      exam_id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/GradingItem'
+        type: array
+      session_id:
+        type: string
+      started_at:
+        type: string
+      status:
+        type: string
+      submitted_at:
+        type: string
+      terminated_at:
+        type: string
+      termination_reason:
         type: string
     type: object
   SessionAnswer:
@@ -1425,6 +1500,42 @@ paths:
       summary: Health check
       tags:
       - system
+  /internal/sessions/{sessionId}/grading-payload:
+    get:
+      description: Internal endpoint — returns the aggregated grading data for a session.
+      parameters:
+      - description: Enterprise ID
+        in: header
+        name: X-Enterprise-Id
+        required: true
+        type: string
+      - description: Session ID (UUID)
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/GradingPayload'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Get grading payload
+      tags:
+      - internal
   /sessions/{sessionId}:
     get:
       description: Get session details for a candidate/admin context.

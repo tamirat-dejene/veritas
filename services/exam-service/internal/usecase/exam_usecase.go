@@ -180,8 +180,8 @@ func (uc *examUsecase) CloneExam(ctx context.Context, sourceID uuid.UUID, enterp
 	return clone, nil
 }
 
-func (uc *examUsecase) GetExams(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params, search string) (pagination.PaginatedResponse[*sdomain.Exam], error) {
-	return uc.examRepo.ListByEnterprise(ctx, enterpriseID, params, search)
+func (uc *examUsecase) GetExams(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params, search string, archived bool, archivedOnly bool) (pagination.PaginatedResponse[*sdomain.Exam], error) {
+	return uc.examRepo.ListByEnterprise(ctx, enterpriseID, params, search, archived, archivedOnly)
 }
 
 // TODO: Also returns archived ones. Refactor it later.
@@ -295,7 +295,7 @@ func (uc *examUsecase) DeleteExam(ctx context.Context, id uuid.UUID, enterpriseI
 			return err
 		}
 
-		if exam.Status != sdomain.ExamDraft && exam.Status != sdomain.ExamScheduled {
+		if exam.Status != sdomain.ExamDraft && exam.Status != sdomain.ExamClosed {
 			return domain.ErrExamCannotBeDeleted
 		}
 
@@ -319,6 +319,27 @@ func (uc *examUsecase) ArchiveExam(ctx context.Context, id uuid.UUID, enterprise
 		}
 
 		exam.Status = sdomain.ExamArchived
+		return uc.examRepo.WithTx(tx).Update(ctx, exam)
+	})
+}
+
+func (uc *examUsecase) RestoreExam(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
+	return RunInTx(ctx, uc.pool, func(tx pgx.Tx) error {
+		exam, err := uc.examRepo.WithTx(tx).GetByID(ctx, id, enterpriseID)
+		if err != nil {
+			return err
+		}
+
+		if exam.Status != sdomain.ExamArchived {
+			return domain.ErrInvalidStatus
+		}
+
+		if exam.ScheduledStart == nil {
+			exam.Status = sdomain.ExamDraft
+		} else {
+			exam.Status = sdomain.ExamClosed
+		}
+
 		return uc.examRepo.WithTx(tx).Update(ctx, exam)
 	})
 }

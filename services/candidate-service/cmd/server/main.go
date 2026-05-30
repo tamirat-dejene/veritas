@@ -129,9 +129,10 @@ func main() {
 	enrollmentHandler := c_http.NewEnrollmentHandler(enrollmentUC)
 	sessionHandler := c_http.NewSessionHandler(sessionUC)
 	monitoringHandler := c_http.NewMonitoringHandler(monitoringUC)
+	internalSessionHandler := c_http.NewInternalSessionHandler(sessionUC)
 
 	// 10. Initialize Router
-	r := router.NewRouter(candidateHandler, enrollmentHandler, sessionHandler, monitoringHandler)
+	r := router.NewRouter(candidateHandler, enrollmentHandler, sessionHandler, monitoringHandler, internalSessionHandler)
 
 	// 11. Initialize Background Tasks
 	scheduler := cronjob.NewScheduler(log.Named("scheduler"))

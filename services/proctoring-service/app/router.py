@@ -129,12 +129,7 @@ def create_app() -> FastAPI:
 
     # Middleware
     app.add_middleware(IdentityMiddleware)
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+
 
     # Routers
     app.include_router(health_handler.router, tags=["system"])

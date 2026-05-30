@@ -1,3 +1,4 @@
+import json
 import logging
 import json
 from uuid import UUID
@@ -6,6 +7,7 @@ import asyncpg
 
 from app.grading.grader import ExamGradeReport, QuestionResult
 from app.grading.security import calculate_row_checksum
+from app.domain.models import GradingStatus
 
 logger = logging.getLogger("grading.repository")
 
@@ -107,15 +109,16 @@ class GradingRepository:
                             total_max_points = $1,
                             total_awarded_points = $2,
                             percentage = $3,
-                            status = 'graded',
-                            graded_by = $4,
-                            row_checksum = $5,
+                            status = $4,
+                            graded_by = $5,
+                            row_checksum = $6,
                             updated_at = NOW()
-                        WHERE session_id = $6 AND version = $7
+                        WHERE session_id = $7 AND version = $8
                         """,
                         report.total_max_points,
                         report.total_awarded_points,
                         report.percentage,
+                        GradingStatus.graded.value,
                         graded_by,
                         new_checksum,
                         UUID(report.session_id),
@@ -149,7 +152,7 @@ class GradingRepository:
                             session_id, exam_id, candidate_id, enterprise_id, enrollment_id,
                             total_max_points, total_awarded_points, percentage, status, graded_by,
                             row_checksum, version
-                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'graded', $9, $10, $11)
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                         RETURNING id
                         """,
                         UUID(report.session_id),
@@ -160,6 +163,7 @@ class GradingRepository:
                         report.total_max_points,
                         report.total_awarded_points,
                         report.percentage,
+                        GradingStatus.graded.value,
                         graded_by,
                         new_checksum,
                         version
@@ -379,14 +383,15 @@ class GradingRepository:
                     UPDATE grading_results SET
                         total_awarded_points = $1,
                         percentage = $2,
-                        status = 'reviewed',
-                        graded_by = $3,
-                        row_checksum = $4,
+                        status = $3,
+                        graded_by = $4,
+                        row_checksum = $5,
                         updated_at = NOW()
-                    WHERE session_id = $5 AND version = $6
+                    WHERE session_id = $6 AND version = $7
                     """,
                     new_awarded_points,
                     new_pct,
+                    GradingStatus.reviewed.value,
                     f"user:{str(actor_id)}",
                     new_checksum,
                     session_id,
@@ -401,7 +406,7 @@ class GradingRepository:
                     "previous_score": float(row["total_awarded_points"]),
                     "new_score": new_awarded_points,
                     "new_percentage": new_pct,
-                    "status": "reviewed"
+                    "status": GradingStatus.reviewed.value
                 }
 
     async def update_question_grade_manually(
@@ -537,4 +542,74 @@ class GradingRepository:
             """,
             grading_result_id
         )
-        return [dict(row) for row in rows]
+
+        result = []
+        for row in rows:
+            record = dict(row)
+            for field in ("old_values", "new_values"):
+                val = record.get(field)
+                if isinstance(val, str):
+                    record[field] = json.loads(val)
+            result.append(record)
+        return result
+
+    async def create_pending_result(
+        self,
+        session_id: UUID,
+        exam_id: UUID,
+        candidate_id: UUID,
+        enterprise_id: UUID,
+        enrollment_id: UUID,
+    ) -> None:
+        """Insert a 'pending' placeholder row before grading begins.
+
+        Idempotent: ON CONFLICT (session_id) DO NOTHING means re-delivered
+        Kafka messages will not raise an error or overwrite a row that is
+        already graded (e.g. from a prior successful run).
+
+        The row checksum is computed for the zero-score values at version=1 so
+        that save_grading_report can verify and then UPDATE the row cleanly.
+        """
+        checksum = calculate_row_checksum(
+            session_id=str(session_id),
+            candidate_id=str(candidate_id),
+            total_max_points=0.0,
+            total_awarded_points=0.0,
+            percentage=0.0,
+            version=1,
+        )
+        await self._pool.execute(
+            """
+            INSERT INTO grading_results (
+                session_id, exam_id, candidate_id, enterprise_id, enrollment_id,
+                total_max_points, total_awarded_points, percentage,
+                status, graded_by, row_checksum, version
+            ) VALUES ($1, $2, $3, $4, $5, 0, 0, 0, $6, 'system', $7, 1)
+            ON CONFLICT (session_id) DO NOTHING
+            """,
+            session_id,
+            exam_id,
+            candidate_id,
+            enterprise_id,
+            enrollment_id,
+            GradingStatus.pending.value,
+            checksum,
+        )
+        logger.info("Pending grading placeholder created for session=%s", session_id)
+
+    async def get_grading_status(self, session_id: UUID) -> Optional[Dict[str, Any]]:
+        """Lightweight status query — returns only the fields needed for polling.
+
+        Includes enterprise_id so the handler can enforce tenant isolation
+        without issuing a second full-detail query.
+        Returns None if no grading record exists yet.
+        """
+        row = await self._pool.fetchrow(
+            """
+            SELECT session_id, enterprise_id, status, graded_by, percentage, updated_at
+            FROM grading_results
+            WHERE session_id = $1
+            """,
+            session_id,
+        )
+        return dict(row) if row else None

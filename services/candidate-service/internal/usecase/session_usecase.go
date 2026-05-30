@@ -598,38 +598,86 @@ func (uc *sessionUseCase) ForceExpireSession(ctx context.Context, sessionID uuid
 }
 
 func (uc *sessionUseCase) publishReadyForGradingEvent(ctx context.Context, session *domain.ExamSession) {
-	// 1. Fetch Master Questions from Exam Service (with true evaluation criteria)
-	masterQuestions, err := uc.examClient.GetExamQuestions(ctx, session.EnterpriseID, session.ExamID, true)
-	if err != nil {
-		fmt.Printf("failed to fetch master questions for grading event: %v\n", err)
-		return
+	// Retrieve auto-submitted flag if submission exists
+	autoSubmitted := false
+	sub, err := uc.sessionRepo.GetSubmissionBySession(ctx, session.ID, session.EnterpriseID)
+	if err == nil && sub != nil {
+		autoSubmitted = sub.AutoSubmitted
 	}
 
-	masterQMap := make(map[uuid.UUID]sdomain.ExamQuestion)
+	// Publish the slim trigger event — grading-service will pull the full payload via HTTP.
+	event := domain.ExamReadyForGradingEvent{
+		EventID:           uuid.New(),
+		EventType:         topics.ExamSessionReadyForGrading,
+		Version:           "3.0",
+		Timestamp:         time.Now(),
+		EnterpriseID:      session.EnterpriseID,
+		ExamID:            session.ExamID,
+		SessionID:         session.ID,
+		CandidateID:       session.CandidateID,
+		EnrollmentID:      session.EnrollmentID,
+		Status:            string(session.Status),
+		StartedAt:         session.StartedAt,
+		SubmittedAt:       session.SubmittedAt,
+		TerminatedAt:      session.TerminatedAt,
+		AutoSubmitted:     autoSubmitted,
+		TerminationReason: session.TerminationReason,
+	}
+
+	payload, err := json.Marshal(event)
+	if err == nil {
+		msg := messaging.Message{
+			Topic: topics.ExamSessionReadyForGrading,
+			Key:   []byte(session.ID.String()),
+			Value: payload,
+		}
+		if err := uc.publisher.Publish(ctx, msg); err != nil {
+			fmt.Printf("failed to publish grading event: %v\n", err)
+		}
+	} else {
+		fmt.Printf("failed to marshal grading event: %v\n", err)
+	}
+}
+
+// BuildGradingPayload assembles the full grading data for a session: it fetches
+// master questions (with evaluation criteria) from the exam-service, loads the
+// candidate's session question snapshots and answers from the local repository,
+// and zips them into a GradingPayload ready for the grading-service to consume.
+func (uc *sessionUseCase) BuildGradingPayload(ctx context.Context, sessionID uuid.UUID, enterpriseID uuid.UUID) (*domain.GradingPayload, error) {
+	session, err := uc.sessionRepo.GetSessionByID(ctx, sessionID, enterpriseID)
+	if err != nil {
+		return nil, fmt.Errorf("get session: %w", err)
+	}
+
+	// 1. Fetch master questions with true evaluation criteria from exam-service
+	masterQuestions, err := uc.examClient.GetExamQuestions(ctx, session.EnterpriseID, session.ExamID, true)
+	if err != nil {
+		return nil, fmt.Errorf("fetch master questions: %w", err)
+	}
+
+	masterQMap := make(map[uuid.UUID]sdomain.ExamQuestion, len(masterQuestions))
 	for _, q := range masterQuestions {
 		masterQMap[q.QuestionID] = q
 	}
 
-	// 2. Fetch Session Questions (to link SessionQuestionID to QuestionID and get runtime points)
+	// 2. Fetch session question snapshots
 	sessionQuestions, err := uc.sessionRepo.GetSessionQuestions(ctx, session.ID)
 	if err != nil {
-		fmt.Printf("failed to fetch session questions for grading event: %v\n", err)
-		return
+		return nil, fmt.Errorf("fetch session questions: %w", err)
 	}
 
-	// 3. Fetch Candidate Answers
+	// 3. Fetch candidate answers
 	answers, err := uc.sessionRepo.GetSessionAnswers(ctx, session.ID)
 	if err != nil {
-		fmt.Printf("failed to fetch answers for grading event: %v\n", err)
-		return
+		return nil, fmt.Errorf("fetch session answers: %w", err)
 	}
 
-	answerMap := make(map[uuid.UUID]domain.SessionAnswer)
+	answerMap := make(map[uuid.UUID]domain.SessionAnswer, len(answers))
 	for _, a := range answers {
 		answerMap[a.SessionQuestionID] = a
 	}
 
-	// 4. Construct Grading Items
+	// 4. Construct grading items
 	gradingItems := make([]domain.GradingItem, 0, len(sessionQuestions))
 	for _, sq := range sessionQuestions {
 		mq, ok := masterQMap[sq.QuestionID]
@@ -651,7 +699,6 @@ func (uc *sessionUseCase) publishReadyForGradingEvent(ctx context.Context, sessi
 			EvaluationCriteria: mq.Question.EvaluationCriteria,
 		}
 
-		// Extract correct option IDs if applicable
 		var correctOptionIDs []uuid.UUID
 		for _, opt := range mq.Question.Options {
 			if opt.IsCorrect {
@@ -662,38 +709,30 @@ func (uc *sessionUseCase) publishReadyForGradingEvent(ctx context.Context, sessi
 			item.CorrectOptionIDs = correctOptionIDs
 		}
 
-		// Attach candidate answer
 		if a, hasAns := answerMap[sq.ID]; hasAns {
 			item.HasAnswer = true
 			var ansData domain.CandidateAnswerData
 			if err := json.Unmarshal(a.AnswerData, &ansData); err == nil {
 				item.CandidateAnswer = &ansData
 			} else {
-				fmt.Printf("warning: failed to unmarshal answer data for session question %s: %v\n", sq.ID, err)
+				fmt.Printf("warning: failed to unmarshal answer for session question %s: %v\n", sq.ID, err)
 			}
-		} else {
-			item.HasAnswer = false
 		}
 
 		gradingItems = append(gradingItems, item)
 	}
 
-	// Retrieve auto-submitted flag if submission exists
+	// 5. Resolve auto-submitted flag
 	autoSubmitted := false
 	sub, err := uc.sessionRepo.GetSubmissionBySession(ctx, session.ID, session.EnterpriseID)
 	if err == nil && sub != nil {
 		autoSubmitted = sub.AutoSubmitted
 	}
 
-	// 5. Construct Event
-	event := domain.ExamReadyForGradingEvent{
-		EventID:           uuid.New(),
-		EventType:         "exam.session.ready_for_grading",
-		Version:           "2.0",
-		Timestamp:         time.Now(),
+	return &domain.GradingPayload{
+		SessionID:         session.ID,
 		EnterpriseID:      session.EnterpriseID,
 		ExamID:            session.ExamID,
-		SessionID:         session.ID,
 		CandidateID:       session.CandidateID,
 		EnrollmentID:      session.EnrollmentID,
 		Status:            string(session.Status),
@@ -703,19 +742,5 @@ func (uc *sessionUseCase) publishReadyForGradingEvent(ctx context.Context, sessi
 		AutoSubmitted:     autoSubmitted,
 		TerminationReason: session.TerminationReason,
 		Items:             gradingItems,
-	}
-
-	payload, err := json.Marshal(event)
-	if err == nil {
-		msg := messaging.Message{
-			Topic: topics.CandidateExamReadyForGrading,
-			Key:   []byte(session.ID.String()),
-			Value: payload,
-		}
-		if err := uc.publisher.Publish(ctx, msg); err != nil {
-			fmt.Printf("failed to publish grading event: %v\n", err)
-		}
-	} else {
-		fmt.Printf("failed to marshal grading event: %v\n", err)
-	}
+	}, nil
 }

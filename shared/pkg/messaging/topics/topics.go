@@ -52,9 +52,10 @@ const (
 	// The notification-service consumes this topic and sends a confirmation email.
 	CandidateExamSubmitted = "candidate.exam.submitted"
 
-	// CandidateExamReadyForGrading is published when a session is submitted or terminated.
-	// The grading-service consumes this fat event containing all answers and questions.
-	CandidateExamReadyForGrading = "candidate.exam.ready_for_grading"
+	// ExamSessionReadyForGrading is published when a session is submitted or terminated.
+	// The grading-service consumes this slim trigger (v3.0) and pulls the full grading
+	// payload via an internal HTTP call to the candidate-service.
+	ExamSessionReadyForGrading = "exam.session.ready_for_grading"
 )
 
 // Proctoring-Service topics

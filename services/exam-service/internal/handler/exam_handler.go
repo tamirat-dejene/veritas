@@ -267,6 +267,8 @@ func (h *ExamHandler) CloneExam(c *gin.Context) {
 //	@Produce		json
 //	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
 //	@Param			search			query	string	false	"Filter by title (case-insensitive substring match)"
+//	@Param			archived		query	bool	false	"Include archived exams (exclude by default)"
+//	@Param			archived_only	query	bool	false	"Get only archived exams (exclude by default)"
 //	@Param			page			query	int		false	"Page number (default: 1)"
 //	@Param			limit			query	int		false	"Number of items per page (default: 10, max: 1000)"
 //	@Param			sort			query	string	false	"Sort field (allowed: created_at, updated_at, title, duration_minutes, passing_score_percent, status) (default: created_at)"
@@ -284,8 +286,10 @@ func (h *ExamHandler) ListExams(c *gin.Context) {
 
 	params := pagination.ParseGin(c)
 	search := strings.TrimSpace(c.Query("search"))
+	archived := c.Query("archived") == "true"
+	archivedOnly := c.Query("archived_only") == "true"
 
-	exams, err := h.usecase.GetExams(c.Request.Context(), enterpriseID, params, search)
+	exams, err := h.usecase.GetExams(c.Request.Context(), enterpriseID, params, search, archived, archivedOnly)
 	if err != nil {
 		handleError(c, err)
 		return
@@ -440,6 +444,42 @@ func (h *ExamHandler) CloseExam(c *gin.Context) {
 	}
 
 	if err := h.usecase.CloseExam(c.Request.Context(), examID, enterpriseID); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// RestoreExam restores an archived exam.
+//
+//	@Summary		Restore exam
+//	@Description	Restore an archived exam back to Draft or Closed status depending on scheduled dates.
+//	@Tags			exam
+//	@Param			X-Enterprise-ID	header	string	true	"Enterprise ID (UUID)"
+//	@Param			examId			path	string	true	"Exam ID (UUID)"
+//	@Success		204			{string}	string	"No Content"
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		409			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
+//	@Router			/exams/{examId}/restore [post]
+func (h *ExamHandler) RestoreExam(c *gin.Context) {
+	enterpriseID, ok := getEnterpriseID(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "missing enterprise ID")
+		return
+	}
+
+	examIDStr := c.Param("examId")
+	examID, err := uuid.Parse(examIDStr)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "invalid exam ID")
+		return
+	}
+
+	if err := h.usecase.RestoreExam(c.Request.Context(), examID, enterpriseID); err != nil {
 		handleError(c, err)
 		return
 	}

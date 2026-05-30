@@ -48,8 +48,38 @@ elif [[ -f .env.example ]]; then
   set +a
 fi
 
+POSTGRES_AUTH_DB="${POSTGRES_AUTH_DB:-veritas_auth_db}"
+POSTGRES_CANDIDATE_DB="${POSTGRES_CANDIDATE_DB:-veritas_candidate_db}"
+POSTGRES_ENTERPRISE_DB="${POSTGRES_ENTERPRISE_DB:-veritas_enterprise_db}"
+POSTGRES_EXAM_DB="${POSTGRES_EXAM_DB:-veritas_exam_db}"
+POSTGRES_GRADING_DB="${POSTGRES_GRADING_DB:-veritas_grading_db}"
+POSTGRES_PAYMENT_DB="${POSTGRES_PAYMENT_DB:-veritas_payment_db}"
+POSTGRES_PROCTORING_DB="${POSTGRES_PROCTORING_DB:-veritas_proctoring_db}"
 PG_VERITAS_USER="${PG_VERITAS_USER:-postgres}"
-PG_VERITAS_CORE_DB="${PG_VERITAS_CORE_DB:-veritas_core}"
+
+DB_LIST=(
+  "$POSTGRES_ENTERPRISE_DB"
+  "$POSTGRES_AUTH_DB"
+  "$POSTGRES_EXAM_DB"
+  "$POSTGRES_CANDIDATE_DB"
+  "$POSTGRES_PAYMENT_DB"
+  "$POSTGRES_PROCTORING_DB"
+  "$POSTGRES_GRADING_DB"
+)
+
+get_db_for_dir() {
+  local dir="$1"
+  case "$dir" in
+    *"auth-service"*) echo "$POSTGRES_AUTH_DB" ;;
+    *"candidate-service"*) echo "$POSTGRES_CANDIDATE_DB" ;;
+    *"enterprise-service"*) echo "$POSTGRES_ENTERPRISE_DB" ;;
+    *"exam-service"*) echo "$POSTGRES_EXAM_DB" ;;
+    *"grading-service"*) echo "$POSTGRES_GRADING_DB" ;;
+    *"payment-service"*) echo "$POSTGRES_PAYMENT_DB" ;;
+    *"proctoring-service"*) echo "$POSTGRES_PROCTORING_DB" ;;
+    *) echo "${PG_VERITAS_CORE_DB:-veritas_core}" ;;
+  esac
+}
 
 UP_DIRS=(
   "services/enterprise-service/migrations"
@@ -113,48 +143,67 @@ psql_exec() {
   "${COMPOSE_CMD[@]}" exec -T postgres psql -U "$PG_VERITAS_USER" "$@"
 }
 
-ensure_database() {
-  local exists
-  exists="$(psql_exec -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${PG_VERITAS_CORE_DB}'")"
-  if [[ "$exists" != "1" ]]; then
-    info "Creating database '${PG_VERITAS_CORE_DB}'..."
-    psql_exec -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE \"${PG_VERITAS_CORE_DB}\";"
-    success "Database '${PG_VERITAS_CORE_DB}' created."
-  else
-    success "Database '${PG_VERITAS_CORE_DB}' exists."
-  fi
+ensure_databases() {
+  local db
+  for db in "${DB_LIST[@]}"; do
+    local exists
+    exists="$(psql_exec -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${db}'")"
+    if [[ "$exists" != "1" ]]; then
+      info "Creating database '${db}'..."
+      psql_exec -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE \"${db}\";"
+      success "Database '${db}' created."
+    else
+      success "Database '${db}' exists."
+    fi
+  done
 }
 
 ensure_extensions() {
-  info "Ensuring pgcrypto extension exists..."
-  psql_exec -d "$PG_VERITAS_CORE_DB" -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
-  success "pgcrypto extension is ready."
+  local db
+  for db in "${DB_LIST[@]}"; do
+    info "Ensuring pgcrypto extension exists in '${db}'..."
+    psql_exec -d "$db" -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+    success "pgcrypto extension is ready in '${db}'."
+  done
 }
 
 apply_sql_file() {
   local file="$1"
-  info "Applying ${file}"
-  if psql_exec -d "$PG_VERITAS_CORE_DB" -v ON_ERROR_STOP=1 -f - < "$file"; then
-    success "Successfully applied $(basename "$file")"
+  local db="$2"
+  local ignore_errors="${3:-false}"
+  info "Applying ${file} to database ${db}"
+  
+  local psql_opts=()
+  if [[ "$ignore_errors" == "false" ]]; then
+    psql_opts+=("-v" "ON_ERROR_STOP=1")
+  fi
+
+  if psql_exec -d "$db" "${psql_opts[@]}" -f - < "$file"; then
+    success "Successfully applied $(basename "$file") to ${db}"
   else
-    error "Failed to apply $(basename "$file")"
-    exit 1
+    if [[ "$ignore_errors" == "true" ]]; then
+      warn "Some errors occurred while applying $(basename "$file") to ${db} (ignored)."
+    else
+      error "Failed to apply $(basename "$file") to ${db}"
+      exit 1
+    fi
   fi
 }
 
 run_up() {
   info "Running UP migrations..."
-  local dir file
+  local dir file db
   for dir in "${UP_DIRS[@]}"; do
     if [[ -d "$dir" ]]; then
-      info "Directory: $dir"
+      db="$(get_db_for_dir "$dir")"
+      info "Directory: $dir (Target Database: $db)"
       while IFS= read -r file; do
         if [[ -n "$file" ]]; then
-          apply_sql_file "$file"
+          apply_sql_file "$file" "$db" "false"
         fi
       done < <(find "$dir" -maxdepth 1 -type f -name '*.up.sql' | sort)
     else
-      warn "Migration directory not found: $dir"
+      info "Migration directory not found or empty: $dir (Skipping)"
     fi
   done
   success "UP migrations completed."
@@ -162,17 +211,18 @@ run_up() {
 
 run_down() {
   warn "Running DOWN migrations..."
-  local dir file
+  local dir file db
   for dir in "${DOWN_DIRS[@]}"; do
     if [[ -d "$dir" ]]; then
-      info "Directory: $dir"
+      db="$(get_db_for_dir "$dir")"
+      info "Directory: $dir (Target Database: $db)"
       while IFS= read -r file; do
         if [[ -n "$file" ]]; then
-          apply_sql_file "$file"
+          apply_sql_file "$file" "$db" "true"
         fi
       done < <(find "$dir" -maxdepth 1 -type f -name '*.down.sql' | sort -r)
     else
-      warn "Migration directory not found: $dir"
+      info "Migration directory not found or empty: $dir (Skipping)"
     fi
   done
   success "DOWN migrations completed."
@@ -188,18 +238,18 @@ main() {
   case "$action" in
     up)
       ensure_postgres_ready
-      ensure_database
+      ensure_databases
       ensure_extensions
       run_up
       ;;
     down)
       ensure_postgres_ready
-      ensure_database
+      ensure_databases
       run_down
       ;;
     reset)
       ensure_postgres_ready
-      ensure_database
+      ensure_databases
       run_down
       ensure_extensions
       run_up

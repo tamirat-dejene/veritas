@@ -125,6 +125,7 @@ func (g *RouterGroup) RegisterExamRoutes(proxy http.Handler) {
 	g.register("POST", "/exams/:examId/clone", proxy, adminRole...)
 	g.register("POST", "/exams/:examId/publish", proxy, adminRole...)
 	g.register("POST", "/exams/:examId/close", proxy, adminRole...)
+	g.register("POST", "/exams/:examId/restore", proxy, adminRole...)
 	g.register("DELETE", "/exams/:examId", proxy, adminRole...)
 
 	// Exam Questions Assembly
@@ -212,6 +213,7 @@ func (g *RouterGroup) RegisterGradingRoutes(proxy http.Handler) {
 	// New Grading Service endpoints
 	g.register("GET", "/grading/results", proxy, staffOrAdmin...)
 	g.register("GET", "/grading/results/:sessionId", proxy, staffOrAdmin...)
+	g.register("GET", "/grading/results/:sessionId/status", proxy, staffOrAdmin...)
 	g.register("POST", "/grading/results/:sessionId/override", proxy, adminRole...)
 	g.register("GET", "/grading/results/:sessionId/logs", proxy, staffOrAdmin...)
 }

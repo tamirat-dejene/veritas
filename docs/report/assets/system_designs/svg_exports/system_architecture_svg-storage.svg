@@ -1,0 +1,165 @@
+<svg id="svg-storage" class="view-svg" viewBox="0 0 800 500" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e2e8f0" stroke-width="0.75" />
+                            </pattern>
+                            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6"
+                                orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b" />
+                            </marker>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#grid)" rx="8" />
+
+                        <!-- Service Layer Panel -->
+                        <rect x="230" y="30" width="340" height="440" rx="12" fill="#f8fafc" stroke="#94a3b8"
+                            stroke-width="1.5" />
+                        <text x="400" y="52" text-anchor="middle" fill="#0f172a" font-size="12" font-weight="bold"
+                            letter-spacing="1.2">SYSTEM SERVICES</text>
+
+                        <!-- Service Nodes -->
+                        <g transform="translate(250, 70)">
+                            <rect width="300" height="45" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5" />
+                            <text x="20" y="27" fill="#1e3a8a" font-size="11" font-weight="bold">Auth, Enterprise &amp;
+                                Payments</text>
+                        </g>
+                        <g transform="translate(250, 150)">
+                            <rect width="300" height="45" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5" />
+                            <text x="20" y="27" fill="#1e3a8a" font-size="11" font-weight="bold">Exam Service</text>
+                        </g>
+                        <g transform="translate(250, 230)">
+                            <rect width="300" height="45" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5" />
+                            <text x="20" y="27" fill="#1e3a8a" font-size="11" font-weight="bold">Candidate
+                                Service</text>
+                        </g>
+                        <g transform="translate(250, 310)">
+                            <rect width="300" height="45" rx="6" fill="#fff7ed" stroke="#f97316" stroke-width="1.5" />
+                            <text x="20" y="27" fill="#7c2d12" font-size="11" font-weight="bold">Proctoring AI
+                                Service</text>
+                        </g>
+                        <g transform="translate(250, 390)">
+                            <rect width="300" height="45" rx="6" fill="#fff7ed" stroke="#f97316" stroke-width="1.5" />
+                            <text x="20" y="27" fill="#7c2d12" font-size="11" font-weight="bold">Grading AI
+                                Service</text>
+                        </g>
+
+                        <!-- Databases (Left column) -->
+                        <text x="110" y="52" text-anchor="middle" fill="#475569" font-size="11" font-weight="600"
+                            letter-spacing="1">PERSISTENCE</text>
+                        <rect x="20" y="65" width="180" height="405" rx="12" fill="#f1f5f9" fill-opacity="0.4"
+                            stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 4" />
+
+                        <!-- DB cylinders (custom path drawing) -->
+                        <g transform="translate(45, 80)">
+                            <path
+                                d="M 0 5 A 40 10 0 1 1 80 5 A 40 10 0 1 1 0 5 Z M 0 5 L 0 25 A 40 10 0 0 0 80 25 L 80 5"
+                                fill="#ffffff" stroke="#475569" stroke-width="1.2" />
+                            <text x="40" y="20" text-anchor="middle" fill="#0f172a" font-size="9" font-weight="600">Core
+                                DBs</text>
+                            <text x="40" y="44" text-anchor="middle" fill="#475569" font-size="8">Auth/Tenant/Pay</text>
+                        </g>
+                        <g transform="translate(45, 160)">
+                            <path
+                                d="M 0 5 A 40 10 0 1 1 80 5 A 40 10 0 1 1 0 5 Z M 0 5 L 0 25 A 40 10 0 0 0 80 25 L 80 5"
+                                fill="#ffffff" stroke="#475569" stroke-width="1.2" />
+                            <text x="40" y="20" text-anchor="middle" fill="#0f172a" font-size="9" font-weight="600">Exam
+                                DB</text>
+                            <text x="40" y="44" text-anchor="middle" fill="#475569" font-size="8">Questions/Exam</text>
+                        </g>
+                        <g transform="translate(45, 240)">
+                            <path
+                                d="M 0 5 A 40 10 0 1 1 80 5 A 40 10 0 1 1 0 5 Z M 0 5 L 0 25 A 40 10 0 0 0 80 25 L 80 5"
+                                fill="#ffffff" stroke="#475569" stroke-width="1.2" />
+                            <text x="40" y="20" text-anchor="middle" fill="#0f172a" font-size="9"
+                                font-weight="600">Candidate DB</text>
+                            <text x="40" y="44" text-anchor="middle" fill="#475569" font-size="8">Sessions/Logs</text>
+                        </g>
+                        <g transform="translate(45, 320)">
+                            <path
+                                d="M 0 5 A 40 10 0 1 1 80 5 A 40 10 0 1 1 0 5 Z M 0 5 L 0 25 A 40 10 0 0 0 80 25 L 80 5"
+                                fill="#ffffff" stroke="#475569" stroke-width="1" stroke-dasharray="2 1" />
+                            <text x="40" y="20" text-anchor="middle" fill="#0f172a" font-size="9"
+                                font-weight="600">Proctor DB</text>
+                            <text x="40" y="44" text-anchor="middle" fill="#475569" font-size="8">Identity Logs</text>
+                        </g>
+                        <g transform="translate(45, 400)">
+                            <path
+                                d="M 0 5 A 40 10 0 1 1 80 5 A 40 10 0 1 1 0 5 Z M 0 5 L 0 25 A 40 10 0 0 0 80 25 L 80 5"
+                                fill="#ffffff" stroke="#475569" stroke-width="1" stroke-dasharray="2 1" />
+                            <text x="40" y="20" text-anchor="middle" fill="#0f172a" font-size="9"
+                                font-weight="600">Grading DB</text>
+                            <text x="40" y="44" text-anchor="middle" fill="#475569"
+                                font-size="8">Scores/Overrides</text>
+                        </g>
+
+                        <!-- External Integrations (Right column) -->
+                        <text x="690" y="52" text-anchor="middle" fill="#475569" font-size="11" font-weight="600"
+                            letter-spacing="1">EXTERNAL APIs</text>
+                        <rect x="600" y="65" width="180" height="405" rx="12" fill="#f8fafc" fill-opacity="0.4"
+                            stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4" />
+
+                        <!-- Cloudinary -->
+                        <g transform="translate(620, 80)">
+                            <rect width="140" height="40" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1"
+                                stroke-dasharray="3 3" />
+                            <text x="70" y="21" text-anchor="middle" fill="#0f172a" font-size="10"
+                                font-weight="600">Cloudinary</text>
+                            <text x="70" y="32" text-anchor="middle" fill="#475569" font-size="8">Media Storage</text>
+                        </g>
+                        <!-- Stripe -->
+                        <g transform="translate(620, 150)">
+                            <rect width="140" height="40" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1"
+                                stroke-dasharray="3 3" />
+                            <text x="70" y="21" text-anchor="middle" fill="#0f172a" font-size="10"
+                                font-weight="600">Stripe Integration</text>
+                            <text x="70" y="32" text-anchor="middle" fill="#475569" font-size="8">Payments</text>
+                        </g>
+                        <!-- SMTP Mail Relay -->
+                        <g transform="translate(620, 220)">
+                            <rect width="140" height="40" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1"
+                                stroke-dasharray="3 3" />
+                            <text x="70" y="21" text-anchor="middle" fill="#0f172a" font-size="10"
+                                font-weight="600">SMTP Relay</text>
+                            <text x="70" y="32" text-anchor="middle" fill="#475569" font-size="8">Transactional
+                                Emails</text>
+                        </g>
+                        <!-- DeepFace API -->
+                        <g transform="translate(620, 290)">
+                            <rect width="140" height="45" rx="6" fill="#fff7ed" stroke="#f97316" stroke-width="1" />
+                            <text x="70" y="21" text-anchor="middle" fill="#7c2d12" font-size="10"
+                                font-weight="600">DeepFace AI API</text>
+                            <text x="70" y="34" text-anchor="middle" fill="#c2410c" font-size="8">Verification
+                                Engine</text>
+                        </g>
+                        <!-- Hugging Face evaluator -->
+                        <g transform="translate(620, 380)">
+                            <rect width="140" height="45" rx="6" fill="#fff7ed" stroke="#f97316" stroke-width="1" />
+                            <text x="70" y="21" text-anchor="middle" fill="#7c2d12" font-size="10"
+                                font-weight="600">Hugging Face ML</text>
+                            <text x="70" y="34" text-anchor="middle" fill="#c2410c" font-size="8">Short-Answer
+                                Models</text>
+                        </g>
+
+                        <!-- Connections to DB (Center to Left) -->
+                        <path d="M 250 92 L 125 92" stroke="#475569" stroke-width="1.2" marker-end="url(#arrow)" />
+                        <path d="M 250 172 L 125 172" stroke="#475569" stroke-width="1.2" marker-end="url(#arrow)" />
+                        <path d="M 250 252 L 125 252" stroke="#475569" stroke-width="1.2" marker-end="url(#arrow)" />
+                        <path d="M 250 332 L 125 332" stroke="#f97316" stroke-dasharray="2 2" stroke-width="1.2"
+                            marker-end="url(#arrow)" />
+                        <path d="M 250 412 L 125 412" stroke="#f97316" stroke-dasharray="2 2" stroke-width="1.2"
+                            marker-end="url(#arrow)" />
+
+                        <!-- Connections to External APIs (Center to Right) -->
+                        <!-- Exam service to Cloudinary -->
+                        <path d="M 550 160 L 590 160 L 590 100 L 620 100" stroke="#64748b" stroke-width="1"
+                            marker-end="url(#arrow)" />
+                        <!-- Candidate to Cloudinary (for registration photos) -->
+                        <path d="M 550 240 L 590 240 L 590 115 L 620 115" stroke="#64748b" stroke-width="1"
+                            marker-end="url(#arrow)" />
+                        <!-- Stripe payment routes -->
+                        <path d="M 550 92 L 600 92 L 600 170 L 620 170" stroke="#64748b" stroke-width="1"
+                            marker-end="url(#arrow)" />
+                        <!-- AI Services Outbound integrations -->
+                        <path d="M 550 332 L 620 312" stroke="#f97316" stroke-width="1.2" marker-end="url(#arrow)" />
+                        <path d="M 550 412 L 620 402" stroke="#f97316" stroke-width="1.2" marker-end="url(#arrow)" />
+                    </svg>

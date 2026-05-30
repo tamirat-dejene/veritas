@@ -34,7 +34,7 @@ func Load() *Config {
 		DBPass:                 getEnv("PG_VERITAS_PASSWORD", "postgres"),
 		DBHost:                 getEnv("PG_VERITAS_HOST", "localhost"),
 		DBPort:                 getEnv("PG_VERITAS_PORT", "5432"),
-		DBName:                 getEnv("PG_VERITAS_CORE_DB", "veritas_core"),
+		DBName:                 getEnv("POSTGRES_CANDIDATE_DB", getEnv("PG_VERITAS_CORE_DB", "veritas_candidate_db")),
 		ExamServiceURL:         getEnv("EXAM_SERVICE_URL", "http://localhost:8084"),
 		EnrollmentTokenSecret:  getEnv("ENROLLMENT_TOKEN_SECRET", "super-secret-enrollment-key"),
 		CandidatePortalBaseURL: getEnv("FRONTEND_BASE_URL", "http://localhost:3000"),

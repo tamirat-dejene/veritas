@@ -1,5 +1,5 @@
 """
-Pydantic models for the candidate.exam.ready_for_grading event payload.
+Pydantic models for the exam.session.ready_for_grading event payload.
 
 These models serve as the single source of truth for event-parsing logic,
 completely decoupled from any HTTP client or network concerns.
@@ -9,6 +9,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Optional
 
+from app.domain.models import QuestionType
 from pydantic import BaseModel, Field
 
 
@@ -44,10 +45,10 @@ class EvaluationCriteria(BaseModel):
 # ---------------------------------------------------------------------------
 
 class GradingItem(BaseModel):
-    """One question/answer pair inside the grading event payload."""
+    """One question/answer pair inside the grading payload."""
     question_id: str
     session_question_id: str
-    question_type: str  # "multiple_choice" | "short_answer"
+    question_type: QuestionType
     content: str
     title: str
     topic: str
@@ -68,15 +69,17 @@ class GradingItem(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Top-level event envelope
+# Slim trigger event envelope (v3.0)
 # ---------------------------------------------------------------------------
 
 class ExamReadyForGradingEvent(BaseModel):
     """
-    Root model for the ``candidate.exam.ready_for_grading`` Kafka event.
+    Slim Kafka trigger event for ``exam.session.ready_for_grading`` (v3.0).
 
-    Mirrors the Go struct ``ExamReadyForGradingEvent`` defined in the
-    candidate-service domain layer.
+    Carries only identifiers and session metadata.  The grading-service fetches
+    the full GradingPayload from the candidate-service internal HTTP endpoint.
+
+    Only version "3.0" is accepted; older events are rejected.
     """
     event_id: str
     event_type: str
@@ -99,5 +102,29 @@ class ExamReadyForGradingEvent(BaseModel):
     auto_submitted: bool = False
     termination_reason: Optional[str] = None
 
-    # Payload
+
+# ---------------------------------------------------------------------------
+# Full grading payload (returned by candidate-service internal endpoint)
+# ---------------------------------------------------------------------------
+
+class GradingPayload(BaseModel):
+    """
+    Full grading data returned by ``GET /internal/sessions/{id}/grading-payload``
+    on the candidate-service.
+
+    This is what the grading engine consumes instead of the (now slim) Kafka event.
+    """
+    session_id: str
+    enterprise_id: str
+    exam_id: str
+    candidate_id: str
+    enrollment_id: str
+
+    status: str
+    started_at: datetime
+    submitted_at: Optional[datetime] = None
+    terminated_at: Optional[datetime] = None
+    auto_submitted: bool = False
+    termination_reason: Optional[str] = None
+
     items: list[GradingItem] = Field(default_factory=list)

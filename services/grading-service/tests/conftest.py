@@ -7,7 +7,9 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List
 from unittest.mock import AsyncMock, MagicMock, patch
 
+# pyrefly: ignore [missing-import]
 import pytest
+from app.domain.models import GradingStatus, QuestionGradingStatus, QuestionType 
 
 # ---------------------------------------------------------------------------
 # Override settings BEFORE any app code imports them
@@ -43,11 +45,11 @@ SQ_ID_3 = str(uuid.UUID("44444444-4444-4444-4444-444444444443"))
 # ---------------------------------------------------------------------------
 
 def _base_event(**overrides) -> Dict[str, Any]:
-    """Build a minimal valid ``candidate.exam.ready_for_grading`` payload."""
+    """Build a minimal valid ``exam.session.ready_for_grading`` payload."""
     event: Dict[str, Any] = {
         "event_id": EVENT_ID,
-        "event_type": "candidate.exam.ready_for_grading",
-        "version": "1.0",
+        "event_type": "exam.session.ready_for_grading",
+        "version": "3.0",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "enterprise_id": ENTERPRISE_ID,
         "exam_id": EXAM_ID,
@@ -78,7 +80,7 @@ def _mcq_item(
     item: Dict[str, Any] = {
         "question_id": question_id,
         "session_question_id": session_question_id,
-        "question_type": "multiple_choice",
+        "question_type": QuestionType.MCQ,
         "content": "Pick the right options",
         "title": "MCQ Question",
         "topic": "general",
@@ -108,7 +110,7 @@ def _sa_item(
     item: Dict[str, Any] = {
         "question_id": question_id,
         "session_question_id": session_question_id,
-        "question_type": "short_answer",
+        "question_type": QuestionType.ShortAnswer,
         "content": "Describe the mitochondria",
         "title": "SA Question",
         "topic": "biology",

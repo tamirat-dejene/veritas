@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import create_pool
+from app.grading.candidate_client import CandidateServiceClient
 from app.grading.worker import run_grading_consumer
 from app.middleware.context import IdentityMiddleware
 from app.repository.grading_repository import GradingRepository
@@ -33,8 +34,19 @@ async def lifespan(app: FastAPI):
     grading_uc = GradingUseCase(grading_repo)
     app.state.grading_uc = grading_uc
 
-    # 3. Spawn the Kafka consumer as a background task, passing the DB pool
-    consumer_task = asyncio.create_task(run_grading_consumer(pool))
+    # 3. Start the candidate-service HTTP client (long-lived connection pool)
+    candidate_client = CandidateServiceClient()
+    await candidate_client.start()
+    app.state.candidate_client = candidate_client
+    logger.info(
+        "CandidateServiceClient started — base_url=%s",
+        settings.CANDIDATE_SERVICE_URL,
+    )
+
+    # 4. Spawn the Kafka consumer as a background task
+    consumer_task = asyncio.create_task(
+        run_grading_consumer(pool, candidate_client)
+    )
     logger.info("Grading Kafka consumer task started.")
 
     yield  # application runs
@@ -46,7 +58,10 @@ async def lifespan(app: FastAPI):
         await consumer_task
     except asyncio.CancelledError:
         pass
-    
+
+    await candidate_client.stop()
+    logger.info("CandidateServiceClient stopped.")
+
     await pool.close()
     logger.info("Shutdown complete")
 
@@ -68,13 +83,6 @@ def create_app() -> FastAPI:
             title=app.title + " - Swagger UI",
         )
 
-    # Middleware
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
     app.add_middleware(IdentityMiddleware)
 
     # Routers
