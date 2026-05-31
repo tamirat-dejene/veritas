@@ -41,6 +41,9 @@ definitions:
         type: boolean
       canceled_at:
         type: string
+      chapa_tx_ref:
+        description: Chapa-specific fields (populated when payment_provider = "chapa")
+        type: string
       created_at:
         type: string
       current_period_end:
@@ -52,6 +55,8 @@ definitions:
       enterprise_id:
         type: string
       id:
+        type: string
+      payment_provider:
         type: string
       plan_id:
         type: string
@@ -298,6 +303,8 @@ definitions:
   UpgradeSubscriptionRequest:
     properties:
       plan_id:
+        type: string
+      provider:
         type: string
     required:
     - plan_id
@@ -969,6 +976,40 @@ paths:
       summary: List subscription plans
       tags:
       - subscription
+  /webhooks/chapa:
+    post:
+      consumes:
+      - application/json
+      description: Validates and processes Chapa webhook event payload.
+      parameters:
+      - description: Chapa webhook signature
+        in: header
+        name: chapa-signature
+        type: string
+      - description: Alternative Chapa signature
+        in: header
+        name: x-chapa-signature
+        type: string
+      - description: Raw webhook payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Handle Chapa webhook
+      tags:
+      - webhook
   /webhooks/stripe:
     post:
       consumes:

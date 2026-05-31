@@ -73,7 +73,7 @@ func (h *PaymentHandler) UpgradeSubscription(c *gin.Context) {
 		return
 	}
 
-	checkoutURL, err := h.usecase.UpgradeSubscription(c.Request.Context(), enterpriseID, planID)
+	checkoutURL, err := h.usecase.UpgradeSubscription(c.Request.Context(), enterpriseID, planID, req.Provider)
 	if err != nil {
 		handleError(c, err)
 		return
@@ -102,7 +102,40 @@ func (h *PaymentHandler) HandleWebhook(c *gin.Context) {
 	}
 
 	sigHeader := c.GetHeader("Stripe-Signature")
-	if err := h.usecase.HandleWebhook(c.Request.Context(), payload, sigHeader); err != nil {
+	if err := h.usecase.HandleWebhook(c.Request.Context(), payload, sigHeader, domain.PaymentProviderStripe); err != nil {
+		writeError(c, http.StatusServiceUnavailable, err.Error())
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
+// HandleChapaWebhook processes Chapa webhook events.
+//
+//	@Summary		Handle Chapa webhook
+//	@Description	Validates and processes Chapa webhook event payload.
+//	@Tags			webhook
+//	@Accept			json
+//	@Param			chapa-signature		header		string	false	"Chapa webhook signature"
+//	@Param			x-chapa-signature	header		string	false	"Alternative Chapa signature"
+//	@Param			payload				body		string	true	"Raw webhook payload"
+//	@Success		200
+//	@Failure		400	{object}	ErrorResponse
+//	@Failure		503	{object}	ErrorResponse
+//	@Router			/webhooks/chapa [post]
+func (h *PaymentHandler) HandleChapaWebhook(c *gin.Context) {
+	payload, err := c.GetRawData()
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "failed to read request body")
+		return
+	}
+
+	sigHeader := c.GetHeader("chapa-signature")
+	if sigHeader == "" {
+		sigHeader = c.GetHeader("x-chapa-signature")
+	}
+
+	if err := h.usecase.HandleWebhook(c.Request.Context(), payload, sigHeader, domain.PaymentProviderChapa); err != nil {
 		writeError(c, http.StatusServiceUnavailable, err.Error())
 		return
 	}

@@ -13,7 +13,8 @@ type ErrorResponse struct {
 
 // UpgradeSubscriptionRequest is the request body for subscription upgrades.
 type UpgradeSubscriptionRequest struct {
-	PlanID string `json:"plan_id" binding:"required"`
+	PlanID   string `json:"plan_id" binding:"required"`
+	Provider string `json:"provider"`
 }
 
 // CheckoutURLResponse is returned after creating a checkout session.

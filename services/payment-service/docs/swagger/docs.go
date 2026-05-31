@@ -933,6 +933,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/webhooks/chapa": {
+            "post": {
+                "description": "Validates and processes Chapa webhook event payload.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "webhook"
+                ],
+                "summary": "Handle Chapa webhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Chapa webhook signature",
+                        "name": "chapa-signature",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Alternative Chapa signature",
+                        "name": "x-chapa-signature",
+                        "in": "header"
+                    },
+                    {
+                        "description": "Raw webhook payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/webhooks/stripe": {
             "post": {
                 "description": "Validates and processes Stripe webhook event payload.",
@@ -1040,6 +1092,10 @@ const docTemplate = `{
                 "canceled_at": {
                     "type": "string"
                 },
+                "chapa_tx_ref": {
+                    "description": "Chapa-specific fields (populated when payment_provider = \"chapa\")",
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -1056,6 +1112,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "payment_provider": {
                     "type": "string"
                 },
                 "plan_id": {
@@ -1415,6 +1474,9 @@ const docTemplate = `{
             ],
             "properties": {
                 "plan_id": {
+                    "type": "string"
+                },
+                "provider": {
                     "type": "string"
                 }
             }
