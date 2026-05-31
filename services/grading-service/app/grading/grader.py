@@ -38,6 +38,8 @@ class QuestionResult:
     session_question_id: str
     question_type: QuestionType
     title: str
+    content: str
+    candidate_answer: Any
     max_points: float
     awarded_points: float
     status: QuestionGradingStatus  # "correct" | "incorrect" | "partial" | "skipped" | "ai_graded"
@@ -85,6 +87,8 @@ def _grade_mcq(item: GradingItem) -> QuestionResult:
             session_question_id=item.session_question_id,
             question_type=item.question_type,
             title=item.title,
+            content=item.content,
+            candidate_answer=item.candidate_answer,
             max_points=item.points,
             awarded_points=0.0,
             status=QuestionGradingStatus.skipped,
@@ -99,6 +103,8 @@ def _grade_mcq(item: GradingItem) -> QuestionResult:
             session_question_id=item.session_question_id,
             question_type=item.question_type,
             title=item.title,
+            content=item.content,
+            candidate_answer=item.candidate_answer,
             max_points=item.points,
             awarded_points=item.points,
             status=QuestionGradingStatus.correct,
@@ -113,6 +119,8 @@ def _grade_mcq(item: GradingItem) -> QuestionResult:
         session_question_id=item.session_question_id,
         question_type=item.question_type,
         title=item.title,
+        content=item.content,
+        candidate_answer=item.candidate_answer,
         max_points=item.points,
         awarded_points=awarded,
         status=QuestionGradingStatus.incorrect,
@@ -214,6 +222,8 @@ async def grade_exam(event_id: str, payload: GradingPayload) -> ExamGradeReport:
                     session_question_id=item.session_question_id,
                     question_type=item.question_type,
                     title=item.title,
+                    content=item.content,
+                    candidate_answer=item.candidate_answer,
                     max_points=item.points,
                     awarded_points=0.0,
                     status=QuestionGradingStatus.skipped,
@@ -235,6 +245,8 @@ async def grade_exam(event_id: str, payload: GradingPayload) -> ExamGradeReport:
                     session_question_id=item.session_question_id,
                     question_type=item.question_type,
                     title=item.title,
+                    content=item.content,
+                    candidate_answer=item.candidate_answer,
                     max_points=item.points,
                     awarded_points=0.0,
                     status=QuestionGradingStatus.skipped,
@@ -291,6 +303,8 @@ async def grade_exam(event_id: str, payload: GradingPayload) -> ExamGradeReport:
             session_question_id=item.session_question_id,
             question_type=item.question_type,
             title=item.title,
+            content=item.content,
+            candidate_answer=item.candidate_answer,
             max_points=item.points,
             awarded_points=awarded,
             status=QuestionGradingStatus.ai_graded,

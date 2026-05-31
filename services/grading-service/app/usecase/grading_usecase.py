@@ -53,6 +53,31 @@ class GradingUseCase:
             ip_address=ip_address
         )
 
+    async def update_question_grade_manually(
+        self,
+        session_id: UUID,
+        session_question_id: UUID,
+        new_question_score: float,
+        actor_id: UUID,
+        actor_role: str,
+        reason: str,
+        ip_address: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Manually override a specific question's score, generating audit records and HMAC updates."""
+        logger.info(
+            "Manual question score override request for session %s question %s by actor %s (role: %s). New score: %s",
+            session_id, session_question_id, actor_id, actor_role, new_question_score
+        )
+        return await self._repository.update_question_grade_manually(
+            session_id=session_id,
+            session_question_id=session_question_id,
+            new_question_score=new_question_score,
+            actor_id=actor_id,
+            actor_role=actor_role,
+            reason=reason,
+            ip_address=ip_address
+        )
+
     async def get_audit_logs(self, session_id: UUID) -> List[Dict[str, Any]]:
         """Get the full immutable history/audit logs of edits for a session's grade."""
         return await self._repository.get_audit_logs(session_id)

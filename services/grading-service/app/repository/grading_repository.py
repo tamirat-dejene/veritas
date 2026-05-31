@@ -1,5 +1,6 @@
 import json
 import logging
+import json
 from uuid import UUID
 from typing import Any, Optional, Dict, List, Tuple
 import asyncpg
@@ -174,14 +175,16 @@ class GradingRepository:
                         """
                         INSERT INTO grading_question_results (
                             grading_result_id, question_id, session_question_id,
-                            question_type, title, max_points, awarded_points, status
-                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                            question_type, title, content, candidate_answer, max_points, awarded_points, status
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                         """,
                         grading_result_id,
                         UUID(qr.question_id),
                         UUID(qr.session_question_id),
                         qr.question_type,
                         qr.title,
+                        qr.content,
+                        json.dumps(qr.candidate_answer) if qr.candidate_answer else None,
                         qr.max_points,
                         qr.awarded_points,
                         qr.status
@@ -245,6 +248,20 @@ class GradingRepository:
                 version=row["version"]
             )
             record["is_tampered"] = (row["row_checksum"] != expected_checksum)
+            
+            # Parse graded_by into a GraderInfo dict
+            raw_grader = record.get("graded_by", "system")
+            if raw_grader.startswith("user:"):
+                record["graded_by"] = {
+                    "id": raw_grader[5:],
+                    "type": "human"
+                }
+            else:
+                record["graded_by"] = {
+                    "id": raw_grader,
+                    "type": "system"
+                }
+                
             if record["is_tampered"]:
                 logger.error(
                     "DATABASE CORRUPTION DETECTED! Grading result row ID %s (Session %s) has invalid checksum.",
@@ -267,6 +284,20 @@ class GradingRepository:
             return None
 
         record = dict(row)
+        
+        # Parse graded_by into a GraderInfo dict
+        raw_grader = record.get("graded_by", "system")
+        if raw_grader.startswith("user:"):
+            record["graded_by"] = {
+                "id": raw_grader[5:],
+                "type": "human"
+            }
+        else:
+            record["graded_by"] = {
+                "id": raw_grader,
+                "type": "system"
+            }
+
         expected_checksum = calculate_row_checksum(
             session_id=str(row["session_id"]),
             candidate_id=str(row["candidate_id"]),
@@ -279,10 +310,20 @@ class GradingRepository:
 
         # Get question details
         qr_rows = await self._pool.fetch(
-            "SELECT question_id, session_question_id, question_type, title, max_points, awarded_points, status FROM grading_question_results WHERE grading_result_id = $1",
+            "SELECT question_id, session_question_id, question_type, title, content, candidate_answer, max_points, awarded_points, status FROM grading_question_results WHERE grading_result_id = $1",
             row["id"]
         )
-        record["question_results"] = [dict(qr) for qr in qr_rows]
+        question_results = []
+        for qr in qr_rows:
+            qr_dict = dict(qr)
+            if qr_dict.get("candidate_answer") and isinstance(qr_dict["candidate_answer"], str):
+                try:
+                    qr_dict["candidate_answer"] = json.loads(qr_dict["candidate_answer"])
+                except json.JSONDecodeError:
+                    pass
+            question_results.append(qr_dict)
+            
+        record["question_results"] = question_results
 
         return record
 
@@ -366,6 +407,121 @@ class GradingRepository:
                     "new_score": new_awarded_points,
                     "new_percentage": new_pct,
                     "status": GradingStatus.reviewed.value
+                }
+
+    async def update_question_grade_manually(
+        self,
+        session_id: UUID,
+        session_question_id: UUID,
+        new_question_score: float,
+        actor_id: UUID,
+        actor_role: str,
+        reason: str,
+        ip_address: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Manually override a specific question's score and recalculate the overall grade with strict HMAC updates.
+        """
+        async with self._pool.acquire() as conn:
+            async with conn.transaction():
+                row = await conn.fetchrow(
+                    "SELECT id, candidate_id, total_max_points, total_awarded_points, percentage, row_checksum, version FROM grading_results WHERE session_id = $1",
+                    session_id
+                )
+                if not row:
+                    raise ValueError(f"Grading result for session {session_id} not found.")
+
+                result_id = row['id']
+
+                # Integrity check before letting anyone update it
+                stored_checksum = row["row_checksum"]
+                expected_checksum = calculate_row_checksum(
+                    session_id=str(session_id),
+                    candidate_id=str(row["candidate_id"]),
+                    total_max_points=float(row["total_max_points"]),
+                    total_awarded_points=float(row["total_awarded_points"]),
+                    percentage=float(row["percentage"]),
+                    version=row["version"]
+                )
+                if stored_checksum != expected_checksum:
+                    raise DataTamperingError(session_id)
+
+                # Fetch question result
+                qr_row = await conn.fetchrow(
+                    "SELECT id, max_points, awarded_points FROM grading_question_results WHERE grading_result_id = $1 AND session_question_id = $2",
+                    result_id, session_question_id
+                )
+                if not qr_row:
+                    raise ValueError(f"Question {session_question_id} not found for session {session_id}.")
+
+                prev_question_score = float(qr_row["awarded_points"])
+                prev_total_score = float(row["total_awarded_points"])
+
+                # Calculate new total awarded points
+                score_diff = new_question_score - prev_question_score
+                new_total_awarded_points = prev_total_score + score_diff
+
+                max_pts = float(row["total_max_points"])
+                new_pct = round((new_total_awarded_points / max_pts) * 100, 2) if max_pts > 0 else 0.0
+                new_version = row["version"] + 1
+
+                # Recalculate HMAC checksum
+                new_checksum = calculate_row_checksum(
+                    session_id=str(session_id),
+                    candidate_id=str(row["candidate_id"]),
+                    total_max_points=max_pts,
+                    total_awarded_points=new_total_awarded_points,
+                    percentage=new_pct,
+                    version=new_version
+                )
+
+                # Set transaction context for audit logging trigger
+                await self._set_audit_context(conn, actor_id, actor_role, ip_address, reason)
+
+                # Update question result
+                await conn.execute(
+                    """
+                    UPDATE grading_question_results SET
+                        awarded_points = $1,
+                        status = 'human_review'
+                    WHERE id = $2
+                    """,
+                    new_question_score,
+                    qr_row["id"]
+                )
+
+                # Update overall result
+                result = await conn.execute(
+                    """
+                    UPDATE grading_results SET
+                        total_awarded_points = $1,
+                        percentage = $2,
+                        status = 'reviewed',
+                        graded_by = $3,
+                        row_checksum = $4,
+                        updated_at = NOW()
+                    WHERE id = $5 AND version = $6
+                    """,
+                    new_total_awarded_points,
+                    new_pct,
+                    f"user:{str(actor_id)}",
+                    new_checksum,
+                    result_id,
+                    row["version"]
+                )
+
+                if result == "UPDATE 0":
+                    raise RuntimeError("Optimistic locking conflict during grade edit. Please try again.")
+
+                return {
+                    "session_id": session_id,
+                    "session_question_id": session_question_id,
+                    "previous_question_score": prev_question_score,
+                    "new_question_score": new_question_score,
+                    "previous_total_score": prev_total_score,
+                    "new_total_score": new_total_awarded_points,
+                    "new_percentage": new_pct,
+                    "status": "reviewed"
                 }
 
     async def get_audit_logs(self, session_id: UUID) -> List[Dict[str, Any]]:

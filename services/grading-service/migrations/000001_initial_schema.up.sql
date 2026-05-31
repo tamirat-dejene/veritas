@@ -78,6 +78,8 @@ CREATE TABLE IF NOT EXISTS grading_question_results (
     session_question_id  UUID NOT NULL,
     question_type        VARCHAR(30) NOT NULL,
     title                VARCHAR(500) NOT NULL DEFAULT '',
+    content              TEXT NOT NULL DEFAULT '',
+    candidate_answer     JSONB,
     max_points           NUMERIC(8,2) NOT NULL DEFAULT 0,
     awarded_points       NUMERIC(8,2) NOT NULL DEFAULT 0,
     status               question_grading_status NOT NULL DEFAULT 'skipped',
