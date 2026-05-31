@@ -41,7 +41,7 @@ jobs:
                 source venv/bin/activate
                 pip install -r requirements.txt
                 if [ -d "tests" ]; then
-                  pip install pytest
+                  pip install pytest pytest-asyncio respx
                   pytest
                 fi
               )
