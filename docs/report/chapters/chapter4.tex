@@ -41,7 +41,7 @@ Key architectural principles realized in the codebase include:
 \begin{itemize}
     \item \textbf{Database-per-service ownership:} Each service owns its schema and data lifecycle. Cross-service access happens only through APIs or events.
     \item \textbf{Event-driven consistency:} Kafka topics propagate lifecycle events (enterprise suspension, exam closure, grading triggers) to keep services consistent without direct coupling.
-    \item \textbf{External integration boundaries:} Third-party providers (Stripe, Cloudinary, SMTP, DeepFace, Hugging Face) are accessed only through the owning service.
+    \item \textbf{External integration boundaries:} Third-party providers (Stripe, Chapa, Cloudinary, SMTP, DeepFace, Hugging Face) are accessed only through the owning service.
 \end{itemize}
 
 \subsubsection{Subsystem Decomposition}
@@ -71,7 +71,7 @@ This subsystem includes \texttt{exam-service} and \texttt{candidate-service}. Ra
 This subsystem contains the heavy machine learning workloads, including \texttt{proctoring-service} and \texttt{grading-service}. Rationale for isolating proctoring from grading is that the proctoring engine must ingest thousands of high-frequency behavioral signals (tab changes, blur events, webcam face checks) per candidate session, calling for high-throughput stream ingestion. Grading, on the other hand, is a high-consistency terminal execution that runs once upon exam completion. Separating these ensures that proctoring signal spikes do not resource-starve the critical scoring and grading transaction pipeline.
 
 \paragraph{Commercial and Communication Subsystem}
-This subsystem consists of \texttt{payment-service} and \texttt{notification-service}. Rationale for decoupling the notification service is that sending transactional emails via SMTP is slow and prone to network timeouts. Delegating notification dispatching to an asynchronous Kafka consumer prevents outbound network delays from blocking candidate logins or exam submissions. The payment service isolates Stripe API credentials and webhook integrations, ensuring that subscription updates propagate asynchronously.
+This subsystem consists of \texttt{payment-service} and \texttt{notification-service}. Rationale for decoupling the notification service is that sending transactional emails via SMTP is slow and prone to network timeouts. Delegating notification dispatching to an asynchronous Kafka consumer prevents outbound network delays from blocking candidate logins or exam submissions. The payment service isolates Stripe and Chapa API credentials and webhook integrations, supporting parallel international and local payment providers to process subscription updates asynchronously.
 
 \subsubsection{Database Design}
 The Veritas platform implements a strict \textbf{Database-per-Service} architecture. Rationale for this design decision includes:
@@ -139,7 +139,7 @@ Data boundaries are explicitly defined across services to prevent distributed tr
     \item \textbf{Enterprise Service Schema} (Figure \ref{fig:erd-enterprise}): Manages tenant metadata, staff allocations, and administrative audit logs.
     \item \textbf{Exam Service Schema} (Figure \ref{fig:erd-exam}): Stores isolated question banks, exam templates, and dynamic scheduling criteria.
     \item \textbf{Candidate Service Schema} (Figure \ref{fig:erd-candidate}): Tracks candidate enrollment tokens, active exam sessions status, and raw question-answer states.
-    \item \textbf{Payment Service Schema} (Figure \ref{fig:erd-payment}): Records billing metadata, Stripe subscription logs, and transactional invoice events.
+    \item \textbf{Payment Service Schema} (Figure \ref{fig:erd-payment}): Records billing metadata, Stripe and Chapa subscription logs, and transactional invoice events.
     \item \textbf{Grading Service Schema} (Figure \ref{fig:erd-grading}): Persists final computed scores, question-by-question marks, and high-security audit rows backed by row-level cryptographic HMAC checksums.
     \item \textbf{Proctoring Service Schema} (Figure \ref{fig:erd-proctoring}): Houses facial verification logs, eye-tracking events, and aggregated cheating score histories.
 \end{itemize}
@@ -306,7 +306,7 @@ Veritas utilizes an asynchronous message-driven pattern built on Apache Kafka to
 \path{auth.user.login} & Auth Service & Notification & Emits User ID, IP address, and login timestamp. Used for anomaly detection and login confirmation alerts. \\ \hline
 \path{enterprise.enterprise.created} & Enterprise & Notification, Auth & Registers a new tenant onboarding. Initiates baseline schema settings and sends welcome configurations. \\ \hline
 \path{enterprise.enterprise.suspended} & Enterprise & Auth, Exam, Candidate & Suspends tenant operations immediately. Revokes JWT session validation and disables ongoing exam templates. \\ \hline
-\path{subscription.payment.failed} & Payment & Enterprise, Notification & Stripe-triggered invoice failure. Initiates grace-period counters and notifies the enterprise administrator. \\ \hline
+\path{subscription.payment.failed} & Payment & Enterprise, Notification & Stripe- or Chapa-triggered invoice failure. Initiates grace-period counters and notifies the enterprise administrator. \\ \hline
 \path{exam.exam.created} & Exam Service & Notification & Broadly updates course/exam configurations. Triggers optional student subscription enrollment calendars. \\ \hline
 \path{exam.session.ready_for_grading} & Candidate & Grading Service & Slim trigger v3.0 metadata: session, candidate, and enterprise UUIDs. Initiates async AI evaluation pipeline. \\ \hline
 \path{candidate.enrollment.invited} & Candidate & Notification & Outlines candidate invitation details, enrollment token, and branding metadata for dispatching custom invitations. \\ \hline

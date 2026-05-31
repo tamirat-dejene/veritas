@@ -101,7 +101,7 @@ Candidate examination & Candidate login, session start, answer saving, submissio
 Proctoring & Event ingestion, severity mapping, face verification support, event persistence, and cheating score computation. & Prototype validates concept; real-world accuracy depends on camera quality, lighting, and model tuning. \\ \hline
 Grading and results & Objective grading, AI-assisted subjective grading path, pending results, final reports, manual override, and checksum protection. & Functional and integrity behavior verified through automated tests and inspection. \\ \hline
 Dashboard and reporting & Administrative views and report-oriented service endpoints support exam, result, and proctoring summaries. & Demonstration-level support; advanced custom report builder remains future work. \\ \hline
-Payment and subscription & Subscription plans, billing records, provider boundary, and tier enforcement logic. & Prototype and simulated-provider support implemented; local payment gateway certification remains future work. \\ \hline
+Payment and subscription & Subscription plans, billing records, provider boundary, and tier enforcement logic. & Prototype and dynamic provider registry implemented, integrating Stripe and a local payment gateway (Chapa); production webhook hardening remains future work. \\ \hline
 \end{longtable}
 
 \subsubsection{Evaluation of Architecture and Integration}
@@ -140,11 +140,11 @@ Some limitations remain. First, the prototype was evaluated mainly in a controll
 
 Second, AI grading and face verification depend on model quality, image conditions, and prompt or rubric configuration. The prototype demonstrates the integration pattern, but a larger labeled dataset would be required to measure accuracy, false-positive rates, fairness, and consistency across different devices and lighting environments.
 
-Third, payment integration is suitable for prototype demonstration but still requires production certification, webhook hardening, reconciliation checks, and local payment-provider approval before real financial use. Similarly, privacy and regulatory compliance require formal policy review and deployment-specific controls.
+Third, payment integration supports parallel Stripe and Chapa provider routing but still requires production certification, webhook hardening, and reconciliation checks before real financial use. Similarly, privacy and regulatory compliance require formal policy review and deployment-specific controls.
 
 Fourth, advanced dashboard capabilities such as fully customizable report builders, large asynchronous report exports, and multilingual localization require additional development. The current implementation provides the foundation for these features but does not exhaust all desirable reporting requirements.
 
 \subsubsection{Conclusion of Evaluation}
 Overall, the evaluation confirms that the proposed Veritas design is technically feasible and that the implemented prototype satisfies the core objectives of the project. The system supports multi-tenant enterprise assessment management, secure access control, candidate exam delivery, AI-assisted grading, proctoring event processing, auditability, and asynchronous integration. The results also show that the selected technologies--Go, Python, PostgreSQL, Redis, Kafka, and Docker--fit the architectural needs of the platform.
 
-The prototype is therefore suitable as a controlled demonstration and as a strong foundation for future development. Before deployment in high-stakes production contexts, the system should undergo extended load testing, formal security review, usability testing with a larger group of candidates and administrators, local payment gateway certification, and AI accuracy validation using representative Ethiopian assessment datasets.
+The prototype is therefore suitable as a controlled demonstration and as a strong foundation for future development. Before deployment in high-stakes production contexts, the system should undergo extended load testing, formal security review, usability testing with a larger group of candidates and administrators, production payment gateway certification, and AI accuracy validation using representative Ethiopian assessment datasets.
