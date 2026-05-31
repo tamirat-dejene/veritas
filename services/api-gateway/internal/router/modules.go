@@ -100,6 +100,9 @@ func (g *RouterGroup) RegisterPaymentRoutes(proxy http.Handler) {
 
 	// Stripe webhook (public)
 	g.register("POST", "/webhooks/stripe", proxy)
+
+	// Chapa webhook (public)
+	g.register("POST", "/webhooks/chapa", proxy)
 }
 
 // RegisterExamRoutes attaches Exam Service proxy routes
