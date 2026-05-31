@@ -15,7 +15,7 @@ import (
 
 const (
 	planFields = "id, name, slug, description, price, currency, billing_cycle, features, is_active, created_at, updated_at"
-	subFields  = "id, enterprise_id, plan_id, status, current_period_start, current_period_end, cancel_at_period_end, canceled_at, ended_at, stripe_customer_id, stripe_subscription_id, created_at, updated_at"
+	subFields  = "id, enterprise_id, plan_id, status, current_period_start, current_period_end, cancel_at_period_end, canceled_at, ended_at, stripe_customer_id, stripe_subscription_id, chapa_tx_ref, payment_provider, created_at, updated_at"
 )
 
 type subscriptionRepository struct {
@@ -130,7 +130,7 @@ func (r *subscriptionRepository) GetSubscriptionByEnterpriseID(ctx context.Conte
 	query := fmt.Sprintf("SELECT %s FROM veritas_enterprise_subscriptions WHERE enterprise_id = $1", subFields)
 	var s domain.EnterpriseSubscription
 	err := r.db.QueryRow(ctx, query, enterpriseID).Scan(
-		&s.ID, &s.EnterpriseID, &s.PlanID, &s.Status, &s.CurrentPeriodStart, &s.CurrentPeriodEnd, &s.CancelAtPeriodEnd, &s.CanceledAt, &s.EndedAt, &s.StripeCustomerID, &s.StripeSubscriptionID, &s.CreatedAt, &s.UpdatedAt,
+		&s.ID, &s.EnterpriseID, &s.PlanID, &s.Status, &s.CurrentPeriodStart, &s.CurrentPeriodEnd, &s.CancelAtPeriodEnd, &s.CanceledAt, &s.EndedAt, &s.StripeCustomerID, &s.StripeSubscriptionID, &s.ChapaTxRef, &s.PaymentProvider, &s.CreatedAt, &s.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -145,7 +145,22 @@ func (r *subscriptionRepository) GetSubscriptionByStripeID(ctx context.Context, 
 	query := fmt.Sprintf("SELECT %s FROM veritas_enterprise_subscriptions WHERE stripe_subscription_id = $1", subFields)
 	var s domain.EnterpriseSubscription
 	err := r.db.QueryRow(ctx, query, stripeSubscriptionID).Scan(
-		&s.ID, &s.EnterpriseID, &s.PlanID, &s.Status, &s.CurrentPeriodStart, &s.CurrentPeriodEnd, &s.CancelAtPeriodEnd, &s.CanceledAt, &s.EndedAt, &s.StripeCustomerID, &s.StripeSubscriptionID, &s.CreatedAt, &s.UpdatedAt,
+		&s.ID, &s.EnterpriseID, &s.PlanID, &s.Status, &s.CurrentPeriodStart, &s.CurrentPeriodEnd, &s.CancelAtPeriodEnd, &s.CanceledAt, &s.EndedAt, &s.StripeCustomerID, &s.StripeSubscriptionID, &s.ChapaTxRef, &s.PaymentProvider, &s.CreatedAt, &s.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrSubscriptionNotFound
+		}
+		return nil, err
+	}
+	return &s, nil
+}
+
+func (r *subscriptionRepository) GetSubscriptionByChapaTxRef(ctx context.Context, txRef string) (*domain.EnterpriseSubscription, error) {
+	query := fmt.Sprintf("SELECT %s FROM veritas_enterprise_subscriptions WHERE chapa_tx_ref = $1", subFields)
+	var s domain.EnterpriseSubscription
+	err := r.db.QueryRow(ctx, query, txRef).Scan(
+		&s.ID, &s.EnterpriseID, &s.PlanID, &s.Status, &s.CurrentPeriodStart, &s.CurrentPeriodEnd, &s.CancelAtPeriodEnd, &s.CanceledAt, &s.EndedAt, &s.StripeCustomerID, &s.StripeSubscriptionID, &s.ChapaTxRef, &s.PaymentProvider, &s.CreatedAt, &s.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -161,8 +176,8 @@ func (r *subscriptionRepository) CreateSubscription(ctx context.Context, s *doma
 		INSERT INTO veritas_enterprise_subscriptions (
 			id, enterprise_id, plan_id, status, current_period_start, current_period_end, 
 			cancel_at_period_end, canceled_at, ended_at, stripe_customer_id, stripe_subscription_id, 
-			created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+			chapa_tx_ref, payment_provider, created_at, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 	`
 	if s.ID == uuid.Nil {
 		s.ID = uuid.New()
@@ -171,10 +186,15 @@ func (r *subscriptionRepository) CreateSubscription(ctx context.Context, s *doma
 	s.CreatedAt = now
 	s.UpdatedAt = now
 
+	// Ensure provider default is stripe if not set
+	if s.PaymentProvider == "" {
+		s.PaymentProvider = domain.PaymentProviderStripe
+	}
+
 	_, err := r.db.Exec(ctx, query,
 		s.ID, s.EnterpriseID, s.PlanID, s.Status, s.CurrentPeriodStart, s.CurrentPeriodEnd,
 		s.CancelAtPeriodEnd, s.CanceledAt, s.EndedAt, s.StripeCustomerID, s.StripeSubscriptionID,
-		s.CreatedAt, s.UpdatedAt,
+		s.ChapaTxRef, s.PaymentProvider, s.CreatedAt, s.UpdatedAt,
 	)
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -191,14 +211,20 @@ func (r *subscriptionRepository) UpdateSubscription(ctx context.Context, s *doma
 		UPDATE veritas_enterprise_subscriptions SET
 			plan_id = $1, status = $2, current_period_start = $3, current_period_end = $4,
 			cancel_at_period_end = $5, canceled_at = $6, ended_at = $7,
-			stripe_customer_id = $8, stripe_subscription_id = $9, updated_at = $10
-		WHERE id = $11
+			stripe_customer_id = $8, stripe_subscription_id = $9, chapa_tx_ref = $10, payment_provider = $11, updated_at = $12
+		WHERE id = $13
 	`
 	s.UpdatedAt = time.Now()
+	
+	// Ensure provider default is stripe if not set
+	if s.PaymentProvider == "" {
+		s.PaymentProvider = domain.PaymentProviderStripe
+	}
+
 	cmd, err := r.db.Exec(ctx, query,
 		s.PlanID, s.Status, s.CurrentPeriodStart, s.CurrentPeriodEnd,
 		s.CancelAtPeriodEnd, s.CanceledAt, s.EndedAt,
-		s.StripeCustomerID, s.StripeSubscriptionID, s.UpdatedAt, s.ID,
+		s.StripeCustomerID, s.StripeSubscriptionID, s.ChapaTxRef, s.PaymentProvider, s.UpdatedAt, s.ID,
 	)
 	if err != nil {
 		return err
@@ -279,7 +305,7 @@ func (r *subscriptionRepository) GetLapsedSubscriptions(ctx context.Context, lim
 		if err := rows.Scan(
 			&s.ID, &s.EnterpriseID, &s.PlanID, &s.Status, &s.CurrentPeriodStart, &s.CurrentPeriodEnd,
 			&s.CancelAtPeriodEnd, &s.CanceledAt, &s.EndedAt, &s.StripeCustomerID, &s.StripeSubscriptionID,
-			&s.CreatedAt, &s.UpdatedAt,
+			&s.ChapaTxRef, &s.PaymentProvider, &s.CreatedAt, &s.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -308,7 +334,7 @@ func (r *subscriptionRepository) GetPastDueCandidates(ctx context.Context, limit
 		if err := rows.Scan(
 			&s.ID, &s.EnterpriseID, &s.PlanID, &s.Status, &s.CurrentPeriodStart, &s.CurrentPeriodEnd,
 			&s.CancelAtPeriodEnd, &s.CanceledAt, &s.EndedAt, &s.StripeCustomerID, &s.StripeSubscriptionID,
-			&s.CreatedAt, &s.UpdatedAt,
+			&s.ChapaTxRef, &s.PaymentProvider, &s.CreatedAt, &s.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
