@@ -43,6 +43,8 @@ class QuestionResult:
     max_points: float
     awarded_points: float
     status: QuestionGradingStatus  # "correct" | "incorrect" | "partial" | "skipped" | "ai_graded"
+    options: list[dict] | None = None
+    correct_option_ids: list[str] | None = None
 
 
 @dataclass
@@ -81,6 +83,9 @@ def _grade_mcq(item: GradingItem) -> QuestionResult:
       • Mismatch     → ``-negative_points`` (floored at 0).
       • Skipped      → 0.
     """
+    options = [opt.model_dump() for opt in item.options] if item.options else None
+    correct = item.correct_option_ids
+
     if not item.has_answer or item.candidate_answer is None:
         return QuestionResult(
             question_id=item.question_id,
@@ -92,12 +97,14 @@ def _grade_mcq(item: GradingItem) -> QuestionResult:
             max_points=item.points,
             awarded_points=0.0,
             status=QuestionGradingStatus.skipped,
+            options=options,
+            correct_option_ids=correct,
         )
 
-    selected = set(item.candidate_answer.get("selectedOptionIds", []))
-    correct = set(item.correct_option_ids or [])
+    selected = set(item.candidate_answer.selectedOptionIds)
+    correct_set = set(correct or [])
 
-    if selected == correct:
+    if selected == correct_set:
         return QuestionResult(
             question_id=item.question_id,
             session_question_id=item.session_question_id,
@@ -108,6 +115,8 @@ def _grade_mcq(item: GradingItem) -> QuestionResult:
             max_points=item.points,
             awarded_points=item.points,
             status=QuestionGradingStatus.correct,
+            options=options,
+            correct_option_ids=correct,
         )
 
     # Incorrect — wrong answer starts at 0 and subtracts negative_points.
@@ -124,6 +133,8 @@ def _grade_mcq(item: GradingItem) -> QuestionResult:
         max_points=item.points,
         awarded_points=awarded,
         status=QuestionGradingStatus.incorrect,
+        options=options,
+        correct_option_ids=correct,
     )
 
 
@@ -139,7 +150,7 @@ def _prepare_sa_batch_item(item: GradingItem) -> dict[str, Any] | None:
     if not item.has_answer or item.candidate_answer is None:
         return None
 
-    student_text = item.candidate_answer.get("text")
+    student_text = item.candidate_answer.text
     if not student_text:
         return None
 
@@ -270,6 +281,8 @@ async def grade_exam(event_id: str, payload: GradingPayload) -> ExamGradeReport:
                 session_question_id=item.session_question_id,
                 question_type=item.question_type,
                 title=item.title,
+                content=item.content,
+                candidate_answer=item.candidate_answer,
                 max_points=item.points,
                 awarded_points=0.0,
                 status=QuestionGradingStatus.skipped,
