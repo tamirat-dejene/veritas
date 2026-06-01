@@ -33,6 +33,7 @@ func NewRouter(h *handler.PaymentHandler) *gin.Engine {
 		api.GET("/invoices/:invoiceId", h.GetInvoice)
 		api.GET("/billing/summary", h.GetBillingSummary)
 		api.POST("/webhooks/stripe", h.HandleWebhook)
+		api.POST("/webhooks/chapa", h.HandleChapaWebhook)
 	}
 
 	// Admin-only routes

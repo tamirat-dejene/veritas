@@ -67,5 +67,10 @@ pip-delete-this-directory.txt
 .env.production
 !.env.example
 tmp/
-docs/report/tex_out
+docs/report/tex_out/*
 veritas_presentation/tex_out
+
+k8s
+secret.yaml
+requirements-gap-analysis.md
+!docs/report/tex_out/report.pdf

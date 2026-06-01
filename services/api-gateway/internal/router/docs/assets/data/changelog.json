@@ -50,6 +50,20 @@
     ]
   },
 
+    "date": "2026-05-31",
+    "changes": [
+      {
+        "type": "new",
+        "service": "payment",
+        "summary": "Integration of Chapa Payment Gateway and Dynamic Provider Strategy",
+        "description": "Integrated Chapa payment gateway as a parallel payment provider alongside Stripe. Support has been added for initializing payments in ETB currency and validating signature/integrity verification on incoming Chapa webhooks. The payment-service has been decoupled from the Stripe SDK, utilizing a dynamic ProviderRegistry to route operations dynamically. Webhook endpoints for both Stripe and Chapa are now routed dynamically.",
+        "endpoints": [
+          "POST /webhooks/chapa (NEW: public endpoint to receive Chapa payment callbacks/webhooks)",
+          "POST /subscriptions/:enterpriseId/upgrade (UPDATED: now accepts an optional 'provider' field to select stripe or chapa)"
+        ]
+      }
+    ]
+  },
   {
     "date": "2026-05-26",
     "changes": [

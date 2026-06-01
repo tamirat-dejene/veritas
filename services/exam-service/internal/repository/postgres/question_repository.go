@@ -259,6 +259,16 @@ func (r *questionRepository) Update(ctx context.Context, q *sdomain.Question) er
 	return nil
 }
 
+func (r *questionRepository) UpdateMediaURL(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID, mediaURL *string) error {
+	const updateMediaURL = `
+		UPDATE veritas_questions
+		SET media_url = $3, updated_at = NOW()
+		WHERE id = $1 AND enterprise_id = $2
+	`
+	_, err := r.db.Exec(ctx, updateMediaURL, id, enterpriseID, mediaURL)
+	return err
+}
+
 func (r *questionRepository) Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
 	const deleteQuestion = `DELETE FROM veritas_questions WHERE id = $1 AND enterprise_id = $2`
 	tag, err := r.db.Exec(ctx, deleteQuestion, id, enterpriseID)

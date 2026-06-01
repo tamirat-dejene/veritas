@@ -36,6 +36,8 @@ import (
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/handler"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/messaging"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/scheduler"
+	chapaprovider "github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/chapa"
+	"github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/providerregistry"
 	stripeprovider "github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/stripe"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/router"
@@ -65,10 +67,13 @@ func main() {
 	defer pool.Close()
 	log.Info("connected to postgres (via pgxpool)")
 
-	// 4. Wire repositories and Stripe provider
+	// 4. Wire repositories, Stripe & Chapa providers, and the registry
 	subRepo := postgres.NewSubscriptionRepository(pool)
 	billingRepo := postgres.NewBillingRepository(pool)
-	payProvider := stripeprovider.NewStripeProvider(cfg.StripeSecretKey, cfg.StripeWebhookSecret, cfg.StripeSuccessURL, cfg.StripeCancelURL)
+	
+	stripeProv := stripeprovider.NewStripeProvider(cfg.StripeSecretKey, cfg.StripeWebhookSecret, cfg.StripeSuccessURL, cfg.StripeCancelURL)
+	chapaProv := chapaprovider.NewChapaProvider(cfg.ChapaSecretKey, cfg.ChapaWebhookSecret, cfg.ChapaReturnURL, cfg.ChapaCallbackURL)
+	provRegistry := providerregistry.NewProviderRegistry(stripeProv, chapaProv)
 
 	// 5. Wire Kafka event publisher (graceful degradation if Kafka is unavailable)
 	var eventPublisher domain.PaymentEventPublisher
@@ -93,7 +98,7 @@ func main() {
 	}
 
 	// 6. Wire usecase and handler
-	payUsecase := usecase.NewPaymentUsecase(pool, subRepo, billingRepo, payProvider, eventPublisher)
+	payUsecase := usecase.NewPaymentUsecase(pool, subRepo, billingRepo, provRegistry, eventPublisher)
 	maintenanceUC := usecase.NewMaintenanceUseCase(subRepo, billingRepo, eventPublisher, log)
 	consistencyUC := usecase.NewConsistencyUseCase(subRepo, billingRepo, log)
 	payHandler := handler.NewPaymentHandler(payUsecase)

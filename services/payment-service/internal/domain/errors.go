@@ -17,4 +17,9 @@ var (
 	ErrUnauthorized               = errors.New("unauthorized")
 	ErrForbidden                  = errors.New("forbidden")
 	ErrInternal                   = errors.New("internal server error")
+	// ErrNotSupported is returned by provider operations that are not available
+	// for a specific provider (e.g., Chapa refunds in v1).
+	ErrNotSupported    = errors.New("operation not supported by this payment provider")
+	// ErrInvalidProvider is returned when an unknown provider name is given.
+	ErrInvalidProvider = errors.New("unknown payment provider")
 )

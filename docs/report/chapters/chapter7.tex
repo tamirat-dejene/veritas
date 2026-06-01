@@ -1,0 +1,40 @@
+% Chapter 7: Conclusions and Recommendations
+\section{Conclusions and Recommendations}
+
+\subsection{Conclusion of the Study}
+This study set out to design and develop Veritas, an AI-enhanced online assessment and monitoring system intended to support secure, scalable, and locally adaptable digital examinations. The motivation for the project was grounded in the growing need for Ethiopian organizations and institutions to conduct remote assessments without depending heavily on expensive foreign-hosted platforms, manual grading processes, or weakly integrated proctoring tools.
+
+The project achieved its main objective by producing a functional prototype that combines enterprise assessment management, candidate examination delivery, role-based access control, AI-assisted grading, automated proctoring, subscription management, notifications, and audit-aware result handling. The system was designed using a microservices architecture in which each major business domain is handled by a dedicated service. This structure improved maintainability and allowed performance-sensitive workflows, such as candidate exam sessions, to remain separate from slower AI-driven processes such as subjective grading and face verification.
+
+The study also demonstrated the value of a hybrid communication model. Synchronous REST APIs were used for immediate user-facing operations, while Apache Kafka was used for asynchronous workflows such as grading triggers, proctoring events, subscription updates, and notification delivery. This design reduced blocking operations and made the system more suitable for environments where network stability and third-party service responsiveness may vary.
+
+Security and integrity were treated as central design concerns. The API Gateway validates JWT tokens, enforces access boundaries, and forwards sanitized identity headers to internal services. Tenant-aware data models help isolate enterprise records, while service-owned database schemas reduce unwanted coupling. The grading service further strengthens result integrity through HMAC-based checksum verification and audit logging for manual overrides. These mechanisms provide a foundation for trustworthy online examination workflows.
+
+The evaluation showed that the prototype satisfies the core functional requirements of the project in a controlled environment. It supports enterprise onboarding, authentication, exam configuration, candidate participation, proctoring event logging, cheating score calculation, grading, result protection, and notification flows. However, the study also identified limitations. The system has not yet been validated under large-scale production traffic, AI accuracy requires broader dataset-based testing, and payment integration (including the local Chapa gateway) needs production-level certification before real financial use. Therefore, Veritas should be considered a strong prototype and foundation for future production development rather than a fully certified deployment-ready system.
+
+Overall, the project confirms that a locally developed AI-enhanced assessment platform is technically feasible and practically valuable. Veritas addresses several gaps in existing assessment solutions by combining multi-tenancy, automated grading, proctoring support, auditability, and containerized deployment in one integrated system. The work contributes a realistic architectural and implementation foundation for future Ethiopian digital assessment platforms.
+
+\subsection{Recommendations of the Study}
+Based on the design, implementation, and evaluation of the Veritas prototype, the following recommendations are proposed:
+
+\begin{itemize}
+    \item \textbf{Evaluate the system at institutional scale:} Future studies should assess Veritas in larger academic, recruitment, and certification settings. This would help determine how well the platform supports high-volume examinations, diverse organizational policies, and real operational constraints.
+
+    \item \textbf{Strengthen AI accuracy and fairness:} The automated grading and proctoring features should be evaluated using broader and more representative datasets. This is important to improve reliability, reduce unfair outcomes, and ensure that AI-assisted decisions remain transparent and reviewable.
+
+    \item \textbf{Improve legal, ethical, and privacy readiness:} Since online assessment systems handle sensitive candidate data, future work should include stronger privacy policies, institutional consent procedures, data retention rules, and compliance review with Ethiopian data protection requirements.
+
+    \item \textbf{Expand accessibility and inclusion:} The system should be refined to support candidates with different levels of digital literacy, device quality, language preference, and accessibility needs. This includes improving readability, localization, guidance, and support for low-bandwidth environments.
+
+    \item \textbf{Broaden stakeholder evaluation:} Future evaluation should involve HR managers, educators, administrators, proctors, and candidates from multiple organizations. Their feedback can guide improvements to trust, usability, assessment policy, reporting, and candidate experience.
+
+    \item \textbf{Develop stronger institutional reporting:} Future versions should provide richer analytics for decision makers, including performance trends, exam quality indicators, candidate progress, proctoring summaries, and organization-level assessment insights.
+
+    \item \textbf{Integrate local digital services:} Although the Chapa local payment gateway has been integrated, the platform should be further extended to work with other Ethiopian digital ecosystems, including institutional identity systems, and national or enterprise-level verification services where appropriate.
+
+    \item \textbf{Prepare for sustainable deployment:} To move beyond prototype status, Veritas should be supported by a long-term deployment, maintenance, monitoring, backup, and support strategy suitable for institutions that depend on high-stakes assessments.
+
+    \item \textbf{Promote continuous research and improvement:} As online assessment practices evolve, future work should continue studying candidate trust, academic integrity, AI explainability, institutional adoption, and the social impact of remote examination technologies.
+\end{itemize}
+
+In conclusion, Veritas provides a promising foundation for secure and intelligent online assessment. With broader institutional validation, stronger policy alignment, inclusive design, and continued AI improvement, the system can evolve from a prototype into a reliable platform capable of supporting modern digital examinations in Ethiopia and similar contexts.

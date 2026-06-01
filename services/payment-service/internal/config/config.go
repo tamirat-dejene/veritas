@@ -17,6 +17,10 @@ type Config struct {
 	StripeWebhookSecret string
 	StripeSuccessURL    string
 	StripeCancelURL     string
+	ChapaSecretKey      string
+	ChapaWebhookSecret  string
+	ChapaReturnURL      string
+	ChapaCallbackURL    string
 	DSN                 string
 	KafkaBrokers        []string
 }
@@ -33,6 +37,10 @@ func Load() *Config {
 		StripeWebhookSecret: getEnv("STRIPE_WEBHOOK_SECRET", ""),
 		StripeSuccessURL:    getEnv("STRIPE_SUCCESS_URL", "https://veritas.com/payment/success?session_id={CHECKOUT_SESSION_ID}"),
 		StripeCancelURL:     getEnv("STRIPE_CANCEL_URL", "https://veritas.com/payment/cancel"),
+		ChapaSecretKey:      getEnv("CHAPA_SECRET_KEY", ""),
+		ChapaWebhookSecret:  getEnv("CHAPA_WEBHOOK_SECRET", ""),
+		ChapaReturnURL:      getEnv("CHAPA_RETURN_URL", "https://veritas.com/payment/success"),
+		ChapaCallbackURL:    getEnv("CHAPA_CALLBACK_URL", "https://api.veritas.com/webhooks/chapa"),
 	}
 
 	cfg.DSN = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",

@@ -1,0 +1,328 @@
+% Chapter 5: System Implementation
+\section{System Implementation}
+
+\subsection{Reviewing the Design Solution}
+The implementation phase successfully translated the architectural design decisions of Chapter 4 into a highly functional multi-service platform. Rationale for this division of Veritas's monolithic scope into separate, autonomous services includes:
+\begin{itemize}
+    \item \textbf{Decoupled Domain Lifecycles:} Each core requirement (e.g., identity, corporate onboarding, test authoring, active testing environments, payment processing, transactional alerts, AI scoring, and video tracking) represents a distinct operational frequency. For example, test deliveries require microsecond write-latencies, whereas AI-assisted grading runs once per exam submission. Division prevents high-frequency read/write operations from being blocked by slow machine learning loops.
+    \item \textbf{Organizational and Technological Alignment:} Microservices enabled a mono-repository structure while maintaining technology boundaries. Developers utilized Go for lightning-fast business logic and Python for high-performance mathematical modeling, selecting the optimal runtime for each distinct task.
+\end{itemize}
+
+Centralizing token validation at the API Gateway served as a crucial implementation boundary. Rather than replicating JWT validation libraries, HMAC keys, and token-decryption configurations across downstream backend microservices, the gateway performs validation once at the edge. Rationale for this design includes:
+\begin{itemize}
+    \item \textbf{Centralized Secret Security:} HMAC signing keys are stored exclusively in the gateway's secure environment variables, limiting exposure and simplifying token rotation operations.
+    \item \textbf{Downstream Performance and Autonomy:} By validating the JWT once, resolving the tenant UUID, and sanitizing claims into standard HTTP headers (\path{X-User-ID}, \path{X-User-Role}, and \path{X-Enterprise-ID}), the gateway strips the heavy \path{Authorization} header before forwarding requests downstream. Internal Go and Python services do not require heavy JWT libraries; they consume pre-parsed headers, reducing decryption CPU cycles and facilitating mock headers usage in isolated unit tests.
+\end{itemize}
+
+The Database-per-Service decision proved to be highly effective. The rationale for strictly segregating database access is as follows:
+\begin{itemize}
+    \item \textbf{Protection Against Schema Coupling:} Directly accessing another service's database tables bypasses business constraints and forces deep coupling. Forcing cross-service access exclusively through REST APIs or serialized Kafka messages ensures that a schema change in one service never causes cascading errors or crashes in another.
+    \item \textbf{Staging vs. Production Scalability:} Logical isolation via distinct schemas in a single PostgreSQL container keeps local developer setups lightweight and cost-effective. During Kubernetes (GKE) production rollouts, these schemas are seamlessly mapped to independent, physically separated database instances, avoiding CPU/memory starvation on a single database server.
+\end{itemize}
+
+Offloading high-latency operations to Kafka was critical for platform reliability. Workflows like sending SMTP onboarding emails, recomputing multi-variable cheating risk, and running AI models are asynchronous by design. Rationale for offloading these workloads includes:
+\begin{itemize}
+    \item \textbf{Latency Shielding:} SMTP transactions can take several seconds due to local networking delays. Moving alerts dispatching to Kafka consumers ensures that the user is immediately redirected to their destination screen without waiting for external mail systems to respond.
+    \item \textbf{Slim-Trigger Efficiency (v3.0):} Rather than clogging Kafka's network pipeline with massive exam submission packages (candidate answers, questions, structures), the candidate service publishes a lightweight references trigger. The grading service then pulls the target grading payload directly via internal REST, keeping Kafka's throughput high and message sizes consistent.
+\end{itemize}
+
+Several critical refinements were integrated to handle development and networking constraints:
+\begin{itemize}
+    \item The gateway strips the raw \path{Authorization} header to prevent internal token spoofing and propagation vulnerabilities across private microservices.
+    \item The grading service immediately writes a \path{pending} result record to the database upon trigger consumption. Rationale: It prevents candidate and staff status-polling APIs from returning a \path{404 Not Found} error during high-latency AI grading, improving candidate user experience.
+    \item The proctoring service isolates high-throughput behavioral signal ingestion from slow cheating risk calculation, guaranteeing that logs are safely persisted even if risk calculation encounters network drops.
+    \item The grading repository implements database-level PL/pgSQL triggers and row-level HMAC checksums to guarantee data integrity, preventing direct database manipulations by rogue database administrators or stale concurrent writes via optimistic locking.
+\end{itemize}
+
+Overall, the implemented system preserves the original design objectives: tenant isolation, secure access control, asynchronous integration, auditability, and operational portability. The main trade-off is increased operational complexity, which was managed through Docker Compose, unified environment configurations, and monorepo shared packages.
+
+\subsection{Deciding on the Development Tools}
+The development toolchain was selected based on strict engineering rationales aligning with the functional responsibilities of each subsystem. 
+
+Backend business workflows, security controllers, and core APIs were implemented in **Go**. The rationale for selecting Go includes:
+\begin{itemize}
+    \item \textbf{High-Performance Concurrency:} Go's lightweight goroutines consume only ~2KB of stack space (compared to ~1MB in thread-based platforms), enabling thousands of concurrent HTTP handlers to run during high-stakes exams without exhausting CPU or RAM.
+    \item \textbf{Single Static Binaries:} Go compiles directly to a single static binary containing all dependencies, enabling tiny Docker container sizes, rapid build cycles, and simple container packaging.
+    \item \textbf{Static Typing and Compilation Speed:} Guarantees high type-safety during development while maintaining rapid compilation feedback loops, which accelerated development.
+\end{itemize}
+
+Conversely, AI grading and face verification pipelines were developed in **Python**. The rationale for choosing Python includes:
+\begin{itemize}
+    \item \textbf{Premier ML Ecosystem:} Python provides native integration with mathematical computation, image parsing, and deep-learning packages (e.g., DeepFace for face biometrics verification and NumPy/SciPy for behavioral threat matrix computation).
+    \item \textbf{Asynchronous Integration:} Frameworks like FastAPI and AsyncIO support highly concurrent non-blocking HTTP and Kafka consumer workers, matching Go's asynchronous event models.
+\end{itemize}
+
+\renewcommand{\arraystretch}{1.25}
+\begin{longtable}{|p{2.5cm}|p{3.5cm}|p{8.5cm}|}
+\caption{Development Tools and Their Architectural Rationale} \label{tab:implementation-tools} \\
+\hline
+\textbf{Tool or Technology} & \textbf{Used In} & \textbf{Architectural Rationale} \\ \hline
+\endfirsthead
+\multicolumn{3}{c}%
+{{\bfseries Table \thetable\ (continued from previous page)}} \\
+\hline
+\textbf{Tool or Technology} & \textbf{Used In} & \textbf{Architectural Rationale} \\ \hline
+\endhead
+\hline \multicolumn{3}{r}{{Continued on next page}} \\
+\endfoot
+\hline
+\endlastfoot
+Go & API Gateway, Auth, Enterprise, Exam, Candidate, Payment, Notification & Selected for extreme static typing performance, tiny memory footprint, and native concurrent REST API handling. \\ \hline
+Gin & Go HTTP services & A highly optimized routing framework using a Radix tree. Chosen for low memory allocations and rapid middleware chaining. \\ \hline
+Python & Grading and Proctoring services & Selected to leverage mature machine-learning wrappers and image processing pipelines (DeepFace). \\ \hline
+FastAPI & Grading and Proctoring services & Native async framework. Chosen for native Pydantic schema validation, OpenAPI generation, and clean lifecycle event handlers. \\ \hline
+PostgreSQL & Persistent storage & Robust enterprise database with ACID guarantees, isolated schema capabilities, and excellent JSONB support for queryable audits. \\ \hline
+Redis & Gateway and proctoring support & Key-value store providing sub-millisecond latencies. Ideal for gateway rate limiting and short-lived caching of proctoring face references. \\ \hline
+Apache Kafka & Inter-service events & Durable, high-throughput distributed commit log. Chosen to guarantee event durability and support partitioned horizontal scaling. \\ \hline
+Docker Compose & Local development & Standardizes local environments. Eliminates dependency issues by mocking multi-service dependencies locally. \\ \hline
+MailHog & Local development & Mock SMTP server. Intercepts outbound emails and bypasses ISP port 25 blocking, preventing accidental production emails during development. \\ \hline
+GitHub Actions & Monorepo monorepos-structure & A single service-oriented monorepo. Shared modules exist under a common path, simplifying local testing and unifying version control history. \\ \hline
+\end{longtable}
+
+The local development environment is defined in \path{docker-compose.yml}. It starts infrastructure containers for PostgreSQL, Redis, Kafka, MailHog, and pgAdmin, then launches each service with its source directory mounted into the container. The Go services use a shared development Dockerfile and a module cache volume. The Python services use a separate development Dockerfile with their own virtual environment directories. Environment variables are centralized through \path{.env.dev}, allowing database credentials, Kafka brokers, JWT secrets, SMTP configuration, and third-party provider settings to be changed without modifying source code.
+
+The development workflow uses the following supporting scripts:
+
+\begin{itemize}
+    \item \path{scripts/setup_dev.sh} prepares the local development environment.
+    \item \path{scripts/migrate.sh} and \path{scripts/migrate.prod.sh} apply database migrations.
+    \item \path{scripts/gen-swagger.sh} regenerates API documentation for services that expose Swagger specifications.
+    \item \path{scripts/dev_logs.sh} helps inspect container logs during integration testing.
+\end{itemize}
+
+The repository is organized as a service-oriented monorepo. Each Go service has its own \path{go.mod}, while common reusable packages live under \path{shared}. The rationale for this monorepo layout is to avoid dependency hell by allowing common middleware, security headers, pagination adapters, and Kafka clients to be modified and tested locally across all services instantly, without managing multiple GitHub repositories or publishing remote Go packages. The Python services keep their own \path{requirements.txt} and \path{pyproject.toml} files, reflecting their different runtime dependencies.
+
+Continuous integration is configured in \path{.github/workflows/ci.yml}. The workflow runs Go tests for every service containing a \path{go.mod} file and performs Python syntax checks for Python service entry points. Although this CI pipeline is intentionally lightweight, it provides a baseline quality gate and can be extended later with database-backed integration tests, Docker image builds, and end-to-end API tests.
+
+\subsection{Developing the Solution}
+Development followed an incremental approach. The infrastructure layer was established first so that services could be developed against the same PostgreSQL, Redis, Kafka, and SMTP dependencies used during integration. After this, shared packages were implemented to standardize cross-cutting concerns such as logging, messaging, HTTP calls, middleware behavior, and pagination. Individual services were then developed around their bounded contexts, using clear separation between handler, usecase, repository, and infrastructure code.
+
+\subsubsection{Gateway Authentication and Tenant Context}
+The API Gateway implements the first security boundary of the platform. It validates bearer tokens, checks signing algorithms, stores the claims in the request context, and allows later middleware to enforce roles or subscription tiers. The essential authentication logic is shown below.
+
+\begingroup
+\footnotesize
+\begin{verbatim}
+func JWTAuth(secret string) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        authHeader := c.GetHeader("Authorization")
+        if authHeader == "" {
+            c.AbortWithStatusJSON(http.StatusUnauthorized,
+                gin.H{"error": "Authorization header required"})
+            return
+        }
+
+        tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+        token, err := jwt.ParseWithClaims(tokenString, &UserClaims{},
+            func(token *jwt.Token) (interface{}, error) {
+                if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+                    return nil, fmt.Errorf("unexpected signing method")
+                }
+                return []byte(secret), nil
+            })
+
+        if err != nil || !token.Valid {
+            c.AbortWithStatusJSON(http.StatusUnauthorized,
+                gin.H{"error": "Invalid or expired token"})
+            return
+        }
+        if claims, ok := token.Claims.(*UserClaims); ok {
+            c.Set(string(UserContextKey), claims)
+            c.Next()
+        } else {
+            c.AbortWithStatusJSON(http.StatusUnauthorized,
+                gin.H{"error": "Invalid token claims"})
+        }
+    }
+}
+\end{verbatim}
+\endgroup
+
+After authentication succeeds, the gateway converts claims into trusted internal headers and removes the raw token. This design prevents downstream services from depending on token parsing and ensures that tenant scoping is handled consistently.
+
+\begingroup
+\footnotesize
+\begin{verbatim}
+c.Request.Header.Set("X-User-ID", sanitizeHeader(claims.UserID))
+c.Request.Header.Set("X-User-Role", sanitizeHeader(string(claims.Role)))
+if claims.EnterpriseID != "" {
+    c.Request.Header.Set("X-Enterprise-ID",
+        sanitizeHeader(claims.EnterpriseID))
+}
+c.Request.Header.Del("Authorization")
+\end{verbatim}
+\endgroup
+
+\subsubsection{Service Resilience}
+The gateway also includes circuit breaker protection around downstream calls. The breaker starts in a closed state, opens after repeated failures, then allows limited test traffic in half-open state. This prevents repeated requests from overwhelming an unhealthy service and gives the system a controlled recovery path.
+
+\begingroup
+\footnotesize
+\begin{verbatim}
+func DefaultCircuitBreakerSettings() CircuitBreakerSettings {
+    return CircuitBreakerSettings{
+        MaxRequests:      3,
+        Interval:         60 * time.Second,
+        Timeout:          30 * time.Second,
+        FailureThreshold: 5,
+    }
+}
+\end{verbatim}
+\endgroup
+
+Kafka consumers in the Python services use a similar resilience strategy. They run inside persistent asynchronous loops and retry after transient broker or network failures. This pattern was used in the grading and proctoring services so that temporary Kafka outages do not permanently stop background processing.
+
+\subsubsection{Grading Workflow Implementation}
+The grading service implements one of the most important asynchronous workflows in the system. When a candidate submits an exam, the candidate service publishes an \path{exam.session.ready_for_grading} event. The grading service validates that event, creates a pending result row, fetches the full grading payload from the candidate service, computes the score, and persists the final result.
+
+\begingroup
+\footnotesize
+\begin{verbatim}
+event = ExamReadyForGradingEvent.model_validate(payload)
+if event.version != ACCEPTED_VERSION:
+    raise ValueError("Unsupported event version")
+
+await repo.create_pending_result(
+    session_id=UUID(event.session_id),
+    exam_id=UUID(event.exam_id),
+    candidate_id=UUID(event.candidate_id),
+    enterprise_id=UUID(event.enterprise_id),
+    enrollment_id=UUID(event.enrollment_id),
+)
+
+grading_payload = await candidate_client.fetch_grading_payload(
+    session_id=event.session_id,
+    enterprise_id=event.enterprise_id,
+)
+report = await grade_exam(event_id=event.event_id,
+                          payload=grading_payload)
+await repo.save_grading_report(report, graded_by="system")
+\end{verbatim}
+\endgroup
+
+The automated grader handles objective questions directly and delegates subjective grading to the configured AI client where appropriate. This separation allows deterministic question types, such as multiple choice and true or false, to be graded locally while short-answer and essay-style responses can use AI-assisted scoring.
+
+\subsubsection{Short Answer Semantic Grading Engine}
+For short-answer questions, the grading service implements a hybrid semantic grading engine rather than relying only on keyword matching or plain embedding cosine similarity. This design follows the broader direction of automated essay scoring and automated short-answer grading research, where neural language models improve coverage of paraphrases but still require constraints for fairness, explainability, and adversarial robustness \citep{Ramesh2022,Uto2021,Schneider2024}.
+
+The engine evaluates each candidate answer against the rubric answer through two complementary signals:
+\begin{itemize}
+    \item \textbf{Bidirectional semantic entailment:} A Natural Language Inference (NLI) cross-encoder compares the expected answer and candidate response in both directions. The forward direction checks whether the candidate answer covers the rubric meaning, while the reverse direction checks whether the candidate answer omits important rubric content. The NLI model produces entailment, neutral, and contradiction scores.
+    \item \textbf{Lexical alignment:} A deterministic lexical score is calculated from normalized content words. The text is lowercased, stop words are removed, remaining terms are lemmatized, and an Intersection-over-Union score is computed over the resulting lemma sets. This signal anchors the model to explicit concept overlap and reduces the risk of awarding marks to fluent but unrelated answers.
+\end{itemize}
+
+For each reference variant, the service combines the semantic and lexical components as:
+\[
+\text{variant\_score} =
+(0.70 \times \text{semantic\_entailment}) +
+(0.30 \times \text{lexical\_iou})
+\]
+
+To improve coverage of valid phrasing, the grader can generate additional rubric paraphrases using a T5 sequence-to-sequence model. These generated variants act as a reference ensemble, allowing answers that express the same idea in different wording to receive credit. To avoid a single weak or overly broad paraphrase producing an inflated score, the service applies top-\(k\) smoothing by averaging the strongest variant scores instead of accepting only the maximum score.
+
+The grading engine also applies contradiction suppression. If the NLI pass detects that a candidate answer uses relevant terminology but states the opposite of the expected meaning, the final score is scaled by an exponential penalty:
+\[
+\text{final\_score} =
+\text{smoothed\_score} \times
+e^{-\lambda \times \text{max\_contradiction}}
+\]
+where \(\lambda\) is the configured contradiction suppression strength. This is important for answers that appear superficially similar to the rubric but contain negation, reversed causality, or factually incompatible claims.
+
+The resulting pipeline grades short answers in four stages: normalize the candidate and reference texts, build the reference ensemble, score each candidate-reference pair using semantic and lexical signals, and finally smooth and suppress the score based on contradiction evidence. In implementation, the NLI comparisons are batched into a single PyTorch inference call where possible, reducing repeated model startup and forward-pass overhead during bulk grading.
+
+\subsubsection{Essay Grading and Inference Optimizations}
+Essay-style questions are handled through a separate generative lane because they require multi-criteria reasoning rather than only factual entailment. The grading service decomposes the rubric into smaller criterion-specific evaluations, such as content coverage, organization, argument development, and clarity. Each criterion is requested as structured data, then the service computes the final percentage from the returned criterion scores. This makes the final score deterministic and keeps each sub-score available for audit or authorized override when AI confidence is low.
+
+To reduce formatting failures from the local Small Language Model (SLM), the essay lane uses schema-constrained output. The expected response shape is defined through a Pydantic model, and the inference adapter constrains the model output to valid JSON before the response reaches the database parser. This prevents common generative-output failures such as conversational preambles, markdown code fences, missing keys, or malformed numeric fields.
+
+The AI runtime also applies several engineering optimizations:
+\begin{itemize}
+    \item \textbf{Tokenizer isolation:} Tokenizer parallelism is disabled before model loading so asynchronous FastAPI workers do not deadlock on shared tokenizer threads. Tokenization is treated as a controlled preprocessing step rather than an implicit side effect inside request handlers.
+    \item \textbf{Dynamic padding and bucketing:} Short-answer pairs are grouped by tokenized length and padded only to the longest sequence in each group. This avoids wasting computation on large numbers of empty padding tokens.
+    \item \textbf{Batched cross-encoder inference:} Short-answer comparisons are assembled into tensor batches where possible, allowing the discriminative model to process many candidate-reference pairs in fewer forward passes.
+    \item \textbf{Quantized essay inference:} The essay SLM is configured as a local quantized model so essay evaluation does not depend on an external commercial API. Its execution is isolated from the short-answer lane to prevent long-form generation from starving faster cross-encoder work.
+\end{itemize}
+
+Together, these choices implement the decoupled architecture described in Chapter 4: fast discriminative scoring for high-volume short answers, and constrained generative reasoning for lower-volume essay questions.
+
+\subsubsection{Grade Integrity and Audit Support}
+To support integrity and auditability, grading results are protected with an HMAC-SHA256 checksum. The checksum is calculated over stable grading fields and the current version number. During retrieval or update, the repository recalculates the checksum and compares it with the stored value. A mismatch indicates that the row may have been modified outside the application workflow.
+
+\begingroup
+\footnotesize
+\begin{verbatim}
+def calculate_row_checksum(
+    session_id: str,
+    candidate_id: str,
+    total_max_points: float,
+    total_awarded_points: float,
+    percentage: float,
+    version: int
+) -> str:
+    msg = (
+        f"{str(session_id).lower()}:"
+        f"{str(candidate_id).lower()}:"
+        f"{float(total_max_points):.2f}:"
+        f"{float(total_awarded_points):.2f}:"
+        f"{float(percentage):.2f}:"
+        f"{int(version)}"
+    )
+    key = settings.GRADING_SECRET_KEY.encode("utf-8")
+    return hmac.new(key, msg.encode("utf-8"),
+                    hashlib.sha256).hexdigest()
+\end{verbatim}
+\endgroup
+
+Manual grade overrides update the checksum and write an audit record. This makes legitimate changes traceable while still allowing the system to detect unauthorized database edits.
+
+\subsubsection{Proctoring Event Processing}
+The proctoring service records behavioral and identity events during an exam session. Each event is persisted, assigned a severity, and used to recompute the current cheating score. The service then publishes two Kafka events: one describing the detected event and one containing the updated score.
+
+\begingroup
+\footnotesize
+\begin{verbatim}
+event = await self._event_repo.create(
+    session_id=req.session_id,
+    candidate_id=candidate_id,
+    enterprise_id=enterprise_id,
+    event_type=req.event_type.value,
+    severity=severity_val,
+    metadata=req.metadata,
+    occurred_at=req.occurred_at,
+)
+
+score = await self._recompute_score(
+    req.session_id, candidate_id, enterprise_id)
+
+await self._producer.publish("proctoring.event.detected", {
+    "event_id": str(event.id),
+    "session_id": str(req.session_id),
+    "event_type": req.event_type.value,
+    "severity": severity_val,
+})
+\end{verbatim}
+\endgroup
+
+The score calculation applies event-specific weights, cooldown windows, and contribution caps. This avoids over-penalizing repeated duplicate events while still allowing serious signals such as identity mismatch or multiple faces to increase the risk score.
+
+\subsubsection{Messaging and Integration}
+Kafka topic names are centralized in the shared package so that event producers and consumers use consistent names. Topics follow the pattern \path{service.entity.action}. Examples include \path{enterprise.enterprise.created}, \path{candidate.exam.submitted}, \path{exam.session.ready_for_grading}, and \path{proctoring.cheating_score.updated}. This naming convention made integration easier to reason about and helped keep event contracts readable.
+
+The notification service consumes domain events and maps them to email templates. Payment publishes subscription-related events. Enterprise lifecycle events allow other services to react to account suspension, deletion, restoration, and staff changes. These integrations are asynchronous by design, preventing secondary work from delaying user-facing API responses.
+
+\subsubsection{Database Migration and Persistence}
+Each service owns a \path{migrations} directory containing forward and rollback SQL files. This ensured that database changes were versioned with the service code that depends on them. Go services use repository layers over PostgreSQL to isolate SQL from HTTP handlers. Python services use \path{asyncpg} connection pools and repository classes for the same purpose. This structure kept handlers small and placed business rules in usecase modules.
+
+\subsubsection{Implementation Challenges}
+The most significant implementation challenge was coordinating consistency across independent services without distributed transactions. The solution was to keep local transactions small and publish events for cross-service effects. For example, exam submission is recorded in the candidate service first; grading then proceeds asynchronously from the grading trigger event. This keeps the candidate workflow responsive and avoids coupling candidate submission to AI grading latency.
+
+Another challenge was balancing security with developer productivity. Centralized JWT validation simplified service code, but it required careful header sanitization and strict trust boundaries. The implementation therefore strips raw authorization tokens at the gateway and treats internal identity headers as gateway-owned metadata.
+
+AI-assisted grading and proctoring also introduced uncertainty because external models and inference endpoints may be slower or less predictable than normal application code. To manage this, the implementation isolates AI calls behind client or port interfaces. This makes it possible to mock AI behavior in tests, change providers later, and keep the core grading and event-processing logic independent from a specific model host.
+
+\subsubsection{Testing and Verification}
+Testing was implemented at multiple levels. Shared Go packages include unit tests for HTTP clients, pagination, cron helpers, and Kafka messaging wrappers. The grading service includes tests for handlers, repositories, usecases, workers, AI-client behavior, grader behavior, and row-checksum security. The CI workflow runs Go tests across service modules and checks Python entry points for syntax errors.
+
+The implementation was also verified through local integration runs using Docker Compose. Health checks for PostgreSQL, Redis, and Kafka ensure that dependent services start only after infrastructure is available. MailHog provides a local SMTP target so notification flows can be tested without sending real email. This environment made it possible to validate user registration, enterprise administration, exam setup, candidate submission, grading, proctoring event ingestion, and notification workflows in a single reproducible setup.
+
+In summary, the implemented solution follows the design proposed in Chapter 4 while adapting it to practical development needs. The final system uses a secure gateway, service-owned data models, event-driven workflows, AI-assisted grading and proctoring, and containerized deployment tooling to deliver the core Veritas platform functionality.

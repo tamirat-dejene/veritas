@@ -54,7 +54,7 @@ The following state machine diagrams represent key components of the Veritas sys
     
     \item \textbf{Grading Module Flow}
         \begin{itemize}
-        \item The Grading \& Results Lifecycle diagram illustrates the progression from exam submission to performance reporting. Upon submission, the Pending Grading state uses AI to evaluate responses, routing low-confidence subjective answers to a Manual Review phase for blind human grading. The process then moves to Analytics Calculation, where the system generates rankings and performs a variance analysis to compare human grades against initial AI scores. The lifecycle concludes in the Reporting phase with the delivery of personalized feedback and the optional generation of branded certificates for passing candidates.
+        \item The Grading \& Results Lifecycle diagram illustrates the progression from exam submission to performance reporting. Upon submission, the Pending Grading state uses AI to evaluate responses, with a guarded path for authorized manual override when AI confidence is low. The process then moves to Analytics Calculation, where the system generates rankings and performs variance analysis to compare outcomes against baseline metrics. The lifecycle concludes in the Reporting phase with the delivery of personalized feedback to candidates.
         \vspace*{0.5em}
         \begin{figure}[H]
         \centering

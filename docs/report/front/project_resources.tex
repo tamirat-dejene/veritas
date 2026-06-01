@@ -1,0 +1,59 @@
+\phantomsection
+\addcontentsline{toc}{section}{Project Resources}
+
+\begin{center}
+{\large\bfseries Veritas Source Links}
+\end{center}
+
+\vspace{0.3cm}
+
+\noindent
+The following resources provide direct access to the Veritas implementation repositories. Each QR code may be scanned to open the corresponding resource directly.
+
+\vspace{0.6cm}
+
+\newcommand{\ResourceBlock}[4]{%
+\begin{center}
+    \begin{minipage}{0.88\linewidth}
+        \begin{minipage}[c]{0.65\linewidth}
+            {\normalsize\bfseries #1}
+
+            \vspace{0.1cm}
+            {\small #2}
+
+            \vspace{0.15cm}
+            \textbf{Access:} \href{#3}{\texttt{Open Source}}
+        \end{minipage}
+        \hfill
+        \begin{minipage}[c]{0.30\linewidth}
+            \centering
+            \includegraphics[width=2.8cm,height=2.8cm,keepaspectratio]{#4}
+        \end{minipage}
+    \end{minipage}
+\end{center}
+\vspace{-0.4cm}
+}
+
+\ResourceBlock
+{Core Backend (Monorepo)}
+{Core backend services, API gateway, and infrastructure repository.}
+{https://github.com/tamirat-dejene/veritas}
+{assets/qr_codes/monorepo_core_backend.png}
+
+\ResourceBlock
+{Frontend Repository}
+{React web application repository.}
+{https://github.com/AlazarGebre21/Veritas-AI-Enhanced-Online-Examination-Platform}
+{assets/qr_codes/frontend_repo.png}
+
+\ResourceBlock
+{AI Essay Grader}
+{Hugging Face Space for rubric-based long-form essay evaluation repository.}
+{https://huggingface.co/spaces/cheifo/Veritas_Essay_Grader/tree/main}
+{assets/qr_codes/hugging_face_essay_grader_repo.png}
+
+\ResourceBlock
+{AI Short-Answer Grader}
+{Semantic evaluation engine for short-answer question grading repository.}
+{https://huggingface.co/spaces/cheifo/veritasGraderTransformer/tree/main}
+{assets/qr_codes/hugging_face_shortans_grader_repo.png}

@@ -89,7 +89,7 @@ func (uc *questionUsecase) DeleteQuestion(ctx context.Context, id uuid.UUID, ent
 
 func (uc *questionUsecase) UploadMedia(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID, fileName string, content io.Reader) (string, error) {
 	// 1. Verify question exists and belongs to enterprise
-	q, err := uc.repo.GetByID(ctx, id, enterpriseID, false)
+	_, err := uc.repo.GetByID(ctx, id, enterpriseID, false)
 	if err != nil {
 		return "", err
 	}
@@ -100,10 +100,8 @@ func (uc *questionUsecase) UploadMedia(ctx context.Context, id uuid.UUID, enterp
 		return "", err
 	}
 
-
 	// 3. Update database
-	q.MediaURL = &mediaURL
-	if err := uc.repo.Update(ctx, q); err != nil {
+	if err := uc.repo.UpdateMediaURL(ctx, id, enterpriseID, &mediaURL); err != nil {
 		return "", err
 	}
 

@@ -89,17 +89,13 @@ FR-PROC-007 & Cheating probability score & The system shall calculate an overall
 \vspace{3em}
 
 % ==================================================
-% Table 6: Grading, Analytics & Certificate Requirements
+% Table 6: Grading & Analytics Requirements
 % ==================================================
 \begin{tabularx}{\linewidth}{|l|>{\raggedright\arraybackslash}p{4.5cm}|>{\raggedright\arraybackslash}X|l|l|}
-\caption{Grading, Analytics \& Certificate Requirements}
+\caption{Grading \& Analytics Requirements}
 \label{tab:grading-analytics} \\ \hline
 \textbf{Req. ID} & \textbf{Requirement Title} & \textbf{Description} & \textbf{Priority} & \textbf{VM} \\ \hline
 FR-GRAD-001 & Automatic grading for subjective/objective questions & The system shall automatically grade MCQ, True/False, fill-in-the-blank, short answer, and essay questions using configurable rubrics and AI assistance where applicable. & Mandatory & Test \\ \hline
-FR-GRAD-002 & Blind grading & When a subjective answer is routed for mandatory human review (due to low AI confidence), the reviewer shall only see the candidate's response and the question rubric and must not see the candidate's name or any AI-assigned score until the manual grade is submitted. & Mandatory & Demonstration \\ \hline
-FR-GRAD-003 & AI-assisted result analytics & The system shall provide detailed analytics including score distribution, time per question, cheating score impact, and rankings. & Mandatory & Demonstration \\ \hline
-FR-GRAD-004 & Personalized feedback & Candidates shall receive personalized feedback reports including score, correct answers, detected cheating flags, and relative ranking. & Desirable & Demonstration \\ \hline
-FR-GRAD-005 & Automatic certificate generation & The system shall generate and deliver customizable PDF certificates to passing candidates with organization branding and a QR code for verification. & Mandatory & Test \\ \hline
 \end{tabularx}
 
 \vspace{3em}
@@ -113,11 +109,8 @@ FR-GRAD-005 & Automatic certificate generation & The system shall generate and d
 \textbf{Req. ID} & \textbf{Requirement Title} & \textbf{Description} & \textbf{Priority} & \textbf{VM} \\ \hline
 FR-DASH-001 & Role-Based Dashboards \& Customization & Super Admin, Enterprise Admin, and Staff shall have customized, widget-based dashboards showing relevant key metrics (KPIs) and quick links. Enterprise Admins shall be able to configure or reorder the widgets displayed on their dashboard. & Mandatory & Demonstration \\ \hline
 FR-DASH-002 & Real-Time Exam Monitoring Dashboard & Enterprise Admins shall view live exams, active candidates, and proctoring flags in real-time. The dashboard shall feature low-latency updates (max 5-second latency) and color-coded severity indicators for proctoring events. & Mandatory & Demonstration / Test \\ \hline
-FR-DASH-003 & Asynchronous Comprehensive Reporting & The system shall provide comprehensive reports for exam results, proctoring logs, and candidate performance. For reports exceeding 500 records, generation shall be asynchronous (user is notified via email/in-app when the report is ready). & Mandatory & Test \\ \hline
-FR-DASH-004 & Granular Data Export Formats & Reports shall be exportable in multiple formats: PDF (formatted, summary), Excel/CSV (raw data for analysis), and JSON/API endpoint (for integration with Enterprise BI tools - Enterprise-tier feature). & Mandatory & Test \\ \hline
-FR-DASH-005 & Audit Log \& Activity Tracking & Super Admins and Enterprise Admins shall have a dedicated report/dashboard to view a complete, immutable audit trail of all critical actions (e.g., user creation, exam changes, deletion, payment history) with timestamp and actor details. & Mandatory & Inspection \\ \hline
-FR-DASH-006 & Performance \& Trend Analytics & Enterprise Admins shall access analytics dashboards to track historical trends (e.g., month-over-month exam volume, average scores over time) and view performance benchmarks against other Enterprise exams (anonymously). & Desirable & Demonstration \\ \hline
-FR-DASH-007 & Custom Report Builder & The system shall provide an interface that allows Enterprise Admins to define and save custom reports by selecting specific filters, fields, and grouping criteria (e.g., performance by department/location). & Desirable & Demonstration \\ \hline
+FR-DASH-003 & Audit Log \& Activity Tracking & Super Admins and Enterprise Admins shall have a dedicated report/dashboard to view a complete, immutable audit trail of all critical actions (e.g., user creation, exam changes, deletion, payment history) with timestamp and actor details. & Mandatory & Inspection \\ \hline
+FR-DASH-004 & Performance \& Trend Analytics & Enterprise Admins shall access analytics dashboards to track historical trends (e.g., month-over-month exam volume, average scores over time) and view performance benchmarks against other Enterprise exams (anonymously). & Desirable & Demonstration \\ \hline
 \end{tabularx}
 
 \vspace{3em}
@@ -129,7 +122,7 @@ FR-DASH-007 & Custom Report Builder & The system shall provide an interface that
 \caption{Payment \& Subscription Requirements}
 \label{tab:payment-subscription} \\ \hline
 \textbf{Req. ID} & \textbf{Requirement Title} & \textbf{Description} & \textbf{Priority} & \textbf{VM} \\ \hline
-FR-PAY-001 & Gateway Integration \& Localization & The system shall integrate with the specified Ethiopian payment gateways (Telebirr, CBE Birr) and support local currency (ETB) transactions. & Mandatory & Test \\ \hline
+FR-PAY-001 & Gateway Integration \& Localization & The system shall integrate with the specified Ethiopian payment gateways (Chapa) and support local currency (ETB) transactions. & Mandatory & Test \\ \hline
 FR-PAY-002 & Secure Transaction Handling & The system shall comply with PCI DSS Level 2 (or equivalent standard for handling payment tokens/data) and ensure all payment data transmission is encrypted using TLS 1.2 or higher. & Mandatory & Inspection / Audit \\ \hline
 FR-PAY-003 & Subscription Plan Management & Super Admin shall define, modify, activate, and deactivate subscription plans, including features, usage limits (max users, max exams), and pricing structures. & Mandatory & Demonstration \\ \hline
 FR-PAY-004 & Automatic Recurring Billing \& Dunning & The system shall automatically handle recurring billing and renewal. It must implement a dunning process to manage failed payments, including retries and automated notification of the Enterprise Admin. & Mandatory & Test \\ \hline

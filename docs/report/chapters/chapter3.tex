@@ -36,7 +36,7 @@ Despite their utility, existing systems exhibit several critical shortcomings, p
     \begin{sloppypar}
         \item \textbf{Cheating Vulnerabilities:} While some systems include basic proctoring (e.g., tab-switch detection in Safe Exam Browser), they fall short in detecting sophisticated behaviors like proxy testing or collaborative cheating. Observational studies revealed false positives in AI monitoring due to poor lighting or device quality, common in Ethiopian settings.
     \end{sloppypar}
-    \item \textbf{Scalability Issues:} Handling large-scale assessments (e.g., national exams or mass recruitment) strains these systems. Moodle, for instance, struggles with concurrency beyond 500 users without custom scaling, resulting in crashes during peak times.
+    \item \textbf{Scalability Issues:} Handling large-scale assessments (e.g. exams, mass recruitment) strains these systems. Moodle, for instance, struggles with concurrency beyond 500 users without custom scaling, resulting in crashes during peak times.
     \item \textbf{User Experience and Accessibility Gaps:} Interfaces are often not localized (e.g. lacking Amharic support), and restrictive features like browser lockdowns exclude users with disabilities who rely on assistive technologies. As per Chapter 2's gaps, this prioritizes security over inclusivity, leading to higher anxiety and error rates among candidates.
 \end{itemize}
 
@@ -44,7 +44,7 @@ Despite their utility, existing systems exhibit several critical shortcomings, p
 \begin{itemize}
     \item \textbf{Data Sovereignty Concerns:} Storing sensitive assessment data abroad violates the Digital Ethiopia 2030 Strategy's emphasis on keeping Ethiopian data within national borders, exposing it to foreign jurisdiction and potential breaches.
     \item \textbf{Bias and Privacy Issues:} AI components in platforms like Jia and He's IOPS (from literature) introduce biases, such as inaccurate facial recognition for diverse ethnicities, and raise privacy concerns without clear compliance to Ethiopia's Personal Data Protection Proclamation.
-    \item \textbf{Limited Customization:} Existing tools do not support multi-tenant environments for multiple organizations, nor do they offer features like automated certificate generation or subscription models tailored to local payment systems (e.g., Telebirr).
+    \item \textbf{Limited Customization:} Existing tools do not support multi-tenant environments for multiple organizations, nor do they offer features like automated report generation or subscription models tailored to local payment systems (e.g., Telebirr).
 \end{itemize}
 
 These problems underscore the need for a tailored solution like Veritas, which addresses them through local development, AI-enhanced grading, and lightweight proctoring, as modeled in subsequent sections of this chapter.
@@ -98,7 +98,7 @@ The primary actors interacting with the Veritas system are as follows:
     \item \textbf{Super Administrator:} Manages the overall platform, including approving enterprise registrations, suspending accounts, defining subscription plans, and overseeing system-wide operations.
     \item \textbf{Enterprise Administrator:} Manages the enterprise's assessment environment, including creating and scheduling exams, managing staff and candidates, viewing reports, and handling their subscription.
     \item \textbf{Enterprise Staff:} Assists in enterprise-specific tasks such as exam management and result visualization under the supervision of the Enterprise Administrator.
-    \item \textbf{Candidate:} Participates in assessments by taking exams, submitting answers, and receiving results and certificates.
+    \item \textbf{Candidate:} Participates in assessments by taking exams, submitting answers, and receiving results.
     \item \textbf{Payment System:} External system that processes payments for subscriptions.
 \end{itemize}
 
@@ -141,7 +141,6 @@ The key use cases for each actor in the Veritas system are outlined below:
     \item Start Exam
     \item Submit Exam
     \item View Results
-    \item Receive Certificate
 \end{itemize}
 
 \textbf{Payment System Use Cases}
@@ -206,7 +205,6 @@ FR-MT-003 & Enterprise Account Approval & UC-01: Approve Enterprise Registration
 FR-EXM-001 & Question Bank Management & UC-08: Create Exam \\ \hline
 FR-EXM-003 & Strict Scheduling & UC-09: Schedule Exam \\ \hline
 FR-CAND-006 & Accessibility & UC-18: Start Exam, UC-19: View Results \\ \hline
-FR-GRAD-005 & Certificate Generation & UC-17: Receive Certificate \\ \hline
 \end{tabular}
 \end{table}
 

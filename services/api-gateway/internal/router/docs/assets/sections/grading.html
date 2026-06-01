@@ -2,23 +2,9 @@
 <section class="section" data-service="grading">
     <div class="section-header">
         <h2>Grading & Results</h2>
-        <span class="section-count">8 endpoints</span>
+        <span class="section-count">5 endpoints</span>
     </div>
     <div class="endpoint-list">
-        <h3 class="endpoint-group-title">Scoring</h3>
-        <endpoint-item method="POST" path="/grading/auto">
-            <span class="badge badge-system">EnterpriseAuto</span>
-        </endpoint-item>
-        <endpoint-item method="POST" path="/grading/manual">
-            <span class="badge badge-enterprise-staff">EnterpriseStaff</span>
-        </endpoint-item>
-        <h3 class="endpoint-group-title">Results & Certificates</h3>
-        <endpoint-item method="GET" path="/results/:examId">
-            <span class="badge badge-admin">EnterpriseAdmin</span>
-        </endpoint-item>
-        <endpoint-item method="GET" path="/certificates/:certificateId">
-            <span class="badge badge-candidate">ExamCandidate</span>
-        </endpoint-item>
         <h3 class="endpoint-group-title">Integrity-Protected Grading Reports & Audits</h3>
         <endpoint-item method="GET" path="/grading/results">
             <span class="badge badge-enterprise-staff">EnterpriseStaff</span>

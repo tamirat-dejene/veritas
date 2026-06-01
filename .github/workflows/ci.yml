@@ -29,7 +29,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Syntax check Python services
+      - name: Test Python services
         run: |
           set -euo pipefail
-          python -m py_compile services/*/*.py
+          for dir in services/*; do
+            if [ -f "$dir/requirements.txt" ]; then
+              echo "==> $dir"
+              (
+                cd "$dir"
+                python -m venv venv
+                source venv/bin/activate
+                pip install -r requirements.txt
+                if [ -d "tests" ]; then
+                  pip install pytest pytest-asyncio respx
+                  pytest
+                fi
+              )
+            fi
+          done

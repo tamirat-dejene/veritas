@@ -100,6 +100,9 @@ func (g *RouterGroup) RegisterPaymentRoutes(proxy http.Handler) {
 
 	// Stripe webhook (public)
 	g.register("POST", "/webhooks/stripe", proxy)
+
+	// Chapa webhook (public)
+	g.register("POST", "/webhooks/chapa", proxy)
 }
 
 // RegisterExamRoutes attaches Exam Service proxy routes
@@ -204,11 +207,6 @@ func (g *RouterGroup) RegisterProctoringRoutes(proxy http.Handler) {
 func (g *RouterGroup) RegisterGradingRoutes(proxy http.Handler) {
 	staffOrAdmin := g.authWithRoles(domain.RoleEnterpriseAdmin, domain.RoleEnterpriseStaff)
 	adminRole := g.authWithRoles(domain.RoleEnterpriseAdmin)
-
-	g.register("POST", "/grading/auto", proxy, g.authWithRoles(domain.RoleEnterpriseAuto)...)
-	g.register("POST", "/grading/manual", proxy, g.authWithRoles(domain.RoleEnterpriseStaff)...)
-	g.register("GET", "/results/:examId", proxy, g.authWithRoles(domain.RoleEnterpriseAdmin)...)
-	g.register("GET", "/certificates/:certificateId", proxy, g.candidateAuthChain()...)
 
 	// New Grading Service endpoints
 	g.register("GET", "/grading/results", proxy, staffOrAdmin...)

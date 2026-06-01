@@ -1,0 +1,150 @@
+% Chapter 6: System Evaluation
+\section{System Evaluation}
+
+This chapter evaluates the Veritas prototype against the objectives, requirements, and design decisions presented in the previous chapters. The evaluation focuses on whether the implemented system satisfies the major functional requirements, whether the proposed architecture performs acceptably in a controlled environment, and whether the security, integrity, and usability mechanisms are suitable for the intended Ethiopian enterprise assessment context. Because the project is a final-year prototype rather than a certified production deployment, the evaluation emphasizes laboratory testing, requirement traceability, controlled demonstrations, code-level verification, and selected integration scenarios.
+
+\subsection{Preparing Sample Test Plans}
+The test plan was prepared from the functional and non-functional requirements specified in Chapter 3. Each test case was designed to verify a user-visible workflow, a service boundary, or a critical quality attribute. The testing strategy combines unit testing, integration testing, system testing, security inspection, and user acceptance demonstration.
+
+\subsubsection{Testing Objectives}
+The main objectives of the evaluation were:
+\begin{itemize}
+    \item To confirm that the system supports the core online assessment workflow from enterprise registration to result generation.
+    \item To verify that tenant data is isolated and that access control decisions are enforced through authenticated roles.
+    \item To evaluate the reliability of asynchronous workflows such as candidate invitation, exam submission, grading, notification, and proctoring score updates.
+    \item To inspect security controls including JWT validation, gateway-owned identity headers, audit logging, and grade tamper detection.
+    \item To assess the usefulness of AI-assisted grading and proctoring in a controlled prototype environment.
+    \item To identify limitations that should be addressed before a full-scale production release.
+\end{itemize}
+
+\subsubsection{Test Environment}
+Testing was conducted in a local containerized environment using Docker Compose. The environment included PostgreSQL, Redis, Kafka, MailHog, pgAdmin, the Go-based services, and the Python-based AI services. MailHog was used to capture outgoing emails without sending messages to real users. Kafka was used to verify event-driven flows, while PostgreSQL schemas were used to validate service-level data isolation. This environment was selected because it closely represents the intended deployment topology while remaining reproducible on a development machine.
+
+\subsubsection{Sample Functional Test Plan}
+\renewcommand{\arraystretch}{1.25}
+\begin{longtable}{|p{2.2cm}|p{3cm}|p{5.2cm}|p{3.2cm}|}
+\caption{Sample Functional Test Plan} \label{tab:sample-functional-test-plan} \\
+\hline
+\textbf{Test ID} & \textbf{Area} & \textbf{Test Scenario} & \textbf{Expected Result} \\ \hline
+\endfirsthead
+\multicolumn{4}{c}%
+{{\bfseries Table \thetable\ (continued from previous page)}} \\
+\hline
+\textbf{Test ID} & \textbf{Area} & \textbf{Test Scenario} & \textbf{Expected Result} \\ \hline
+\endhead
+\hline \multicolumn{4}{r}{{Continued on next page}} \\
+\endfoot
+\hline
+\endlastfoot
+TC-01 & Enterprise registration & Register a new enterprise with organization details and subscription plan. & Enterprise record is created and awaits administrator approval. \\ \hline
+TC-02 & Authentication and RBAC & Login as super admin, enterprise admin, staff, and candidate using valid and invalid credentials. & Valid users receive tokens; invalid users are rejected; restricted routes return unauthorized or forbidden responses. \\ \hline
+TC-03 & Tenant isolation & Access one enterprise's exam, candidate, or result data using another enterprise's identity context. & Request is rejected or returns only tenant-scoped data. \\ \hline
+TC-04 & Exam management & Create a question bank, configure an exam, schedule it, and enroll candidates. & Exam is stored with correct metadata, timing rules, and candidate enrollment records. \\ \hline
+TC-05 & Candidate session & Start an exam using a valid token, answer questions, autosave progress, and submit. & Session status changes correctly; answers are persisted; late or duplicate submissions are controlled. \\ \hline
+TC-06 & Proctoring events & Generate tab-switch, inactivity, face mismatch, and multiple-face events during an exam. & Events are logged with timestamps and severity; cheating score is recalculated. \\ \hline
+TC-07 & Grading workflow & Submit an exam containing objective and subjective questions. & A pending result is created, grading runs asynchronously, and final score is saved. \\ \hline
+TC-08 & Manual override & Adjust a grading result as authorized staff with a justification. & Score is updated, checksum is recalculated, and an audit record is written. \\ \hline
+TC-09 & Notification flow & Enroll candidates and publish result-related events. & MailHog receives invitation or result notification emails. \\ \hline
+TC-10 & Subscription restriction & Attempt to use a Premium-only feature from a Basic enterprise account. & Feature access is denied according to subscription tier. \\ \hline
+\end{longtable}
+
+\subsubsection{Sample Non-Functional Test Plan}
+The non-functional test plan focused on performance, reliability, security, maintainability, and usability. These tests were designed around the non-functional requirements in Chapter 3 and the design goals in Chapter 4.
+
+\begin{longtable}{|p{2.2cm}|p{3cm}|p{5.2cm}|p{3.2cm}|}
+\caption{Sample Non-Functional Test Plan} \label{tab:sample-nonfunctional-test-plan} \\
+\hline
+\textbf{Test ID} & \textbf{Quality Attribute} & \textbf{Evaluation Method} & \textbf{Expected Result} \\ \hline
+\endfirsthead
+\multicolumn{4}{c}%
+{{\bfseries Table \thetable\ (continued from previous page)}} \\
+\hline
+\textbf{Test ID} & \textbf{Quality Attribute} & \textbf{Evaluation Method} & \textbf{Expected Result} \\ \hline
+\endhead
+\hline \multicolumn{4}{r}{{Continued on next page}} \\
+\endfoot
+\hline
+\endlastfoot
+NFTC-01 & Security & Inspect gateway JWT validation, signing algorithm checks, and protected routes. & Invalid, expired, or malformed tokens are rejected at the gateway. \\ \hline
+NFTC-02 & Integrity & Modify a grading result directly in the database and request it through the service. & HMAC checksum mismatch is detected. \\ \hline
+NFTC-03 & Reliability & Stop and restart Kafka or a dependent service during background processing. & Consumers retry and resume processing after dependency recovery. \\ \hline
+NFTC-04 & Responsiveness & Submit an exam while grading and notification services are running asynchronously. & Candidate receives immediate submission confirmation without waiting for AI grading or email delivery. \\ \hline
+NFTC-05 & Maintainability & Run unit tests for shared packages, grading service, and proctoring service. & Core business logic passes automated tests. \\ \hline
+NFTC-06 & Auditability & Perform login, exam, grading, payment, and administrative actions. & Critical actions create inspectable audit or event records. \\ \hline
+NFTC-07 & Usability & Demonstrate candidate and administrator workflows to users in a guided session. & Users can complete primary tasks with minimal guidance. \\ \hline
+\end{longtable}
+
+\subsection{Evaluating the Proposed Design and Solutions}
+The proposed solution was evaluated by comparing the implemented system with the architectural goals defined in Chapter 4: multi-tenant isolation, hybrid communication, scalability, fault tolerance, integrity, auditability, security-by-design, and operational portability.
+
+\subsubsection{Evaluation of Functional Coverage}
+The prototype implements the main lifecycle of an enterprise examination platform. Enterprise and authentication services provide tenant onboarding, staff identity management, role-based access control, and JWT-based session handling. Exam and candidate services provide the core assessment flow, including exam authoring, scheduling, candidate enrollment, secure exam participation, answer persistence, and final submission. The grading service handles automated scoring and supports protected manual overrides. The proctoring service records monitoring events and calculates an aggregated cheating score. Notification and payment services support the commercial and communication workflows required by the platform.
+
+\begin{longtable}{|p{3.3cm}|p{5.8cm}|p{4.5cm}|}
+\caption{Functional Requirement Evaluation Summary} \label{tab:functional-evaluation-summary} \\
+\hline
+\textbf{Requirement Group} & \textbf{Implemented Support} & \textbf{Evaluation Result} \\ \hline
+\endfirsthead
+\multicolumn{3}{c}%
+{{\bfseries Table \thetable\ (continued from previous page)}} \\
+\hline
+\textbf{Requirement Group} & \textbf{Implemented Support} & \textbf{Evaluation Result} \\ \hline
+\endhead
+\hline \multicolumn{3}{r}{{Continued on next page}} \\
+\endfoot
+\hline
+\endlastfoot
+Multi-tenancy & Enterprise-scoped data models, gateway tenant headers, service-owned schemas, and tenant-aware repositories. & Satisfies the prototype requirement; requires larger production audit before national-scale deployment. \\ \hline
+Authentication and authorization & JWT login, refresh-token support, role claims, gateway validation, and downstream identity headers. & Core access control behavior verified through tests and inspection. \\ \hline
+Exam management & Question bank, exam configuration, scheduling, enrollment, and candidate-session flows. & Core workflows implemented and suitable for demonstration. \\ \hline
+Candidate examination & Candidate login, session start, answer saving, submission, and result retrieval. & Main candidate workflow functions in controlled testing. \\ \hline
+Proctoring & Event ingestion, severity mapping, face verification support, event persistence, and cheating score computation. & Prototype validates concept; real-world accuracy depends on camera quality, lighting, and model tuning. \\ \hline
+Grading and results & Objective grading, AI-assisted subjective grading path, pending results, final reports, manual override, and checksum protection. & Functional and integrity behavior verified through automated tests and inspection. \\ \hline
+Dashboard and reporting & Administrative views and report-oriented service endpoints support exam, result, and proctoring summaries. & Demonstration-level support; advanced custom report builder remains future work. \\ \hline
+Payment and subscription & Subscription plans, billing records, provider boundary, and tier enforcement logic. & Prototype and dynamic provider registry implemented, integrating Stripe and a local payment gateway (Chapa); production webhook hardening remains future work. \\ \hline
+\end{longtable}
+
+\subsubsection{Evaluation of Architecture and Integration}
+The microservices architecture proved suitable for separating independent business domains. The gateway successfully centralizes authentication, rate limiting, routing, and identity propagation. This reduces duplicated security code in downstream services and creates a clear boundary between public clients and private internal services.
+
+The hybrid communication model also performed well in the prototype. Synchronous REST was appropriate for interactive operations such as login, exam retrieval, and candidate answer submission. Kafka-based asynchronous processing was appropriate for grading triggers, notifications, proctoring events, and subscription updates. This design reduced user-facing waiting time because slow tasks did not block candidate workflows. For example, after exam submission, the candidate service persisted the submission and published a grading event, while the grading service independently created a pending result and completed scoring in the background.
+
+The database-per-service approach strengthened maintainability and reduced schema coupling. Since each service owns its migrations and schema, changes to grading or proctoring persistence do not require direct modification of exam or candidate tables. The trade-off is that reporting across services becomes more complex because data must be collected through APIs or events rather than direct joins. This trade-off is acceptable for the prototype because it preserves service autonomy and supports future horizontal scaling.
+
+\subsubsection{Evaluation of Security and Integrity}
+Security evaluation focused on access control, token handling, data isolation, and tamper evidence. JWT validation at the gateway rejects missing, malformed, expired, or incorrectly signed tokens. After validation, the gateway injects sanitized identity headers such as \path{X-User-ID}, \path{X-User-Role}, and \path{X-Enterprise-ID}. The raw authorization token is removed before requests are forwarded to internal services. This reduces the possibility that downstream services accidentally reuse or expose bearer tokens.
+
+The grading service adds an additional integrity layer through row-level HMAC checksums. When a grade is created or updated through legitimate workflows, the checksum is computed from stable grading fields and the version number. If a database row is modified directly outside the application workflow, checksum verification detects the mismatch. Manual overrides are still allowed, but they must pass through the service layer so that audit records and checksums are updated consistently.
+
+Auditability is supported through administrative logs, grading audit records, proctoring event logs, payment records, and Kafka event histories. These records provide a foundation for later compliance reviews. However, the prototype does not claim full legal or regulatory certification; formal penetration testing, privacy impact assessment, and production hardening would be required before live deployment in high-stakes examinations.
+
+\subsubsection{Evaluation of Automated Tests}
+Automated tests were used to verify core service behavior. The shared Go packages include tests for HTTP client behavior, pagination utilities, and background scheduler helpers. The grading service includes tests for AI client behavior, grading calculations, API handlers, repository logic, security checks, use cases, and worker behavior. The proctoring service includes tests for handlers, infrastructure clients, repository functions, event processing, score calculation, deduplication, capping, cache behavior, and face-verification error handling.
+
+These tests improve confidence in the most sensitive areas of the system: asynchronous grading, proctoring event handling, and tamper detection. The CI workflow provides a baseline quality gate by running Go tests across service modules and checking Python entry points. Further improvement would involve adding more end-to-end browser tests, database-backed integration tests, and load tests with realistic concurrent candidate traffic.
+
+\subsection{Discussing the Results}
+The evaluation shows that the Veritas prototype successfully demonstrates the feasibility of a locally developed, AI-enhanced online assessment platform. The system addresses the main problems identified in Chapter 1: dependence on foreign-hosted tools, manual subjective grading delays, limited proctoring, weak local customization, and lack of tenant-aware enterprise control.
+
+\subsubsection{Major Strengths}
+The first major strength is architectural separation. By dividing the system into gateway, identity, enterprise, exam, candidate, grading, proctoring, payment, and notification services, the design avoids a single overloaded application. This makes the solution easier to maintain and allows heavy AI workloads to be isolated from time-sensitive candidate interactions.
+
+The second strength is the asynchronous workflow design. Kafka-based processing prevents slow background tasks from blocking the candidate experience. This is especially important in environments where internet quality and external provider response times may vary. Candidate submission, proctoring event storage, notification delivery, and grading can proceed independently while still remaining connected through durable events.
+
+The third strength is security and integrity awareness. The prototype does not rely only on normal application permissions; it includes gateway-controlled identity propagation, tenant scoping, audit logs, and grading-result checksums. These features are important because online assessments require both prevention and later investigation.
+
+The fourth strength is practical deployability. Docker Compose, migrations, service-specific configurations, and health checks make the system reproducible for demonstration and development. The same containerization approach also creates a foundation for future Kubernetes deployment.
+
+\subsubsection{Observed Limitations}
+Some limitations remain. First, the prototype was evaluated mainly in a controlled local environment. This confirms functional correctness and design feasibility, but it does not fully prove behavior under large scale concurrency or unstable wide-area network conditions. A future evaluation should use dedicated load testing tools and distributed test clients to simulate hundreds or thousands of simultaneous candidates.
+
+Second, AI grading and face verification depend on model quality, image conditions, and prompt or rubric configuration. The prototype demonstrates the integration pattern, but a larger labeled dataset would be required to measure accuracy, false-positive rates, fairness, and consistency across different devices and lighting environments.
+
+Third, payment integration supports parallel Stripe and Chapa provider routing but still requires production certification, webhook hardening, and reconciliation checks before real financial use. Similarly, privacy and regulatory compliance require formal policy review and deployment-specific controls.
+
+Fourth, advanced dashboard capabilities such as fully customizable report builders, large asynchronous report exports, and multilingual localization require additional development. The current implementation provides the foundation for these features but does not exhaust all desirable reporting requirements.
+
+\subsubsection{Conclusion of Evaluation}
+Overall, the evaluation confirms that the proposed Veritas design is technically feasible and that the implemented prototype satisfies the core objectives of the project. The system supports multi-tenant enterprise assessment management, secure access control, candidate exam delivery, AI-assisted grading, proctoring event processing, auditability, and asynchronous integration. The results also show that the selected technologies--Go, Python, PostgreSQL, Redis, Kafka, and Docker--fit the architectural needs of the platform.
+
+The prototype is therefore suitable as a controlled demonstration and as a strong foundation for future development. Before deployment in high-stakes production contexts, the system should undergo extended load testing, formal security review, usability testing with a larger group of candidates and administrators, production payment gateway certification, and AI accuracy validation using representative Ethiopian assessment datasets.
