@@ -20,7 +20,7 @@ The Database-per-Service decision proved to be highly effective. The rationale f
     \item \textbf{Staging vs. Production Scalability:} Logical isolation via distinct schemas in a single PostgreSQL container keeps local developer setups lightweight and cost-effective. During Kubernetes (GKE) production rollouts, these schemas are seamlessly mapped to independent, physically separated database instances, avoiding CPU/memory starvation on a single database server.
 \end{itemize}
 
-Offloading high-latency operations to Kafka was critical for platform reliability. Workflows like sending SMTP onboarding emails, rendering certificates, recomputing multi-variable cheating risk, and running AI models are asynchronous by design. Rationale for offloading these workloads includes:
+Offloading high-latency operations to Kafka was critical for platform reliability. Workflows like sending SMTP onboarding emails, recomputing multi-variable cheating risk, and running AI models are asynchronous by design. Rationale for offloading these workloads includes:
 \begin{itemize}
     \item \textbf{Latency Shielding:} SMTP transactions can take several seconds due to local networking delays. Moving alerts dispatching to Kafka consumers ensures that the user is immediately redirected to their destination screen without waiting for external mail systems to respond.
     \item \textbf{Slim-Trigger Efficiency (v3.0):} Rather than clogging Kafka's network pipeline with massive exam submission packages (candidate answers, questions, structures), the candidate service publishes a lightweight references trigger. The grading service then pulls the target grading payload directly via internal REST, keeping Kafka's throughput high and message sizes consistent.
@@ -200,7 +200,50 @@ await repo.save_grading_report(report, graded_by="system")
 \end{verbatim}
 \endgroup
 
-The automated grader handles objective questions directly and delegates subjective grading to the configured AI client where appropriate. This separation allows deterministic question types, such as multiple choice and true or false, to be graded locally while essay-style answers can use AI-assisted scoring.
+The automated grader handles objective questions directly and delegates subjective grading to the configured AI client where appropriate. This separation allows deterministic question types, such as multiple choice and true or false, to be graded locally while short-answer and essay-style responses can use AI-assisted scoring.
+
+\subsubsection{Short Answer Semantic Grading Engine}
+For short-answer questions, the grading service implements a hybrid semantic grading engine rather than relying only on keyword matching or plain embedding cosine similarity. This design follows the broader direction of automated essay scoring and automated short-answer grading research, where neural language models improve coverage of paraphrases but still require constraints for fairness, explainability, and adversarial robustness \citep{Ramesh2022,Uto2021,Schneider2024}.
+
+The engine evaluates each candidate answer against the rubric answer through two complementary signals:
+\begin{itemize}
+    \item \textbf{Bidirectional semantic entailment:} A Natural Language Inference (NLI) cross-encoder compares the expected answer and candidate response in both directions. The forward direction checks whether the candidate answer covers the rubric meaning, while the reverse direction checks whether the candidate answer omits important rubric content. The NLI model produces entailment, neutral, and contradiction scores.
+    \item \textbf{Lexical alignment:} A deterministic lexical score is calculated from normalized content words. The text is lowercased, stop words are removed, remaining terms are lemmatized, and an Intersection-over-Union score is computed over the resulting lemma sets. This signal anchors the model to explicit concept overlap and reduces the risk of awarding marks to fluent but unrelated answers.
+\end{itemize}
+
+For each reference variant, the service combines the semantic and lexical components as:
+\[
+\text{variant\_score} =
+(0.70 \times \text{semantic\_entailment}) +
+(0.30 \times \text{lexical\_iou})
+\]
+
+To improve coverage of valid phrasing, the grader can generate additional rubric paraphrases using a T5 sequence-to-sequence model. These generated variants act as a reference ensemble, allowing answers that express the same idea in different wording to receive credit. To avoid a single weak or overly broad paraphrase producing an inflated score, the service applies top-\(k\) smoothing by averaging the strongest variant scores instead of accepting only the maximum score.
+
+The grading engine also applies contradiction suppression. If the NLI pass detects that a candidate answer uses relevant terminology but states the opposite of the expected meaning, the final score is scaled by an exponential penalty:
+\[
+\text{final\_score} =
+\text{smoothed\_score} \times
+e^{-\lambda \times \text{max\_contradiction}}
+\]
+where \(\lambda\) is the configured contradiction suppression strength. This is important for answers that appear superficially similar to the rubric but contain negation, reversed causality, or factually incompatible claims.
+
+The resulting pipeline grades short answers in four stages: normalize the candidate and reference texts, build the reference ensemble, score each candidate-reference pair using semantic and lexical signals, and finally smooth and suppress the score based on contradiction evidence. In implementation, the NLI comparisons are batched into a single PyTorch inference call where possible, reducing repeated model startup and forward-pass overhead during bulk grading.
+
+\subsubsection{Essay Grading and Inference Optimizations}
+Essay-style questions are handled through a separate generative lane because they require multi-criteria reasoning rather than only factual entailment. The grading service decomposes the rubric into smaller criterion-specific evaluations, such as content coverage, organization, argument development, and clarity. Each criterion is requested as structured data, then the service computes the final percentage from the returned criterion scores. This makes the final score deterministic and keeps each sub-score available for audit or authorized override when AI confidence is low.
+
+To reduce formatting failures from the local Small Language Model (SLM), the essay lane uses schema-constrained output. The expected response shape is defined through a Pydantic model, and the inference adapter constrains the model output to valid JSON before the response reaches the database parser. This prevents common generative-output failures such as conversational preambles, markdown code fences, missing keys, or malformed numeric fields.
+
+The AI runtime also applies several engineering optimizations:
+\begin{itemize}
+    \item \textbf{Tokenizer isolation:} Tokenizer parallelism is disabled before model loading so asynchronous FastAPI workers do not deadlock on shared tokenizer threads. Tokenization is treated as a controlled preprocessing step rather than an implicit side effect inside request handlers.
+    \item \textbf{Dynamic padding and bucketing:} Short-answer pairs are grouped by tokenized length and padded only to the longest sequence in each group. This avoids wasting computation on large numbers of empty padding tokens.
+    \item \textbf{Batched cross-encoder inference:} Short-answer comparisons are assembled into tensor batches where possible, allowing the discriminative model to process many candidate-reference pairs in fewer forward passes.
+    \item \textbf{Quantized essay inference:} The essay SLM is configured as a local quantized model so essay evaluation does not depend on an external commercial API. Its execution is isolated from the short-answer lane to prevent long-form generation from starving faster cross-encoder work.
+\end{itemize}
+
+Together, these choices implement the decoupled architecture described in Chapter 4: fast discriminative scoring for high-volume short answers, and constrained generative reasoning for lower-volume essay questions.
 
 \subsubsection{Grade Integrity and Audit Support}
 To support integrity and auditability, grading results are protected with an HMAC-SHA256 checksum. The checksum is calculated over stable grading fields and the current version number. During retrieval or update, the repository recalculates the checksum and compares it with the stored value. A mismatch indicates that the row may have been modified outside the application workflow.

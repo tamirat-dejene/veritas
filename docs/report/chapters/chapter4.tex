@@ -2,18 +2,19 @@
 \section{System Design}
 
 \subsection{Overview}
-This chapter documents the system design of the Veritas online assessment platform, detailing the architectural patterns, communication models, and data tier configurations. The system adopts a hybrid communication topology, combining synchronous REST APIs for interactive actions and asynchronous Apache Kafka event queues for background workflows. Rationale for this hybrid model centers on protecting critical candidate workflows from network latency and slow downstream services (such as third-party payment APIs or machine learning loops), which is vital given Ethiopia's constrained and highly volatile network conditions. Data is isolated per service via a Database-per-Service architecture, eliminating database-level coupling and ensuring that schemas can evolve independently. Real-time proctoring and grading are assisted by AI subsystems to reduce human operational bottlenecks and accelerate scoring feedback.
+This chapter documents the system design of the Veritas online assessment platform, detailing the architectural patterns, communication models, and data tier configurations. The system adopts a hybrid communication topology, combining synchronous REST APIs for interactive actions and asynchronous Apache Kafka event queues for background workflows. Rationale for this hybrid model centers on protecting critical candidate workflows from network latency and slow downstream services (such as third-party payment APIs or machine learning loops), which is vital given Ethiopia's constrained and highly volatile network conditions. Data is isolated per service via a Database-per-Service architecture, eliminating database-level coupling and ensuring that schemas can evolve independently. Real-time proctoring and grading are assisted by AI subsystems to reduce human operational bottlenecks and accelerate scoring feedback. Within the grading subsystem, Veritas further uses a decoupled AI evaluation architecture: short-answer questions are treated as fast discriminative entailment tasks, while long-form essays are routed to a constrained generative evaluation lane.
 
 \subsection{Specifying the Design Goals}
 The system design is guided by the objectives and constraints established in Chapter 1 and the modeling artifacts in Chapter 3. The following architectural design goals were formulated, and the rationale behind each decision is as follows:
 
 \begin{itemize}
-    \item \textbf{Multi-tenant isolation (Rationale):} To comply with emerging data residency standards and Ethiopia's Personal Data Protection Proclamation, the platform must guarantee that enterprise-specific candidate lists, assessment templates, and proctoring metrics never leak across organizational boundaries. Logical scoping by enterprise identifiers ensures data-tier security without incurring the vast infrastructure overhead of completely isolated hardware stacks.
-    \item \textbf{Hybrid communication (Rationale):} Synchronous REST provides immediate consistency and instant feedback for critical user operations (e.g., retrieving exam questions or submitting answers). Conversely, slow operations like dispatching email invitations or recomputing behavioral cheating scores are offloaded asynchronously to Kafka, preventing network latency or external system outages from blocking candidate-facing applications.
-    \item \textbf{Scalability and fault tolerance (Rationale):} During national civil service exams or university entrance assessments, the platform encounters massive surges in concurrent sessions. Centralizing rate limiting and circuit breakers at the API Gateway protects downstream microservices from CPU starvation or memory exhaustion, while asynchronous Kafka queues buffer spikes in write operations.
-    \item \textbf{Integrity and auditability (Rationale):} Academic and recruitment examinations are high-stakes events prone to collusion or direct database manipulation. Implementing row-level HMAC checksums and automatic PL/pgSQL database triggers enforces a strict audit trail, guaranteeing that no grade can be modified out-of-band without detection.
-    \item \textbf{Security-by-design (Rationale):} Operating in public, untrusted internet environments requires stateless identity validation. Implementing short-lived JSON Web Tokens (JWT) with role-based claims centralizes access controls at the gateway, avoiding the need for microservices to share session states or make repeated round-trips to a central session store.
-    \item \textbf{Operational portability (Rationale):} Veritas must accommodate both lightweight regional test centers running on local servers and global high-availability deployments on public clouds. Standardizing on containerized microservices enables seamless transitions between Docker Compose and Kubernetes environments.
+    \item \textbf{Multi-tenant isolation:} The platform must guarantee that enterprise-specific candidate lists, assessment templates, and proctoring metrics never leak across organizational boundaries. Logical scoping by enterprise identifiers ensures data-tier security without incurring the vast infrastructure overhead of completely isolated hardware stacks.
+    \item \textbf{Hybrid communication:} Synchronous REST provides immediate consistency and instant feedback for critical user operations (e.g., retrieving exam questions or submitting answers). Conversely, slow operations like dispatching email invitations or recomputing behavioral cheating scores are offloaded asynchronously to Kafka, preventing network latency or external system outages from blocking candidate-facing applications.
+    \item \textbf{Scalability and fault tolerance:} During national civil service exams or university entrance assessments, the platform encounters massive surges in concurrent sessions. Centralizing rate limiting and circuit breakers at the API Gateway protects downstream microservices from CPU starvation or memory exhaustion, while asynchronous Kafka queues buffer spikes in write operations.
+    \item \textbf{Integrity and auditability:} Academic and recruitment examinations are high-stakes events prone to collusion or direct database manipulation. Implementing row-level HMAC checksums and automatic PL/pgSQL database triggers enforces a strict audit trail, guaranteeing that no grade can be modified out-of-band without detection.
+    \item \textbf{Security-by-design:} Operating in public, untrusted internet environments requires stateless identity validation. Implementing short-lived JSON Web Tokens (JWT) with role-based claims centralizes access controls at the gateway, avoiding the need for microservices to share session states or make repeated round-trips to a central session store.
+    \item \textbf{Model-specific grading efficiency:} Automated grading should not send every subjective response to a single generative model. Short factual answers require fast concept verification, whereas essays require richer rubric-based reasoning. Separating these workloads improves latency, cost control, and evaluation consistency.
+    \item \textbf{Operational portability:} Veritas must accommodate both lightweight regional test centers running on local servers and global high-availability deployments on public clouds. Standardizing on containerized microservices enables seamless transitions between Docker Compose and Kubernetes environments.
 \end{itemize}
 
 \subsection{System Design}
@@ -68,7 +69,54 @@ This subsystem includes \texttt{auth-service} and \texttt{enterprise-service}. R
 This subsystem includes \texttt{exam-service} and \texttt{candidate-service}. Rationale for this division is that test authoring (which is write-infrequent but requires rich templates and question-bank logic) is structurally distinct from test delivery. The \texttt{candidate-service} requires highly optimized write workflows (recording candidates' answers every few seconds to prevent loss during internet outages). It delivers questions incrementally to prevent candidates from scraping or leaking full exam packages. Upon exam submission, the candidate service emits a v3.0 slim grading trigger to Kafka rather than a massive payload, preventing message broker bloat under low-bandwidth constraints.
 
 \paragraph{AI Proctoring and Grading Subsystem}
-This subsystem contains the heavy machine learning workloads, including \texttt{proctoring-service} and \texttt{grading-service}. Rationale for isolating proctoring from grading is that the proctoring engine must ingest thousands of high-frequency behavioral signals (tab changes, blur events, webcam face checks) per candidate session, calling for high-throughput stream ingestion. Grading, on the other hand, is a high-consistency terminal execution that runs once upon exam completion. Separating these ensures that proctoring signal spikes do not resource-starve the critical scoring and grading transaction pipeline.
+This subsystem contains the heavy machine learning workloads, including \texttt{proctoring-service} and \texttt{grading-service}. Rationale for isolating proctoring from grading is that the proctoring engine must ingest thousands of high-frequency behavioral signals (tab changes, blur events, webcam face checks) per candidate session, calling for high-throughput stream ingestion. Grading, on the other hand, is a high-consistency terminal execution that runs once upon exam completion. Separating these ensures that proctoring signal spikes do not resource-starve the critical scoring and grading transaction pipeline. Inside the \texttt{grading-service}, the AI workload is split again into a short-answer lane and an essay lane so that each model is matched to the structure of the assessment task.
+
+\subsubsection{Decoupled Automated Grading Architecture}
+The grading architecture avoids the anti-pattern of using one generative Large Language Model (LLM) for every subjective question. A single generative model is simple to configure, but it creates unnecessary latency for short factual responses, increases dependency on expensive external inference endpoints, and can be vulnerable to verbosity bias when wordy responses receive inflated marks. Automated scoring literature also shows that reliable grading requires both semantic understanding and explicit constraints rather than unconstrained text generation alone \citep{BenOmranAbAziz2013,Haller2022,Ramesh2022}.
+
+Veritas therefore routes subjective responses through two task-specific lanes:
+\begin{itemize}
+    \item \textbf{Lane 1 -- Short-answer grading:} Short answers are treated as Natural Language Inference (NLI) and lexical alignment problems. The service compares the question context, reference answer, and candidate answer using a DeBERTa-v3-style cross-encoder, then combines the semantic score with a deterministic lemma-based Intersection-over-Union (IoU) check. This design modernizes earlier hybrid short-answer grading approaches that combined lexical overlap, sequence similarity, and semantic distance \citep{BenOmranAbAziz2013,He2023}.
+    \item \textbf{Lane 2 -- Essay evaluation:} Long-form essays are routed to a local, quantized instruction-tuned Small Language Model (SLM). The essay lane decomposes the rubric into criteria such as argument quality, organization, evidence use, and clarity. Instead of accepting free-form model output, the service constrains responses to a strict JSON schema that can be parsed and audited consistently.
+\end{itemize}
+
+For short-answer grading, lexical alignment is calculated as:
+\[
+\text{IoU}(A,B) = \frac{|A \cap B|}{|A \cup B|}
+\]
+where \(A\) is the set of normalized reference lemmas and \(B\) is the set of normalized candidate-answer lemmas. The final short-answer score fuses this explicit concept overlap with the semantic cross-encoder output:
+\[
+\text{short\_answer\_score} =
+(\alpha \times \text{semantic\_score}) +
+((1-\alpha) \times \text{lexical\_iou})
+\]
+where \(\alpha\) is configured according to the marking policy of the question type.
+
+For essay grading, each rubric criterion is scored independently and then mapped to a standard percentage:
+\[
+\text{scaled\_percentage} =
+\left(
+\frac{\text{average\_score} - \text{minimum\_score}}
+{\text{maximum\_score} - \text{minimum\_score}}
+\right) \times 100
+\]
+This keeps the final grade deterministic even though the individual criterion judgments are produced by a generative model. It also supports auditability because each criterion can be inspected separately instead of exposing only a single opaque grade.
+
+\begin{table}[H]
+\centering
+\caption{Decoupled Grading Lane Design}
+\label{tab:decoupled-grading-lanes}
+\renewcommand{\arraystretch}{1.25}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{|p{3.1cm}|p{4.0cm}|p{3.2cm}|p{3.4cm}|}
+\hline
+\textbf{Question Type} & \textbf{Primary Model} & \textbf{Core Output} & \textbf{Design Rationale} \\ \hline
+Short answer & DeBERTa-v3-style cross-encoder with lemma IoU check & Entailment-style semantic score plus lexical alignment & Fast batched inference and strong resistance to keyword stuffing or fluent but incorrect answers. \\ \hline
+Essay & Local 7B/8B-class quantized SLM with schema-constrained JSON output & Criterion-level rubric scores and explanations & Supports multi-criteria reasoning while keeping outputs parseable, auditable, and suitable for authorized override if AI confidence is low. \\ \hline
+\end{tabular}
+\end{table}
+
+This separation also improves throughput. In a typical exam with many short-answer items and only a small number of essays, the short-answer lane can batch static tensor inputs and avoid autoregressive token generation. The essay lane remains available for richer reasoning without delaying high-volume factual grading. The design therefore reduces queue pressure during mass submissions and keeps candidate result generation more predictable.
 
 \paragraph{Commercial and Communication Subsystem}
 This subsystem consists of \texttt{payment-service} and \texttt{notification-service}. Rationale for decoupling the notification service is that sending transactional emails via SMTP is slow and prone to network timeouts. Delegating notification dispatching to an asynchronous Kafka consumer prevents outbound network delays from blocking candidate logins or exam submissions. The payment service isolates Stripe and Chapa API credentials and webhook integrations, supporting parallel international and local payment providers to process subscription updates asynchronously.
@@ -169,53 +217,45 @@ This section documents the primary user-facing screens and interfaces developed 
 
 \begin{figure}[H]
 \centering
-\fbox{\parbox{0.9\linewidth}{\centering Placeholder: Enterprise Admin Dashboard UI Screenshot}}
-\caption{Enterprise Admin Dashboard (Placeholder)}
+\includegraphics[width=1\linewidth,keepaspectratio]{assets/ui_screens/enterprise_admin.png}
+\caption{Enterprise Admin Dashboard}
 \label{fig:ui-admin}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\fbox{\parbox{0.9\linewidth}{\centering Placeholder: Enterprise Staff Exam Management UI Screenshot}}
-\caption{Enterprise Staff Exam Management (Placeholder)}
+\includegraphics[width=1\linewidth,keepaspectratio]{assets/ui_screens/enterprise_staff.png}
+\caption{Enterprise Staff Exam Management}
 \label{fig:ui-staff}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\fbox{\parbox{0.9\linewidth}{\centering Placeholder: Candidate Exam Interface UI Screenshot}}
-\caption{Candidate Exam Interface (Placeholder)}
+\includegraphics[width=1\linewidth,keepaspectratio]{assets/ui_screens/live_exam.png}
+\caption{Candidate Exam Interface}
 \label{fig:ui-candidate}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\fbox{\parbox{0.9\linewidth}{\centering Placeholder: Proctoring Monitoring View UI Screenshot}}
-\caption{Proctoring Monitoring View (Placeholder)}
+\includegraphics[width=1\linewidth,keepaspectratio]{assets/ui_screens/live_proctoring_1.png}
+\caption{Proctoring Monitoring View}
 \label{fig:ui-proctoring}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\fbox{\parbox{0.9\linewidth}{\centering Placeholder: Grading Results and Override UI Screenshot}}
-\caption{Grading Results and Override View (Placeholder)}
+\includegraphics[width=1\linewidth,keepaspectratio]{assets/ui_screens/grading.png}
+\caption{Grading Results and Override View}
 \label{fig:ui-grading}
 \end{figure}
 
-\paragraph{Enterprise Admin Dashboard}
-The dashboard shown in Figure \ref{fig:ui-admin} is the administrative command center for the Enterprise Administrator. It displays real-time aggregated metrics such as active subscription tier status, usage quotas, active exam sessions count, and global candidate success distributions. It provides navigation links to manage administrative staff, customize portal branding, and trigger billing workflows.
-
-\paragraph{Enterprise Staff Exam Management}
-The interface illustrated in Figure \ref{fig:ui-staff} is utilized by staff to construct assessment pipelines. Key features include the questions bank manager (supporting drag-and-drop file uploads for multimedia questions), randomized question rule constructors, exam timing windows, enrollment invitations triggers, and manual verification bypass settings.
-
-\paragraph{Candidate Exam Interface}
-Figure \ref{fig:ui-candidate} depicts the candidate-facing exam environment. This interface is heavily optimized for low-bandwidth and offline resilience. It renders single-question cards to minimize load time, synchronizes answer states locally using browser local storage, and incorporates persistent sync indicator elements. An integrated proctoring indicator reminds candidates of the active camera and tab-monitoring systems.
-
-\paragraph{Proctoring Monitoring View}
-The proctoring screen shown in Figure \ref{fig:ui-proctoring} provides real-time oversight of active assessment sessions. It aggregates deep learning streams from the Proctoring Service, displaying webcam face-matching comparisons, eye-movement tracking metrics, audio anomalies, and browser focus logs. An auto-computed cheating risk score is updated dynamically as events are processed.
-
-\paragraph{Grading Results and Override View}
-Illustrated in Figure \ref{fig:ui-grading}, this view presents the final assessment evaluations. It displays side-by-side comparisons of candidate answers alongside AI-generated feedback and awarded scores. It features a secure manual override console where authorized staff can adjust marks; doing so updates the cryptographic row checksum and logs the action in the append-only database audit log with a mandatory justification.
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\linewidth,keepaspectratio]{assets/ui_screens/grade_override.png}
+\caption{Grade Override Interface}
+\label{fig:ui-grade-override}
+\end{figure}
 
 \subsection{Verifying the Requirements in the Design}
 This subsection connects the implemented design to the functional and non-functional requirements listed in Chapter 3. The mapping verifies that core requirements are supported by the architecture and deployment decisions.
