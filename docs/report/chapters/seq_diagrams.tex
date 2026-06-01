@@ -93,7 +93,7 @@ The sequence diagrams below illustrate the interactions between actors and the V
     
     \item \textbf{Grading \& Reporting}
         \begin{itemize}
-            \item \textbf{Hybrid Grading Workflow:} This diagram explains the split-processing logic for mixed-format exams (FR-GRAD-001, FR-GRAD-002). It shows objective answers (MCQ) being routed immediately to the Auto-Grader for instant scoring, while subjective answers (Essays) are queued for human review. Crucially, the diagram highlights the privacy layer where the system strips candidate identifiers before presenting the answer to the Human Reviewer ("Blind Grading"), ensuring the final grade is composed of unbiased manual scores and calculated automated scores.
+            \item \textbf{Hybrid Grading Workflow:} This diagram explains the split-processing logic for mixed-format exams (FR-GRAD-001). It shows objective answers (MCQ) being routed immediately to the Auto-Grader for instant scoring, while subjective answers (Essays) are processed by the AI grading lane. When AI confidence is low, the workflow supports an authorized manual override path for staff review and correction. The final grade is composed of automated scores with any validated overrides applied.
             \vspace*{0.5em}
             \begin{figure}[H]
             \centering
