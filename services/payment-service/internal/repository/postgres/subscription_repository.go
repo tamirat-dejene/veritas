@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	planFields = "id, name, slug, description, price, currency, billing_cycle, features, is_active, created_at, updated_at"
+	planFields = "id, name, slug, description, price, currency, billing_cycle, features, stripe_price_id, is_active, created_at, updated_at"
 	subFields  = "id, enterprise_id, plan_id, status, current_period_start, current_period_end, cancel_at_period_end, canceled_at, ended_at, stripe_customer_id, stripe_subscription_id, chapa_tx_ref, payment_provider, created_at, updated_at"
 )
 
@@ -51,7 +51,7 @@ func (r *subscriptionRepository) ListPlans(ctx context.Context, params paginatio
 	for rows.Next() {
 		var p domain.SubscriptionPlan
 		err := rows.Scan(
-			&p.ID, &p.Name, &p.Slug, &p.Description, &p.Price, &p.Currency, &p.BillingCycle, &p.Features, &p.IsActive, &p.CreatedAt, &p.UpdatedAt,
+			&p.ID, &p.Name, &p.Slug, &p.Description, &p.Price, &p.Currency, &p.BillingCycle, &p.Features, &p.StripePriceID, &p.IsActive, &p.CreatedAt, &p.UpdatedAt,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -86,7 +86,7 @@ func (r *subscriptionRepository) ListAllPlans(ctx context.Context, params pagina
 	for rows.Next() {
 		var p domain.SubscriptionPlan
 		err := rows.Scan(
-			&p.ID, &p.Name, &p.Slug, &p.Description, &p.Price, &p.Currency, &p.BillingCycle, &p.Features, &p.IsActive, &p.CreatedAt, &p.UpdatedAt,
+			&p.ID, &p.Name, &p.Slug, &p.Description, &p.Price, &p.Currency, &p.BillingCycle, &p.Features, &p.StripePriceID, &p.IsActive, &p.CreatedAt, &p.UpdatedAt,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -100,7 +100,7 @@ func (r *subscriptionRepository) GetPlanByID(ctx context.Context, id uuid.UUID) 
 	query := fmt.Sprintf("SELECT %s FROM veritas_subscription_plans WHERE id = $1", planFields)
 	var p domain.SubscriptionPlan
 	err := r.db.QueryRow(ctx, query, id).Scan(
-		&p.ID, &p.Name, &p.Slug, &p.Description, &p.Price, &p.Currency, &p.BillingCycle, &p.Features, &p.IsActive, &p.CreatedAt, &p.UpdatedAt,
+		&p.ID, &p.Name, &p.Slug, &p.Description, &p.Price, &p.Currency, &p.BillingCycle, &p.Features, &p.StripePriceID, &p.IsActive, &p.CreatedAt, &p.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -115,7 +115,7 @@ func (r *subscriptionRepository) GetPlanBySlug(ctx context.Context, slug string)
 	query := fmt.Sprintf("SELECT %s FROM veritas_subscription_plans WHERE slug = $1", planFields)
 	var p domain.SubscriptionPlan
 	err := r.db.QueryRow(ctx, query, slug).Scan(
-		&p.ID, &p.Name, &p.Slug, &p.Description, &p.Price, &p.Currency, &p.BillingCycle, &p.Features, &p.IsActive, &p.CreatedAt, &p.UpdatedAt,
+		&p.ID, &p.Name, &p.Slug, &p.Description, &p.Price, &p.Currency, &p.BillingCycle, &p.Features, &p.StripePriceID, &p.IsActive, &p.CreatedAt, &p.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

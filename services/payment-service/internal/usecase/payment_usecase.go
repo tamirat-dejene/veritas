@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -304,6 +305,12 @@ func (u *paymentUsecase) AdminSetSubscription(ctx context.Context, enterpriseID 
 			return u.subRepo.WithTx(tx).CreateSubscription(ctx, newSub)
 		}
 
+		// Apply admin changes to existing subscription
+		existing.PlanID = req.PlanID
+		existing.Status = req.Status
+		existing.CurrentPeriodStart = periodStart
+		existing.CurrentPeriodEnd = periodEnd
+		existing.UpdatedAt = now
 		return u.subRepo.WithTx(tx).UpdateSubscription(ctx, existing)
 	})
 }
@@ -348,7 +355,10 @@ func (u *paymentUsecase) CreateTrialSubscription(ctx context.Context, enterprise
 	}
 
 	// Publish event so enterprise-service knows the subscription changed
-	return u.eventPublisher.PublishSubscriptionUpdated(ctx, enterpriseID)
+	if u.eventPublisher != nil {
+		return u.eventPublisher.PublishSubscriptionUpdated(ctx, enterpriseID)
+	}
+	return nil
 }
 
 // ─── Webhook ──────────────────────────────────────────────────────────────────
@@ -474,8 +484,10 @@ func (u *paymentUsecase) handleChapaPaymentSuccess(ctx context.Context, event *d
 		}
 
 		// Publish event
-		if pubErr := u.eventPublisher.PublishSubscriptionUpdated(ctx, sub.EnterpriseID); pubErr != nil {
-			zap.L().Error("failed to publish subscription_updated event after Chapa checkout", zap.Error(pubErr))
+		if u.eventPublisher != nil {
+			if pubErr := u.eventPublisher.PublishSubscriptionUpdated(ctx, sub.EnterpriseID); pubErr != nil {
+				zap.L().Error("failed to publish subscription_updated event after Chapa checkout", zap.Error(pubErr))
+			}
 		}
 
 		return nil
@@ -498,7 +510,7 @@ func (u *paymentUsecase) handleChapaPaymentFailed(ctx context.Context, event *do
 		return err
 	}
 
-	if enterpriseID != uuid.Nil {
+	if enterpriseID != uuid.Nil && u.eventPublisher != nil {
 		if err := u.eventPublisher.PublishPaymentFailed(ctx, enterpriseID); err != nil {
 			zap.L().Error("handleChapaPaymentFailed: failed to publish kafka event",
 				zap.String("enterprise_id", enterpriseID.String()),
@@ -561,7 +573,7 @@ func (u *paymentUsecase) handleCheckoutSessionCompleted(ctx context.Context, eve
 		}
 		return u.subRepo.WithTx(tx).UpdateSubscription(ctx, sub)
 	})
-	if err == nil {
+	if err == nil && u.eventPublisher != nil {
 		if pubErr := u.eventPublisher.PublishSubscriptionUpdated(ctx, enterpriseID); pubErr != nil {
 			zap.L().Error("failed to publish subscription_updated event after checkout", zap.Error(pubErr))
 		}
@@ -579,22 +591,73 @@ func (u *paymentUsecase) handleInvoicePaid(ctx context.Context, event *domain.Pa
 	case int64:
 		amountPaid = float64(v) / 100
 	}
+	amountDueRaw := event.Raw["amount_due"]
+	var amountDue float64
+	switch v := amountDueRaw.(type) {
+	case float64:
+		amountDue = v / 100
+	case int64:
+		amountDue = float64(v) / 100
+	}
 	currencyStr, _ := event.Raw["currency"].(string)
 	currency := domain.Currency(currencyStr)
+	hostedInvoiceURL, _ := event.Raw["hosted_invoice_url"].(string)
+	invoicePDFURL, _ := event.Raw["invoice_pdf"].(string)
+
+	subscriptionRef := event.SubscriptionRef
+	if subscriptionRef == "" {
+		subscriptionRef, _ = event.Raw["subscription"].(string)
+	}
 
 	return RunInTx(ctx, u.pool, func(tx pgx.Tx) error {
 		inv, err := u.billingRepo.WithTx(tx).GetInvoiceByNumber(ctx, invoiceNumber)
-		if err != nil {
+		if err != nil && !errors.Is(err, domain.ErrInvoiceNotFound) {
 			return err
 		}
 
-		inv.Status = domain.InvoiceStatusPaid
-		inv.AmountPaid = amountPaid
-		inv.AmountRemaining = 0
 		now := time.Now()
-		inv.PaidAt = &now
-		if err := u.billingRepo.WithTx(tx).UpdateInvoice(ctx, inv); err != nil {
-			return err
+
+		if errors.Is(err, domain.ErrInvoiceNotFound) {
+			// Invoice not found locally — create it from Stripe event data.
+			sub, lookupErr := u.subRepo.WithTx(tx).GetSubscriptionByStripeID(ctx, subscriptionRef)
+			if lookupErr != nil {
+				return fmt.Errorf("lookup subscription by stripe id %s: %w", subscriptionRef, lookupErr)
+			}
+
+			inv = &domain.Invoice{
+				ID:              uuid.New(),
+				EnterpriseID:    sub.EnterpriseID,
+				SubscriptionID:  sub.ID,
+				Number:          invoiceNumber,
+				Status:          domain.InvoiceStatusPaid,
+				AmountDue:       amountDue,
+				AmountPaid:      amountPaid,
+				AmountRemaining: 0,
+				Currency:        currency,
+				DueDate:         now,
+				PaidAt:          &now,
+				HostedInvoiceURL: &hostedInvoiceURL,
+				InvoicePDFURL:   &invoicePDFURL,
+				CreatedAt:       now,
+				UpdatedAt:       now,
+			}
+			if err := u.billingRepo.WithTx(tx).CreateInvoice(ctx, inv); err != nil {
+				return err
+			}
+		} else {
+			inv.Status = domain.InvoiceStatusPaid
+			inv.AmountPaid = amountPaid
+			inv.AmountRemaining = 0
+			inv.PaidAt = &now
+			if hostedInvoiceURL != "" {
+				inv.HostedInvoiceURL = &hostedInvoiceURL
+			}
+			if invoicePDFURL != "" {
+				inv.InvoicePDFURL = &invoicePDFURL
+			}
+			if err := u.billingRepo.WithTx(tx).UpdateInvoice(ctx, inv); err != nil {
+				return err
+			}
 		}
 
 		payment := &domain.Payment{
@@ -646,7 +709,7 @@ func (u *paymentUsecase) handleInvoicePaymentFailed(ctx context.Context, event *
 	}
 
 	// Publish Kafka event
-	if enterpriseID != uuid.Nil {
+	if enterpriseID != uuid.Nil && u.eventPublisher != nil {
 		if err := u.eventPublisher.PublishPaymentFailed(ctx, enterpriseID); err != nil {
 			zap.L().Error("handleInvoicePaymentFailed: failed to publish kafka event",
 				zap.String("enterprise_id", enterpriseID.String()),
@@ -685,7 +748,10 @@ func (u *paymentUsecase) handleInvoiceUpcoming(ctx context.Context, event *domai
 	daysUntil := int(time.Until(nextPaymentAttempt).Hours() / 24)
 
 	// Publish notification event
-	return u.eventPublisher.PublishInvoiceUpcoming(ctx, sub.EnterpriseID, daysUntil)
+	if u.eventPublisher != nil {
+		return u.eventPublisher.PublishInvoiceUpcoming(ctx, sub.EnterpriseID, daysUntil)
+	}
+	return nil
 }
 
 func (u *paymentUsecase) handleSubscriptionUpdated(ctx context.Context, event *domain.PaymentEvent) error {
@@ -732,8 +798,10 @@ func (u *paymentUsecase) handleSubscriptionUpdated(ctx context.Context, event *d
 			return err
 		}
 
-		if err := u.eventPublisher.PublishSubscriptionUpdated(ctx, sub.EnterpriseID); err != nil {
-			zap.L().Error("failed to publish subscription_updated event", zap.Error(err))
+		if u.eventPublisher != nil {
+			if err := u.eventPublisher.PublishSubscriptionUpdated(ctx, sub.EnterpriseID); err != nil {
+				zap.L().Error("failed to publish subscription_updated event", zap.Error(err))
+			}
 		}
 
 		return nil
@@ -766,8 +834,10 @@ func (u *paymentUsecase) handleSubscriptionDeleted(ctx context.Context, event *d
 			return err
 		}
 
-		if err := u.eventPublisher.PublishSubscriptionCanceled(ctx, sub.EnterpriseID); err != nil {
-			zap.L().Error("failed to publish subscription_canceled event", zap.Error(err))
+		if u.eventPublisher != nil {
+			if err := u.eventPublisher.PublishSubscriptionCanceled(ctx, sub.EnterpriseID); err != nil {
+				zap.L().Error("failed to publish subscription_canceled event", zap.Error(err))
+			}
 		}
 
 		return nil
