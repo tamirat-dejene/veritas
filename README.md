@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="vlogo.png" alt="Veritas Logo" width="200">
+</p>
+
 # Veritas Microservices Platform
 
 Veritas is a secure, multi-tenant enterprise examination platform built with a microservices architecture. It features Go-based business services, Python-based AI proctoring and grading services, and an event-driven core powered by Apache Kafka.
