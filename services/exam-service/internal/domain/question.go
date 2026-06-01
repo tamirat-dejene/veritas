@@ -15,6 +15,7 @@ type QuestionRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID, withCorrectAnswer bool) (*sdomain.Question, error)
 	ListByEnterprise(ctx context.Context, enterpriseID uuid.UUID, params pagination.Params, withCorrectAnswer bool) (pagination.PaginatedResponse[*sdomain.Question], error)
 	Update(ctx context.Context, q *sdomain.Question) error
+	UpdateMediaURL(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID, mediaURL *string) error
 	Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
 	WithTx(tx pgx.Tx) QuestionRepository
 }
