@@ -19,8 +19,20 @@ class TestGradingUseCase:
         return repo
 
     @pytest.fixture
-    def usecase(self, mock_repo):
-        return GradingUseCase(mock_repo)
+    def mock_candidate_client(self):
+        client = AsyncMock()
+        client.fetch_candidate = AsyncMock(return_value=None)
+        return client
+
+    @pytest.fixture
+    def mock_enterprise_client(self):
+        client = AsyncMock()
+        client.fetch_user = AsyncMock(return_value=None)
+        return client
+
+    @pytest.fixture
+    def usecase(self, mock_repo, mock_candidate_client, mock_enterprise_client):
+        return GradingUseCase(mock_repo, mock_candidate_client, mock_enterprise_client)
 
     # --- list_graded_students ---
 
@@ -94,3 +106,43 @@ class TestGradingUseCase:
         logs = await usecase.get_audit_logs(uuid.UUID(SESSION_ID))
         mock_repo.get_audit_logs.assert_awaited_once_with(uuid.UUID(SESSION_ID))
         assert len(logs) == 1
+
+    @pytest.mark.asyncio
+    async def test_get_grade_detail_enriches_candidate_and_grader(
+        self, usecase, mock_repo, mock_candidate_client, mock_enterprise_client
+    ):
+        mock_repo.get_by_session.return_value = {
+            "session_id": SESSION_ID,
+            "candidate_id": "candidate-123",
+            "enterprise_id": "enterprise-123",
+            "graded_by": {"id": "user-456", "type": "human"},
+        }
+        mock_candidate_client.fetch_candidate.return_value = {
+            "id": "candidate-123",
+            "firstName": "John",
+            "lastName": "Doe",
+            "email": "john@example.com",
+        }
+        mock_enterprise_client.fetch_user.return_value = {
+            "id": "user-456",
+            "first_name": "Jane",
+            "last_name": "Smith",
+            "email": "jane@example.com",
+            "role": "enterprise_admin",
+        }
+
+        result = await usecase.get_grade_detail(uuid.UUID(SESSION_ID))
+        
+        assert result["candidate_info"] == {
+            "id": "candidate-123",
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "john@example.com",
+        }
+        assert result["graded_by"]["user_details"] == {
+            "id": "user-456",
+            "first_name": "Jane",
+            "last_name": "Smith",
+            "email": "jane@example.com",
+            "role": "enterprise_admin",
+        }

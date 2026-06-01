@@ -3,13 +3,22 @@ from uuid import UUID
 from typing import Any, Optional, Dict, List, Tuple
 
 from app.repository.grading_repository import GradingRepository, DataTamperingError
+from app.grading.candidate_client import CandidateServiceClient
+from app.grading.enterprise_client import EnterpriseServiceClient
 
 logger = logging.getLogger("grading.usecase")
 
 
 class GradingUseCase:
-    def __init__(self, repository: GradingRepository):
+    def __init__(
+        self,
+        repository: GradingRepository,
+        candidate_client: CandidateServiceClient,
+        enterprise_client: EnterpriseServiceClient,
+    ):
         self._repository = repository
+        self._candidate_client = candidate_client
+        self._enterprise_client = enterprise_client
 
     async def list_graded_students(
         self,
@@ -27,8 +36,38 @@ class GradingUseCase:
         )
 
     async def get_grade_detail(self, session_id: UUID) -> Optional[Dict[str, Any]]:
-        """Retrieve grading report detail (scores, questions, tamper flags)."""
-        return await self._repository.get_by_session(session_id)
+        """Retrieve grading report detail and enrich with candidate and grader profile info."""
+        detail = await self._repository.get_by_session(session_id)
+        if not detail:
+            return None
+
+        # 1. Fetch & Enrich Candidate Profile
+        candidate_id = str(detail.get("candidate_id"))
+        enterprise_id = str(detail.get("enterprise_id"))
+        if candidate_id and enterprise_id:
+            candidate_data = await self._candidate_client.fetch_candidate(candidate_id, enterprise_id)
+            if candidate_data:
+                detail["candidate_info"] = {
+                    "id": candidate_data["id"],
+                    "first_name": candidate_data["firstName"],
+                    "last_name": candidate_data["lastName"],
+                    "email": candidate_data.get("email"),
+                }
+
+        # 2. Fetch & Enrich Grader Profile
+        grader = detail.get("graded_by")
+        if grader and grader.get("type") == "human":
+            user_data = await self._enterprise_client.fetch_user(grader["id"])
+            if user_data:
+                grader["user_details"] = {
+                    "id": user_data["id"],
+                    "first_name": user_data["first_name"],
+                    "last_name": user_data["last_name"],
+                    "email": user_data["email"],
+                    "role": user_data["role"],
+                }
+
+        return detail
 
     async def update_grade_manually(
         self,

@@ -67,6 +67,30 @@ class GraderInfo(BaseModel):
     type: str  # "system" or "human"
 
 
+class CandidateInfo(BaseModel):
+    """Enriched candidate profile details."""
+    id: UUID
+    first_name: str
+    last_name: str
+    email: Optional[str] = None
+
+
+class GraderUserInfo(BaseModel):
+    """Enriched human grader user profile details."""
+    id: UUID
+    first_name: str
+    last_name: str
+    email: str
+    role: str
+
+
+class GraderInfoExtended(BaseModel):
+    """Extended grader info containing user profile details if type is human."""
+    id: str
+    type: str  # "system" or "human"
+    user_details: Optional[GraderUserInfo] = None
+
+
 class GradeResultResponse(BaseModel):
     id: UUID
     session_id: UUID
@@ -96,11 +120,12 @@ class GradeDetailResponse(BaseModel):
     session_id: UUID
     exam_id: UUID
     candidate_id: UUID
+    candidate_info: Optional[CandidateInfo] = None
     enrollment_id: UUID
     total_max_points: float
     total_awarded_points: float
     percentage: float 
-    graded_by: GraderInfo
+    graded_by: GraderInfoExtended
     status: GradingStatus
     is_tampered: bool
     version: int

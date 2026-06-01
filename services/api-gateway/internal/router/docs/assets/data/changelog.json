@@ -10,6 +10,15 @@
         "endpoints": [
           "GET /grading/results/:sessionId (UPDATED: question_results now includes optional options and correct_option_ids fields)"
         ]
+      },
+      {
+        "type": "changed",
+        "service": "grading",
+        "summary": "Enriched GradeDetailResponse with Candidate and Grader profile details",
+        "description": "The GradeDetailResponse model has been updated to include candidate_info (first name, last name, email) and extended human grader details. These are dynamically resolved using async service-to-service calls to candidate-service and enterprise-service respectively, allowing the frontend to display rich profile info in a single API call.",
+        "endpoints": [
+          "GET /grading/results/:sessionId (UPDATED: returns optional candidate_info and extended human user_details inside graded_by)"
+        ]
       }
     ]
   },
