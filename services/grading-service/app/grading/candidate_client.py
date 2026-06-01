@@ -138,3 +138,44 @@ class CandidateServiceClient:
             raise CandidateServiceError(
                 f"Failed to parse GradingPayload for session {session_id}: {exc}"
             ) from exc
+
+    async def fetch_candidate(
+        self,
+        candidate_id: str,
+        enterprise_id: str,
+    ) -> dict | None:
+        """
+        Call ``GET /candidates/{candidate_id}`` and return the candidate profile.
+        """
+        if self._client is None:
+            raise RuntimeError(
+                "CandidateServiceClient is not started. Call start() or use as async context manager."
+            )
+
+        url = f"/candidates/{candidate_id}"
+        try:
+            response = await self._client.get(
+                url,
+                headers={"X-Enterprise-Id": enterprise_id},
+            )
+            if response.status_code == 200:
+                body = response.json()
+                return body.get("data")
+            elif response.status_code == 404:
+                logger.warning("Candidate %s not found in candidate-service", candidate_id)
+                return None
+            else:
+                logger.error(
+                    "Unexpected status from candidate-service lookup  candidate=%s  status=%d",
+                    candidate_id,
+                    response.status_code,
+                )
+                return None
+        except Exception as exc:
+            logger.error(
+                "Error fetching candidate details from candidate-service  candidate=%s  error=%s",
+                candidate_id,
+                exc,
+            )
+            return None
+

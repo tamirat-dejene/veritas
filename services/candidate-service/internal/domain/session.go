@@ -163,6 +163,11 @@ type CandidateExamSubmittedEvent struct {
 	Timestamp      int64     `json:"timestamp"`
 }
 
+type GradingOption struct {
+	ID      uuid.UUID `json:"id"`
+	Content string    `json:"content"`
+}
+
 type CandidateAnswerData struct {
 	SelectedOptionIDs []uuid.UUID `json:"selectedOptionIds,omitempty"`
 	Text              *string     `json:"text,omitempty"`
@@ -185,6 +190,7 @@ type GradingItem struct {
 	ExpectedAnswer     *string        `json:"expected_answer,omitempty"`
 	EvaluationCriteria map[string]any `json:"evaluation_criteria,omitempty"`
 	CorrectOptionIDs   []uuid.UUID    `json:"correct_option_ids,omitempty"`
+	Options            []GradingOption `json:"options,omitempty"`
 
 	// Candidate's Actual Answer (from Candidate Service)
 	HasAnswer       bool                 `json:"has_answer"`

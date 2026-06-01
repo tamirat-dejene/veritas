@@ -3,7 +3,7 @@ Unit tests for app.repository.grading_repository — data layer with mocked asyn
 """
 import uuid
 import pytest
-from app.domain.models import GradingStatus, QuestionGradingStatus, QuestionType
+from app.domain.models import GradingStatus, QuestionGradingStatus, QuestionType, MCQCandidateAnswer
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -47,7 +47,7 @@ def _sample_report(**overrides) -> ExamGradeReport:
                 question_type="multiple_choice",
                 title="Q1",
                 content="What is Python?",
-                candidate_answer={"selectedOptionIds": ["opt_1"]},
+                candidate_answer=MCQCandidateAnswer(selectedOptionIds=["opt_1"]),
                 max_points=100.0,
                 awarded_points=75.0,
                 status=QuestionGradingStatus.correct.value,

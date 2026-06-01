@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from uuid import UUID
 from datetime import datetime
-from typing import List, Optional, Any
+from typing import List, Optional, Union
 from enum import Enum
 
 
@@ -24,21 +24,71 @@ class QuestionType(str, Enum):
     ShortAnswer = "ShortAnswer"
     Essay = "Essay"
 
+# ---------------------------------------------------------------------------
+# Candidate answer sub-models
+# (shared between domain responses and the internal grading payload models)
+# ---------------------------------------------------------------------------
+
+class MCQCandidateAnswer(BaseModel):
+    """Answer payload for multiple-choice / true-false questions."""
+    selectedOptionIds: List[str] = Field(default_factory=list, description="IDs of the options selected by the candidate.")
+
+
+class TextCandidateAnswer(BaseModel):
+    """Answer payload for short-answer and essay questions."""
+    text: Optional[str] = Field(None, description="Free-text answer written by the candidate.")
+
+
+class QuestionOption(BaseModel):
+    """Option details for MCQ / TrueFalse questions."""
+    id: str
+    content: str
+
+
 class QuestionGradeResponse(BaseModel):
     question_id: UUID
     session_question_id: UUID
     question_type: QuestionType
     title: str
     content: str
-    candidate_answer: Optional[Any] = None
+    candidate_answer: Optional[Union[MCQCandidateAnswer, TextCandidateAnswer]] = Field(
+        None,
+        description="The candidate's submitted answer. MCQ/TrueFalse questions use `MCQCandidateAnswer` (selectedOptionIds); ShortAnswer/Essay questions use `TextCandidateAnswer` (text)."
+    )
     max_points: float
     awarded_points: float
     status: QuestionGradingStatus
+    options: Optional[List[QuestionOption]] = Field(None, description="All options available for this question.")
+    correct_option_ids: Optional[List[str]] = Field(None, description="IDs of the correct options.")
 
 
 class GraderInfo(BaseModel):
     id: str
     type: str  # "system" or "human"
+
+
+class CandidateInfo(BaseModel):
+    """Enriched candidate profile details."""
+    id: UUID
+    first_name: str
+    last_name: str
+    email: Optional[str] = None
+
+
+class GraderUserInfo(BaseModel):
+    """Enriched human grader user profile details."""
+    id: UUID
+    first_name: str
+    last_name: str
+    email: str
+    role: str
+
+
+class GraderInfoExtended(BaseModel):
+    """Extended grader info containing user profile details if type is human."""
+    id: str
+    type: str  # "system" or "human"
+    user_details: Optional[GraderUserInfo] = None
 
 
 class GradeResultResponse(BaseModel):
@@ -70,11 +120,12 @@ class GradeDetailResponse(BaseModel):
     session_id: UUID
     exam_id: UUID
     candidate_id: UUID
+    candidate_info: Optional[CandidateInfo] = None
     enrollment_id: UUID
     total_max_points: float
     total_awarded_points: float
     percentage: float 
-    graded_by: GraderInfo
+    graded_by: GraderInfoExtended
     status: GradingStatus
     is_tampered: bool
     version: int

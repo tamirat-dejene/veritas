@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import create_pool
 from app.grading.candidate_client import CandidateServiceClient
+from app.grading.enterprise_client import EnterpriseServiceClient
 from app.grading.worker import run_grading_consumer
 from app.middleware.context import IdentityMiddleware
 from app.repository.grading_repository import GradingRepository
@@ -29,12 +30,7 @@ async def lifespan(app: FastAPI):
     app.state.pool = pool
     logger.info("Connected to PostgreSQL")
 
-    # 2. Dependency Injection
-    grading_repo = GradingRepository(pool)
-    grading_uc = GradingUseCase(grading_repo)
-    app.state.grading_uc = grading_uc
-
-    # 3. Start the candidate-service HTTP client (long-lived connection pool)
+    # 2. Start service clients
     candidate_client = CandidateServiceClient()
     await candidate_client.start()
     app.state.candidate_client = candidate_client
@@ -42,6 +38,19 @@ async def lifespan(app: FastAPI):
         "CandidateServiceClient started — base_url=%s",
         settings.CANDIDATE_SERVICE_URL,
     )
+
+    enterprise_client = EnterpriseServiceClient()
+    await enterprise_client.start()
+    app.state.enterprise_client = enterprise_client
+    logger.info(
+        "EnterpriseServiceClient started — base_url=%s",
+        settings.ENTERPRISE_SERVICE_URL,
+    )
+
+    # 3. Dependency Injection
+    grading_repo = GradingRepository(pool)
+    grading_uc = GradingUseCase(grading_repo, candidate_client, enterprise_client)
+    app.state.grading_uc = grading_uc
 
     # 4. Spawn the Kafka consumer as a background task
     consumer_task = asyncio.create_task(
@@ -61,6 +70,9 @@ async def lifespan(app: FastAPI):
 
     await candidate_client.stop()
     logger.info("CandidateServiceClient stopped.")
+
+    await enterprise_client.stop()
+    logger.info("EnterpriseServiceClient stopped.")
 
     await pool.close()
     logger.info("Shutdown complete")

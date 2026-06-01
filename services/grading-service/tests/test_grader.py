@@ -108,6 +108,15 @@ class TestGradeMCQ:
         assert result.question_type == QuestionType.MCQ
         assert result.max_points == 10.0
 
+    def test_options_and_correct_answers_fields_populated(self):
+        item = self._item(
+            options=[{"id": "a", "content": "Option A"}, {"id": "b", "content": "Option B"}],
+            correct_option_ids=["a", "b"]
+        )
+        result = _grade_mcq(item)
+        assert result.options == [{"id": "a", "content": "Option A"}, {"id": "b", "content": "Option B"}]
+        assert result.correct_option_ids == ["a", "b"]
+
 
 # ===================================================================
 # Short-answer batch preparation

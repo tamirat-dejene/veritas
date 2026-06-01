@@ -11,7 +11,7 @@ from app.domain.models import (
     QuestionManualOverrideRequest,
     QuestionManualOverrideResponse,
     AuditLogResponse,
-    GradingStatusResponse
+    GradingStatusResponse,
 )
 from app.middleware.context import get_enterprise_id, get_user_id, get_user_role
 from app.repository.grading_repository import DataTamperingError

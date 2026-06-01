@@ -175,8 +175,9 @@ class GradingRepository:
                         """
                         INSERT INTO grading_question_results (
                             grading_result_id, question_id, session_question_id,
-                            question_type, title, content, candidate_answer, max_points, awarded_points, status
-                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                            question_type, title, content, candidate_answer, max_points, awarded_points, status,
+                            options, correct_option_ids
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                         """,
                         grading_result_id,
                         UUID(qr.question_id),
@@ -184,10 +185,12 @@ class GradingRepository:
                         qr.question_type,
                         qr.title,
                         qr.content,
-                        json.dumps(qr.candidate_answer) if qr.candidate_answer else None,
+                        json.dumps(qr.candidate_answer.model_dump()) if qr.candidate_answer is not None else None,
                         qr.max_points,
                         qr.awarded_points,
-                        qr.status
+                        qr.status,
+                        json.dumps(qr.options) if qr.options is not None else None,
+                        json.dumps(qr.correct_option_ids) if qr.correct_option_ids is not None else None,
                     )
 
                 return grading_result_id
@@ -310,7 +313,7 @@ class GradingRepository:
 
         # Get question details
         qr_rows = await self._pool.fetch(
-            "SELECT question_id, session_question_id, question_type, title, content, candidate_answer, max_points, awarded_points, status FROM grading_question_results WHERE grading_result_id = $1",
+            "SELECT question_id, session_question_id, question_type, title, content, candidate_answer, max_points, awarded_points, status, options, correct_option_ids FROM grading_question_results WHERE grading_result_id = $1",
             row["id"]
         )
         question_results = []
@@ -319,6 +322,16 @@ class GradingRepository:
             if qr_dict.get("candidate_answer") and isinstance(qr_dict["candidate_answer"], str):
                 try:
                     qr_dict["candidate_answer"] = json.loads(qr_dict["candidate_answer"])
+                except json.JSONDecodeError:
+                    pass
+            if qr_dict.get("options") and isinstance(qr_dict["options"], str):
+                try:
+                    qr_dict["options"] = json.loads(qr_dict["options"])
+                except json.JSONDecodeError:
+                    pass
+            if qr_dict.get("correct_option_ids") and isinstance(qr_dict["correct_option_ids"], str):
+                try:
+                    qr_dict["correct_option_ids"] = json.loads(qr_dict["correct_option_ids"])
                 except json.JSONDecodeError:
                     pass
             question_results.append(qr_dict)

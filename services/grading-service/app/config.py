@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     CANDIDATE_SERVICE_URL: str = "http://candidate-service:8080"
     CANDIDATE_SERVICE_TIMEOUT_SECONDS: float = 30.0
 
+    # Enterprise service (internal service-to-service calls)
+    ENTERPRISE_SERVICE_URL: str = "http://enterprise-service:8080"
+
     model_config = SettingsConfigDict(env_file=".env.dev", extra="ignore")
 
     @property

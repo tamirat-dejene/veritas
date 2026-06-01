@@ -709,6 +709,17 @@ func (uc *sessionUseCase) BuildGradingPayload(ctx context.Context, sessionID uui
 			item.CorrectOptionIDs = correctOptionIDs
 		}
 
+		if len(mq.Question.Options) > 0 {
+			opts := make([]domain.GradingOption, 0, len(mq.Question.Options))
+			for _, opt := range mq.Question.Options {
+				opts = append(opts, domain.GradingOption{
+					ID:      opt.ID,
+					Content: opt.Content,
+				})
+			}
+			item.Options = opts
+		}
+
 		if a, hasAns := answerMap[sq.ID]; hasAns {
 			item.HasAnswer = true
 			var ansData domain.CandidateAnswerData

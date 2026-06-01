@@ -7,24 +7,10 @@ completely decoupled from any HTTP client or network concerns.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Optional, Union
 
-from app.domain.models import QuestionType
+from app.domain.models import QuestionType, MCQCandidateAnswer, TextCandidateAnswer
 from pydantic import BaseModel, Field
-
-
-# ---------------------------------------------------------------------------
-# Candidate answer sub-models
-# ---------------------------------------------------------------------------
-
-class MCQCandidateAnswer(BaseModel):
-    """Answer payload for multiple-choice questions."""
-    selectedOptionIds: list[str] = Field(default_factory=list)
-
-
-class TextCandidateAnswer(BaseModel):
-    """Answer payload for short-answer / essay questions."""
-    text: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -44,6 +30,12 @@ class EvaluationCriteria(BaseModel):
 # Single exam item (question + candidate answer)
 # ---------------------------------------------------------------------------
 
+class GradingOption(BaseModel):
+    """Option payload representation for multiple-choice/true-false questions."""
+    id: str
+    content: str
+
+
 class GradingItem(BaseModel):
     """One question/answer pair inside the grading payload."""
     question_id: str
@@ -62,10 +54,11 @@ class GradingItem(BaseModel):
     expected_answer: Optional[str] = None
     evaluation_criteria: Optional[EvaluationCriteria] = None
     correct_option_ids: Optional[list[str]] = None
+    options: list[GradingOption] = Field(default_factory=list, description="All options available for this question.")
 
     # Candidate's actual answer (from Candidate Service)
     has_answer: bool = False
-    candidate_answer: Optional[dict[str, Any]] = None
+    candidate_answer: Optional[Union[MCQCandidateAnswer, TextCandidateAnswer]] = None
 
 
 # ---------------------------------------------------------------------------

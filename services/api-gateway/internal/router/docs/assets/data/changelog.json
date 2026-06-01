@@ -1,5 +1,55 @@
 [
   {
+    "date": "2026-06-01",
+    "changes": [
+      {
+        "type": "changed",
+        "service": "grading",
+        "summary": "Enriched QuestionGradeResponse with options and correct_option_ids fields",
+        "description": "The QuestionGradeResponse has been updated to include full option definitions (id and content/text) and the correct option IDs for MCQ and True/False questions. This avoids the need for front-end clients to make secondary calls to the exam service when displaying graded answers. Databases, internal models, grading pipelines, and repository queries were fully updated, and a new migration script was added.",
+        "endpoints": [
+          "GET /grading/results/:sessionId (UPDATED: question_results now includes optional options and correct_option_ids fields)"
+        ]
+      },
+      {
+        "type": "changed",
+        "service": "grading",
+        "summary": "Enriched GradeDetailResponse with Candidate and Grader profile details",
+        "description": "The GradeDetailResponse model has been updated to include candidate_info (first name, last name, email) and extended human grader details. These are dynamically resolved using async service-to-service calls to candidate-service and enterprise-service respectively, allowing the frontend to display rich profile info in a single API call.",
+        "endpoints": [
+          "GET /grading/results/:sessionId (UPDATED: returns optional candidate_info and extended human user_details inside graded_by)"
+        ]
+      }
+    ]
+  },
+
+  {
+    "date": "2026-05-31",
+    "changes": [
+      {
+        "type": "changed",
+        "service": "grading",
+        "summary": "candidate_answer typed as discriminated union — Swagger schema updated automatically",
+        "description": "The candidate_answer field in QuestionGradeResponse was previously typed as Optional[Any], producing an empty {} schema in Swagger. It is now typed as Optional[Union[MCQCandidateAnswer, TextCandidateAnswer]]. MCQ and TrueFalse questions produce {selectedOptionIds: string[]}, ShortAnswer and Essay questions produce {text: string | null}. FastAPI/OpenAPI regenerates its schema at startup from the Pydantic models, so Swagger UI reflects the correct anyOf shape automatically — no manual doc changes are needed.",
+        "endpoints": [
+          "GET /grading/results/:sessionId (UPDATED: question.candidate_answer now shows typed anyOf schema in Swagger)"
+        ]
+      },
+      {
+        "type": "fixed",
+        "service": "grading",
+        "summary": "Essay questions no longer crash with missing required fields",
+        "description": "The QuestionResult dataclass construction for Essay-type questions was missing the required content and candidate_answer fields, which would have caused a TypeError at runtime for any exam containing essay questions. Both fields are now populated from the GradingItem."
+      },
+      {
+        "type": "fixed",
+        "service": "grading",
+        "summary": "GradingStatusResponse missing import resolved",
+        "description": "The grading_handler module referenced GradingStatusResponse for the status-polling endpoint but did not import it, causing a NameError on module load. The import has been added."
+      }
+    ]
+  },
+
     "date": "2026-05-31",
     "changes": [
       {
