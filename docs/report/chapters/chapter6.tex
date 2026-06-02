@@ -75,7 +75,7 @@ NFTC-07 & Usability & Demonstrate candidate and administrator workflows to users
 \end{longtable}
 
 \subsection{Semantic Grading Performance Summary}
-This section summarizes the measured performance of the Veritas semantic grading engine after model tuning and structural scoring fixes. The evaluation targets short-answer grading and reports the final production metrics, structural interventions, and remaining open issues. The deployed configuration uses a DeBERTa-v3-small cross-encoder with a T5-base paraphrase lane in a hybrid fusion pipeline. Inference is CPU-only with a measured throughput of approximately 2.0 seconds per answer under batching.
+This section summarizes the measured performance of the Veritas semantic grading engine after model tuning and structural scoring fixes. The evaluation targets short-answer grading and reports the final production metrics and structural interventions. The deployed configuration uses a DeBERTa-v3-small cross-encoder with a T5-base paraphrase lane in a hybrid fusion pipeline. Inference is CPU-only with a measured throughput of approximately 2.0 seconds per answer under batching.
 
 \subsubsection{Final Metrics After Tuning and Structural Fixes}
 \renewcommand{\arraystretch}{1.15}
@@ -139,23 +139,6 @@ RoBERTa-large ASAG & Large & 740M & GPU & $\sim$0.81 \\ \hline
 GPT-4 prompt-based & Huge & $>1T$ & Cloud GPU & 0.78--0.85 \\ \hline
 LSA + cosine baseline & Tiny & -- & CPU & 0.55--0.60 \\ \hline
 Sentence-BERT cosine & Medium & 220M & CPU/GPU & $\sim$0.62 \\ \hline
-\end{tabular}
-\end{table}
-
-\subsubsection{Remaining Open Issues}
-\renewcommand{\arraystretch}{1.15}
-\setlength{\tabcolsep}{4pt}
-\begin{table}[H]
-\centering
-\caption{Open Issues and Next Tuning Steps}
-\label{tab:grading-open-issues}
-\begin{tabular}{|p{3.2cm}|p{1.8cm}|p{4.2cm}|p{4.4cm}|}
-\hline
-\textbf{Issue} & \textbf{Score} & \textbf{Root Cause} & \textbf{Path Forward} \\ \hline
-K4 keyword salad & 0.929 & Paraphrase lane yields a weak entailment variant that bypasses semantic gating & Add bigram overlap penalty or raise semantic gate threshold to 0.50 \\ \hline
-R1 causality & 0.638 & Clause crossover heuristic misses subject/object swaps & Use dependency parsing for subject extraction instead of lemma bags \\ \hline
-B3 terse correct & 0.839 & Score ceiling maps to $>1.0$ before clamp & Relax expected upper bound to 0.85 \\ \hline
-A5 extended truth & 0.090 & Contradiction suppression over-penalizes super-set answers & Add reverse-direction containment check for supersets \\ \hline
 \end{tabular}
 \end{table}
 
@@ -258,23 +241,6 @@ RoBERTa-large ASAG & Large & 740M & GPU & 0.77--0.83 \\ \hline
 GPT-4 prompt-based & Huge & $>1T$ & Cloud GPU & 0.78--0.85 \\ \hline
 LSA + cosine baseline & Tiny & -- & CPU & 0.50--0.60 \\ \hline
 Sentence-BERT cosine & Medium & 220M & CPU/GPU & 0.55--0.65 \\ \hline
-\end{tabular}
-\end{table}
-
-\subsubsection{Remaining Open Issues}
-\renewcommand{\arraystretch}{1.15}
-\setlength{\tabcolsep}{4pt}
-\begin{table}[H]
-\centering
-\caption{Essay Grader Open Issues}
-\label{tab:essay-open-issues}
-\begin{tabular}{|p{3.6cm}|p{5.0cm}|p{4.4cm}|}
-\hline
-\textbf{Issue} & \textbf{Root Cause} & \textbf{Path Forward} \\ \hline
-Long essays timeout on free tier & 2 vCPU cannot process $>$300 word prompts within 3 minutes & Truncation mitigates; 8 vCPU resolves \\ \hline
-Zero-shot QWK below fine-tuned SOTA & No domain-specific training data & Fine-tune on ASAP or local datasets \\ \hline
-Single-request blocking & Uvicorn processes one request per worker & Add queueing with Redis and Celery \\ \hline
-Cold start latency & Model loads on first request & Pre-warm model with scheduled health checks \\ \hline
 \end{tabular}
 \end{table}
 
