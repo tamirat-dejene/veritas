@@ -94,6 +94,13 @@ async def override_grade(
         "Attempting manual grade override for session %s. New score requested: %s, Actor: %s (%s)",
         session_id, body.new_score, actor_id, actor_role
     )
+
+    if actor_role not in ("EnterpriseAdmin", "EnterpriseStaff", "SystemAdmin", "EnterpriseAuto"):
+         logger.warning(
+             "Manual grade override access denied: insufficient role '%s' for actor %s on session %s",
+             actor_role, actor_id, session_id
+         )
+         raise HTTPException(status_code=403, detail="Insufficient role to perform this action.")
     
     grading_uc = request.app.state.grading_uc
 
@@ -166,7 +173,7 @@ async def override_question_grade(
         session_id, session_question_id, body.new_score, actor_id, actor_role
     )
 
-    if actor_role not in ("enterprise_admin", "enterprise_staff", "system"):
+    if actor_role not in ("EnterpriseAdmin", "EnterpriseStaff", "SystemAdmin", "EnterpriseAuto"):
          logger.warning(
              "Manual question override access denied: insufficient role '%s' for actor %s on session %s",
              actor_role, actor_id, session_id

@@ -253,7 +253,7 @@ class TestUpdateGradeManually:
             session_id=uuid.UUID(SESSION_ID),
             new_awarded_points=90.0,
             actor_id=uuid.UUID(ACTOR_ID),
-            actor_role="admin",
+            actor_role="EnterpriseAdmin",
             reason="Correcting score",
         )
 
@@ -273,7 +273,7 @@ class TestUpdateGradeManually:
                 session_id=uuid.UUID(SESSION_ID),
                 new_awarded_points=90.0,
                 actor_id=uuid.UUID(ACTOR_ID),
-                actor_role="admin",
+                actor_role="EnterpriseAdmin",
                 reason="Test",
             )
 
@@ -288,7 +288,7 @@ class TestUpdateGradeManually:
                 session_id=uuid.UUID(SESSION_ID),
                 new_awarded_points=90.0,
                 actor_id=uuid.UUID(ACTOR_ID),
-                actor_role="admin",
+                actor_role="EnterpriseAdmin",
                 reason="Test",
             )
 
@@ -316,7 +316,7 @@ class TestGetAuditLogs:
                 id=uuid.uuid4(),
                 action="UPDATE",
                 actor_id=uuid.UUID(ACTOR_ID),
-                actor_role="admin",
+                actor_role="EnterpriseAdmin",
                 old_values={"total_awarded_points": 75.0},
                 new_values={"total_awarded_points": 90.0},
                 changed_fields=["total_awarded_points"],

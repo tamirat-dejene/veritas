@@ -16,7 +16,7 @@ class IdentityMiddleware(BaseHTTPMiddleware):
         request.state.user_id = None
         request.state.candidate_id = None
         request.state.enterprise_id = None
-        request.state.user_role = "system"
+        request.state.user_role = "SystemAdmin"
 
         if user_id:
             try:
@@ -64,4 +64,4 @@ def get_enterprise_id(request: Request) -> UUID:
 
 
 def get_user_role(request: Request) -> str:
-    return getattr(request.state, "user_role", "system")
+    return getattr(request.state, "user_role", "SystemAdmin")

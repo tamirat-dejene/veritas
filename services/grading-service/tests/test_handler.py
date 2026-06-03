@@ -50,7 +50,7 @@ def _create_test_app(grading_uc: AsyncMock) -> FastAPI:
 def _headers(
     enterprise_id: str = ENTERPRISE_ID,
     user_id: str = ACTOR_ID,
-    user_role: str = "admin",
+    user_role: str = "EnterpriseAdmin",
 ) -> dict:
     return {
         "X-Enterprise-ID": enterprise_id,
@@ -263,6 +263,78 @@ class TestOverrideGrade:
         )
         assert resp.status_code == 409
 
+    def test_unauthorized_role_returns_403(self):
+        uc = AsyncMock()
+        client = TestClient(_create_test_app(uc))
+        resp = client.post(
+            f"/grading/results/{SESSION_ID}/override",
+            json={"new_score": 90.0, "reason": "Correcting error in grading"},
+            headers=_headers(user_role="ExamCandidate"),
+        )
+        assert resp.status_code == 403
+
+
+# ===================================================================
+# override_question_grade
+# ===================================================================
+
+
+class TestOverrideQuestionGrade:
+
+    def _make_detail(self):
+        return {
+            "id": uuid.uuid4(),
+            "session_id": uuid.UUID(SESSION_ID),
+            "exam_id": uuid.UUID(EXAM_ID),
+            "candidate_id": uuid.UUID(CANDIDATE_ID),
+            "enterprise_id": uuid.UUID(ENTERPRISE_ID),
+            "enrollment_id": uuid.UUID(ENROLLMENT_ID),
+            "total_max_points": 100,
+            "total_awarded_points": 75,
+            "percentage": 75.0,
+            "status": GradingStatus.graded.value,
+            "graded_by": "system",
+            "is_tampered": False,
+            "version": 1,
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+            "question_results": [],
+        }
+
+    def test_successful_question_override(self):
+        uc = AsyncMock()
+        uc.get_grade_detail.return_value = self._make_detail()
+        uc.update_question_grade_manually.return_value = {
+            "session_id": uuid.UUID(SESSION_ID),
+            "session_question_id": uuid.UUID(SQ_ID_1),
+            "previous_question_score": 10.0,
+            "new_question_score": 15.0,
+            "previous_total_score": 75.0,
+            "new_total_score": 80.0,
+            "new_percentage": 80.0,
+            "status": "reviewed",
+        }
+        client = TestClient(_create_test_app(uc))
+        resp = client.post(
+            f"/grading/results/{SESSION_ID}/questions/{SQ_ID_1}/override",
+            json={"new_score": 15.0, "reason": "Correcting question score"},
+            headers=_headers(user_role="EnterpriseAdmin"),
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["new_question_score"] == 15.0
+        assert body["status"] == "reviewed"
+
+    def test_unauthorized_role_returns_403(self):
+        uc = AsyncMock()
+        client = TestClient(_create_test_app(uc))
+        resp = client.post(
+            f"/grading/results/{SESSION_ID}/questions/{SQ_ID_1}/override",
+            json={"new_score": 15.0, "reason": "Correcting question score"},
+            headers=_headers(user_role="ExamCandidate"),
+        )
+        assert resp.status_code == 403
+
 
 # ===================================================================
 # get_audit_logs
@@ -299,7 +371,7 @@ class TestGetAuditLogs:
                 "id": uuid.uuid4(),
                 "action": "UPDATE",
                 "actor_id": uuid.UUID(ACTOR_ID),
-                "actor_role": "admin",
+                "actor_role": "EnterpriseAdmin",
                 "old_values": {"total_awarded_points": 75.0},
                 "new_values": {"total_awarded_points": 90.0},
                 "changed_fields": ["total_awarded_points"],
