@@ -73,3 +73,11 @@ const (
 	// is submitted, signalling the definitive score to reporting and grading services.
 	ProctoringCheatingScore = "proctoring.cheating_score.updated"
 )
+
+// Grading-Service topics
+const (
+	// GradingSessionCompleted is published when an exam session has been graded.
+	// The notification-service consumes this to email candidates their results.
+	GradingSessionCompleted = "grading.session.completed"
+)
+
