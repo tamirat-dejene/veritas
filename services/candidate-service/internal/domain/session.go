@@ -232,6 +232,9 @@ type GradingPayload struct {
 	ExamID            uuid.UUID  `json:"exam_id"`
 	CandidateID       uuid.UUID  `json:"candidate_id"`
 	EnrollmentID      uuid.UUID  `json:"enrollment_id"`
+	CandidateName     string     `json:"candidate_name"`
+	CandidateEmail    string     `json:"candidate_email"`
+	ExamTitle         string     `json:"exam_title"`
 	Status            string     `json:"status"`
 	StartedAt         time.Time  `json:"started_at"`
 	SubmittedAt       *time.Time `json:"submitted_at,omitempty"`

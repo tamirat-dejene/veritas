@@ -649,6 +649,17 @@ func (uc *sessionUseCase) BuildGradingPayload(ctx context.Context, sessionID uui
 		return nil, fmt.Errorf("get session: %w", err)
 	}
 
+	// Fetch candidate and exam details for the grading payload
+	candidate, err := uc.candidateRepo.GetByID(ctx, session.CandidateID, session.EnterpriseID)
+	if err != nil {
+		return nil, fmt.Errorf("fetch candidate for grading payload: %w", err)
+	}
+
+	examMeta, err := uc.examClient.GetExamMetadata(ctx, session.EnterpriseID, session.ExamID)
+	if err != nil {
+		return nil, fmt.Errorf("fetch exam metadata for grading payload: %w", err)
+	}
+
 	// 1. Fetch master questions with true evaluation criteria from exam-service
 	masterQuestions, err := uc.examClient.GetExamQuestions(ctx, session.EnterpriseID, session.ExamID, true)
 	if err != nil {
@@ -740,12 +751,20 @@ func (uc *sessionUseCase) BuildGradingPayload(ctx context.Context, sessionID uui
 		autoSubmitted = sub.AutoSubmitted
 	}
 
+	var email string
+	if candidate.Email != nil {
+		email = *candidate.Email
+	}
+
 	return &domain.GradingPayload{
 		SessionID:         session.ID,
 		EnterpriseID:      session.EnterpriseID,
 		ExamID:            session.ExamID,
 		CandidateID:       session.CandidateID,
 		EnrollmentID:      session.EnrollmentID,
+		CandidateName:     candidate.FirstName + " " + candidate.LastName,
+		CandidateEmail:    email,
+		ExamTitle:         examMeta.Title,
 		Status:            string(session.Status),
 		StartedAt:         session.StartedAt,
 		SubmittedAt:       session.SubmittedAt,
