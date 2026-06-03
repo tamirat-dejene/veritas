@@ -17,6 +17,7 @@ class QuestionGradingStatus(str, Enum):
     partial = "partial"
     skipped = "skipped"
     ai_graded = "ai_graded"
+    human_review = "human_review"
 
 class QuestionType(str, Enum):
     MCQ = "MCQ"
