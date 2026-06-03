@@ -112,6 +112,9 @@ class GradingPayload(BaseModel):
     exam_id: str
     candidate_id: str
     enrollment_id: str
+    candidate_name: str = "Test Candidate"
+    candidate_email: str = "candidate@test.com"
+    exam_title: str = "Test Exam"
 
     status: str
     started_at: datetime

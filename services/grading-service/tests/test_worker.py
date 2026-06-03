@@ -135,3 +135,44 @@ class TestProcessIncomingEvent:
                 enterprise_id=ENTERPRISE_ID,
             )
             mock_repo.save_grading_report.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_grades_saves_and_publishes(self):
+        slim_trigger = _base_event()
+        payload_dict = _base_event(
+            items=[
+                _mcq_item(QUESTION_ID_1, SQ_ID_1, selected_ids=["opt-a", "opt-b"])
+            ],
+            candidate_name="John Doe",
+            candidate_email="john@example.com",
+            exam_title="Physics 101",
+        )
+        grading_payload = GradingPayload.model_validate(payload_dict)
+
+        mock_pool = AsyncMock()
+        mock_client = AsyncMock()
+        mock_client.fetch_grading_payload.return_value = grading_payload
+        mock_producer = AsyncMock()
+
+        with patch(
+            "app.grading.worker.GradingRepository",
+        ) as MockRepoClass:
+            mock_repo = AsyncMock()
+            MockRepoClass.return_value = mock_repo
+
+            report = await process_incoming_event(
+                slim_trigger,
+                mock_pool,
+                mock_client,
+                producer=mock_producer,
+            )
+
+            assert isinstance(report, ExamGradeReport)
+            mock_producer.publish.assert_awaited_once()
+            topic, event_payload = mock_producer.publish.call_args[0]
+            assert topic == "grading.session.completed"
+            assert event_payload["candidate_name"] == "John Doe"
+            assert event_payload["candidate_email"] == "john@example.com"
+            assert event_payload["exam_title"] == "Physics 101"
+            assert event_payload["percentage"] == 100.0
+

@@ -29,6 +29,7 @@ from app.grading.candidate_client import CandidateServiceClient, CandidateServic
 from app.grading.grader import grade_exam, ExamGradeReport
 from app.grading.models import ExamReadyForGradingEvent
 from app.repository.grading_repository import GradingRepository
+from app.grading.producer import KafkaProducer
 
 logger = logging.getLogger("grading.worker")
 
@@ -37,6 +38,7 @@ logger = logging.getLogger("grading.worker")
 # ---------------------------------------------------------------------------
 
 GRADING_TOPIC = "exam.session.ready_for_grading"
+COMPLETED_TOPIC = "grading.session.completed"
 CONSUMER_GROUP = "grading-service-group"
 ACCEPTED_VERSION = "3.0"
 
@@ -49,6 +51,7 @@ async def process_incoming_event(
     payload: dict[str, Any],
     pool: asyncpg.Pool,
     candidate_client: CandidateServiceClient,
+    producer: KafkaProducer | None = None,
 ) -> ExamGradeReport:
     """
     Top-level handler: parse slim trigger → fetch grading payload → grade → persist.
@@ -116,6 +119,36 @@ async def process_incoming_event(
         elapsed_ms,
     )
 
+    # 7. Publish grading completed event to Kafka
+    if producer:
+        try:
+            logger.info("Publishing grading completed event for session=%s", report.session_id)
+            await producer.publish(
+                COMPLETED_TOPIC,
+                {
+                    "event_id": str(event.event_id),
+                    "event_type": COMPLETED_TOPIC,
+                    "version": "1.0",
+                    "timestamp": int(time.time() * 1000),
+                    "session_id": str(report.session_id),
+                    "candidate_id": str(report.candidate_id),
+                    "enterprise_id": str(report.enterprise_id),
+                    "exam_id": str(report.exam_id),
+                    "candidate_name": grading_payload.candidate_name,
+                    "candidate_email": grading_payload.candidate_email,
+                    "exam_title": grading_payload.exam_title,
+                    "total_awarded_points": float(report.total_awarded_points),
+                    "total_max_points": float(report.total_max_points),
+                    "percentage": float(report.percentage),
+                }
+            )
+        except Exception as exc:
+            logger.error(
+                "Failed to publish grading completed event for session=%s: %s",
+                report.session_id,
+                exc,
+            )
+
     return report
 
 
@@ -126,6 +159,7 @@ async def process_incoming_event(
 async def run_grading_consumer(
     pool: asyncpg.Pool,
     candidate_client: CandidateServiceClient,
+    producer: KafkaProducer,
 ) -> None:
     """
     Long-running Kafka consumer coroutine.
@@ -151,7 +185,7 @@ async def run_grading_consumer(
             )
 
             async for msg in consumer:
-                await _handle_message(msg, pool, candidate_client)
+                await _handle_message(msg, pool, candidate_client, producer)
 
         except asyncio.CancelledError:
             logger.info("Kafka consumer received shutdown signal.")
@@ -172,6 +206,7 @@ async def _handle_message(
     msg: Any,
     pool: asyncpg.Pool,
     candidate_client: CandidateServiceClient,
+    producer: KafkaProducer | None = None,
 ) -> None:
     """Process a single Kafka message."""
     try:
@@ -216,7 +251,7 @@ async def _handle_message(
             msg.offset,
         )
 
-        await process_incoming_event(payload, pool, candidate_client)
+        await process_incoming_event(payload, pool, candidate_client, producer)
 
     except json.JSONDecodeError as exc:
         logger.error(

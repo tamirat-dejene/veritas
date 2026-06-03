@@ -10,6 +10,7 @@ from app.config import settings
 from app.database import create_pool
 from app.grading.candidate_client import CandidateServiceClient
 from app.grading.enterprise_client import EnterpriseServiceClient
+from app.grading.producer import KafkaProducer
 from app.grading.worker import run_grading_consumer
 from app.middleware.context import IdentityMiddleware
 from app.repository.grading_repository import GradingRepository
@@ -30,7 +31,7 @@ async def lifespan(app: FastAPI):
     app.state.pool = pool
     logger.info("Connected to PostgreSQL")
 
-    # 2. Start service clients
+    # 2. Start service clients & Kafka producer
     candidate_client = CandidateServiceClient()
     await candidate_client.start()
     app.state.candidate_client = candidate_client
@@ -47,6 +48,11 @@ async def lifespan(app: FastAPI):
         settings.ENTERPRISE_SERVICE_URL,
     )
 
+    kafka_producer = KafkaProducer()
+    await kafka_producer.start()
+    app.state.kafka_producer = kafka_producer
+    logger.info("Kafka producer started")
+
     # 3. Dependency Injection
     grading_repo = GradingRepository(pool)
     grading_uc = GradingUseCase(grading_repo, candidate_client, enterprise_client)
@@ -54,7 +60,7 @@ async def lifespan(app: FastAPI):
 
     # 4. Spawn the Kafka consumer as a background task
     consumer_task = asyncio.create_task(
-        run_grading_consumer(pool, candidate_client)
+        run_grading_consumer(pool, candidate_client, kafka_producer)
     )
     logger.info("Grading Kafka consumer task started.")
 
@@ -67,6 +73,9 @@ async def lifespan(app: FastAPI):
         await consumer_task
     except asyncio.CancelledError:
         pass
+
+    await kafka_producer.stop()
+    logger.info("Kafka producer stopped.")
 
     await candidate_client.stop()
     logger.info("CandidateServiceClient stopped.")
