@@ -11,7 +11,7 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE question_grading_status AS ENUM ('correct', 'incorrect', 'partial', 'skipped', 'ai_graded');
+    CREATE TYPE question_grading_status AS ENUM ('correct', 'incorrect', 'partial', 'skipped', 'ai_graded', 'human_review');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
