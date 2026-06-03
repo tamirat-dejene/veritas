@@ -422,6 +422,8 @@ func (u *paymentUsecase) HandleWebhook(ctx context.Context, payload []byte, sigH
 			processErr = u.handleCheckoutSessionCompleted(ctx, event)
 		case "invoice.paid":
 			processErr = u.handleInvoicePaid(ctx, event)
+		case "invoice.payment_succeeded":
+			processErr = u.handleInvoicePaid(ctx, event)
 		case "invoice.payment_failed":
 			processErr = u.handleInvoicePaymentFailed(ctx, event)
 		case "invoice.upcoming":
@@ -616,6 +618,10 @@ func (u *paymentUsecase) handleCheckoutSessionCompleted(ctx context.Context, eve
 }
 
 func (u *paymentUsecase) handleInvoicePaid(ctx context.Context, event *domain.PaymentEvent) error {
+	log := logger.WithContext(ctx, zap.L()).With(
+		zap.String("event_id", event.EventID),
+		zap.String("event_type", event.EventType),
+	)
 	invoiceNumber, _ := event.Raw["number"].(string)
 	amountPaidRaw := event.Raw["amount_paid"]
 	var amountPaid float64
@@ -642,6 +648,10 @@ func (u *paymentUsecase) handleInvoicePaid(ctx context.Context, event *domain.Pa
 	if subscriptionRef == "" {
 		subscriptionRef, _ = event.Raw["subscription"].(string)
 	}
+	if subscriptionRef == "" {
+		log.Warn("invoice paid webhook missing subscription reference")
+		return nil
+	}
 
 	return RunInTx(ctx, u.pool, func(tx pgx.Tx) error {
 		inv, err := u.billingRepo.WithTx(tx).GetInvoiceByNumber(ctx, invoiceNumber)
@@ -655,6 +665,10 @@ func (u *paymentUsecase) handleInvoicePaid(ctx context.Context, event *domain.Pa
 			// Invoice not found locally — create it from Stripe event data.
 			sub, lookupErr := u.subRepo.WithTx(tx).GetSubscriptionByStripeID(ctx, subscriptionRef)
 			if lookupErr != nil {
+				if errors.Is(lookupErr, domain.ErrSubscriptionNotFound) {
+					log.Warn("invoice paid webhook subscription not found", zap.String("subscription_id", subscriptionRef))
+					return nil
+				}
 				return fmt.Errorf("lookup subscription by stripe id %s: %w", subscriptionRef, lookupErr)
 			}
 
