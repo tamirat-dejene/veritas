@@ -29,15 +29,15 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/tamirat-dejene/veritas/services/payment-service/docs/swagger"
 	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/tamirat-dejene/veritas/services/payment-service/docs/swagger"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/config"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/handler"
-	"github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/messaging"
-	"github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/scheduler"
 	chapaprovider "github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/chapa"
+	"github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/messaging"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/providerregistry"
+	"github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/scheduler"
 	stripeprovider "github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/stripe"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/repository/postgres"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/router"
@@ -55,6 +55,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
 		os.Exit(1)
 	}
+	defer func() { _ = log.Sync() }()
+	zap.ReplaceGlobals(log)
 
 	// 2. Load configuration
 	cfg := config.Load()
@@ -70,7 +72,7 @@ func main() {
 	// 4. Wire repositories, Stripe & Chapa providers, and the registry
 	subRepo := postgres.NewSubscriptionRepository(pool)
 	billingRepo := postgres.NewBillingRepository(pool)
-	
+
 	stripeProv := stripeprovider.NewStripeProvider(cfg.StripeSecretKey, cfg.StripeWebhookSecret, cfg.StripeSuccessURL, cfg.StripeCancelURL)
 	chapaProv := chapaprovider.NewChapaProvider(cfg.ChapaSecretKey, cfg.ChapaWebhookSecret, cfg.ChapaReturnURL, cfg.ChapaCallbackURL)
 	provRegistry := providerregistry.NewProviderRegistry(stripeProv, chapaProv)
