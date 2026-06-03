@@ -7,6 +7,7 @@ import (
 	stripego "github.com/stripe/stripe-go/v85"
 	"github.com/stripe/stripe-go/v85/webhook"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
+	"go.uber.org/zap"
 )
 
 type stripeProvider struct {
@@ -60,15 +61,24 @@ func (p *stripeProvider) CreateCheckoutSession(ctx context.Context, req domain.C
 // VerifyWebhookEvent validates the Stripe-Signature header and maps the event
 // to the provider-agnostic domain.PaymentEvent.
 func (p *stripeProvider) VerifyWebhookEvent(payload []byte, sigHeader string) (*domain.PaymentEvent, error) {
-	event, err := webhook.ConstructEvent(payload, sigHeader, p.webhookSecret)
+	if p.webhookSecret == "" {
+		zap.L().Warn("stripe webhook secret is empty; signature verification may fail")
+	}
+
+	event, err := webhook.ConstructEventWithOptions(
+		payload,
+		sigHeader,
+		p.webhookSecret,
+		webhook.ConstructEventOptions{IgnoreAPIVersionMismatch: true},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("stripe: construct event: %w", err)
 	}
 
 	pe := &domain.PaymentEvent{
-		EventID:  event.ID,
+		EventID:   event.ID,
 		EventType: string(event.Type),
-		Raw:      event.Data.Object,
+		Raw:       event.Data.Object,
 	}
 
 	// Extract common fields where available.
