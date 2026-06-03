@@ -6,7 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
+	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
+	"go.uber.org/zap"
 )
 
 type PaymentHandler struct {
@@ -34,7 +36,8 @@ func (h *PaymentHandler) ListPlans(c *gin.Context) {
 	params := pagination.ParseGin(c)
 	plans, err := h.usecase.ListPlans(c.Request.Context(), params)
 	if err != nil {
-		{ e := mapDomainError(err); writeError(c, e.Code, e.Message) }
+		e := mapDomainError(err)
+		writeError(c, e.Code, e.Message)
 		return
 	}
 	writeJSON(c, http.StatusOK, plans)
@@ -97,12 +100,22 @@ func (h *PaymentHandler) UpgradeSubscription(c *gin.Context) {
 func (h *PaymentHandler) HandleWebhook(c *gin.Context) {
 	payload, err := c.GetRawData()
 	if err != nil {
+		logger.WithContext(c.Request.Context(), zap.L()).Warn("stripe webhook read body failed", zap.Error(err))
 		writeError(c, http.StatusBadRequest, "failed to read request body")
 		return
 	}
 
 	sigHeader := c.GetHeader("Stripe-Signature")
+	logger.WithContext(c.Request.Context(), zap.L()).Info(
+		"stripe webhook received",
+		zap.Int("payload_bytes", len(payload)),
+		zap.Bool("signature_present", sigHeader != ""),
+	)
 	if err := h.usecase.HandleWebhook(c.Request.Context(), payload, sigHeader, domain.PaymentProviderStripe); err != nil {
+		logger.WithContext(c.Request.Context(), zap.L()).Error(
+			"stripe webhook handling failed",
+			zap.Error(err),
+		)
 		writeError(c, http.StatusServiceUnavailable, err.Error())
 		return
 	}
@@ -126,6 +139,7 @@ func (h *PaymentHandler) HandleWebhook(c *gin.Context) {
 func (h *PaymentHandler) HandleChapaWebhook(c *gin.Context) {
 	payload, err := c.GetRawData()
 	if err != nil {
+		logger.WithContext(c.Request.Context(), zap.L()).Warn("chapa webhook read body failed", zap.Error(err))
 		writeError(c, http.StatusBadRequest, "failed to read request body")
 		return
 	}
@@ -135,7 +149,17 @@ func (h *PaymentHandler) HandleChapaWebhook(c *gin.Context) {
 		sigHeader = c.GetHeader("x-chapa-signature")
 	}
 
+	logger.WithContext(c.Request.Context(), zap.L()).Info(
+		"chapa webhook received",
+		zap.Int("payload_bytes", len(payload)),
+		zap.Bool("signature_present", sigHeader != ""),
+	)
+
 	if err := h.usecase.HandleWebhook(c.Request.Context(), payload, sigHeader, domain.PaymentProviderChapa); err != nil {
+		logger.WithContext(c.Request.Context(), zap.L()).Error(
+			"chapa webhook handling failed",
+			zap.Error(err),
+		)
 		writeError(c, http.StatusServiceUnavailable, err.Error())
 		return
 	}
@@ -242,7 +266,10 @@ func (h *PaymentHandler) ListInvoices(c *gin.Context) {
 
 	invoices, err := h.usecase.ListInvoices(c.Request.Context(), enterpriseID, params)
 	if err != nil {
-		{ e := mapDomainError(err); writeError(c, e.Code, e.Message) }
+		{
+			e := mapDomainError(err)
+			writeError(c, e.Code, e.Message)
+		}
 		return
 	}
 
@@ -558,7 +585,10 @@ func (h *PaymentHandler) AdminListPlans(c *gin.Context) {
 	params := pagination.ParseGin(c)
 	plans, err := h.usecase.ListAllPlans(c.Request.Context(), params)
 	if err != nil {
-		{ e := mapDomainError(err); writeError(c, e.Code, e.Message) }
+		{
+			e := mapDomainError(err)
+			writeError(c, e.Code, e.Message)
+		}
 		return
 	}
 	writeJSON(c, http.StatusOK, plans)

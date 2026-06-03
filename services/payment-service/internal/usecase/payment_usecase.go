@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/domain"
 	"github.com/tamirat-dejene/veritas/services/payment-service/internal/infrastructure/providerregistry"
+	"github.com/tamirat-dejene/veritas/shared/pkg/logger"
 	"github.com/tamirat-dejene/veritas/shared/pkg/pagination"
 	"go.uber.org/zap"
 )
@@ -368,31 +369,51 @@ func (u *paymentUsecase) HandleWebhook(ctx context.Context, payload []byte, sigH
 		provider = domain.PaymentProviderStripe
 	}
 
+	log := logger.WithContext(ctx, zap.L()).With(
+		zap.String("provider", provider),
+		zap.Int("payload_bytes", len(payload)),
+		zap.Bool("signature_present", sigHeader != ""),
+	)
+	log.Info("webhook handling started")
+
 	prov, err := u.providerRegistry.Get(provider)
 	if err != nil {
+		log.Error("webhook provider lookup failed", zap.Error(err))
 		return err
 	}
 
 	event, err := prov.VerifyWebhookEvent(payload, sigHeader)
 	if err != nil {
+		log.Error("webhook verification failed", zap.Error(err))
 		return err
 	}
+
+	log = log.With(
+		zap.String("event_id", event.EventID),
+		zap.String("event_type", event.EventType),
+	)
+	log.Info("webhook verified")
 
 	// Idempotency check
 	processed, err := u.billingRepo.HasEventBeenProcessed(ctx, event.EventID)
 	if err != nil {
+		log.Error("webhook idempotency check failed", zap.Error(err))
 		return fmt.Errorf("check event processed: %w", err)
 	}
 	if processed {
+		log.Info("webhook already processed")
 		return nil // Already processed, return success
 	}
 
 	var processErr error
+	handled := true
 	if provider == domain.PaymentProviderChapa {
 		if event.EventType == "payment.success" {
 			processErr = u.handleChapaPaymentSuccess(ctx, event)
 		} else if event.EventType == "payment.failed" {
 			processErr = u.handleChapaPaymentFailed(ctx, event)
+		} else {
+			handled = false
 		}
 	} else {
 		// Stripe specific events
@@ -409,15 +430,28 @@ func (u *paymentUsecase) HandleWebhook(ctx context.Context, payload []byte, sigH
 			processErr = u.handleSubscriptionUpdated(ctx, event)
 		case "customer.subscription.deleted":
 			processErr = u.handleSubscriptionDeleted(ctx, event)
+		default:
+			handled = false
 		}
 	}
 
 	if processErr != nil {
+		log.Error("webhook processing failed", zap.Error(processErr))
 		return processErr
 	}
 
+	if !handled {
+		log.Warn("webhook event ignored")
+	}
+
 	// Record success
-	return u.billingRepo.RecordEventProcessed(ctx, event.EventID, string(event.EventType))
+	if err := u.billingRepo.RecordEventProcessed(ctx, event.EventID, string(event.EventType)); err != nil {
+		log.Error("webhook record processed failed", zap.Error(err))
+		return err
+	}
+
+	log.Info("webhook handled")
+	return nil
 }
 
 func (u *paymentUsecase) handleChapaPaymentSuccess(ctx context.Context, event *domain.PaymentEvent) error {
@@ -625,21 +659,21 @@ func (u *paymentUsecase) handleInvoicePaid(ctx context.Context, event *domain.Pa
 			}
 
 			inv = &domain.Invoice{
-				ID:              uuid.New(),
-				EnterpriseID:    sub.EnterpriseID,
-				SubscriptionID:  sub.ID,
-				Number:          invoiceNumber,
-				Status:          domain.InvoiceStatusPaid,
-				AmountDue:       amountDue,
-				AmountPaid:      amountPaid,
-				AmountRemaining: 0,
-				Currency:        currency,
-				DueDate:         now,
-				PaidAt:          &now,
+				ID:               uuid.New(),
+				EnterpriseID:     sub.EnterpriseID,
+				SubscriptionID:   sub.ID,
+				Number:           invoiceNumber,
+				Status:           domain.InvoiceStatusPaid,
+				AmountDue:        amountDue,
+				AmountPaid:       amountPaid,
+				AmountRemaining:  0,
+				Currency:         currency,
+				DueDate:          now,
+				PaidAt:           &now,
 				HostedInvoiceURL: &hostedInvoiceURL,
-				InvoicePDFURL:   &invoicePDFURL,
-				CreatedAt:       now,
-				UpdatedAt:       now,
+				InvoicePDFURL:    &invoicePDFURL,
+				CreatedAt:        now,
+				UpdatedAt:        now,
 			}
 			if err := u.billingRepo.WithTx(tx).CreateInvoice(ctx, inv); err != nil {
 				return err
