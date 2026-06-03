@@ -89,6 +89,12 @@ async def override_grade(
     enterprise_id = get_enterprise_id(request)
     actor_id = get_user_id(request)
     actor_role = get_user_role(request)
+    
+    logger.info(
+        "Attempting manual grade override for session %s. New score requested: %s, Actor: %s (%s)",
+        session_id, body.new_score, actor_id, actor_role
+    )
+    
     grading_uc = request.app.state.grading_uc
 
     # Get client IP address
@@ -97,9 +103,14 @@ async def override_grade(
     # First, fetch to verify ownership
     detail = await grading_uc.get_grade_detail(session_id)
     if not detail:
+        logger.warning("Manual override failed: session %s not found", session_id)
         raise HTTPException(status_code=404, detail="Grading result not found")
 
     if detail["enterprise_id"] != enterprise_id:
+        logger.warning(
+            "Manual override access denied: enterprise mismatch for session %s. Actor enterprise: %s, Session enterprise: %s",
+            session_id, enterprise_id, detail["enterprise_id"]
+        )
         raise HTTPException(status_code=403, detail="Access denied to this resource")
 
     try:
@@ -112,13 +123,19 @@ async def override_grade(
             ip_address=ip_address
         )
     except DataTamperingError as exc:
+        logger.error("Manual override blocked due to database tampering verification failure for session %s", session_id)
         raise HTTPException(
             status_code=409,
             detail="Tamper detection block: cannot edit a database row that fails integrity verification."
         ) from exc
     except Exception as exc:
-        logger.exception("Failed to manually update grade: %s", exc)
+        logger.exception("Failed to manually update grade for session %s: %s", session_id, exc)
         raise HTTPException(status_code=500, detail=str(exc))
+
+    logger.info(
+        "Successfully manually overrode grade for session %s. Previous score: %s, New score: %s",
+        session_id, update_result["previous_score"], update_result["new_score"]
+    )
 
     return ManualOverrideResponse(
         session_id=update_result["session_id"],
@@ -144,7 +161,16 @@ async def override_question_grade(
     actor_id = get_user_id(request)
     actor_role = get_user_role(request)
     
+    logger.info(
+        "Attempting manual question grade override for session %s, question %s. New score requested: %s, Actor: %s (%s)",
+        session_id, session_question_id, body.new_score, actor_id, actor_role
+    )
+
     if actor_role not in ("enterprise_admin", "enterprise_staff", "system"):
+         logger.warning(
+             "Manual question override access denied: insufficient role '%s' for actor %s on session %s",
+             actor_role, actor_id, session_id
+         )
          raise HTTPException(status_code=403, detail="Insufficient role to perform this action.")
          
     grading_uc = request.app.state.grading_uc
@@ -155,9 +181,14 @@ async def override_question_grade(
     # First, fetch to verify ownership
     detail = await grading_uc.get_grade_detail(session_id)
     if not detail:
+        logger.warning("Manual question override failed: session %s not found", session_id)
         raise HTTPException(status_code=404, detail="Grading result not found")
 
     if detail["enterprise_id"] != enterprise_id:
+        logger.warning(
+            "Manual question override access denied: enterprise mismatch for session %s. Actor enterprise: %s, Session enterprise: %s",
+            session_id, enterprise_id, detail["enterprise_id"]
+        )
         raise HTTPException(status_code=403, detail="Access denied to this resource")
 
     try:
@@ -171,18 +202,28 @@ async def override_question_grade(
             ip_address=ip_address
         )
     except DataTamperingError as exc:
+        logger.error("Manual question override blocked due to database tampering verification failure for session %s", session_id)
         raise HTTPException(
             status_code=409,
             detail="Tamper detection block: cannot edit a database row that fails integrity verification."
         ) from exc
     except ValueError as exc:
+        logger.warning(
+            "Manual question override failed validation: %s (session %s, question %s)",
+            str(exc), session_id, session_question_id
+        )
         raise HTTPException(
             status_code=404,
             detail=str(exc)
         )
     except Exception as exc:
-        logger.exception("Failed to manually update question grade: %s", exc)
+        logger.exception("Failed to manually update question grade for session %s: %s", session_id, exc)
         raise HTTPException(status_code=500, detail=str(exc))
+
+    logger.info(
+        "Successfully manually overrode question grade for session %s, question %s. Previous question score: %s, New question score: %s",
+        session_id, session_question_id, update_result["previous_question_score"], update_result["new_question_score"]
+    )
 
     return QuestionManualOverrideResponse(
         session_id=update_result["session_id"],

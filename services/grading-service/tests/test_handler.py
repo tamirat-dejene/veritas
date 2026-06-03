@@ -327,3 +327,36 @@ class TestGetAuditLogs:
             headers=_headers(),
         )
         assert resp.status_code == 404
+
+
+class TestValidationExceptionHandler:
+    @pytest.mark.anyio
+    async def test_validation_exception_handler_logging(self):
+        from app.router import create_app
+        from fastapi.exceptions import RequestValidationError
+        from unittest.mock import patch, MagicMock, AsyncMock
+
+        app = create_app()
+        # Find the registered exception handler for RequestValidationError
+        handler = app.exception_handlers.get(RequestValidationError)
+        assert handler is not None
+
+        mock_request = MagicMock()
+        mock_request.method = "POST"
+        mock_request.url.path = "/grading/results/some-uuid/override"
+        
+        mock_exc = MagicMock(spec=RequestValidationError)
+        mock_exc.errors.return_value = [{"loc": ["body", "new_score"], "msg": "value is not a valid float"}]
+
+        with patch("app.router.logger.error") as mock_log_error:
+            # We mock request_validation_exception_handler since we don't want to actually execute the response construction
+            with patch("app.router.request_validation_exception_handler", new_callable=AsyncMock) as mock_default_handler:
+                # pyrefly: ignore [not-async]
+                await handler(mock_request, mock_exc)
+                mock_log_error.assert_called_once_with(
+                    "Request validation failed for %s %s: %s",
+                    "POST",
+                    "/grading/results/some-uuid/override",
+                    mock_exc.errors(),
+                )
+                mock_default_handler.assert_called_once_with(mock_request, mock_exc)

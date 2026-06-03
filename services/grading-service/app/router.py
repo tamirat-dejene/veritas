@@ -5,6 +5,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import request_validation_exception_handler
 
 from app.config import settings
 from app.database import create_pool
@@ -96,6 +98,16 @@ def create_app() -> FastAPI:
         docs_url=None,
         openapi_url="/swagger/openapi.json"
     )
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request, exc: RequestValidationError):
+        logger.error(
+            "Request validation failed for %s %s: %s",
+            request.method,
+            request.url.path,
+            exc.errors(),
+        )
+        return await request_validation_exception_handler(request, exc)
 
     @app.get("/swagger/index.html", include_in_schema=False)
     async def custom_swagger_ui_html():
