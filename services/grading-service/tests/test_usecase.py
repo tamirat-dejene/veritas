@@ -125,8 +125,8 @@ class TestGradingUseCase:
         }
         mock_enterprise_client.fetch_user.return_value = {
             "id": "user-456",
-            "first_name": "Jane",
-            "last_name": "Smith",
+            "firstName": "Jane",
+            "lastName": "Smith",
             "email": "jane@example.com",
             "role": "enterprise_admin",
         }

@@ -61,8 +61,8 @@ class GradingUseCase:
             if user_data:
                 grader["user_details"] = {
                     "id": user_data["id"],
-                    "first_name": user_data["first_name"],
-                    "last_name": user_data["last_name"],
+                    "first_name": user_data.get("firstName"),
+                    "last_name": user_data.get("lastName"),
                     "email": user_data["email"],
                     "role": user_data["role"],
                 }
