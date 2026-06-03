@@ -40,6 +40,7 @@ type notificationUsecase struct {
 	examClosedCandidateTmpl   *template.Template
 	candidateInvitationTmpl   *template.Template
 	examSubmittedConfirmationTmpl *template.Template
+	examGradedCandidateTmpl   *template.Template
 }
 
 
@@ -87,6 +88,7 @@ func NewNotificationUsecase(mailer domain.Mailer, logger *zap.Logger) (domain.No
 	exCloCan, _ := parse("exam_closed_candidate.html", emailtemplate.ExamClosedCandidateEmail)
 	candInv, _ := parse("candidate_invitation_email.html", emailtemplate.CandidateInvitationEmail)
 	examSubConf, _ := parse("exam_submitted_confirmation.html", emailtemplate.ExamSubmittedConfirmationEmail)
+	exGradCand, _ := parse("exam_graded_candidate.html", emailtemplate.ExamGradedCandidateEmail)
 
 	return &notificationUsecase{
 		mailer:                mailer,
@@ -114,6 +116,7 @@ func NewNotificationUsecase(mailer domain.Mailer, logger *zap.Logger) (domain.No
 		examClosedCandidateTmpl:   exCloCan,
 		candidateInvitationTmpl:   candInv,
 		examSubmittedConfirmationTmpl: examSubConf,
+		examGradedCandidateTmpl:   exGradCand,
 	}, nil
 }
 
@@ -589,6 +592,57 @@ func (uc *notificationUsecase) HandleCandidateExamSubmitted(ctx context.Context,
 	}
 
 	uc.logger.Info("Successfully sent exam submitted confirmation email", zap.String("email", event.CandidateEmail))
+	return nil
+}
+
+type GradingSessionCompletedEvent struct {
+	SessionID          uuid.UUID `json:"session_id"`
+	CandidateID        uuid.UUID `json:"candidate_id"`
+	ExamID             uuid.UUID `json:"exam_id"`
+	EnterpriseID       uuid.UUID `json:"enterprise_id"`
+	CandidateName      string    `json:"candidate_name"`
+	CandidateEmail     string    `json:"candidate_email"`
+	ExamTitle          string    `json:"exam_title"`
+	TotalAwardedPoints float64   `json:"total_awarded_points"`
+	TotalMaxPoints     float64   `json:"total_max_points"`
+	Percentage         float64   `json:"percentage"`
+	Timestamp          int64     `json:"timestamp"`
+}
+
+func (uc *notificationUsecase) HandleGradingSessionCompleted(ctx context.Context, payload []byte) error {
+	var event GradingSessionCompletedEvent
+	if err := json.Unmarshal(payload, &event); err != nil {
+		uc.logger.Error("Failed to unmarshal GradingSessionCompletedEvent", zap.Error(err))
+		return err
+	}
+
+	uc.logger.Info("Processing exam graded email", zap.String("email", event.CandidateEmail))
+
+	var bodyBuffer bytes.Buffer
+	err := uc.examGradedCandidateTmpl.Execute(&bodyBuffer, map[string]interface{}{
+		"CandidateName":      event.CandidateName,
+		"ExamTitle":          event.ExamTitle,
+		"TotalAwardedPoints": event.TotalAwardedPoints,
+		"TotalMaxPoints":     event.TotalMaxPoints,
+		"Percentage":         event.Percentage,
+	})
+	if err != nil {
+		uc.logger.Error("Failed to render exam graded template", zap.Error(err))
+		return err
+	}
+
+	req := domain.EmailRequest{
+		To:      event.CandidateEmail,
+		Subject: fmt.Sprintf("Your Exam Results are Ready: %s", event.ExamTitle),
+		Body:    bodyBuffer.String(),
+	}
+
+	if err := uc.mailer.SendEmail(ctx, req); err != nil {
+		uc.logger.Error("Failed to send exam graded email", zap.Error(err))
+		return err
+	}
+
+	uc.logger.Info("Successfully sent exam graded email", zap.String("email", event.CandidateEmail))
 	return nil
 }
 

@@ -69,3 +69,7 @@ var CandidateInvitationEmail string
 
 //go:embed exam_submitted_confirmation.html
 var ExamSubmittedConfirmationEmail string
+
+//go:embed exam_graded_candidate.html
+var ExamGradedCandidateEmail string
+
