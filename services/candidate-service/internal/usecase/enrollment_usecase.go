@@ -478,10 +478,9 @@ func (uc *enrollmentUseCase) DeleteEnrollment(ctx context.Context, id uuid.UUID,
 }
 
 func (uc *enrollmentUseCase) ResetAttempts(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error {
-	e, err := uc.repo.GetByID(ctx, id, enterpriseID)
+	_, err := uc.repo.GetByID(ctx, id, enterpriseID)
 	if err != nil {
 		return err
 	}
-	e.AttemptsUsed = 0
-	return uc.repo.Update(ctx, e)
+	return uc.repo.ResetAttempts(ctx, id)
 }

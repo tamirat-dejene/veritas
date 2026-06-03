@@ -341,6 +341,18 @@ func (r *enrollmentRepository) Delete(ctx context.Context, id uuid.UUID, enterpr
 	return nil
 }
 
+func (r *enrollmentRepository) ResetAttempts(ctx context.Context, id uuid.UUID) error {
+	const q = `UPDATE exam_enrollments SET attempts_used = 0 WHERE id = $1`
+	tag, err := r.db.Exec(ctx, q, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrEnrollmentNotFound
+	}
+	return nil
+}
+
 func (r *enrollmentRepository) WithTx(tx pgx.Tx) domain.EnrollmentRepository {
 	return &enrollmentRepository{db: tx}
 }

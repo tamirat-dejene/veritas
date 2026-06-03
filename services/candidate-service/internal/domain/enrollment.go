@@ -57,7 +57,9 @@ type EnrollmentRepository interface {
 	RevokeByEnterprise(ctx context.Context, enterpriseID uuid.UUID) error
 	RevokeByExam(ctx context.Context, examID uuid.UUID) error
 	Delete(ctx context.Context, id uuid.UUID, enterpriseID uuid.UUID) error
+	ResetAttempts(ctx context.Context, id uuid.UUID) error
 	WithTx(tx pgx.Tx) EnrollmentRepository
+
 }
 
 // EnrollmentUseCase is the business-logic contract for the enrollment workflow.
